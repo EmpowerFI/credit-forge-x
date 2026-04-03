@@ -1,7 +1,7 @@
 const stats = [
   { value: "$8T+", label: "Mercado global de crédito" },
   { value: "$5T", label: "Gap de crédito para PMEs" },
-  { value: "40M+", label: "Empresas lideradas por mulheres no Brasil" },
+  { value: "2,3M+", label: "Empresas lideradas por mulheres no Brasil" },
   { value: "∞", label: "Potencial com Open Finance + Blockchain" },
 ];
 
