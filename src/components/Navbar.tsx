@@ -24,9 +24,6 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
-          <Button size="sm" className="gradient-primary text-primary-foreground hover:opacity-90 transition-opacity">
-            Pitch Deck
-          </Button>
         </div>
 
         <button className="md:hidden text-foreground" onClick={() => setOpen(!open)}>
@@ -42,7 +39,7 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
-          <Button size="sm" className="gradient-primary text-primary-foreground w-full mt-2">Pitch Deck</Button>
+          
         </div>
       )}
     </nav>

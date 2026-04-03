@@ -28,9 +28,6 @@ const HeroSection = () => (
         </p>
 
         <div className="flex flex-wrap gap-4 pt-2 opacity-0 animate-fade-in-delay-3">
-          <Button size="lg" className="gradient-primary text-primary-foreground hover:opacity-90 transition-opacity gap-2 shadow-glow">
-            <FileText size={18} /> Solicitar pitch deck
-          </Button>
           <Button size="lg" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10 gap-2">
             Falar com o time <ArrowRight size={18} />
           </Button>
