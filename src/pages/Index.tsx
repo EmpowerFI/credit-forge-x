@@ -8,7 +8,7 @@ import OpportunitySection from "@/components/OpportunitySection";
 import TractionSection from "@/components/TractionSection";
 import RoadmapSection from "@/components/RoadmapSection";
 import BusinessModelSection from "@/components/BusinessModelSection";
-import NewsSection from "@/components/NewsSection";
+
 import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
 
@@ -24,7 +24,7 @@ const Index = () => (
     <TractionSection />
     <RoadmapSection />
     <BusinessModelSection />
-    <NewsSection />
+    
     <CTASection />
     <Footer />
   </div>
