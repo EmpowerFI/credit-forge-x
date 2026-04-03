@@ -24,7 +24,7 @@ const Index = () => (
     <TractionSection />
     <RoadmapSection />
     <BusinessModelSection />
-    <NewsSection />
+    
     <CTASection />
     <Footer />
   </div>
