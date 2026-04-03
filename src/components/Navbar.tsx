@@ -39,7 +39,7 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
-          <Button size="sm" className="gradient-primary text-primary-foreground w-full mt-2">Pitch Deck</Button>
+          
         </div>
       )}
     </nav>
