@@ -3,7 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 const news = [
   {
     tag: "Aceleração",
-    title: "EmpowerFI selecionada para o programa Ginga Prototipa do Sebrae",
+    title: "EmpowerFI selecionada para o programa Prototipa do Sebrae",
     desc: "A startup foi escolhida entre centenas de projetos para integrar o programa de aceleração focado em inovação e impacto social.",
     date: "Mar 2025",
   },
