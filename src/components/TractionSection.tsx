@@ -9,7 +9,7 @@ const TractionSection = () => (
         </div>
         <p className="text-sm font-medium text-accent uppercase tracking-widest">Tração</p>
         <h2 className="section-title !text-2xl md:!text-3xl">
-          Selecionada para o programa <span className="text-gradient">Selecionada para o programa <span className="text-gradient">Ginga Prototipa do Sebrae</span></span>
+          Selecionada para o programa <span className="text-gradient">Prototipa do Sebrae</span>
         </h2>
         <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">
           A validação pelo Sebrae reforça o potencial da solução e seu impacto no ecossistema de 
