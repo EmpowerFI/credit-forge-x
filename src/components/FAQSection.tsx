@@ -7,20 +7,24 @@ import {
 
 const faqs = [
   {
-    q: "Como vocês definem minha taxa?",
-    a: "Sua taxa parte de 2% ao mês e é calculada com base no comportamento real do seu negócio: fluxo de caixa, recorrência de receita, sazonalidade e histórico transacional via Open Finance. Quem opera bem paga menos — sem depender do Serasa.",
+    q: "Em que estágio o produto está hoje?",
+    a: "Estamos em fase de desenvolvimento e validação. Tese validada com pesquisa primária, protótipo navegável testado, acelerada pelo Sebrae. Próxima etapa é MVP técnico via hackathon Solana e captação pré-seed. Originação real de crédito está prevista para 12–18 meses, após estruturação regulatória adequada.",
   },
   {
-    q: "É seguro conectar o Open Finance?",
-    a: "Sim. O Open Finance é regulado pelo Banco Central e usa criptografia ponta a ponta. Você autoriza apenas a leitura dos dados que já são seus, e pode revogar o acesso quando quiser. A gente nunca movimenta dinheiro sem sua autorização explícita.",
+    q: "Como vão captar e originar crédito?",
+    a: "Capital virá de investidores via estrutura tokenizada com lastro em Tesouro brasileiro (similar ao modelo da Ondo Finance, adaptado ao contexto brasileiro). Originação inicial via parceria com instituições reguladas; visão de longo prazo é internalização.",
   },
   {
-    q: "Quanto tempo até eu receber o crédito?",
-    a: "A análise leva minutos. Aprovado o crédito, o valor é liberado no mesmo dia útil em conta de sua escolha. Sem fila de agência, sem gerente, sem papel.",
+    q: "Qual o caminho regulatório?",
+    a: "Estamos mapeando estrutura adequada com escritório especializado. Caminho provável envolve correspondente bancário ou SCD própria, em paralelo a estrutura de tokenização via securitizadora parceira.",
   },
   {
-    q: "E se eu já estiver com nome sujo?",
-    a: "Restrição no Serasa não é um 'não' automático aqui. Avaliamos seu negócio hoje, não o seu passado. Se o fluxo de caixa mostra capacidade de pagamento, conseguimos oferecer crédito — e ainda ajudamos você a renegociar dívidas com o copiloto de IA.",
+    q: "Quem é o time?",
+    a: "Daniele Rodrigues dos Santos (fundadora) — engenheira da computação com 20 anos de experiência em TI corporativa. Cofundador técnico em blockchain e mercado de capitais é prioridade da próxima fase.",
+  },
+  {
+    q: "Como posso me envolver?",
+    a: "Investidores: agende uma conversa pelo formulário. Programas de aceleração: estamos abertos a participar. Parceiros institucionais (tokenizadoras, IMFs, bancos de desenvolvimento): adoraríamos conversar. Talentos com experiência em fintech ou Web3: estamos formando time fundador.",
   },
 ];
 

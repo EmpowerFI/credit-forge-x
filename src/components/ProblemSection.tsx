@@ -14,7 +14,7 @@ const ProblemSection = () => (
         <p className="text-sm font-medium text-accent uppercase tracking-widest">O Problema</p>
         <h2 className="section-title">
           O banco analisa seu passado.{" "}
-          <span className="text-gradient">A gente analisa seu negócio.</span>
+          <span className="text-gradient">Estamos construindo algo que analisa seu negócio.</span>
         </h2>
         <p className="section-subtitle">
           Microempreendedoras geram receita todos os dias e ainda assim recebem um "não" — ou uma taxa de cheque especial.
@@ -34,7 +34,7 @@ const ProblemSection = () => (
         <p className="text-xl md:text-2xl font-heading font-bold text-foreground">
           Boa pagadora tratada como{" "}
           <span className="text-gradient">alto risco.</span>{" "}
-          Isso acaba aqui.
+          É esse gap que estamos endereçando.
         </p>
       </div>
     </div>
