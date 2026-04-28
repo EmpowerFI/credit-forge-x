@@ -1,8 +1,8 @@
 const phases = [
-  { phase: "Fase 1", title: "Assistente Financeiro com IA", desc: "Integrado ao Open Finance para análise inteligente de fluxo de caixa." },
-  { phase: "Fase 2", title: "Score Proprietário", desc: "Desenvolvimento do modelo de score baseado em comportamento real." },
-  { phase: "Fase 3", title: "Crédito com Pools de Liquidez", desc: "Oferta de crédito utilizando pools de liquidez descentralizados." },
-  { phase: "Fase 4", title: "Marketplace & Escala Global", desc: "Expansão para marketplace financeiro e internacionalização." },
+  { phase: "Fase 1", title: "Copiloto financeiro com IA", desc: "Diagnóstico do negócio via Open Finance e plano de ação personalizado em microsessões." },
+  { phase: "Fase 2", title: "Score proprietário", desc: "Modelo de risco baseado em fluxo de caixa real, comportamento e histórico transacional." },
+  { phase: "Fase 3", title: "Originação com capital tokenizado", desc: "Crédito originado com lastro em Tesouro brasileiro, mantendo taxa competitiva." },
+  { phase: "Fase 4", title: "Marketplace e expansão", desc: "Produtos adjacentes (conta, recebíveis, seguros) e expansão para outros mercados." },
 ];
 
 const RoadmapSection = () => (
@@ -10,7 +10,7 @@ const RoadmapSection = () => (
     <div className="container mx-auto space-y-12">
       <div className="text-center space-y-4">
         <p className="text-sm font-medium text-accent uppercase tracking-widest">Roadmap</p>
-        <h2 className="section-title">Evolução <span className="text-gradient">estratégica</span></h2>
+        <h2 className="section-title">Construção <span className="text-gradient">por etapas</span></h2>
       </div>
 
       <div className="relative">

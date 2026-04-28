@@ -1,8 +1,8 @@
 const stats = [
-  { value: "$8T+", label: "Mercado global de crédito" },
-  { value: "$5T", label: "Gap de crédito para PMEs" },
-  { value: "2,3M+", label: "Empresas lideradas por mulheres no Brasil" },
-  { value: "∞", label: "Potencial com Open Finance + Blockchain" },
+  { value: "2,3M+", label: "Microempreendedoras invisíveis ao crédito tradicional no Brasil" },
+  { value: "R$ 1T", label: "Demanda reprimida de crédito para PMEs no país" },
+  { value: "350%+", label: "Custo médio do cartão rotativo a.a. — o que estamos substituindo" },
+  { value: "2% a.m.", label: "Taxa de partida da EmpowerFI" },
 ];
 
 const OpportunitySection = () => (
@@ -10,9 +10,11 @@ const OpportunitySection = () => (
     <div className="container mx-auto text-center space-y-12">
       <div className="space-y-4">
         <p className="text-sm font-medium text-accent uppercase tracking-widest">Oportunidade</p>
-        <h2 className="section-title">Mercado <span className="text-gradient">massivo e ineficiente</span></h2>
+        <h2 className="section-title">
+          Mercado <span className="text-gradient">grande, caro e mal servido</span>
+        </h2>
         <p className="section-subtitle">
-          A solução nasce global, começando pelo Brasil como mercado MVP.
+          A dor é concreta. A tecnologia para resolver, hoje, existe.
         </p>
       </div>
 
