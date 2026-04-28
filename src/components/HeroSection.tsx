@@ -19,21 +19,21 @@ const HeroSection = () => (
         </div>
 
         <h1 className="section-title !text-4xl md:!text-5xl lg:!text-6xl leading-tight opacity-0 animate-fade-in-delay-1">
-          Crédito justo para{" "}
+          Estamos construindo a fintech de crédito para{" "}
           <span className="text-gradient">microempreendedoras invisíveis</span>{" "}
-          ao sistema bancário
+          ao sistema bancário tradicional
         </h1>
 
         <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl opacity-0 animate-fade-in-delay-2">
-          Analisamos seu negócio de verdade — não seu Serasa. Taxa a partir de 2% ao mês, decisão em minutos, sem letra miúda.
+          Combinamos Open Finance, score baseado em comportamento, IA assistente e capital tokenizado com lastro em Tesouro brasileiro. Em fase de desenvolvimento, com tese validada e tração inicial.
         </p>
 
         <div className="flex flex-wrap gap-4 pt-2 opacity-0 animate-fade-in-delay-3">
           <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
-            Quero conhecer meu crédito <ArrowRight size={18} />
+            Sou investidor <ArrowRight size={18} />
           </Button>
           <Button size="lg" variant="outline" className="border-primary/40 text-foreground hover:bg-primary/10 gap-2">
-            Sou investidor, quero saber mais
+            Quero ser parceira institucional
           </Button>
         </div>
       </div>

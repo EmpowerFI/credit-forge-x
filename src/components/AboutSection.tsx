@@ -15,13 +15,13 @@ const AboutSection = () => (
           <p className="text-sm font-medium text-accent uppercase tracking-widest">Sobre a EmpowerFI</p>
           <h2 className="section-title">
             Uma fintech de crédito{" "}
-            <span className="text-gradient">construída com tecnologia de ponta</span>
+            <span className="text-gradient">em construção, com tese validada</span>
           </h2>
           <p className="text-muted-foreground leading-relaxed">
-            A EmpowerFI é um produto de crédito desenhado para quem o banco tradicional não enxerga: empreendedoras com renda variável, sem garantias formais, com jornada dupla e tempo escasso.
+            A EmpowerFI está sendo construída para resolver um gap concreto: microempreendedoras com renda variável, sem garantias formais, são consistentemente recusadas ou penalizadas com taxas abusivas pelo sistema bancário tradicional.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Combinamos Open Finance, IA e capital tokenizado com lastro em Tesouro brasileiro para entregar uma taxa que cabe no seu negócio — e uma decisão em minutos, sem letra miúda.
+            Nossa tese combina análise de fluxo de caixa via Open Finance, score baseado em comportamento financeiro, IA assistente em jornadas adaptativas, e captação de capital via tokenização com lastro em Tesouro brasileiro. O resultado projetado: crédito significativamente mais barato e acessível, com sustentabilidade econômica sem depender de subsídio filantrópico.
           </p>
         </div>
 
@@ -30,6 +30,7 @@ const AboutSection = () => (
             <div key={label} className="glass rounded-xl p-6 glow-border hover:shadow-glow transition-shadow duration-300">
               <Icon className="text-accent mb-3" size={28} />
               <p className="font-heading font-semibold text-foreground">{label}</p>
+              <p className="text-xs text-muted-foreground mt-1">Compõe nossa arquitetura</p>
             </div>
           ))}
         </div>

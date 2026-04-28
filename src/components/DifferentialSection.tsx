@@ -14,14 +14,14 @@ const DifferentialSection = () => (
         <div className="space-y-6">
           <p className="text-sm font-medium text-accent uppercase tracking-widest">Diferencial</p>
           <h2 className="section-title">
-            Controle total da{" "}
+            Controle proprietário da{" "}
             <span className="text-gradient">stack de crédito</span>
           </h2>
           <p className="text-muted-foreground leading-relaxed">
-            A EmpowerFI é dona de cada camada: coleta de dados, modelagem de risco, score proprietário e originação. Quanto mais você usa, mais preciso fica o sistema — e mais justa fica sua taxa.
+            Estamos construindo a EmpowerFI sendo donos de cada camada: coleta de dados, modelagem de risco, score proprietário e originação. Esta arquitetura proprietária é nosso principal diferencial competitivo de longo prazo.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Construído pensando em quem o sistema bancário historicamente não enxerga: empreendedoras com renda variável, sem garantias formais, com jornada dupla e tempo escasso.
+            Pensada para quem o sistema bancário historicamente não enxerga: empreendedoras com renda variável, sem garantias formais, com jornada dupla e tempo escasso.
           </p>
         </div>
 

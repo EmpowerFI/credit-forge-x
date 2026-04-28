@@ -1,8 +1,8 @@
 const stats = [
   { value: "2,3M+", label: "Microempreendedoras invisíveis ao crédito tradicional no Brasil" },
   { value: "R$ 1T", label: "Demanda reprimida de crédito para PMEs no país" },
-  { value: "350%+", label: "Custo médio do cartão rotativo a.a. — o que estamos substituindo" },
-  { value: "2% a.m.", label: "Taxa de partida da EmpowerFI" },
+  { value: "350%+", label: "Custo médio do cartão rotativo a.a. — o que pretendemos substituir" },
+  { value: "Modelo projetado", label: "Taxas substancialmente abaixo do crédito disponível hoje para esse público" },
 ];
 
 const OpportunitySection = () => (

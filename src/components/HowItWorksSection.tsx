@@ -4,22 +4,22 @@ const steps = [
   {
     icon: Link2,
     title: "1. Conexão via Open Finance",
-    desc: "Em poucos cliques, você autoriza o acesso aos dados do seu negócio: maquininha, Pix, conta. Tudo regulado pelo Banco Central.",
+    desc: "A empreendedora autorizará o acesso a dados do negócio (maquininha, Pix, conta) em poucos cliques, dentro do framework regulado pelo Banco Central.",
   },
   {
     icon: Gauge,
     title: "2. Score baseado em comportamento",
-    desc: "Nossa IA lê seu fluxo de caixa real e calcula um score próprio. Não dependemos do Serasa para entender quem é boa pagadora.",
+    desc: "Nosso modelo lerá fluxo de caixa real e calculará score próprio. A arquitetura não depende do Serasa para identificar boas pagadoras.",
   },
   {
     icon: Coins,
     title: "3. Capital tokenizado com lastro em Tesouro",
-    desc: "O dinheiro vem de investidores via uma estrutura blockchain com lastro em títulos do Tesouro brasileiro. Isso derruba o custo do crédito.",
+    desc: "O funding virá de investidores via estrutura tokenizada com lastro em títulos do Tesouro brasileiro — desenhado para reduzir substancialmente o custo do crédito.",
   },
   {
     icon: Sparkles,
     title: "4. Copiloto com IA assistente",
-    desc: "Você recebe diagnóstico do negócio, sugestões priorizadas e ajuda para renegociar dívidas e organizar finanças.",
+    desc: "A jornada incluirá diagnóstico do negócio, sugestões priorizadas e apoio para renegociação de dívidas e organização financeira.",
   },
 ];
 
@@ -27,13 +27,13 @@ const HowItWorksSection = () => (
   <section id="como-funciona" className="section-padding">
     <div className="container mx-auto space-y-12">
       <div className="text-center space-y-4">
-        <p className="text-sm font-medium text-accent uppercase tracking-widest">Como funciona</p>
+        <p className="text-sm font-medium text-accent uppercase tracking-widest">Como vai funcionar</p>
         <h2 className="section-title">
-          Tecnologia avançada,{" "}
-          <span className="text-gradient">explicada de forma simples</span>
+          Quatro pilares técnicos da{" "}
+          <span className="text-gradient">nossa arquitetura</span>
         </h2>
         <p className="section-subtitle">
-          Quatro pilares técnicos, sem jargão pesado.
+          Sem jargão pesado.
         </p>
       </div>
 
