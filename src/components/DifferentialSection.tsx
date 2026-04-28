@@ -1,10 +1,10 @@
 import { Database, Cpu, BarChart, Landmark } from "lucide-react";
 
 const stack = [
-  { icon: Database, label: "Geração de Dados" },
-  { icon: Cpu, label: "Modelagem de Risco" },
-  { icon: BarChart, label: "Score Proprietário" },
-  { icon: Landmark, label: "Infraestrutura de Crédito" },
+  { icon: Database, label: "Dados via Open Finance" },
+  { icon: Cpu, label: "Modelagem de risco com IA" },
+  { icon: BarChart, label: "Score proprietário" },
+  { icon: Landmark, label: "Capital tokenizado com lastro em Tesouro" },
 ];
 
 const DifferentialSection = () => (
@@ -14,11 +14,14 @@ const DifferentialSection = () => (
         <div className="space-y-6">
           <p className="text-sm font-medium text-accent uppercase tracking-widest">Diferencial</p>
           <h2 className="section-title">
-            Não é apenas uma fintech. É uma <span className="text-gradient">nova camada de risco</span> para o sistema financeiro global.
+            Controle total da{" "}
+            <span className="text-gradient">stack de crédito</span>
           </h2>
           <p className="text-muted-foreground leading-relaxed">
-            A EmpowerFI controla toda a stack: geração de dados, modelagem de risco, score proprietário e 
-            infraestrutura de crédito. Quanto mais o usuário utiliza, mais inteligente e preciso o sistema se torna.
+            A EmpowerFI é dona de cada camada: coleta de dados, modelagem de risco, score proprietário e originação. Quanto mais você usa, mais preciso fica o sistema — e mais justa fica sua taxa.
+          </p>
+          <p className="text-muted-foreground leading-relaxed">
+            Construído pensando em quem o sistema bancário historicamente não enxerga: empreendedoras com renda variável, sem garantias formais, com jornada dupla e tempo escasso.
           </p>
         </div>
 

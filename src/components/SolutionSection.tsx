@@ -1,10 +1,21 @@
-import { Activity, BarChart3, Brain, Globe } from "lucide-react";
+import { Activity, Percent, Bot } from "lucide-react";
 
 const features = [
-  { icon: BarChart3, title: "Score Dinâmico", desc: "Baseado em fluxo de caixa e comportamento real, não histórico estático." },
-  { icon: Activity, title: "Reputação Real", desc: "Construída por transações reais e dados on-chain verificáveis." },
-  { icon: Brain, title: "IA em Tempo Real", desc: "Inteligência artificial analisando risco continuamente." },
-  { icon: Globe, title: "Infraestrutura Global", desc: "Sem fronteiras. Crédito baseado em dados vivos." },
+  {
+    icon: Activity,
+    title: "Análise inteligente do seu negócio",
+    desc: "Conectamos seu Open Finance e analisamos seu fluxo de caixa real. Sua maquininha, seu Pix, sua história. Isso conta mais que score do Serasa.",
+  },
+  {
+    icon: Percent,
+    title: "Taxa que faz sentido",
+    desc: "Spread baixo financiado por capital de investidores via tecnologia blockchain. Você paga muito menos que cheque especial ou cartão rotativo, sem perder em qualidade de produto.",
+  },
+  {
+    icon: Bot,
+    title: "Mais que empréstimo, um copiloto",
+    desc: "IA assistente que diagnostica seu negócio, sugere ações priorizadas e ajuda você a renegociar dívidas, organizar finanças e crescer. Em microsessões que cabem na sua rotina.",
+  },
 ];
 
 const SolutionSection = () => (
@@ -12,13 +23,16 @@ const SolutionSection = () => (
     <div className="container mx-auto space-y-12">
       <div className="text-center space-y-4">
         <p className="text-sm font-medium text-accent uppercase tracking-widest">A Solução</p>
-        <h2 className="section-title">Reconstruindo o <span className="text-gradient">sistema de crédito</span></h2>
+        <h2 className="section-title">
+          Crédito honesto, com{" "}
+          <span className="text-gradient">tecnologia que entende você</span>
+        </h2>
         <p className="section-subtitle">
-          Um modelo baseado em comportamento real. Crédito baseado em dados vivos, não em histórico estático.
+          Três coisas que mudam a forma como você acessa capital — sem promessas vazias.
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         {features.map(({ icon: Icon, title, desc }) => (
           <div key={title} className="glass rounded-xl p-8 glow-border hover:shadow-glow transition-all duration-300 group">
             <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4 group-hover:animate-float">

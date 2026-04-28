@@ -1,10 +1,10 @@
 import { Percent, ArrowLeftRight, Building2, Code2 } from "lucide-react";
 
 const models = [
-  { icon: Percent, title: "Juros sobre empréstimos", desc: "Receita principal através de operações de crédito." },
-  { icon: ArrowLeftRight, title: "Taxas de transação", desc: "Fee sobre cada transação processada na plataforma." },
-  { icon: Building2, title: "Serviços financeiros B2B", desc: "Soluções de risco e score para empresas parceiras." },
-  { icon: Code2, title: "APIs para parceiros", desc: "Infraestrutura de crédito como serviço (CaaS)." },
+  { icon: Percent, title: "Spread sobre crédito", desc: "Receita principal da operação de empréstimos com taxa justa e risco ajustado." },
+  { icon: ArrowLeftRight, title: "Taxas transacionais", desc: "Fee sobre operações financeiras processadas dentro da plataforma." },
+  { icon: Building2, title: "Risco como serviço", desc: "Score e modelagem licenciados para parceiros B2B com público similar." },
+  { icon: Code2, title: "APIs de crédito", desc: "Infraestrutura de originação plugável para outros players (CaaS)." },
 ];
 
 const BusinessModelSection = () => (
