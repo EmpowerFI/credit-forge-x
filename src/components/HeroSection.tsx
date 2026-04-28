@@ -1,11 +1,11 @@
-import { ArrowRight, FileText } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const HeroSection = () => (
   <section className="relative min-h-screen flex items-center overflow-hidden">
     <div className="absolute inset-0">
-      <img src={heroBg} alt="Mulher empreendedora em ambiente fintech" width={1920} height={1080}
+      <img src={heroBg} alt="Microempreendedora atendendo cliente em seu negócio" width={1920} height={1080}
         className="w-full h-full object-cover" />
       <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-background/40" />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
@@ -15,21 +15,25 @@ const HeroSection = () => (
       <div className="max-w-2xl space-y-6">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glow-border text-xs text-accent font-medium opacity-0 animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-accent animate-pulse-glow" />
-          Acelerada pelo Sebrae — Programa Prototipa
+          Acelerada pelo Sebrae — Programa Ginga Prototipa
         </div>
 
         <h1 className="section-title !text-4xl md:!text-5xl lg:!text-6xl leading-tight opacity-0 animate-fade-in-delay-1">
-          Invisíveis para os bancos.{" "}
-          <span className="text-gradient">Evidentes nos dados.</span>
+          Crédito justo para{" "}
+          <span className="text-gradient">microempreendedoras invisíveis</span>{" "}
+          ao sistema bancário
         </h1>
 
         <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl opacity-0 animate-fade-in-delay-2">
-          Estamos construindo um novo sistema de crédito baseado em comportamento financeiro real — combinando IA, Open Finance e blockchain para destravar capital global.
+          Analisamos seu negócio de verdade — não seu Serasa. Taxa a partir de 2% ao mês, decisão em minutos, sem letra miúda.
         </p>
 
         <div className="flex flex-wrap gap-4 pt-2 opacity-0 animate-fade-in-delay-3">
-          <Button size="lg" variant="outline" className="border-primary/30 text-foreground hover:bg-primary/10 gap-2">
-            Falar com o time <ArrowRight size={18} />
+          <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+            Quero conhecer meu crédito <ArrowRight size={18} />
+          </Button>
+          <Button size="lg" variant="outline" className="border-primary/40 text-foreground hover:bg-primary/10 gap-2">
+            Sou investidor, quero saber mais
           </Button>
         </div>
       </div>
