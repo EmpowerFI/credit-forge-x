@@ -3,20 +3,20 @@ import { Menu, X, Languages } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const navLinks = [
-  { label: "Sobre", href: "#sobre" },
-  { label: "Solução", href: "#solucao" },
-  { label: "Como funciona", href: "#como-funciona" },
-  { label: "Oportunidade", href: "#oportunidade" },
+  { label: "About", href: "#about" },
+  { label: "Solution", href: "#solution" },
+  { label: "How it works", href: "#how-it-works" },
+  { label: "Opportunity", href: "#opportunity" },
   { label: "FAQ", href: "#faq" },
 ];
 
-const Navbar = () => {
+const NavbarEn = () => {
   const [open, setOpen] = useState(false);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <a href="#" className="text-xl font-bold font-heading text-gradient">EmpowerFI</a>
+        <Link to="/en" className="text-xl font-bold font-heading text-gradient">EmpowerFI</Link>
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((l) => (
@@ -24,8 +24,8 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
-          <Link to="/en" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5">
-            <Languages size={14} /> EN
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5">
+            <Languages size={14} /> PT
           </Link>
         </div>
 
@@ -42,9 +42,9 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
-          <Link to="/en" onClick={() => setOpen(false)}
+          <Link to="/" onClick={() => setOpen(false)}
             className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            English
+            Português
           </Link>
         </div>
       )}
@@ -52,4 +52,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default NavbarEn;
