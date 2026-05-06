@@ -7,12 +7,12 @@ const FooterEn = () => (
         <div className="flex gap-6">
           <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms</a>
           <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
-          <a href="mailto:contato@empowerfi.com.br" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+          <a href="mailto:daniele@empowerfi.io" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
         </div>
       </div>
       <p className="text-xs text-muted-foreground text-center md:text-left max-w-3xl mx-auto md:mx-0 leading-relaxed">
         EmpowerFI is a credit fintech in development. For institutional partnerships, investment funds or press, get in touch at{" "}
-        <a href="mailto:contato@empowerfi.com.br" className="underline hover:text-foreground">contato@empowerfi.com.br</a>.
+        <a href="mailto:daniele@empowerfi.io" className="underline hover:text-foreground">daniele@empowerfi.io</a>.
       </p>
     </div>
   </footer>
