@@ -10,10 +10,6 @@ const Footer = () => (
           <a href="mailto:contato@empowerfi.com.br" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contato</a>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground text-center md:text-left max-w-3xl mx-auto md:mx-0 leading-relaxed">
-        EmpowerFI é uma fintech de crédito em desenvolvimento. Para parcerias institucionais, fundos de investimento ou imprensa, entre em contato em{" "}
-        <a href="mailto:contato@empowerfi.com.br" className="underline hover:text-foreground">contato@empowerfi.com.br</a>.
-      </p>
     </div>
   </footer>
 );
