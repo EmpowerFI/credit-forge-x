@@ -13,8 +13,8 @@ const steps = [
   },
   {
     icon: Coins,
-    title: "3. Tokenized capital backed by Treasury",
-    desc: "Funding will come from investors via a tokenized structure backed by Brazilian Treasury bonds — designed to substantially reduce the cost of credit.",
+    title: "3. Tokenized capital",
+    desc: "Funding will come from investors via a tokenized structure — designed to substantially reduce the cost of credit.",
   },
   {
     icon: Sparkles,

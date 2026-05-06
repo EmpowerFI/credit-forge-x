@@ -9,7 +9,7 @@ const features = [
   {
     icon: Percent,
     title: "Rates that make sense",
-    desc: "Model designed for rates significantly below today's overdraft and revolving credit, enabled by tokenized capital backed by Brazilian Treasury bonds.",
+    desc: "Model designed for rates significantly below today's overdraft and revolving credit, enabled by tokenized capital.",
   },
   {
     icon: Bot,
