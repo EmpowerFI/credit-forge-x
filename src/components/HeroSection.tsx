@@ -25,7 +25,7 @@ const HeroSection = () => (
         </h1>
 
         <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl opacity-0 animate-fade-in-delay-2">
-          Combinamos Open Finance, score baseado em comportamento, IA assistente e capital tokenizado com lastro em Tesouro brasileiro. Em fase de desenvolvimento, com tese validada e tração inicial.
+          Combinamos Open Finance, score baseado em comportamento, IA assistente e capital tokenizado. Em fase de desenvolvimento, com tese validada e tração inicial.
         </p>
 
         <div className="flex flex-wrap gap-4 pt-2 opacity-0 animate-fade-in-delay-3">
