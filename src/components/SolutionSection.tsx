@@ -9,7 +9,7 @@ const features = [
   {
     icon: Percent,
     title: "Taxa que faz sentido",
-    desc: "Modelo projetado para taxas significativamente abaixo das praticadas hoje pelo cheque especial e cartão rotativo, viabilizado por capital tokenizado",
+    desc: "Modelo projetado para taxas significativamente abaixo das praticadas hoje pelo cheque especial e cartão rotativo, viabilizado por capital tokenizado.",
   },
   {
     icon: Bot,
