@@ -14,7 +14,7 @@ const steps = [
   {
     icon: Coins,
     title: "3. Capital tokenizado com lastro em Tesouro",
-    desc: "O funding virá de investidores via estrutura tokenizada com lastro em títulos do Tesouro brasileiro — desenhado para reduzir substancialmente o custo do crédito.",
+    desc: "O funding virá de investidores via estrutura tokenizada  — desenhado para reduzir substancialmente o custo do crédito.",
   },
   {
     icon: Sparkles,
