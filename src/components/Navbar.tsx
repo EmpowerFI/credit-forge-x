@@ -7,7 +7,6 @@ const navLinks = [
   { label: "Solução", href: "#solucao" },
   { label: "Como funciona", href: "#como-funciona" },
   { label: "Oportunidade", href: "#oportunidade" },
-  { label: "FAQ", href: "#faq" },
 ];
 
 const Navbar = () => {
