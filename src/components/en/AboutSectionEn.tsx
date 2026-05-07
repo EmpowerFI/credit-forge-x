@@ -21,7 +21,7 @@ const AboutSectionEn = () => (
             EmpowerFI is being built to address a concrete gap: microentrepreneurs with variable income and no formal collateral are consistently rejected — or penalized with abusive rates — by the traditional banking system.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Our thesis combines cash-flow analysis via Open Finance, scoring based on financial behavior, AI assistance in adaptive journeys, and capital raised through tokenization backed by Brazilian Treasury bonds. The projected outcome: substantially cheaper and more accessible credit, with economic sustainability — without depending on philanthropic subsidy.
+            Our thesis combines cash-flow analysis via Open Finance, scoring based on financial behavior, AI assistance in adaptive journeys, and capital raised through tokenization. The projected outcome: substantially cheaper and more accessible credit, with economic sustainability.
           </p>
         </div>
 
