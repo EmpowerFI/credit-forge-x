@@ -21,7 +21,7 @@ const AboutSection = () => (
             A EmpowerFI está sendo construída para resolver um gap concreto: microempreendedoras com renda variável, sem garantias formais, são consistentemente recusadas ou penalizadas com taxas abusivas pelo sistema bancário tradicional.
           </p>
           <p className="text-muted-foreground leading-relaxed">
-            Nossa tese combina análise de fluxo de caixa via Open Finance, score baseado em comportamento financeiro, IA assistente em jornadas adaptativas, e captação de capital via tokenização com lastro em Tesouro brasileiro. O resultado projetado: crédito significativamente mais barato e acessível, com sustentabilidade econômica sem depender de subsídio filantrópico.
+            Nossa tese combina análise de fluxo de caixa via Open Finance, score baseado em comportamento financeiro, IA assistente em jornadas adaptativas, e captação de capital via tokenização. O resultado projetado: crédito significativamente mais barato e acessível, com sustentabilidade econômica.
           </p>
         </div>
 
