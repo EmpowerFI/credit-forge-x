@@ -3,7 +3,7 @@ import { AlertTriangle, XCircle, TrendingDown, Ban } from "lucide-react";
 const problems = [
   { icon: Ban, text: "Renda variável não é considerada" },
   { icon: XCircle, text: "Sem histórico bancário formal, sem crédito" },
-  { icon: TrendingDown, text: "Modelos de risco presos ao Serasa" },
+  { icon: TrendingDown, text: "Modelos de risco presos ao agências de crédito" },
   { icon: AlertTriangle, text: "Taxas abusivas para quem mais precisa" },
 ];
 
