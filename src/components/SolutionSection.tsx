@@ -4,7 +4,7 @@ const features = [
   {
     icon: Activity,
     title: "Análise inteligente do negócio",
-    desc: "Vamos conectar via Open Finance e analisar fluxo de caixa real — maquininha, Pix, conta. Comportamento transacional conta mais que score do Serasa.",
+    desc: "Vamos conectar via Open Finance e analisar fluxo de caixa real — maquininha, Pix, conta. Comportamento transacional conta mais que score do agências de crédito.",
   },
   {
     icon: Percent,

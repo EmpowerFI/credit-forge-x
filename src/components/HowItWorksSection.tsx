@@ -9,7 +9,7 @@ const steps = [
   {
     icon: Gauge,
     title: "2. Score baseado em comportamento",
-    desc: "Nosso modelo lerá fluxo de caixa real e calculará score próprio. A arquitetura não depende do Serasa para identificar boas pagadoras.",
+    desc: "Nosso modelo lerá fluxo de caixa real e calculará score próprio. A arquitetura não depende do agências de crédito para identificar boas pagadoras.",
   },
   {
     icon: Coins,
