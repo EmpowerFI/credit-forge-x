@@ -18,7 +18,7 @@ const steps = [
   },
   {
     icon: Sparkles,
-    title: "4. IA Assistente pró-ativa",
+    title: "4. IA Assistente proativa",
     desc: "IA proativa que combate a pobreza de tempo.",
   },
 ];
