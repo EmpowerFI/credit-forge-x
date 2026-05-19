@@ -1,5 +1,5 @@
 const stats = [
-  { value: "2.3M+", label: "Microentrepreneurs invisible to traditional credit in Brazil" },
+  { value: "7.4M+", label: "Microentrepreneurs invisible to traditional credit in Brazil" },
   { value: "R$ 1T", label: "Unmet SMB credit demand in the country" },
   { value: "350%+", label: "Average revolving card cost p.a. — what we intend to replace" },
   { value: "Projected model", label: "Rates substantially below the credit available today for this audience" },
