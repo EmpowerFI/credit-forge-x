@@ -1,25 +1,25 @@
-import { Link2, Gauge, Coins, Sparkles } from "lucide-react";
+import { Coins, Gauge, ShoppingBag, Sparkles } from "lucide-react";
 
 const steps = [
   {
-    icon: Link2,
-    title: "1. Conexão via Open Finance",
-    desc: "A empreendedora autorizará o acesso a dados do negócio (maquininha, Pix, conta) em poucos cliques, dentro do framework regulado pelo Banco Central.",
+    icon: Coins,
+    title: "1. RWA Tokenizado",
+    desc: "Pool de garantia reduz o custo do crédito.",
   },
   {
     icon: Gauge,
-    title: "2. Score baseado em comportamento",
-    desc: "Nosso modelo lerá fluxo de caixa real e calculará score próprio. A arquitetura não depende do agências de crédito para identificar boas pagadoras.",
+    title: "2. Score Alternativo + Risco Social",
+    desc: "Modelos tradicionais excluem boas pagadoras.",
   },
   {
-    icon: Coins,
-    title: "3. Capital tokenizado",
-    desc: "O funding virá de investidores via estrutura tokenizada  — desenhado para reduzir substancialmente o custo do crédito.",
+    icon: ShoppingBag,
+    title: "3. Marketplace + B2B BNPL",
+    desc: "Marketplace comunitário com financiamento integrado.",
   },
   {
     icon: Sparkles,
-    title: "4. Copiloto com IA assistente",
-    desc: "A jornada incluirá diagnóstico do negócio, sugestões priorizadas e apoio para renegociação de dívidas e organização financeira.",
+    title: "4. IA Assistente pró-ativa",
+    desc: "IA proativa que combate a pobreza de tempo.",
   },
 ];
 
