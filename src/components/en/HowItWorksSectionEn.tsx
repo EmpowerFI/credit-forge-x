@@ -1,25 +1,25 @@
-import { Link2, Gauge, Coins, Sparkles } from "lucide-react";
+import { Coins, Gauge, ShoppingBag, Sparkles } from "lucide-react";
 
 const steps = [
   {
-    icon: Link2,
-    title: "1. Open Finance connection",
-    desc: "Entrepreneurs will authorize access to business data (card terminal, Pix, bank account) in a few clicks, within the framework regulated by the Central Bank of Brazil.",
+    icon: Coins,
+    title: "1. Tokenized RWA",
+    desc: "Collateral pool reduces the cost of credit.",
   },
   {
     icon: Gauge,
-    title: "2. Behavior-based score",
-    desc: "Our model will read real cash flow and compute a proprietary score. The architecture does not depend on credit bureaus to identify reliable payers.",
+    title: "2. Alternative Score + Social Risk",
+    desc: "Traditional models exclude reliable payers.",
   },
   {
-    icon: Coins,
-    title: "3. Tokenized capital",
-    desc: "Funding will come from investors via a tokenized structure — designed to substantially reduce the cost of credit.",
+    icon: ShoppingBag,
+    title: "3. Marketplace + B2B BNPL",
+    desc: "Community marketplace with integrated financing.",
   },
   {
     icon: Sparkles,
-    title: "4. AI-powered copilot",
-    desc: "The journey will include business diagnosis, prioritized recommendations and support to renegotiate debt and organize finances.",
+    title: "4. Proactive AI Assistant",
+    desc: "Proactive AI that fights time poverty.",
   },
 ];
 
