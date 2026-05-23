@@ -7,7 +7,7 @@ const Footer = () => (
         <div className="flex gap-6">
           <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Termos</a>
           <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacidade</a>
-          <a href="mailto:daniele@empowerfi.io" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contato</a>
+          <a href="mailto:contato@empowerfi.io" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contato</a>
         </div>
       </div>
     </div>
