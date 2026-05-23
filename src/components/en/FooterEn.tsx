@@ -7,7 +7,7 @@ const FooterEn = () => (
         <div className="flex gap-6">
           <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms</a>
           <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
-          <a href="mailto:daniele@empowerfi.io" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
+          <a href="mailto:contato@empowerfi.io" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
         </div>
       </div>
     </div>
