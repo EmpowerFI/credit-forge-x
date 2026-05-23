@@ -6,41 +6,41 @@
 
 @layer base {
   :root {
-    --background: 36 25% 95%;
-    --foreground: 217 35% 15%;
+    --background: 217 45% 11%;
+    --foreground: 36 30% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 217 35% 15%;
+    --card: 217 40% 14%;
+    --card-foreground: 36 30% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 217 35% 15%;
+    --popover: 217 40% 14%;
+    --popover-foreground: 36 30% 95%;
 
-    --primary: 36 70% 48%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 36 78% 52%;
+    --primary-foreground: 217 45% 11%;
 
-    --secondary: 36 20% 90%;
-    --secondary-foreground: 217 35% 15%;
+    --secondary: 217 35% 18%;
+    --secondary-foreground: 36 30% 95%;
 
-    --muted: 36 18% 88%;
-    --muted-foreground: 217 15% 40%;
+    --muted: 217 30% 20%;
+    --muted-foreground: 36 15% 70%;
 
-    --accent: 36 78% 52%;
-    --accent-foreground: 217 35% 15%;
+    --accent: 36 85% 58%;
+    --accent-foreground: 217 45% 11%;
 
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 36 20% 82%;
-    --input: 36 20% 82%;
-    --ring: 36 70% 48%;
+    --border: 217 30% 22%;
+    --input: 217 30% 22%;
+    --ring: 36 78% 52%;
 
     --radius: 0.75rem;
 
     --gradient-primary: linear-gradient(135deg, hsl(36 78% 52%), hsl(36 85% 62%));
-    --gradient-subtle: linear-gradient(135deg, hsl(36 25% 96%), hsl(36 30% 92%));
+    --gradient-subtle: linear-gradient(135deg, hsl(217 45% 11%), hsl(217 40% 14%));
     --gradient-glow: linear-gradient(135deg, hsl(36 78% 52% / 0.18), hsl(36 85% 62% / 0.08));
-    --shadow-glow: 0 0 40px hsl(36 70% 48% / 0.25);
-    --shadow-card: 0 4px 24px hsl(217 35% 15% / 0.12);
+    --shadow-glow: 0 0 40px hsl(36 78% 52% / 0.35);
+    --shadow-card: 0 4px 24px hsl(217 50% 5% / 0.5);
 
 
     --font-heading: 'Space Grotesk', sans-serif;
@@ -84,13 +84,13 @@
     background-clip: text;
   }
   .glass {
-    background: hsl(0 0% 100% / 0.7);
+    background: hsl(217 40% 14% / 0.7);
     backdrop-filter: blur(20px);
-    border: 1px solid hsl(36 78% 52% / 0.2);
+    border: 1px solid hsl(36 78% 52% / 0.25);
   }
   .glow-border {
     border: 1px solid hsl(36 78% 52% / 0.3);
-    box-shadow: 0 0 20px hsl(36 70% 48% / 0.1), inset 0 0 20px hsl(36 78% 52% / 0.04);
+    box-shadow: 0 0 20px hsl(36 78% 52% / 0.15), inset 0 0 20px hsl(36 78% 52% / 0.05);
   }
 
 }
