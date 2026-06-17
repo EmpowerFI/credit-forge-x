@@ -1,5 +1,50 @@
-import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+
+// Send one transactional email via Resend. Throws an Error carrying `.status`
+// (and `.retryAfterSeconds` on 429) so the rate-limit / forbidden handling
+// below keeps working unchanged.
+async function sendEmail(
+  payload: Record<string, any>,
+  apiKey: string,
+  baseUrl: string
+): Promise<void> {
+  const headers: Record<string, string> = {}
+  if (payload.unsubscribe_token) {
+    const unsubUrl = `${baseUrl}/functions/v1/handle-email-unsubscribe?token=${payload.unsubscribe_token}`
+    headers['List-Unsubscribe'] = `<${unsubUrl}>`
+    headers['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'
+  }
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: payload.from,
+      to: [payload.to],
+      subject: payload.subject,
+      html: payload.html,
+      text: payload.text,
+      ...(Object.keys(headers).length ? { headers } : {}),
+    }),
+  })
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    const err = new Error(`Resend API ${res.status}: ${detail}`) as Error & {
+      status?: number
+      retryAfterSeconds?: number
+    }
+    err.status = res.status
+    if (res.status === 429) {
+      const ra = res.headers.get('retry-after')
+      err.retryAfterSeconds = ra ? parseInt(ra, 10) || 60 : 60
+    }
+    throw err
+  }
+}
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -79,7 +124,7 @@ async function moveToDlq(
 }
 
 Deno.serve(async (req) => {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  const apiKey = Deno.env.get('RESEND_API_KEY')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
@@ -249,26 +294,7 @@ Deno.serve(async (req) => {
       }
 
       try {
-        await sendLovableEmail(
-          {
-            run_id: payload.run_id,
-            to: payload.to,
-            from: payload.from,
-            sender_domain: payload.sender_domain,
-            subject: payload.subject,
-            html: payload.html,
-            text: payload.text,
-            purpose: payload.purpose,
-            label: payload.label,
-            idempotency_key: payload.idempotency_key,
-            unsubscribe_token: payload.unsubscribe_token,
-            message_id: payload.message_id,
-          },
-          // sendUrl is optional — when LOVABLE_SEND_URL is not set, the library
-          // falls back to the default Lovable API endpoint (https://api.lovable.dev).
-          // Set LOVABLE_SEND_URL as a Supabase secret to override (e.g. for local dev).
-          { apiKey, sendUrl: Deno.env.get('LOVABLE_SEND_URL') }
-        )
+        await sendEmail(payload, apiKey, supabaseUrl)
 
         // Log success
         await supabase.from('email_send_log').insert({
