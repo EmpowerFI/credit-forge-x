@@ -3,10 +3,10 @@ import { Menu, X, Languages } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const navLinks = [
-  { label: "Sobre", href: "#sobre" },
-  { label: "Solução", href: "#solucao" },
+  { label: "O problema", href: "#problema" },
   { label: "Como funciona", href: "#como-funciona" },
-  { label: "Oportunidade", href: "#oportunidade" },
+  { label: "Diferencial", href: "#diferencial" },
+  { label: "Investidores", href: "#investidores" },
 ];
 
 const Navbar = () => {

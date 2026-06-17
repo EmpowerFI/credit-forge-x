@@ -1,41 +1,57 @@
-import { AlertTriangle, XCircle, TrendingDown, Ban } from "lucide-react";
+import { Scale, Eye } from "lucide-react";
 
-const problems = [
-  { icon: Ban, text: "Renda variável não é considerada" },
-  { icon: XCircle, text: "Sem histórico bancário formal, sem crédito" },
-  { icon: TrendingDown, text: "Modelos de risco presos ao agências de crédito" },
-  { icon: AlertTriangle, text: "Taxas abusivas para quem mais precisa" },
+const stats = [
+  { value: "29%", label: "do crédito empresarial vai para mulheres — que tocam ~40% das operações" },
+  { value: "68%", label: "das empreendedoras têm pedidos de crédito negados ou só parcialmente atendidos" },
+  { value: "=", label: "mesma taxa de inadimplência dos homens — porém pagando juros mais altos" },
+];
+
+const failures = [
+  {
+    icon: Scale,
+    title: "O crédito ignora quem sustenta a economia",
+    desc: "Mulheres tocam cerca de 40% das operações, mas recebem só ~29% do crédito empresarial — com a mesma taxa de inadimplência e juros mais altos. Sem histórico bancário formal, ficam invisíveis aos modelos de risco.",
+  },
+  {
+    icon: Eye,
+    title: "O capital de impacto não enxerga onde chega",
+    desc: "Fundos de impacto não têm prova verificável e em tempo real de onde o dinheiro foi parar. A medição é anual, autodeclarada e difícil de auditar — o que trava a alocação séria de capital.",
+  },
 ];
 
 const ProblemSection = () => (
   <section id="problema" className="section-padding gradient-subtle">
-    <div className="container mx-auto text-center space-y-12">
-      <div className="space-y-4">
+    <div className="container mx-auto space-y-12">
+      <div className="text-center space-y-4">
         <p className="text-sm font-medium text-accent uppercase tracking-widest">O Problema</p>
         <h2 className="section-title">
-          O banco analisa seu passado.{" "}
-          <span className="text-gradient">Estamos construindo algo que analisa seu negócio.</span>
+          Duas falhas de mercado,{" "}
+          <span className="text-gradient">uma só infraestrutura para resolver</span>
         </h2>
         <p className="section-subtitle">
-          Microempreendedoras geram receita todos os dias e ainda assim recebem um "não" — ou uma taxa de cheque especial.
+          Um lado não consegue provar que merece crédito. O outro não consegue provar onde o capital gera impacto.
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {problems.map(({ icon: Icon, text }) => (
-          <div key={text} className="glass rounded-xl p-6 text-left glow-border">
-            <Icon className="text-destructive mb-4" size={24} />
-            <p className="text-foreground font-medium">{text}</p>
+      <div className="grid sm:grid-cols-3 gap-6">
+        {stats.map(({ value, label }) => (
+          <div key={label} className="glass rounded-xl p-8 glow-border text-center">
+            <p className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
+            <p className="text-sm text-muted-foreground">{label}</p>
           </div>
         ))}
       </div>
 
-      <div className="glass rounded-2xl p-8 glow-border max-w-2xl mx-auto">
-        <p className="text-xl md:text-2xl font-heading font-bold text-foreground">
-          Boa pagadora tratada como{" "}
-          <span className="text-gradient">alto risco.</span>{" "}
-          É esse gap que estamos endereçando.
-        </p>
+      <div className="grid md:grid-cols-2 gap-6">
+        {failures.map(({ icon: Icon, title, desc }) => (
+          <div key={title} className="glass rounded-2xl p-8 glow-border text-left">
+            <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4">
+              <Icon className="text-primary-foreground" size={24} />
+            </div>
+            <h3 className="text-xl font-heading font-bold text-foreground mb-2">{title}</h3>
+            <p className="text-muted-foreground leading-relaxed">{desc}</p>
+          </div>
+        ))}
       </div>
     </div>
   </section>

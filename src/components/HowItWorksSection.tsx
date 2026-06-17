@@ -1,25 +1,30 @@
-import { Coins, Gauge, ShoppingBag, Sparkles } from "lucide-react";
+import { ShoppingBag, Gauge, Landmark, Bot } from "lucide-react";
 
-const steps = [
+const layers = [
   {
-    icon: Coins,
-    title: "1. RWA Tokenizado",
-    desc: "Pool de garantia reduz o custo do crédito.",
+    icon: ShoppingBag,
+    tag: "No ar agora",
+    tagLive: true,
+    title: "Marketplace",
+    desc: "Conecta microempreendedoras a novos clientes e umas às outras. Gera atividade econômica real — vendas, recebimentos, reputação — e os dados que alimentam tudo o que vem depois.",
   },
   {
     icon: Gauge,
-    title: "2. Score Alternativo + Risco Social",
-    desc: "Modelos tradicionais excluem boas pagadoras.",
+    tag: "Próximo passo",
+    title: "Score alternativo invisível",
+    desc: "Construído principalmente a partir do comportamento de poupança e da atividade no marketplace. Sem cursos, sem formulários, sem atrito: o histórico se forma sozinho, conforme ela empreende.",
   },
   {
-    icon: ShoppingBag,
-    title: "3. Marketplace + B2B BNPL",
-    desc: "Marketplace comunitário com financiamento integrado.",
+    icon: Landmark,
+    tag: "Em sequência",
+    title: "Pool de capital RWA na Solana",
+    desc: "Capital tokenizado com lastro em títulos do Tesouro brasileiro. Cada real alocado e cada impacto gerado ficam registrados na blockchain — prova contínua e auditável de para onde o capital foi.",
   },
   {
-    icon: Sparkles,
-    title: "4. IA Assistente proativa",
-    desc: "IA proativa que combate a pobreza de tempo.",
+    icon: Bot,
+    tag: "Em sequência",
+    title: "Copiloto de IA",
+    desc: "Orientação contextual no dia a dia do negócio: organizar finanças, priorizar decisões, entender o próximo passo. A IA sugere — a pessoa sempre decide.",
   },
 ];
 
@@ -27,22 +32,27 @@ const HowItWorksSection = () => (
   <section id="como-funciona" className="section-padding">
     <div className="container mx-auto space-y-12">
       <div className="text-center space-y-4">
-        <p className="text-sm font-medium text-accent uppercase tracking-widest">Como vai funcionar</p>
+        <p className="text-sm font-medium text-accent uppercase tracking-widest">Como funciona</p>
         <h2 className="section-title">
-          Quatro pilares técnicos da{" "}
-          <span className="text-gradient">nossa arquitetura</span>
+          Quatro camadas que se constroem{" "}
+          <span className="text-gradient">uma sobre a outra</span>
         </h2>
         <p className="section-subtitle">
-          Sem jargão pesado.
+          O marketplace lança primeiro e gera os dados. As demais camadas vêm em sequência, sobre essa base.
         </p>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {steps.map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="glass rounded-xl p-6 glow-border hover:shadow-glow transition-shadow duration-300">
-            <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4">
+        {layers.map(({ icon: Icon, tag, tagLive, title, desc }, i) => (
+          <div key={title} className="relative glass rounded-xl p-6 glow-border hover:shadow-glow transition-shadow duration-300">
+            <span className="text-xs font-mono text-accent">0{i + 1}</span>
+            <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center my-4">
               <Icon className="text-primary-foreground" size={22} />
             </div>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium mb-3 ${tagLive ? "glow-border text-accent" : "bg-muted text-muted-foreground"}`}>
+              {tagLive && <span className="h-1.5 w-1.5 animate-pulse-glow rounded-full bg-accent" />}
+              {tag}
+            </span>
             <h3 className="font-heading font-semibold text-foreground mb-2">{title}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
           </div>

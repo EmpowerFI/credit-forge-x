@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { ArrowRight, Mail, Send } from "lucide-react";
+import { Send, Mail, Landmark, ShieldCheck, Globe2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { INVESTOR_EMAIL } from "@/config/links";
 import { z } from "zod";
 
 const contactSchema = z.object({
@@ -14,20 +15,27 @@ const contactSchema = z.object({
   message: z.string().trim().min(5, "Mensagem muito curta").max(2000, "Máximo de 2000 caracteres"),
 });
 
+const pillars = [
+  {
+    icon: Landmark,
+    title: "Yield com lastro em Tesouro",
+    desc: "Retorno estável apoiado em títulos do Tesouro brasileiro, tokenizados como RWA.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Impacto verificável on-chain",
+    desc: "Cada alocação e cada resultado registrados na blockchain — prova de impacto contínua e auditável, não relatório anual.",
+  },
+  {
+    icon: Globe2,
+    title: "Infraestrutura global, rollout em fases",
+    desc: "Construída como infraestrutura financeira global na Solana, com lançamento em fases começando pelo Brasil.",
+  },
+];
+
 const CTASection = () => {
-  const [waitlistEmail, setWaitlistEmail] = useState("");
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [sending, setSending] = useState(false);
-
-  const handleWaitlist = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!waitlistEmail) return;
-    toast({
-      title: "Tudo certo!",
-      description: "Vamos te avisar quando o produto estiver disponível.",
-    });
-    setWaitlistEmail("");
-  };
 
   const handleQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +61,6 @@ const CTASection = () => {
       });
       if (error) throw error;
 
-      // Confirmação para quem enviou (best-effort)
       await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "contact-question-confirmation",
@@ -81,16 +88,38 @@ const CTASection = () => {
   };
 
   return (
-    <section className="section-padding">
-      <div className="container mx-auto">
+    <section id="investidores" className="section-padding gradient-subtle">
+      <div className="container mx-auto space-y-12">
+        <div className="text-center space-y-4">
+          <p className="text-sm font-medium text-accent uppercase tracking-widest">Para investidores</p>
+          <h2 className="section-title">
+            Um fundo de impacto Web3 com{" "}
+            <span className="text-gradient">retorno estável e impacto auditável</span>
+          </h2>
+          <p className="section-subtitle">
+            Yield com lastro em Tesouro de um lado; prova de impacto verificável on-chain do outro. Os números detalhados são compartilhados sob NDA.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {pillars.map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="glass rounded-2xl p-8 glow-border text-left">
+              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4">
+                <Icon className="text-primary-foreground" size={24} />
+              </div>
+              <h3 className="text-lg font-heading font-bold text-foreground mb-2">{title}</h3>
+              <p className="text-muted-foreground leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+
         <div className="glass rounded-2xl p-10 md:p-16 glow-border shadow-glow max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-4">
-            <h2 className="section-title !text-3xl md:!text-4xl">
-              Estamos construindo.{" "}
-              <span className="text-gradient">Venha junto.</span>
-            </h2>
+            <h3 className="section-title !text-2xl md:!text-3xl">
+              Solicite o <span className="text-gradient">deck</span>.
+            </h3>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              Investidores, parceiros institucionais, programas de aceleração ou talentos — envie sua mensagem e a fundadora responde pessoalmente.
+              Investidores e parceiros estratégicos: envie uma mensagem para receber o material completo.
             </p>
           </div>
 
@@ -121,7 +150,7 @@ const CTASection = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="contact-message">Sua pergunta</Label>
+              <Label htmlFor="contact-message">Mensagem</Label>
               <Textarea
                 id="contact-message"
                 required
@@ -129,45 +158,30 @@ const CTASection = () => {
                 maxLength={2000}
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
-                placeholder="Como podemos te ajudar? Conte sobre seu interesse — investimento, parceria, aceleração ou outro."
+                placeholder="Conte sobre seu interesse — investimento, parceria estratégica ou capital de impacto."
               />
             </div>
-            <div className="flex justify-center pt-2">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 pt-2">
               <Button
                 type="submit"
                 size="lg"
                 disabled={sending}
                 className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                {sending ? "Enviando..." : (<>Enviar pergunta <Send size={16} /></>)}
+                {sending ? "Enviando..." : (<>Solicitar o deck <Send size={16} /></>)}
               </Button>
+              <a
+                href={`mailto:${INVESTOR_EMAIL}?subject=Interesse%20EmpowerFI`}
+                className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Mail size={16} /> ou escreva para {INVESTOR_EMAIL}
+              </a>
             </div>
           </form>
 
-          <div className="pt-6 border-t border-border space-y-3">
-            <p className="text-sm text-muted-foreground text-center">
-              Sou empreendedora, quero acompanhar o lançamento
-            </p>
-            <form onSubmit={handleWaitlist} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <div className="relative flex-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-                <Input
-                  type="email"
-                  required
-                  placeholder="seu@email.com"
-                  value={waitlistEmail}
-                  onChange={(e) => setWaitlistEmail(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Button type="submit" variant="outline" className="border-primary/40 text-foreground hover:bg-primary/10 gap-2">
-                Entrar na lista <ArrowRight size={16} />
-              </Button>
-            </form>
-            <p className="text-xs text-muted-foreground text-center">
-              Vamos te avisar quando o produto estiver disponível. Estamos em fase de desenvolvimento.
-            </p>
-          </div>
+          <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground text-center">
+            <Lock size={12} /> Projeções e termos financeiros detalhados são compartilhados sob NDA.
+          </p>
         </div>
       </div>
     </section>

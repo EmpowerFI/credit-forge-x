@@ -1,25 +1,30 @@
-import { Coins, Gauge, ShoppingBag, Sparkles } from "lucide-react";
+import { ShoppingBag, Gauge, Landmark, Bot } from "lucide-react";
 
-const steps = [
+const layers = [
   {
-    icon: Coins,
-    title: "1. Tokenized RWA",
-    desc: "Collateral pool reduces the cost of credit.",
+    icon: ShoppingBag,
+    tag: "Live now",
+    tagLive: true,
+    title: "Marketplace",
+    desc: "Connects women micro-entrepreneurs to new clients and to each other. It generates real economic activity — sales, payments, reputation — and the data that powers everything that follows.",
   },
   {
     icon: Gauge,
-    title: "2. Alternative Score + Social Risk",
-    desc: "Traditional models exclude reliable payers.",
+    tag: "Next",
+    title: "Invisible alternative score",
+    desc: "Built primarily from savings behavior and marketplace activity. No courses, no forms, no friction: the history forms on its own as she does business.",
   },
   {
-    icon: ShoppingBag,
-    title: "3. Marketplace + B2B BNPL",
-    desc: "Community marketplace with integrated financing.",
+    icon: Landmark,
+    tag: "Then",
+    title: "RWA capital pool on Solana",
+    desc: "Tokenized capital backed by Brazilian Treasury bonds. Every amount allocated and every impact created is recorded on-chain — continuous, auditable proof of where the capital went.",
   },
   {
-    icon: Sparkles,
-    title: "4. Proactive AI Assistant",
-    desc: "Proactive AI that fights time poverty.",
+    icon: Bot,
+    tag: "Then",
+    title: "AI copilot",
+    desc: "Contextual guidance in the day-to-day of the business: organizing finances, prioritizing decisions, understanding the next step. The AI suggests — a human always decides.",
   },
 ];
 
@@ -27,22 +32,27 @@ const HowItWorksSectionEn = () => (
   <section id="how-it-works" className="section-padding">
     <div className="container mx-auto space-y-12">
       <div className="text-center space-y-4">
-        <p className="text-sm font-medium text-accent uppercase tracking-widest">How it will work</p>
+        <p className="text-sm font-medium text-accent uppercase tracking-widest">How it works</p>
         <h2 className="section-title">
-          Four technical pillars of{" "}
-          <span className="text-gradient">our architecture</span>
+          Four layers that build{" "}
+          <span className="text-gradient">on top of each other</span>
         </h2>
         <p className="section-subtitle">
-          No heavy jargon.
+          The marketplace ships first and generates the data. The other layers follow in sequence, on that foundation.
         </p>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {steps.map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="glass rounded-xl p-6 glow-border hover:shadow-glow transition-shadow duration-300">
-            <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4">
+        {layers.map(({ icon: Icon, tag, tagLive, title, desc }, i) => (
+          <div key={title} className="relative glass rounded-xl p-6 glow-border hover:shadow-glow transition-shadow duration-300">
+            <span className="text-xs font-mono text-accent">0{i + 1}</span>
+            <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center my-4">
               <Icon className="text-primary-foreground" size={22} />
             </div>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium mb-3 ${tagLive ? "glow-border text-accent" : "bg-muted text-muted-foreground"}`}>
+              {tagLive && <span className="h-1.5 w-1.5 animate-pulse-glow rounded-full bg-accent" />}
+              {tag}
+            </span>
             <h3 className="font-heading font-semibold text-foreground mb-2">{title}</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
           </div>

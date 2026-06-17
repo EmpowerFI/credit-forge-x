@@ -4,58 +4,74 @@
 @tailwind components;
 @tailwind utilities;
 
+/* EmpowerFI design system — all colors HSL.
+   Palette synced to the brand asset (designer-provided banner + logo):
+   primary navy = the wordmark color; accent amber = the logo mark color.
+   Gradients & glows are amber-based — the brand's warm signature. */
+
 @layer base {
   :root {
-    --background: 40 30% 96%;
-    --foreground: 217 45% 12%;
+    --background: 40 14% 95%;
+    --foreground: 0 0% 16%;
 
     --card: 0 0% 100%;
-    --card-foreground: 217 45% 12%;
+    --card-foreground: 0 0% 16%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 217 45% 12%;
+    --popover-foreground: 0 0% 16%;
 
-    --primary: 36 78% 52%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 215 56% 14%;
+    --primary-foreground: 40 14% 95%;
 
-    --secondary: 40 25% 92%;
-    --secondary-foreground: 217 45% 12%;
+    --secondary: 40 33% 92%;
+    --secondary-foreground: 215 56% 14%;
 
-    --muted: 40 20% 90%;
-    --muted-foreground: 217 15% 40%;
+    --muted: 60 10% 94%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 36 85% 58%;
-    --accent-foreground: 217 45% 12%;
+    --accent: 36 75% 47%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 70% 50%;
+    --success: 138 26% 39%;
+    --success-foreground: 0 0% 100%;
+
+    --destructive: 3 47% 54%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 40 15% 85%;
-    --input: 40 15% 85%;
-    --ring: 36 78% 52%;
+    --warning: 36 75% 47%;
+    --warning-foreground: 0 0% 100%;
+
+    --highlight: 36 60% 92%;
+    --highlight-foreground: 215 56% 14%;
+
+    --border: 40 15% 88%;
+    --input: 40 15% 88%;
+    --ring: 215 56% 14%;
 
     --radius: 0.75rem;
 
-    --gradient-primary: linear-gradient(135deg, hsl(36 78% 52%), hsl(36 85% 62%));
-    --gradient-subtle: linear-gradient(135deg, hsl(40 30% 96%), hsl(40 25% 92%));
-    --gradient-glow: linear-gradient(135deg, hsl(36 78% 52% / 0.15), hsl(36 85% 62% / 0.05));
-    --shadow-glow: 0 0 40px hsl(36 78% 52% / 0.25);
-    --shadow-card: 0 4px 24px hsl(217 30% 20% / 0.08);
-
+    --gradient-primary: linear-gradient(135deg, hsl(36 75% 47%), hsl(36 82% 58%));
+    --gradient-subtle: linear-gradient(180deg, hsl(40 14% 95%), hsl(40 33% 92%));
+    --gradient-glow: linear-gradient(135deg, hsl(36 75% 47% / 0.12), hsl(36 75% 47% / 0.02));
+    --shadow-glow: 0 0 40px hsl(36 75% 47% / 0.20);
+    --shadow-card: 0 4px 24px hsl(215 56% 14% / 0.08);
 
     --font-heading: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
   }
-
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
@@ -85,16 +101,14 @@
     background-clip: text;
   }
   .glass {
-    background: hsl(0 0% 100% / 0.7);
+    background: hsl(0 0% 100% / 0.72);
     backdrop-filter: blur(20px);
-    border: 1px solid hsl(36 78% 52% / 0.2);
+    border: 1px solid hsl(36 75% 47% / 0.18);
   }
   .glow-border {
-    border: 1px solid hsl(36 78% 52% / 0.3);
-    box-shadow: 0 0 20px hsl(36 78% 52% / 0.12), inset 0 0 20px hsl(36 78% 52% / 0.04);
+    border: 1px solid hsl(36 75% 47% / 0.28);
+    box-shadow: 0 0 20px hsl(36 75% 47% / 0.10), inset 0 0 20px hsl(36 75% 47% / 0.03);
   }
-
-
 }
 
 @layer components {
