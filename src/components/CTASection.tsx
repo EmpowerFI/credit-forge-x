@@ -97,7 +97,7 @@ const CTASection = () => {
             <span className="text-gradient">retorno estável e impacto auditável</span>
           </h2>
           <p className="section-subtitle">
-            Yield com lastro em Tesouro de um lado; prova de impacto verificável on-chain do outro. Os números detalhados são compartilhados sob NDA.
+            Yield com lastro em Tesouro de um lado; prova de impacto verificável on-chain do outro.
           </p>
         </div>
 
