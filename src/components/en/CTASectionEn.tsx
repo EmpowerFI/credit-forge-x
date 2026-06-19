@@ -97,7 +97,7 @@ const CTASectionEn = () => {
             <span className="text-gradient">stable returns and auditable impact</span>
           </h2>
           <p className="section-subtitle">
-            Treasury-backed yield on one side; verifiable on-chain impact on the other. Detailed figures are shared under NDA.
+            Treasury-backed yield on one side; verifiable on-chain impact on the other.
           </p>
         </div>
 
