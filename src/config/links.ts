@@ -1,9 +1,7 @@
 // Single source of truth for external links, shared by the PT (/) and EN (/en)
 // pages so both languages stay in sync.
-//
-// TODO(daniele): confirm/replace PLAY_STORE_URL with the live listing.
 export const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=io.empowerfi.app";
+  "https://play.google.com/store/apps/details?id=com.empowerfi.app";
 
 // Founder replies personally — used for the investor / deck request CTA.
 export const INVESTOR_EMAIL = "daniele@empowerfi.io";
