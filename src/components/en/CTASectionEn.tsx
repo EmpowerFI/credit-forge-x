@@ -18,8 +18,8 @@ const contactSchema = z.object({
 const pillars = [
   {
     icon: Landmark,
-    title: "Treasury-backed yield",
-    desc: "Stable returns backed by Brazilian Treasury bonds, tokenized as RWA.",
+    title: "Returns protected by Treasury collateral",
+    desc: "The yield comes from the credit originated. The principal is protected by two layers: collateral in Brazilian Treasury bonds, and a first-loss layer that EmpowerFI absorbs before any investor capital is touched.",
   },
   {
     icon: ShieldCheck,
@@ -29,7 +29,7 @@ const pillars = [
   {
     icon: Globe2,
     title: "Global infrastructure, phased rollout",
-    desc: "Built as global financial infrastructure on Solana, launching in phases starting with Brazil.",
+    desc: "Built as global financial infrastructure on blockchain, launching in phases starting with Brazil.",
   },
 ];
 
@@ -97,7 +97,7 @@ const CTASectionEn = () => {
             <span className="text-gradient">stable returns and auditable impact</span>
           </h2>
           <p className="section-subtitle">
-            Treasury-backed yield on one side; verifiable on-chain impact on the other.
+            Returns protected by two layers on one side; verifiable on-chain impact on the other.
           </p>
         </div>
 

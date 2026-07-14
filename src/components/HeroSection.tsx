@@ -21,7 +21,7 @@ const HeroSection = () => (
         </h1>
 
         <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl opacity-0 animate-fade-in-delay-2">
-          Um marketplace que gera renda e dados, transforma esse histórico em score e abre acesso a crédito e capital de impacto. São <span className="text-foreground font-medium">7 milhões+ de mulheres empreendedoras invisíveis</span> ao sistema financeiro no Brasil.
+          Um marketplace que gera renda e dados, transforma esse histórico em score e abre acesso a crédito e capital de impacto. São <span className="text-foreground font-medium">~7,4 milhões de mulheres MEI ativas</span> — sub-bancarizadas pelo sistema financeiro brasileiro.
         </p>
 
         <div className="space-y-5 pt-2 opacity-0 animate-fade-in-delay-3">

@@ -12,13 +12,13 @@ const layers = [
     icon: Gauge,
     tag: "Próximo passo",
     title: "Score alternativo invisível",
-    desc: "Construído principalmente a partir do comportamento de poupança e da atividade no marketplace. Sem cursos, sem formulários, sem atrito: o histórico se forma sozinho, conforme ela empreende.",
+    desc: "Construído a partir do que ela já faz: os pagamentos que recebe, a atividade no marketplace, a disciplina financeira ao longo do tempo. Sem cursos, sem formulários, sem atrito — o histórico se forma sozinho, conforme ela empreende.",
   },
   {
     icon: Landmark,
     tag: "Em sequência",
-    title: "Pool de capital RWA na Solana",
-    desc: "Capital tokenizado com lastro em títulos do Tesouro brasileiro. Cada real alocado e cada impacto gerado ficam registrados na blockchain — prova contínua e auditável de para onde o capital foi.",
+    title: "Pool de capital RWA",
+    desc: "Tokenização é o que traz capital de impacto global para empreendedoras que o sistema bancário não alcança — com colateral em Tesouro protegendo o principal. Cada real e cada impacto ficam registrados em blockchain: prova contínua e auditável, não relatório anual.",
   },
   {
     icon: Bot,

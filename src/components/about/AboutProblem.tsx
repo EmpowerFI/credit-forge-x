@@ -12,13 +12,16 @@ const AboutProblem = ({ problem }: { problem: AboutContent["problem"] }) => (
         <p className="section-subtitle">{problem.subtitle}</p>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-6">
-        {problem.stats.map(({ value, label }) => (
-          <div key={label} className="glass rounded-xl p-8 glow-border text-center">
-            <p className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
-            <p className="text-sm text-muted-foreground">{label}</p>
-          </div>
-        ))}
+      <div className="space-y-4">
+        <div className="grid sm:grid-cols-3 gap-6">
+          {problem.stats.map(({ value, label }) => (
+            <div key={label} className="glass rounded-xl p-8 glow-border text-center">
+              <p className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
+              <p className="text-sm text-muted-foreground">{label}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground text-center">{problem.statsSource}</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

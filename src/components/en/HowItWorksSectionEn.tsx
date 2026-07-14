@@ -12,13 +12,13 @@ const layers = [
     icon: Gauge,
     tag: "Next",
     title: "Invisible alternative score",
-    desc: "Built primarily from savings behavior and marketplace activity. No courses, no forms, no friction: the history forms on its own as she does business.",
+    desc: "Built from what she already does: the payments she receives, her marketplace activity, her financial discipline over time. No courses, no forms, no friction — the track record builds itself as she does business.",
   },
   {
     icon: Landmark,
     tag: "Then",
-    title: "RWA capital pool on Solana",
-    desc: "Tokenized capital backed by Brazilian Treasury bonds. Every amount allocated and every impact created is recorded on-chain — continuous, auditable proof of where the capital went.",
+    title: "RWA capital pool",
+    desc: "Tokenization is what brings global impact capital to entrepreneurs the banking system does not reach — with Treasury collateral protecting the principal. Every amount and every impact is recorded on blockchain: continuous, auditable proof, not an annual report.",
   },
   {
     icon: Bot,

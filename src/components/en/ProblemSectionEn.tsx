@@ -3,14 +3,14 @@ import { Scale, Eye } from "lucide-react";
 const stats = [
   { value: "29%", label: "of business credit goes to women — who run ~40% of operations" },
   { value: "68%", label: "of women entrepreneurs have credit requests denied or only partially met" },
-  { value: "=", label: "same default rate as men — yet they pay higher interest" },
+  { value: "7.1%", label: "default rate among women, against 7.6% among men — they pay better and still pay higher interest" },
 ];
 
 const failures = [
   {
     icon: Scale,
     title: "Credit ignores who keeps the economy running",
-    desc: "Women run about 40% of operations but receive only ~29% of business credit — at the same default rate and higher interest. With no formal banking history, they stay invisible to risk models.",
+    desc: "Women run about 40% of operations but receive only ~29% of business credit — and although they default less than men, they pay higher interest. With no formal banking history, they stay invisible to risk models.",
   },
   {
     icon: Eye,
@@ -33,13 +33,16 @@ const ProblemSectionEn = () => (
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-6">
-        {stats.map(({ value, label }) => (
-          <div key={label} className="glass rounded-xl p-8 glow-border text-center">
-            <p className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
-            <p className="text-sm text-muted-foreground">{label}</p>
-          </div>
-        ))}
+      <div className="space-y-4">
+        <div className="grid sm:grid-cols-3 gap-6">
+          {stats.map(({ value, label }) => (
+            <div key={label} className="glass rounded-xl p-8 glow-border text-center">
+              <p className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
+              <p className="text-sm text-muted-foreground">{label}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground text-center">Source: Sebrae and Banco Central (Brazil's central bank), 2024.</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

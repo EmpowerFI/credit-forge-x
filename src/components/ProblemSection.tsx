@@ -3,14 +3,14 @@ import { Scale, Eye } from "lucide-react";
 const stats = [
   { value: "29%", label: "do crédito empresarial vai para mulheres — que tocam ~40% das operações" },
   { value: "68%", label: "das empreendedoras têm pedidos de crédito negados ou só parcialmente atendidos" },
-  { value: "=", label: "mesma taxa de inadimplência dos homens — porém pagando juros mais altos" },
+  { value: "7,1%", label: "de inadimplência entre as mulheres, contra 7,6% entre os homens — elas pagam melhor e ainda assim pagam juros mais altos" },
 ];
 
 const failures = [
   {
     icon: Scale,
     title: "O crédito ignora quem sustenta a economia",
-    desc: "Mulheres tocam cerca de 40% das operações, mas recebem só ~29% do crédito empresarial — com a mesma taxa de inadimplência e juros mais altos. Sem histórico bancário formal, ficam invisíveis aos modelos de risco.",
+    desc: "Mulheres tocam cerca de 40% das operações, mas recebem só ~29% do crédito empresarial — e, mesmo inadimplindo menos que os homens, pagam juros mais altos. Sem histórico bancário formal, ficam invisíveis aos modelos de risco.",
   },
   {
     icon: Eye,
@@ -33,13 +33,16 @@ const ProblemSection = () => (
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-6">
-        {stats.map(({ value, label }) => (
-          <div key={label} className="glass rounded-xl p-8 glow-border text-center">
-            <p className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
-            <p className="text-sm text-muted-foreground">{label}</p>
-          </div>
-        ))}
+      <div className="space-y-4">
+        <div className="grid sm:grid-cols-3 gap-6">
+          {stats.map(({ value, label }) => (
+            <div key={label} className="glass rounded-xl p-8 glow-border text-center">
+              <p className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
+              <p className="text-sm text-muted-foreground">{label}</p>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground text-center">Fonte: Sebrae e Banco Central, 2024.</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">

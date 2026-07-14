@@ -55,6 +55,8 @@ export interface AboutContent {
     titleAccent: string;
     subtitle: string;
     stats: { value: string; label: string }[];
+    /** Attribution for the stats above. */
+    statsSource: string;
     items: { icon: LucideIcon; title: string; desc: string }[];
   };
   solution: {
@@ -178,15 +180,16 @@ export const aboutPt: AboutContent = {
     subtitle:
       "Não é falta de capacidade nem de disciplina. É uma falha estrutural de infraestrutura de dados — e ela se repete todos os dias.",
     stats: [
-      { value: "7 mi+", label: "de mulheres empreendedoras invisíveis ao sistema financeiro no Brasil" },
-      { value: "68%", label: "das empreendedoras têm pedidos de crédito negados ou só parcialmente atendidos" },
-      { value: "29%", label: "do crédito empresarial vai para mulheres — que tocam cerca de 40% das operações" },
+      { value: "~7,4 mi", label: "de mulheres MEI ativas no Brasil — sub-bancarizadas pelo sistema financeiro" },
+      { value: "68%", label: "delas já tiveram um pedido de crédito negado ou só parcialmente atendido" },
+      { value: "7,1%", label: "de inadimplência entre as mulheres, contra 7,6% entre os homens — elas pagam melhor e ainda assim pagam mais caro" },
     ],
+    statsSource: "Fonte: Sebrae e Banco Central, 2024.",
     items: [
       {
         icon: Landmark,
         title: "Dificuldade de acesso ao crédito",
-        desc: "Quando o crédito aparece, vem caro e curto: cheque especial, cartão rotativo, agiota. A mesma empreendedora que paga em dia é empurrada para as linhas mais caras do mercado — com taxa de inadimplência igual à dos homens, mas pagando juros mais altos.",
+        desc: "Quando o crédito aparece, vem caro e curto: cheque especial, cartão rotativo, agiota. A mesma empreendedora que paga em dia é empurrada para as linhas mais caras do mercado — e, embora as mulheres inadimplam menos que os homens (7,1% contra 7,6%), são elas que pagam os juros mais altos.",
       },
       {
         icon: Eye,
@@ -450,15 +453,16 @@ export const aboutEn: AboutContent = {
     subtitle:
       "It is not a lack of capability or discipline. It is a structural failure of data infrastructure — and it repeats every single day.",
     stats: [
-      { value: "7M+", label: "women entrepreneurs invisible to the financial system in Brazil" },
-      { value: "68%", label: "of women entrepreneurs have credit requests denied or only partially met" },
-      { value: "29%", label: "of business credit goes to women — who run around 40% of the operations" },
+      { value: "~7.4M", label: "active women-led micro-businesses in Brazil — underbanked by the financial system" },
+      { value: "68%", label: "of them have had a credit request denied or only partially granted" },
+      { value: "7.1%", label: "default rate among women, against 7.6% among men — they pay better and still pay more" },
     ],
+    statsSource: "Source: Sebrae and Banco Central (Brazil's central bank), 2024.",
     items: [
       {
         icon: Landmark,
         title: "Hard access to credit",
-        desc: "When credit does show up, it is expensive and short: overdraft, revolving card, loan sharks. The same entrepreneur who always pays on time is pushed to the priciest lines on the market — with the same default rate as men, yet higher interest.",
+        desc: "When credit does show up, it is expensive and short: overdraft, revolving card, loan sharks. The same entrepreneur who always pays on time is pushed to the priciest lines on the market — and although women default less than men (7.1% against 7.6%), it is women who pay the higher interest.",
       },
       {
         icon: Eye,

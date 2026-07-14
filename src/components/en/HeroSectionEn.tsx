@@ -21,7 +21,7 @@ const HeroSectionEn = () => (
         </h1>
 
         <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl opacity-0 animate-fade-in-delay-2">
-          A marketplace that generates income and data, turns that history into a score, and unlocks access to credit and impact capital. There are <span className="text-foreground font-medium">7 million+ women entrepreneurs invisible</span> to the financial system in Brazil.
+          A marketplace that generates income and data, turns that history into a score, and unlocks access to credit and impact capital. There are <span className="text-foreground font-medium">~7.4 million active women-led micro-businesses</span> in Brazil — underbanked by the financial system.
         </p>
 
         <div className="space-y-5 pt-2 opacity-0 animate-fade-in-delay-3">

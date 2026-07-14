@@ -18,8 +18,8 @@ const contactSchema = z.object({
 const pillars = [
   {
     icon: Landmark,
-    title: "Yield com lastro em Tesouro",
-    desc: "Retorno estável apoiado em títulos do Tesouro brasileiro, tokenizados como RWA.",
+    title: "Retorno protegido por colateral em Tesouro",
+    desc: "O rendimento vem do crédito originado. O principal é protegido em duas camadas: colateral em títulos do Tesouro brasileiro e uma camada de primeira perda que a EmpowerFI assume antes de tocar o capital do investidor.",
   },
   {
     icon: ShieldCheck,
@@ -29,7 +29,7 @@ const pillars = [
   {
     icon: Globe2,
     title: "Infraestrutura global, rollout em fases",
-    desc: "Construída como infraestrutura financeira global na Solana, com lançamento em fases começando pelo Brasil.",
+    desc: "Construída como infraestrutura financeira global em blockchain, com lançamento em fases começando pelo Brasil.",
   },
 ];
 
@@ -97,7 +97,7 @@ const CTASection = () => {
             <span className="text-gradient">retorno estável e impacto auditável</span>
           </h2>
           <p className="section-subtitle">
-            Yield com lastro em Tesouro de um lado; prova de impacto verificável on-chain do outro.
+            Retorno protegido em duas camadas de um lado; prova de impacto verificável on-chain do outro.
           </p>
         </div>
 
