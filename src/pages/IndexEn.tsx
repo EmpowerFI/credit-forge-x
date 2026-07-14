@@ -6,7 +6,6 @@ import HowItWorksSectionEn from "@/components/en/HowItWorksSectionEn";
 import DifferentialSectionEn from "@/components/en/DifferentialSectionEn";
 import TractionSectionEn from "@/components/en/TractionSectionEn";
 import CTASectionEn from "@/components/en/CTASectionEn";
-import InstitutionalTeaser from "@/components/InstitutionalTeaser";
 import FooterEn from "@/components/en/FooterEn";
 
 // index.html only carries the Portuguese home page's meta, so without this the
@@ -33,12 +32,6 @@ const IndexEn = () => (
     <DifferentialSectionEn />
     <TractionSectionEn />
     <CTASectionEn />
-    <InstitutionalTeaser
-      title="Meet EmpowerFI"
-      body="EmpowerFI is building financial infrastructure for women entrepreneurs. Learn about our mission, our story and the long-term vision behind the platform."
-      cta="Read our story"
-      to="/en/about"
-    />
     <FooterEn />
   </div>
 );

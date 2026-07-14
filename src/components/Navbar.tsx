@@ -23,6 +23,10 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
+          {/* A route, not an anchor: the other links jump within this page. */}
+          <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Sobre
+          </Link>
           <Link to="/en" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5">
             <Languages size={14} /> EN
           </Link>
@@ -41,6 +45,10 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
+          <Link to="/about" onClick={() => setOpen(false)}
+            className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Sobre
+          </Link>
           <Link to="/en" onClick={() => setOpen(false)}
             className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
             English
