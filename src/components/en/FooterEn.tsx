@@ -1,4 +1,5 @@
 import { Linkedin, Instagram } from "lucide-react";
+import { Link } from "react-router-dom";
 import { X_URL, LINKEDIN_URL, INSTAGRAM_URL, CONTACT_EMAIL } from "@/config/links";
 
 const FooterEn = () => (
@@ -27,9 +28,10 @@ const FooterEn = () => (
           </a>
         </div>
 
-        <div className="flex gap-6">
-          <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms</a>
-          <a href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy</a>
+        <div className="flex flex-wrap justify-center gap-6">
+          <Link to="/en/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">About</Link>
+          <Link to="/en/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms</Link>
+          <Link to="/en/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>
           <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a>
         </div>
       </div>
