@@ -91,7 +91,15 @@ export interface AboutContent {
     titleLead: string;
     titleAccent: string;
     subtitle: string;
-    items: { icon: LucideIcon; title: string; desc: string; href?: string; linkLabel?: string }[];
+    items: {
+      icon: LucideIcon;
+      title: string;
+      desc: string;
+      href?: string;
+      linkLabel?: string;
+      /** Third-party mark evidencing institutional backing, from /public. */
+      logo?: { src: string; alt: string; label: string };
+    }[];
   };
   faq: {
     eyebrow: string;
@@ -325,6 +333,7 @@ export const aboutPt: AboutContent = {
         icon: BarChart3,
         title: "Programas do Sebrae: Ginga Prototipa e PIER",
         desc: "Tese validada em campo junto ao Sebrae. O Ginga Prototipa foi concluído com a construção do protótipo, e a empresa segue agora no PIER, refinando o modelo de negócios com consultoria especializada.",
+        logo: { src: "/sebrae.svg", alt: "Sebrae", label: "Apoio institucional" },
       },
       {
         icon: Building2,
@@ -598,6 +607,7 @@ export const aboutEn: AboutContent = {
         icon: BarChart3,
         title: "Sebrae programmes: Ginga Prototipa and PIER",
         desc: "Thesis validated in the field with Sebrae. Ginga Prototipa concluded with the prototype built, and the company is now in PIER, refining the business model with specialist consulting.",
+        logo: { src: "/sebrae.svg", alt: "Sebrae", label: "Institutional support" },
       },
       {
         icon: Building2,

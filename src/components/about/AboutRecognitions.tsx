@@ -1,4 +1,5 @@
 import { ExternalLink } from "lucide-react";
+import SupportLogo from "@/components/SupportLogo";
 import type { AboutContent } from "@/content/about";
 
 const AboutRecognitions = ({ recognitions }: { recognitions: AboutContent["recognitions"] }) => (
@@ -14,7 +15,7 @@ const AboutRecognitions = ({ recognitions }: { recognitions: AboutContent["recog
       </div>
 
       <div className="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        {recognitions.items.map(({ icon: Icon, title, desc, href, linkLabel }) => (
+        {recognitions.items.map(({ icon: Icon, title, desc, href, linkLabel, logo }) => (
           <div key={title} className="glass rounded-2xl p-8 glow-border flex flex-col">
             <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4">
               <Icon className="text-primary-foreground" size={24} />
@@ -31,6 +32,7 @@ const AboutRecognitions = ({ recognitions }: { recognitions: AboutContent["recog
                 {linkLabel} <ExternalLink size={14} />
               </a>
             )}
+            {logo && <SupportLogo {...logo} />}
           </div>
         ))}
       </div>
