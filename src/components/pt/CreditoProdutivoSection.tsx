@@ -55,17 +55,24 @@ const CreditoProdutivoSection = () => (
         ))}
       </div>
 
-      {/* Ainda não há crédito disponível. Dizer isso com todas as letras é o que
-          impede a página de virar promessa. */}
-      <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card/60 p-8 text-center">
+      {/* O crédito ainda não existe como produto. A seção inteira lê como oferta
+          sem este bloco — e "depende do enquadramento regulatório aplicável" é
+          deliberadamente neutro: não afirma licença nem autorização alguma. */}
+      <div className="mx-auto max-w-3xl space-y-4 rounded-2xl border border-border bg-card/60 p-8 md:p-10">
+        <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-accent glow-border">
+          <span className="h-1.5 w-1.5 animate-pulse-glow rounded-full bg-accent" />
+          Em desenvolvimento
+        </span>
         <p className="leading-relaxed text-foreground">
-          <span className="font-medium">Ainda não estamos emprestando.</span> O primeiro
-          piloto de microcrédito produtivo está em preparação, com empreendedoras e
-          comunidades parceiras no Brasil.
+          O crédito produtivo é a próxima etapa da EmpowerFI. Sua operação depende de
+          infraestrutura financeira, parcerias institucionais e do enquadramento
+          regulatório aplicável, e será lançada primeiro como piloto, com empreendedoras
+          e comunidades parceiras no Brasil.
         </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Quem já usa o app e mantém o negócio organizado chega na frente quando o piloto
-          abrir — mas usar o app não garante crédito, e a gente não vai fingir que garante.
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Organizar o negócio no aplicativo já fortalece o seu histórico desde agora. A
+          eventual concessão de crédito seguirá critérios de análise: o uso do aplicativo
+          não constitui oferta nem garantia de crédito.
         </p>
       </div>
     </div>
