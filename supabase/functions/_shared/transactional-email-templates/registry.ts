@@ -11,8 +11,12 @@ export interface TemplateEntry {
 
 import { template as contactQuestionForFounder } from './contact-question-for-founder.tsx'
 import { template as contactQuestionConfirmation } from './contact-question-confirmation.tsx'
+import { template as investorWaitlistForFounder } from './investor-waitlist-for-founder.tsx'
+import { template as investorWaitlistConfirmation } from './investor-waitlist-confirmation.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'contact-question-for-founder': contactQuestionForFounder,
   'contact-question-confirmation': contactQuestionConfirmation,
+  'investor-waitlist-for-founder': investorWaitlistForFounder,
+  'investor-waitlist-confirmation': investorWaitlistConfirmation,
 }

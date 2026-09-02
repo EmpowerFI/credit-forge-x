@@ -1,7 +1,14 @@
 # Backend deploy — self-hosted email stack (Path B)
 
-Target Supabase project: **EmpowerFI** — `tfjxvliinkhlimxfrkpr`
-(`https://tfjxvliinkhlimxfrkpr.supabase.co`)
+Target Supabase project: **EmpowerFI admin dashboard** — `xifczvaiedmokdpjevsf`
+(`https://xifczvaiedmokdpjevsf.supabase.co`)
+
+> The backend was consolidated here from `yczodofprsgjsffemkac` (which the site
+> used) and `tfjxvliinkhlimxfrkpr`. Domain verification (step 1) lives in the
+> **Resend account**, not in Supabase — if `empowerfi.io` is already verified,
+> skip it. What *is* per-project and must be redone here: the Vault secret
+> (step 4, holding **this** project's service_role key) and `RESEND_API_KEY`
+> (step 5). The Resend API key itself can be the same one.
 
 This moves the contact-form email pipeline off Lovable's managed API onto your
 own Supabase project, sending through **Resend**. Run every command yourself so
@@ -36,17 +43,24 @@ shows **Verified**, sends will fail with 403/422.
 ## 2. Link the CLI to the project
 
 ```bash
-npx supabase link --project-ref tfjxvliinkhlimxfrkpr
+npx supabase link --project-ref xifczvaiedmokdpjevsf
 # prompts for your DB password
 ```
 
 ## 3. Push the database migrations
 
-Creates the pgmq queues, tables, RPCs, and the dispatcher cron (pg_cron + pg_net).
+Creates the pgmq queues, tables, RPCs, the dispatcher cron (pg_cron + pg_net) and
+the `investor_waitlist` table behind /investors.
 
 ```bash
+npx supabase migration list   # check what is actually pending first
 npx supabase db push
 ```
+
+> The dispatcher cron hardcodes the project URL in its body. On a project move,
+> add a migration that re-schedules `process-email-queue` against the new ref —
+> see `20260902000000_repoint_email_cron.sql`. Otherwise the cron calls the old
+> project with this project's key and every email stalls at `pending`.
 
 ## 4. Store the service_role key in Vault (enables the cron)
 
@@ -99,9 +113,9 @@ true; unsubscribe = false).
 **Local** `.env` (gitignored — copy from `.env.example`):
 
 ```
-VITE_SUPABASE_URL="https://tfjxvliinkhlimxfrkpr.supabase.co"
-VITE_SUPABASE_PUBLISHABLE_KEY="<anon key for tfjxvliinkhlimxfrkpr>"
-VITE_SUPABASE_PROJECT_ID="tfjxvliinkhlimxfrkpr"
+VITE_SUPABASE_URL="https://xifczvaiedmokdpjevsf.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY="<anon key for xifczvaiedmokdpjevsf>"
+VITE_SUPABASE_PROJECT_ID="xifczvaiedmokdpjevsf"
 ```
 
 **Vercel** → Project → Settings → Environment Variables: set the same three for
@@ -123,7 +137,7 @@ Production + Preview, then redeploy.
 - Cron not firing / not authed → confirm step 4 ran and `RESEND_API_KEY` is set.
 - Manually kick the dispatcher (replace the key):
   ```bash
-  curl -X POST https://tfjxvliinkhlimxfrkpr.supabase.co/functions/v1/process-email-queue \
+  curl -X POST https://xifczvaiedmokdpjevsf.supabase.co/functions/v1/process-email-queue \
     -H "Authorization: Bearer <SERVICE_ROLE_KEY>"
   ```
 - Inspect cron runs:

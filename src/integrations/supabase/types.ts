@@ -101,6 +101,45 @@ export type Database = {
         }
         Relationships: []
       }
+      investor_waitlist: {
+        Row: {
+          consent: boolean
+          country: string
+          created_at: string
+          email: string
+          id: string
+          investor_type: string
+          motivation: string
+          source: string | null
+          ticket_range: string
+          wallet_address: string | null
+        }
+        Insert: {
+          consent: boolean
+          country: string
+          created_at?: string
+          email: string
+          id?: string
+          investor_type: string
+          motivation: string
+          source?: string | null
+          ticket_range: string
+          wallet_address?: string | null
+        }
+        Update: {
+          consent?: boolean
+          country?: string
+          created_at?: string
+          email?: string
+          id?: string
+          investor_type?: string
+          motivation?: string
+          source?: string | null
+          ticket_range?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
