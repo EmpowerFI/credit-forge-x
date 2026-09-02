@@ -1,6 +1,6 @@
 import { Award, Building2, ExternalLink, Smartphone } from "lucide-react";
 import { PLAY_STORE_URL } from "@/config/links";
-import SectionHeading from "./SectionHeading";
+import SectionHeading from "@/components/SectionHeading";
 
 const items = [
   {

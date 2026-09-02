@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import CapitalFlow from "./CapitalFlow";
+import CapitalFlow from "@/components/CapitalFlow";
 
 // The whole thesis in four nodes, so the first screen already answers what
 // EmpowerFI does and who ends up holding the capital.

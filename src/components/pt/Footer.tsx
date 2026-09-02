@@ -8,7 +8,7 @@ const Footer = () => (
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-col items-center md:items-start gap-1">
           <span className="text-lg font-heading font-bold text-gradient">EmpowerFI</span>
-          <p className="text-xs text-muted-foreground">Infraestrutura financeira para empreendedoras — começando pelo Brasil.</p>
+          <p className="text-xs text-muted-foreground">Crédito produtivo para pequenos negócios — começando por mulheres empreendedoras no Brasil.</p>
         </div>
 
         <div className="flex items-center gap-5">
@@ -33,6 +33,7 @@ const Footer = () => (
           <Link to="/termos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Termos</Link>
           <Link to="/privacidade" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacidade</Link>
           <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contato</a>
+          <Link to="/investors" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Investidores</Link>
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">English</Link>
         </div>
       </div>

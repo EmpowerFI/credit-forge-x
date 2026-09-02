@@ -1,6 +1,6 @@
 import { Activity, BarChart3, Brain, Coins, Radar, Wrench } from "lucide-react";
-import CapitalFlow from "./CapitalFlow";
-import SectionHeading from "./SectionHeading";
+import CapitalFlow from "@/components/CapitalFlow";
+import SectionHeading from "@/components/SectionHeading";
 
 const components = [
   { icon: BarChart3, title: "Business data", desc: "What the business actually does, day to day." },

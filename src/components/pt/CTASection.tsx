@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Brain, Globe2, Mail, Send, Target } from "lucide-react";
+import { ArrowRight, Mail, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -9,30 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTACT_EMAIL } from "@/config/links";
+import PlayStoreBadge from "@/components/PlayStoreBadge";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Informe seu nome").max(100, "Máximo de 100 caracteres"),
   email: z.string().trim().email("E-mail inválido").max(255),
   message: z.string().trim().min(5, "Mensagem muito curta").max(2000, "Máximo de 2000 caracteres"),
 });
-
-const pillars = [
-  {
-    icon: Globe2,
-    title: "Infraestrutura de crédito produtivo",
-    desc: "Capital global chega ao pequeno negócio em moeda local. Stablecoins e a Solana são o trilho que torna viável um empréstimo de US$ 50 a US$ 200 atravessar fronteiras.",
-  },
-  {
-    icon: Brain,
-    title: "Inteligência de crédito alternativa",
-    desc: "Sinais de atividade e gestão do negócio constroem uma visão de capacidade de pagamento para quem tem pouco histórico no sistema financeiro tradicional.",
-  },
-  {
-    icon: Target,
-    title: "Resultado econômico mensurável",
-    desc: "Acompanhamos o que aconteceu depois do desembolso: negócios financiados, pagamento, evolução do faturamento, negócios ainda ativos.",
-  },
-];
 
 const CTASection = () => {
   const [form, setForm] = useState({ name: "", email: "", message: "" });
@@ -86,61 +69,30 @@ const CTASection = () => {
   };
 
   return (
-    <section id="investidores" className="section-padding gradient-subtle">
+    <section id="contato" className="section-padding">
       <div className="container mx-auto space-y-12">
-        <div className="space-y-4 text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-accent">
-            Investidores e parceiros
-          </p>
-          <h2 className="section-title">
-            Infraestrutura que transforma liquidez global em{" "}
-            <span className="text-gradient">capital produtivo</span>
+        <div className="mx-auto max-w-3xl space-y-6 rounded-2xl p-10 text-center glass glow-border shadow-glow md:p-16">
+          <h2 className="section-title !text-2xl md:!text-3xl">
+            Comece pelo <span className="text-gradient">seu negócio</span>.
           </h2>
-          <p className="section-subtitle">
-            A EmpowerFI conecta capital global a pequenos negócios sub-atendidos — começando
-            por mulheres empreendedoras no Brasil.
+          <p className="mx-auto max-w-xl leading-relaxed text-muted-foreground">
+            Baixe o app, organize o dia a dia e comece a construir o histórico que hoje
+            ninguém enxerga. É gratuito.
           </p>
+          <div className="flex justify-center">
+            <PlayStoreBadge eyebrow="Baixe agora no" justLaunched="Disponível no Brasil" />
+          </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {pillars.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="rounded-2xl p-8 text-left glass glow-border">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
-                <Icon className="text-primary-foreground" size={24} />
-              </div>
-              <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{title}</h3>
-              <p className="leading-relaxed text-muted-foreground">{desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col items-center gap-3">
-          {/* The investor material and the waitlist are maintained in English,
-              for the international audience they are written for. */}
-          <Button
-            asChild
-            size="lg"
-            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Link to="/investors">
-              Página para investidores (em inglês) <ArrowRight size={18} />
-            </Link>
-          </Button>
-          <p className="max-w-xl text-center text-xs text-muted-foreground">
-            A lista de espera representa apenas interesse não vinculante. A EmpowerFI não
-            está ofertando valores mobiliários ou produtos de investimento, nem captando
-            recursos de investidores por este site.
-          </p>
-        </div>
-
-        <div className="mx-auto max-w-3xl space-y-8 rounded-2xl p-10 glass glow-border shadow-glow md:p-16">
-          <div className="space-y-4 text-center">
+        <div className="mx-auto max-w-3xl space-y-8">
+          <div className="space-y-3 text-center">
+            <p className="text-sm font-medium uppercase tracking-widest text-accent">Contato</p>
             <h3 className="section-title !text-2xl md:!text-3xl">
-              Fale com a <span className="text-gradient">EmpowerFI</span>.
+              Fale com a <span className="text-gradient">EmpowerFI</span>
             </h3>
             <p className="mx-auto max-w-xl text-muted-foreground">
-              Imprensa, parcerias, comunidades de empreendedorismo ou dúvidas sobre o
-              produto: escreva para a gente. Respondemos todas as mensagens.
+              Dúvidas sobre o app, imprensa, comunidades de empreendedorismo ou parcerias.
+              Respondemos todas as mensagens.
             </p>
           </div>
 
@@ -179,7 +131,7 @@ const CTASection = () => {
                 maxLength={2000}
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
-                placeholder="Conte sobre seu interesse — parceria, comunidade de empreendedoras ou o produto."
+                placeholder="Como podemos ajudar?"
               />
             </div>
             <div className="flex flex-col items-center justify-center gap-3 pt-2 sm:flex-row">
@@ -200,6 +152,18 @@ const CTASection = () => {
             </div>
           </form>
         </div>
+
+        {/* A tese para investidor vive em /investors, em inglês. Aqui fica só a
+            porta de entrada, para não competir com a mensagem da página. */}
+        <p className="text-center text-sm text-muted-foreground">
+          Investidor ou parceiro institucional?{" "}
+          <Link
+            to="/investors"
+            className="inline-flex items-center gap-1 font-medium text-accent transition-colors hover:text-foreground"
+          >
+            Veja a tese da EmpowerFI (em inglês) <ArrowRight size={14} />
+          </Link>
+        </p>
       </div>
     </section>
   );

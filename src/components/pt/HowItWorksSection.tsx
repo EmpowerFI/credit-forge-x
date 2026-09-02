@@ -1,60 +1,51 @@
-import { ShoppingBag, Gauge, Coins, Bot } from "lucide-react";
+import { Banknote, Gauge, Smartphone, Sparkles } from "lucide-react";
+import SectionHeading from "@/components/SectionHeading";
 
-const layers = [
+const steps = [
   {
-    icon: ShoppingBag,
-    tag: "No ar agora",
-    tagLive: true,
-    title: "Marketplace",
-    desc: "Conecta microempreendedoras a novos clientes e umas às outras. Gera atividade econômica real — vendas, recebimentos, reputação — e os dados que alimentam tudo o que vem depois.",
+    icon: Smartphone,
+    title: "Você usa o app no dia a dia",
+    desc: "Vendas, recebimentos e clientes no mesmo lugar onde você já trabalha. Organizar o negócio deixa de ser caderno e planilha e vira parte natural do dia.",
   },
   {
     icon: Gauge,
-    tag: "Próximo passo",
-    title: "Score alternativo invisível",
-    desc: "Construído a partir do que ela já faz: os pagamentos que recebe, a atividade no marketplace, a disciplina financeira ao longo do tempo. Sem cursos, sem formulários, sem atrito — o histórico se forma sozinho, conforme ela empreende.",
+    title: "Seu histórico se forma sozinho",
+    desc: "Sem curso, sem formulário, sem prova. O histórico nasce do que você já faz — o que vende, com que regularidade, como organiza o dinheiro que entra e sai.",
   },
   {
-    icon: Coins,
-    tag: "Em sequência",
-    title: "Crédito produtivo",
-    desc: "Capital global chega em stablecoin, liquida na Solana e vira crédito produtivo em moeda local — valores pequenos, para estoque, equipamento ou capital de giro. Cada operação e cada pagamento geram registro auditável, sem expor a identidade da empreendedora.",
+    icon: Sparkles,
+    title: "A EmpowerFI olha o negócio, não só a conta",
+    desc: "Atividade, gestão, evolução, pagamentos anteriores. São esses sinais que constroem uma leitura mais justa da sua capacidade de pagamento do que um cadastro vazio no banco.",
   },
   {
-    icon: Bot,
-    tag: "Em sequência",
-    title: "Copiloto de IA",
-    desc: "Orientação contextual no dia a dia do negócio: organizar finanças, priorizar decisões, entender o próximo passo. A IA sugere — a pessoa sempre decide.",
+    icon: Banknote,
+    title: "O capital chega em reais, no Pix",
+    desc: "Quando o crédito produtivo estiver disponível, ele chega na sua conta em reais, como qualquer outro recebimento. Você não precisa saber nada de blockchain — essa parte é problema nosso.",
   },
 ];
 
 const HowItWorksSection = () => (
   <section id="como-funciona" className="section-padding">
     <div className="container mx-auto space-y-12">
-      <div className="text-center space-y-4">
-        <p className="text-sm font-medium text-accent uppercase tracking-widest">Como funciona</p>
-        <h2 className="section-title">
-          Quatro camadas que se constroem{" "}
-          <span className="text-gradient">uma sobre a outra</span>
-        </h2>
-        <p className="section-subtitle">
-          O marketplace lança primeiro e gera os dados. As demais camadas vêm em sequência, sobre essa base.
-        </p>
-      </div>
+      <SectionHeading
+        eyebrow="Como funciona"
+        title="Como funciona"
+        accent="para você"
+        subtitle="Quatro passos, e nenhum deles exige que você pare de tocar o negócio para preencher alguma coisa."
+      />
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {layers.map(({ icon: Icon, tag, tagLive, title, desc }, i) => (
-          <div key={title} className="relative glass rounded-xl p-6 glow-border hover:shadow-glow transition-shadow duration-300">
-            <span className="text-xs font-mono text-accent">0{i + 1}</span>
-            <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center my-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {steps.map(({ icon: Icon, title, desc }, i) => (
+          <div
+            key={title}
+            className="relative rounded-xl p-6 transition-shadow duration-300 glass glow-border hover:shadow-glow"
+          >
+            <span className="font-mono text-xs text-accent">0{i + 1}</span>
+            <div className="my-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
               <Icon className="text-primary-foreground" size={22} />
             </div>
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium mb-3 ${tagLive ? "glow-border text-accent" : "bg-muted text-muted-foreground"}`}>
-              {tagLive && <span className="h-1.5 w-1.5 animate-pulse-glow rounded-full bg-accent" />}
-              {tag}
-            </span>
-            <h3 className="font-heading font-semibold text-foreground mb-2">{title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+            <h3 className="mb-2 font-heading font-semibold text-foreground">{title}</h3>
+            <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
           </div>
         ))}
       </div>

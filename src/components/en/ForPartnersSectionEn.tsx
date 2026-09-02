@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTACT_EMAIL } from "@/config/links";
-import SectionHeading from "./SectionHeading";
+import SectionHeading from "@/components/SectionHeading";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Enter your name").max(100, "Max 100 characters"),

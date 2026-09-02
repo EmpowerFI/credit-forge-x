@@ -1,6 +1,7 @@
 import Seo from "@/components/Seo";
+import AppSection from "@/components/pt/AppSection";
 import CTASection from "@/components/pt/CTASection";
-import DifferentialSection from "@/components/pt/DifferentialSection";
+import CreditoProdutivoSection from "@/components/pt/CreditoProdutivoSection";
 import Footer from "@/components/pt/Footer";
 import HeroSection from "@/components/pt/HeroSection";
 import HowItWorksSection from "@/components/pt/HowItWorksSection";
@@ -9,7 +10,7 @@ import ProblemSection from "@/components/pt/ProblemSection";
 import TractionSection from "@/components/pt/TractionSection";
 import { organizationSchema, softwareApplicationSchema } from "@/config/structuredData";
 
-// index.html carries the English corporate meta, so the Portuguese home has to
+// index.html carries the English corporate meta, so the Portuguese page has to
 // declare its own — otherwise it would advertise itself to crawlers and link
 // previews as the English page.
 const alternates = [
@@ -21,15 +22,21 @@ const alternates = [
 const jsonLd = [organizationSchema(), softwareApplicationSchema()];
 
 /**
- * The entrepreneur-facing page, in Portuguese. The corporate positioning is now
- * carried by the English site at "/"; this page speaks to the women who use the
- * app, which is the audience that has always read it in Portuguese.
+ * The entrepreneur-facing page, in Portuguese.
+ *
+ * This is NOT a translation of "/". The corporate thesis — global capital,
+ * Solana, PSV, the pilot, the business model — is written for investors and
+ * lives in English at "/" and "/investors". This page speaks to the woman who
+ * runs the business: what EmpowerFI does for her, what productive credit is
+ * for, and the app she can install today. The two pages tell the same story
+ * from the two ends of the same chain, which is why the investor and moat
+ * sections do not belong here.
  */
 const IndexPt = () => (
   <div className="min-h-screen bg-background">
     <Seo
-      title="EmpowerFI — Infraestrutura financeira para empreendedoras"
-      description="Conectamos microempreendedoras a novos clientes, construímos o histórico financeiro que os bancos nunca enxergaram e abrimos acesso a crédito produtivo. App no ar no Google Play."
+      title="EmpowerFI — Crédito produtivo para o seu negócio"
+      description="A EmpowerFI ajuda mulheres empreendedoras a organizar o negócio, construir histórico financeiro e se preparar para acessar crédito produtivo. App gratuito no Google Play."
       path="/pt"
       lang="pt-BR"
       alternates={alternates}
@@ -39,7 +46,8 @@ const IndexPt = () => (
     <HeroSection />
     <ProblemSection />
     <HowItWorksSection />
-    <DifferentialSection />
+    <CreditoProdutivoSection />
+    <AppSection />
     <TractionSection />
     <CTASection />
     <Footer />

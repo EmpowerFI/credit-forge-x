@@ -1,4 +1,5 @@
-import { Scale, Eye } from "lucide-react";
+import { Eye, Receipt, TrendingDown } from "lucide-react";
+import SectionHeading from "@/components/SectionHeading";
 
 const stats = [
   { value: "29%", label: "do crédito empresarial vai para mulheres — que tocam ~40% das operações" },
@@ -8,51 +9,56 @@ const stats = [
 
 const failures = [
   {
-    icon: Scale,
-    title: "O crédito ignora quem sustenta a economia",
-    desc: "Mulheres tocam cerca de 40% das operações, mas recebem só ~29% do crédito empresarial — e, mesmo inadimplindo menos que os homens, pagam juros mais altos. Sem histórico bancário formal, ficam invisíveis aos modelos de risco.",
+    icon: Eye,
+    title: "O que você faz não vira histórico",
+    desc: "Venda no Pix, na maquininha, no dinheiro. Você vende, recebe e paga em dia — e nada disso chega ao banco. Do lado de lá, um negócio que sustenta uma família inteira simplesmente não aparece.",
   },
   {
-    icon: Eye,
-    title: "O capital de impacto não enxerga onde chega",
-    desc: "Fundos de impacto não têm prova verificável e em tempo real de onde o dinheiro foi parar. A medição é anual, autodeclarada e difícil de auditar — o que trava a alocação séria de capital.",
+    icon: Receipt,
+    title: "Sem histórico, o modelo nem te avalia",
+    desc: "Sem conta empresarial, garantia formal ou balanço auditado, o modelo de risco não tem onde olhar. Você não é recusada por ser má pagadora — é recusada por não existir para o modelo.",
+  },
+  {
+    icon: TrendingDown,
+    title: "E o negócio fica preso no tamanho de hoje",
+    desc: "Sem capital de giro não dá para comprar estoque, contratar nem atravessar um mês ruim. O negócio não para porque falhou: para porque faltou combustível para crescer.",
   },
 ];
 
 const ProblemSection = () => (
   <section id="problema" className="section-padding gradient-subtle">
     <div className="container mx-auto space-y-12">
-      <div className="text-center space-y-4">
-        <p className="text-sm font-medium text-accent uppercase tracking-widest">O Problema</p>
-        <h2 className="section-title">
-          Duas falhas de mercado,{" "}
-          <span className="text-gradient">uma só infraestrutura para resolver</span>
-        </h2>
-        <p className="section-subtitle">
-          Um lado não consegue provar que merece crédito. O outro não consegue provar onde o capital gera impacto.
-        </p>
-      </div>
+      <SectionHeading
+        eyebrow="O problema"
+        title="O problema nunca foi o seu negócio."
+        accent="Foi o que o banco consegue enxergar."
+        subtitle="Não é falta de capacidade nem de disciplina. É uma falha de infraestrutura de dados — e ela se repete todo dia."
+      />
 
       <div className="space-y-4">
-        <div className="grid sm:grid-cols-3 gap-6">
+        <div className="grid gap-6 sm:grid-cols-3">
           {stats.map(({ value, label }) => (
-            <div key={label} className="glass rounded-xl p-8 glow-border text-center">
-              <p className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
+            <div key={label} className="rounded-xl p-8 text-center glass glow-border">
+              <p className="mb-2 font-heading text-4xl font-bold text-gradient md:text-5xl">
+                {value}
+              </p>
               <p className="text-sm text-muted-foreground">{label}</p>
             </div>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground text-center">Fonte: Sebrae e Banco Central, 2024.</p>
+        <p className="text-center text-xs text-muted-foreground">
+          Fonte: Sebrae e Banco Central, 2024.
+        </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid gap-6 md:grid-cols-3">
         {failures.map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="glass rounded-2xl p-8 glow-border text-left">
-            <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4">
+          <div key={title} className="rounded-2xl p-8 text-left glass glow-border">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
               <Icon className="text-primary-foreground" size={24} />
             </div>
-            <h3 className="text-xl font-heading font-bold text-foreground mb-2">{title}</h3>
-            <p className="text-muted-foreground leading-relaxed">{desc}</p>
+            <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{title}</h3>
+            <p className="leading-relaxed text-muted-foreground">{desc}</p>
           </div>
         ))}
       </div>

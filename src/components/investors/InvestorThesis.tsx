@@ -1,6 +1,6 @@
 import { ArrowRight, Brain, Globe2, Target } from "lucide-react";
 import { Link } from "react-router-dom";
-import CapitalFlow from "@/components/en/CapitalFlow";
+import CapitalFlow from "@/components/CapitalFlow";
 
 const pillars = [
   {

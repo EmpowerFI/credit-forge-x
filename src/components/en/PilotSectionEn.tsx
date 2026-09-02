@@ -1,7 +1,7 @@
 import { ArrowRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import SectionHeading from "./SectionHeading";
+import SectionHeading from "@/components/SectionHeading";
 
 const tests = [
   "Small-ticket productive credit",

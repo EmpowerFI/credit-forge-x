@@ -1,6 +1,6 @@
 import { Building2, Layers, Store } from "lucide-react";
-import CapitalFlow from "./CapitalFlow";
-import SectionHeading from "./SectionHeading";
+import CapitalFlow from "@/components/CapitalFlow";
+import SectionHeading from "@/components/SectionHeading";
 
 const participants = [
   {

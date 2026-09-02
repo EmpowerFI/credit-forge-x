@@ -1,5 +1,5 @@
 import { Banknote, Brain, Building2, LineChart } from "lucide-react";
-import SectionHeading from "./SectionHeading";
+import SectionHeading from "@/components/SectionHeading";
 
 const lines = [
   {

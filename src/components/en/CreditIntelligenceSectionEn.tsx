@@ -1,4 +1,4 @@
-import SectionHeading from "./SectionHeading";
+import SectionHeading from "@/components/SectionHeading";
 
 const signals = [
   { title: "Business activity", desc: "What the business sells, and how steadily." },

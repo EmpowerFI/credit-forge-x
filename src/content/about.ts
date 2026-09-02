@@ -136,7 +136,7 @@ export interface AboutContent {
 
 export const aboutPt: AboutContent = {
   meta: {
-    title: "Sobre a EmpowerFI — Infraestrutura financeira para mulheres empreendedoras",
+    title: "Sobre a EmpowerFI — Crédito produtivo para pequenos negócios",
     description:
       "Conheça a EmpowerFI: nossa missão, nossa história, o problema que resolvemos e a empresa por trás da plataforma. Fundada por Daniele Rodrigues dos Santos em São Paulo, Brasil.",
   },
@@ -153,10 +153,10 @@ export const aboutPt: AboutContent = {
   },
   hero: {
     badge: "Sobre a empresa",
-    titleLead: "Construindo infraestrutura financeira para ",
-    titleAccent: "mulheres empreendedoras",
+    titleLead: "Construindo infraestrutura de crédito para ",
+    titleAccent: "quem o sistema não enxerga",
     subtitle:
-      "A EmpowerFI nasceu para tornar mulheres empreendedoras mais visíveis, gerar novas oportunidades de negócio e construir acesso a serviços financeiros mais justos.",
+      "A EmpowerFI conecta capital global a pequenos negócios sub-atendidos — começando por mulheres empreendedoras no Brasil.",
     primaryCta: "Falar com a gente",
     secondaryCta: "Ver o aplicativo",
   },
@@ -171,7 +171,7 @@ export const aboutPt: AboutContent = {
       "A partir dessa base, cada camada reforça a seguinte: ferramentas de gestão organizam o negócio, o score alternativo traduz o comportamento em confiança mensurável, e o crédito passa a ser consequência de um histórico real — não de uma garantia que ela nunca teve como oferecer.",
     ],
     pullQuote:
-      "O Marketplace é apenas o primeiro passo de uma visão muito maior: criar infraestrutura financeira para milhões de mulheres empreendedoras.",
+      "O app é apenas o primeiro passo de uma visão muito maior: infraestrutura de crédito que transforma liquidez global em capital produtivo para milhões de pequenos negócios.",
   },
   problem: {
     eyebrow: "O problema",
@@ -242,20 +242,20 @@ export const aboutPt: AboutContent = {
       },
       {
         icon: Layers,
-        title: "Infraestrutura financeira",
+        title: "Infraestrutura de crédito",
         status: "Visão de longo prazo",
-        desc: "A base que sustenta tudo isso vira plataforma: score, originação e capital disponíveis para escalar o acesso a serviços financeiros justos para milhões de empreendedoras.",
+        desc: "A base que sustenta tudo isso vira infraestrutura: inteligência de crédito, originação, servicing e medição de impacto — com capital global chegando ao negócio por um trilho que torna viável o empréstimo pequeno.",
       },
     ],
   },
   missionVision: {
     mission: {
       eyebrow: "Missão",
-      text: "Capacitar mulheres empreendedoras através de tecnologia, geração de renda e inclusão financeira.",
+      text: "Transformar liquidez global em capital produtivo para os pequenos negócios que o sistema financeiro nunca foi construído para alcançar.",
     },
     vision: {
       eyebrow: "Visão",
-      text: "Construir a principal infraestrutura financeira para mulheres empreendedoras na América Latina.",
+      text: "Ser a infraestrutura de crédito que conecta capital global a microempreendedores em mercados emergentes — começando pelo Brasil.",
     },
   },
   values: {
@@ -396,7 +396,7 @@ export const aboutPt: AboutContent = {
     },
   },
   footer: {
-    tagline: "Infraestrutura financeira para mulheres empreendedoras — começando pelo Brasil.",
+    tagline: "Crédito produtivo para pequenos negócios — começando por mulheres empreendedoras no Brasil.",
     developedBy: "Produto desenvolvido por",
     cnpjLabel: "CNPJ",
     privacy: "Política de Privacidade",

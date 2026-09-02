@@ -1,5 +1,5 @@
 import { FileCheck2, Gauge, Globe2, Wallet } from "lucide-react";
-import SectionHeading from "./SectionHeading";
+import SectionHeading from "@/components/SectionHeading";
 
 const properties = [
   {
