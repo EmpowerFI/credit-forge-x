@@ -1,16 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import CapitalFlow from "@/components/CapitalFlow";
-
-// The whole thesis in four nodes, so the first screen already answers what
-// EmpowerFI does and who ends up holding the capital.
-const heroFlow = [
-  { label: "Global capital", sub: "USDC", emphasis: true },
-  { label: "Solana", sub: "Settlement layer" },
-  { label: "EmpowerFI", sub: "Credit infrastructure", emphasis: true },
-  { label: "Microbusiness", sub: "Pix / local currency" },
-];
+import CapitalStack from "./CapitalStack";
 
 const HeroSectionEn = () => (
   <section className="relative flex min-h-screen items-center overflow-hidden gradient-subtle">
@@ -67,11 +58,7 @@ const HeroSectionEn = () => (
 
         {/* Secondary to the headline on a phone, so it comes after the copy. */}
         <div className="opacity-0 animate-fade-in-delay-3">
-          <CapitalFlow
-            vertical
-            steps={heroFlow}
-            caption="Global capital held as USDC settles on Solana, passes through EmpowerFI's credit infrastructure and reaches a microbusiness as local currency over Pix."
-          />
+          <CapitalStack />
         </div>
       </div>
     </div>

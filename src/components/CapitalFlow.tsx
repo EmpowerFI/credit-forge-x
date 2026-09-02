@@ -17,11 +17,6 @@ interface CapitalFlowProps {
   loopLabel?: string;
   /** Accessible description of what the chain shows, for screen readers. */
   caption: string;
-  /**
-   * Stay stacked at every breakpoint. For a short chain in a narrow column —
-   * the hero's side panel — rather than a full-width section.
-   */
-  vertical?: boolean;
 }
 
 /**
@@ -32,30 +27,20 @@ interface CapitalFlowProps {
  * Each item pairs its *incoming* arrow with its node so the two wrap together:
  * a row can then never end on an arrow pointing at nothing.
  */
-const CapitalFlow = ({ steps, loopLabel, caption, vertical = false }: CapitalFlowProps) => (
-  <figure className={vertical ? "space-y-3" : "space-y-4"}>
-    <ol
-      className={
-        vertical
-          ? "flex flex-col items-stretch gap-2"
-          : "flex flex-col items-stretch justify-center gap-2 md:flex-row md:flex-wrap md:items-center md:gap-3"
-      }
-    >
+const CapitalFlow = ({ steps, loopLabel, caption }: CapitalFlowProps) => (
+  <figure className="space-y-4">
+    <ol className="flex flex-col items-stretch justify-center gap-2 md:flex-row md:flex-wrap md:items-center md:gap-3">
       {/* Keyed by position: a cycle legitimately repeats a label (USDC out,
           USDC back), and these lists are static. */}
       {steps.map(({ label, sub, emphasis }, i) => (
         <li
           key={`${i}-${label}`}
-          className={
-            vertical
-              ? "flex flex-col items-stretch gap-2"
-              : "flex flex-col items-stretch gap-2 md:flex-row md:items-center md:gap-3"
-          }
+          className="flex flex-col items-stretch gap-2 md:flex-row md:items-center md:gap-3"
         >
           {i > 0 && (
             <span aria-hidden className="flex items-center justify-center text-accent">
-              <ArrowDown size={18} className={vertical ? "" : "md:hidden"} />
-              {!vertical && <ArrowRight size={18} className="hidden md:block" />}
+              <ArrowDown size={18} className="md:hidden" />
+              <ArrowRight size={18} className="hidden md:block" />
             </span>
           )}
 
