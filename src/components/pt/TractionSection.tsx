@@ -1,8 +1,22 @@
 import { Award, Building2, ExternalLink, Smartphone } from "lucide-react";
 import { PLAY_STORE_URL } from "@/config/links";
 import SectionHeading from "@/components/SectionHeading";
+import SupportLogo from "@/components/SupportLogo";
 
-const items = [
+interface TractionLogo {
+  src: string;
+  alt: string;
+  label: string;
+}
+
+const items: {
+  icon: typeof Smartphone;
+  title: string;
+  desc: string;
+  href?: string;
+  linkLabel?: string;
+  logo?: TractionLogo;
+}[] = [
   {
     icon: Smartphone,
     title: "O app está no ar",
@@ -14,6 +28,7 @@ const items = [
     icon: Award,
     title: "Construído e refinado com o Sebrae",
     desc: "Tese validada em campo junto ao Sebrae, uma das principais referências de inovação do país. A EmpowerFI concluiu o Ginga Prototipa, que resultou no protótipo em funcionamento, e está agora no PIER — programa do Sebrae para refinar o modelo de negócios com consultoria especializada.",
+    logo: { src: "/sebrae.svg", alt: "Sebrae", label: "Apoio institucional" },
   },
   {
     icon: Building2,
@@ -33,7 +48,7 @@ const TractionSection = () => (
       />
 
       <div className="grid gap-6 md:grid-cols-3">
-        {items.map(({ icon: Icon, title, desc, href, linkLabel }) => (
+        {items.map(({ icon: Icon, title, desc, href, linkLabel, logo }) => (
           <div key={title} className="flex flex-col rounded-2xl p-8 glass glow-border">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
               <Icon className="text-primary-foreground" size={24} />
@@ -50,6 +65,7 @@ const TractionSection = () => (
                 {linkLabel} <ExternalLink size={14} />
               </a>
             )}
+            {logo && <SupportLogo {...logo} />}
           </div>
         ))}
       </div>

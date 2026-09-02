@@ -1,8 +1,22 @@
 import { Award, Building2, ExternalLink, Smartphone } from "lucide-react";
 import { PLAY_STORE_URL } from "@/config/links";
 import SectionHeading from "@/components/SectionHeading";
+import SupportLogo from "@/components/SupportLogo";
 
-const items = [
+interface TractionLogo {
+  src: string;
+  alt: string;
+  label: string;
+}
+
+const items: {
+  icon: typeof Smartphone;
+  title: string;
+  desc: string;
+  href?: string;
+  linkLabel?: string;
+  logo?: TractionLogo;
+}[] = [
   {
     icon: Smartphone,
     title: "The app is live in Brazil",
@@ -14,6 +28,7 @@ const items = [
     icon: Award,
     title: "Built and refined with Sebrae",
     desc: "Thesis validated in the field with Sebrae, one of Brazil's leading innovation references. EmpowerFI completed Ginga Prototipa, which produced the working prototype, and is now in PIER — a Sebrae programme for refining the business model with specialist consulting.",
+    logo: { src: "/sebrae.svg", alt: "Sebrae", label: "Institutional support" },
   },
   {
     icon: Building2,
@@ -33,7 +48,7 @@ const TractionSectionEn = () => (
       />
 
       <div className="grid gap-6 md:grid-cols-3">
-        {items.map(({ icon: Icon, title, desc, href, linkLabel }) => (
+        {items.map(({ icon: Icon, title, desc, href, linkLabel, logo }) => (
           <div key={title} className="flex flex-col rounded-2xl p-8 glass glow-border">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
               <Icon className="text-primary-foreground" size={24} />
@@ -50,6 +65,7 @@ const TractionSectionEn = () => (
                 {linkLabel} <ExternalLink size={14} />
               </a>
             )}
+            {logo && <SupportLogo {...logo} />}
           </div>
         ))}
       </div>
