@@ -20,7 +20,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
-import { PLAY_STORE_URL } from "@/config/links";
+import { PLAY_STORE_URL, SEBRAE_LOGO_SRC } from "@/config/links";
 
 // Content for the institutional /about (EN) and /pt/sobre (PT) routes.
 //
@@ -333,7 +333,7 @@ export const aboutPt: AboutContent = {
         icon: BarChart3,
         title: "Programas do Sebrae: Ginga Prototipa e PIER",
         desc: "Tese validada em campo junto ao Sebrae. O Ginga Prototipa foi concluído com a construção do protótipo, e a empresa segue agora no PIER, refinando o modelo de negócios com consultoria especializada.",
-        logo: { src: "/sebrae.svg", alt: "Sebrae", label: "Apoio institucional" },
+        logo: { src: SEBRAE_LOGO_SRC, alt: "Sebrae", label: "Apoio institucional" },
       },
       {
         icon: Building2,
@@ -607,7 +607,7 @@ export const aboutEn: AboutContent = {
         icon: BarChart3,
         title: "Sebrae programmes: Ginga Prototipa and PIER",
         desc: "Thesis validated in the field with Sebrae. Ginga Prototipa concluded with the prototype built, and the company is now in PIER, refining the business model with specialist consulting.",
-        logo: { src: "/sebrae.svg", alt: "Sebrae", label: "Institutional support" },
+        logo: { src: SEBRAE_LOGO_SRC, alt: "Sebrae", label: "Institutional support" },
       },
       {
         icon: Building2,

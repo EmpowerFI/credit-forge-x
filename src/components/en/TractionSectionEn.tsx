@@ -1,5 +1,5 @@
 import { Award, Building2, ExternalLink, Smartphone } from "lucide-react";
-import { PLAY_STORE_URL } from "@/config/links";
+import { PLAY_STORE_URL, SEBRAE_LOGO_SRC } from "@/config/links";
 import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
 
@@ -28,7 +28,7 @@ const items: {
     icon: Award,
     title: "Built and refined with Sebrae",
     desc: "Thesis validated in the field with Sebrae, one of Brazil's leading innovation references. EmpowerFI completed Ginga Prototipa, which produced the working prototype, and is now in PIER — a Sebrae programme for refining the business model with specialist consulting.",
-    logo: { src: "/sebrae.svg", alt: "Sebrae", label: "Institutional support" },
+    logo: { src: SEBRAE_LOGO_SRC, alt: "Sebrae", label: "Institutional support" },
   },
   {
     icon: Building2,

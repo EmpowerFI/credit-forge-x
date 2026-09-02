@@ -1,5 +1,5 @@
 import { Award, Building2, ExternalLink, Smartphone } from "lucide-react";
-import { PLAY_STORE_URL } from "@/config/links";
+import { PLAY_STORE_URL, SEBRAE_LOGO_SRC } from "@/config/links";
 import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
 
@@ -28,7 +28,7 @@ const items: {
     icon: Award,
     title: "Construído e refinado com o Sebrae",
     desc: "Tese validada em campo junto ao Sebrae, uma das principais referências de inovação do país. A EmpowerFI concluiu o Ginga Prototipa, que resultou no protótipo em funcionamento, e está agora no PIER — programa do Sebrae para refinar o modelo de negócios com consultoria especializada.",
-    logo: { src: "/sebrae.svg", alt: "Sebrae", label: "Apoio institucional" },
+    logo: { src: SEBRAE_LOGO_SRC, alt: "Sebrae", label: "Apoio institucional" },
   },
   {
     icon: Building2,
