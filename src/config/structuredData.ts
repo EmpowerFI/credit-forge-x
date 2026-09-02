@@ -32,7 +32,7 @@ export const organizationSchema = (): Record<string, unknown> => ({
   logo: `${SITE_URL}/favicon.png`,
   foundingDate: COMPANY_FOUNDING_YEAR,
   description:
-    "EmpowerFI builds financial infrastructure for women entrepreneurs — a marketplace that generates income and data, turns that history into an alternative credit score, and opens access to fair credit.",
+    "EmpowerFI builds credit infrastructure that connects global capital with underserved microbusinesses in emerging markets, starting with women entrepreneurs in Brazil. Stablecoin settlement makes small-ticket productive credit economically viable, and alternative credit intelligence makes it underwritable.",
   address: {
     "@type": "PostalAddress",
     addressLocality: COMPANY_CITY,

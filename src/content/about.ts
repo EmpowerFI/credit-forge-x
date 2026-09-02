@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { PLAY_STORE_URL } from "@/config/links";
 
-// Content for the institutional /about (PT) and /en/about (EN) routes.
+// Content for the institutional /about (EN) and /pt/sobre (PT) routes.
 //
 // The rest of this codebase duplicates each section into Section.tsx +
 // SectionEn.tsx. That pattern costs ~20 near-identical files for the ten
@@ -409,9 +409,9 @@ export const aboutPt: AboutContent = {
 
 export const aboutEn: AboutContent = {
   meta: {
-    title: "About EmpowerFI — Financial infrastructure for women entrepreneurs",
+    title: "About EmpowerFI — Credit infrastructure for underserved entrepreneurs",
     description:
-      "Meet EmpowerFI: our mission, our story, the problem we solve and the company behind the platform. Founded by Daniele Rodrigues dos Santos in São Paulo, Brazil.",
+      "Meet EmpowerFI: our mission, our story, the problem we solve and the company behind the credit infrastructure connecting global capital to microbusinesses. Founded by Daniele Rodrigues dos Santos in São Paulo, Brazil.",
   },
   nav: {
     links: [
@@ -426,10 +426,10 @@ export const aboutEn: AboutContent = {
   },
   hero: {
     badge: "About the company",
-    titleLead: "Building financial infrastructure for ",
-    titleAccent: "women entrepreneurs",
+    titleLead: "Building credit infrastructure for ",
+    titleAccent: "the next generation of entrepreneurs",
     subtitle:
-      "EmpowerFI was created to make women entrepreneurs more visible, generate new business opportunities and build access to fairer financial services.",
+      "EmpowerFI connects global capital with underserved microbusinesses in emerging markets — starting with women entrepreneurs in Brazil.",
     primaryCta: "Get in touch",
     secondaryCta: "See the app",
   },
@@ -444,7 +444,7 @@ export const aboutEn: AboutContent = {
       "From that base, each layer reinforces the next: management tools organise the business, the alternative score turns behaviour into measurable trust, and credit becomes the consequence of a real track record — not of collateral she never had to offer.",
     ],
     pullQuote:
-      "The Marketplace is only the first step of a much larger vision: building financial infrastructure for millions of women entrepreneurs.",
+      "The app is only the first step of a much larger vision: credit infrastructure that turns global liquidity into productive capital for millions of small businesses.",
   },
   problem: {
     eyebrow: "The problem",
@@ -515,20 +515,20 @@ export const aboutEn: AboutContent = {
       },
       {
         icon: Layers,
-        title: "Financial infrastructure",
+        title: "Credit infrastructure",
         status: "Long-term vision",
-        desc: "The base underneath it all becomes a platform: score, origination and capital available to scale access to fair financial services for millions of entrepreneurs.",
+        desc: "The base underneath it all becomes infrastructure: credit intelligence, origination, servicing and impact measurement — with global capital reaching the business over a stablecoin rail that makes small tickets viable.",
       },
     ],
   },
   missionVision: {
     mission: {
       eyebrow: "Mission",
-      text: "To empower women entrepreneurs through technology, income generation and financial inclusion.",
+      text: "To turn global liquidity into productive capital for the small businesses the financial system was never built to reach.",
     },
     vision: {
       eyebrow: "Vision",
-      text: "To build the leading financial infrastructure for women entrepreneurs in Latin America.",
+      text: "To become the credit infrastructure connecting global capital to microbusinesses across emerging markets — starting in Brazil.",
     },
   },
   values: {
@@ -669,7 +669,7 @@ export const aboutEn: AboutContent = {
     },
   },
   footer: {
-    tagline: "Financial infrastructure for women entrepreneurs — starting in Brazil.",
+    tagline: "Credit infrastructure for the next generation of entrepreneurs — starting in Brazil.",
     developedBy: "Product developed by",
     cnpjLabel: "Company tax ID (CNPJ)",
     privacy: "Privacy Policy",

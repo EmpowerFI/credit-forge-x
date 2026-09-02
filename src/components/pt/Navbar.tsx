@@ -15,7 +15,7 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <a href="#" className="text-xl font-bold font-heading text-gradient">EmpowerFI</a>
+        <Link to="/pt" className="text-xl font-bold font-heading text-gradient">EmpowerFI</Link>
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((l) => (
@@ -24,10 +24,10 @@ const Navbar = () => {
             </a>
           ))}
           {/* A route, not an anchor: the other links jump within this page. */}
-          <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <Link to="/pt/sobre" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Sobre
           </Link>
-          <Link to="/en" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5">
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5">
             <Languages size={14} /> EN
           </Link>
         </div>
@@ -45,11 +45,11 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
-          <Link to="/about" onClick={() => setOpen(false)}
+          <Link to="/pt/sobre" onClick={() => setOpen(false)}
             className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
             Sobre
           </Link>
-          <Link to="/en" onClick={() => setOpen(false)}
+          <Link to="/" onClick={() => setOpen(false)}
             className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
             English
           </Link>

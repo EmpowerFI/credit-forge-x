@@ -1,58 +1,54 @@
-import { Scale, Eye } from "lucide-react";
+import { Coins, Receipt, Unplug } from "lucide-react";
+import CapitalFlow from "./CapitalFlow";
+import SectionHeading from "./SectionHeading";
 
-const stats = [
-  { value: "29%", label: "of business credit goes to women — who run ~40% of operations" },
-  { value: "68%", label: "of women entrepreneurs have credit requests denied or only partially met" },
-  { value: "7.1%", label: "default rate among women, against 7.6% among men — they pay better and still pay higher interest" },
+const frictions = [
+  {
+    icon: Receipt,
+    title: "Small tickets carry big fixed costs",
+    desc: "Traditional credit infrastructure was not designed for loans of $50, $100 or $200. Originating, monitoring and servicing a small ticket costs almost the same as a large one — which is what makes the economics fail, not the borrower.",
+  },
+  {
+    icon: Coins,
+    title: "The capital exists. The route does not.",
+    desc: "Global capital looking for financial return and measurable impact stays disconnected from these businesses. There is no efficient path from a pool of liquidity to a business that needs $200 to buy inventory next week.",
+  },
+  {
+    icon: Unplug,
+    title: "So the business stays at survival scale",
+    desc: "Millions of microentrepreneurs in emerging markets need small amounts of capital for inventory, equipment or working capital. Without it, a business that works never gets the fuel to grow.",
+  },
 ];
 
-const failures = [
-  {
-    icon: Scale,
-    title: "Credit ignores who keeps the economy running",
-    desc: "Women run about 40% of operations but receive only ~29% of business credit — and although they default less than men, they pay higher interest. With no formal banking history, they stay invisible to risk models.",
-  },
-  {
-    icon: Eye,
-    title: "Impact capital can't see where it lands",
-    desc: "Impact funds have no verifiable, real-time proof of where money actually goes. Measurement is annual, self-reported and hard to audit — which stalls serious capital allocation.",
-  },
+const flow = [
+  { label: "Global capital", sub: "Looking for return and impact", emphasis: true },
+  { label: "Financial friction", sub: "Cost, distance, infrastructure" },
+  { label: "Small businesses", sub: "Need $50–$200 to grow", emphasis: true },
 ];
 
 const ProblemSectionEn = () => (
   <section id="problem" className="section-padding gradient-subtle">
     <div className="container mx-auto space-y-12">
-      <div className="text-center space-y-4">
-        <p className="text-sm font-medium text-accent uppercase tracking-widest">The Problem</p>
-        <h2 className="section-title">
-          Two market failures,{" "}
-          <span className="text-gradient">one infrastructure to fix them</span>
-        </h2>
-        <p className="section-subtitle">
-          One side can't prove it deserves credit. The other can't prove where its capital creates impact.
-        </p>
-      </div>
+      <SectionHeading
+        eyebrow="The problem"
+        title="Small businesses don't lack potential."
+        accent="They lack access to capital."
+        subtitle="The gap is not a shortage of money. It is the missing infrastructure between capital and the businesses that can put it to work."
+      />
 
-      <div className="space-y-4">
-        <div className="grid sm:grid-cols-3 gap-6">
-          {stats.map(({ value, label }) => (
-            <div key={label} className="glass rounded-xl p-8 glow-border text-center">
-              <p className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
-              <p className="text-sm text-muted-foreground">{label}</p>
-            </div>
-          ))}
-        </div>
-        <p className="text-xs text-muted-foreground text-center">Source: Sebrae and Banco Central (Brazil's central bank), 2024.</p>
-      </div>
+      <CapitalFlow
+        steps={flow}
+        caption="Global capital is separated from small businesses by financial friction."
+      />
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {failures.map(({ icon: Icon, title, desc }) => (
-          <div key={title} className="glass rounded-2xl p-8 glow-border text-left">
-            <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4">
+      <div className="grid gap-6 md:grid-cols-3">
+        {frictions.map(({ icon: Icon, title, desc }) => (
+          <div key={title} className="glass rounded-2xl p-8 text-left glow-border">
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
               <Icon className="text-primary-foreground" size={24} />
             </div>
-            <h3 className="text-xl font-heading font-bold text-foreground mb-2">{title}</h3>
-            <p className="text-muted-foreground leading-relaxed">{desc}</p>
+            <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{title}</h3>
+            <p className="leading-relaxed text-muted-foreground">{desc}</p>
           </div>
         ))}
       </div>

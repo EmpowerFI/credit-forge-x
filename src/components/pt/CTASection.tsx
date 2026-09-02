@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { Send, Mail, Landmark, ShieldCheck, Globe2, Lock } from "lucide-react";
+import { ArrowRight, Brain, Globe2, Mail, Send, Target } from "lucide-react";
+import { Link } from "react-router-dom";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { INVESTOR_EMAIL } from "@/config/links";
-import { z } from "zod";
+import { CONTACT_EMAIL } from "@/config/links";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Informe seu nome").max(100, "Máximo de 100 caracteres"),
@@ -17,19 +18,19 @@ const contactSchema = z.object({
 
 const pillars = [
   {
-    icon: Landmark,
-    title: "Retorno protegido por colateral em Tesouro",
-    desc: "O rendimento vem do crédito originado. O principal é protegido em duas camadas: colateral em títulos do Tesouro brasileiro e uma camada de primeira perda que a EmpowerFI assume antes de tocar o capital do investidor.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Impacto verificável on-chain",
-    desc: "Cada alocação e cada resultado registrados na blockchain — prova de impacto contínua e auditável, não relatório anual.",
-  },
-  {
     icon: Globe2,
-    title: "Infraestrutura global, rollout em fases",
-    desc: "Construída como infraestrutura financeira global em blockchain, com lançamento em fases começando pelo Brasil.",
+    title: "Infraestrutura de crédito produtivo",
+    desc: "Capital global chega ao pequeno negócio em moeda local. Stablecoins e a Solana são o trilho que torna viável um empréstimo de US$ 50 a US$ 200 atravessar fronteiras.",
+  },
+  {
+    icon: Brain,
+    title: "Inteligência de crédito alternativa",
+    desc: "Sinais de atividade e gestão do negócio constroem uma visão de capacidade de pagamento para quem tem pouco histórico no sistema financeiro tradicional.",
+  },
+  {
+    icon: Target,
+    title: "Resultado econômico mensurável",
+    desc: "Acompanhamos o que aconteceu depois do desembolso: negócios financiados, pagamento, evolução do faturamento, negócios ainda ativos.",
   },
 ];
 
@@ -70,16 +71,13 @@ const CTASection = () => {
         },
       });
 
-      toast({
-        title: "Mensagem enviada!",
-        description: "Vamos te responder em breve.",
-      });
+      toast({ title: "Mensagem enviada!", description: "Respondemos em breve." });
       setForm({ name: "", email: "", message: "" });
     } catch (err) {
-      console.error("Erro ao enviar pergunta", err);
+      console.error("Erro ao enviar mensagem", err);
       toast({
         title: "Não foi possível enviar",
-        description: "Tente novamente em alguns instantes.",
+        description: "Tente novamente em instantes.",
         variant: "destructive",
       });
     } finally {
@@ -90,41 +88,64 @@ const CTASection = () => {
   return (
     <section id="investidores" className="section-padding gradient-subtle">
       <div className="container mx-auto space-y-12">
-        <div className="text-center space-y-4">
-          <p className="text-sm font-medium text-accent uppercase tracking-widest">Para investidores</p>
+        <div className="space-y-4 text-center">
+          <p className="text-sm font-medium uppercase tracking-widest text-accent">
+            Investidores e parceiros
+          </p>
           <h2 className="section-title">
-            Um fundo de impacto Web3 com{" "}
-            <span className="text-gradient">retorno estável e impacto auditável</span>
+            Infraestrutura que transforma liquidez global em{" "}
+            <span className="text-gradient">capital produtivo</span>
           </h2>
           <p className="section-subtitle">
-            Retorno protegido em duas camadas de um lado; prova de impacto verificável on-chain do outro.
+            A EmpowerFI conecta capital global a pequenos negócios sub-atendidos — começando
+            por mulheres empreendedoras no Brasil.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid gap-6 md:grid-cols-3">
           {pillars.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="glass rounded-2xl p-8 glow-border text-left">
-              <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4">
+            <div key={title} className="rounded-2xl p-8 text-left glass glow-border">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
                 <Icon className="text-primary-foreground" size={24} />
               </div>
-              <h3 className="text-lg font-heading font-bold text-foreground mb-2">{title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{desc}</p>
+              <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{title}</h3>
+              <p className="leading-relaxed text-muted-foreground">{desc}</p>
             </div>
           ))}
         </div>
 
-        <div className="glass rounded-2xl p-10 md:p-16 glow-border shadow-glow max-w-3xl mx-auto space-y-8">
-          <div className="text-center space-y-4">
+        <div className="flex flex-col items-center gap-3">
+          {/* The investor material and the waitlist are maintained in English,
+              for the international audience they are written for. */}
+          <Button
+            asChild
+            size="lg"
+            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Link to="/investors">
+              Página para investidores (em inglês) <ArrowRight size={18} />
+            </Link>
+          </Button>
+          <p className="max-w-xl text-center text-xs text-muted-foreground">
+            A lista de espera representa apenas interesse não vinculante. A EmpowerFI não
+            está ofertando valores mobiliários ou produtos de investimento, nem captando
+            recursos de investidores por este site.
+          </p>
+        </div>
+
+        <div className="mx-auto max-w-3xl space-y-8 rounded-2xl p-10 glass glow-border shadow-glow md:p-16">
+          <div className="space-y-4 text-center">
             <h3 className="section-title !text-2xl md:!text-3xl">
-              Solicite o <span className="text-gradient">deck</span>.
+              Fale com a <span className="text-gradient">EmpowerFI</span>.
             </h3>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Investidores e parceiros estratégicos: envie uma mensagem para receber o material completo.
+            <p className="mx-auto max-w-xl text-muted-foreground">
+              Imprensa, parcerias, comunidades de empreendedorismo ou dúvidas sobre o
+              produto: escreva para a gente. Respondemos todas as mensagens.
             </p>
           </div>
 
           <form onSubmit={handleQuestion} className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="contact-name">Nome</Label>
                 <Input
@@ -158,30 +179,26 @@ const CTASection = () => {
                 maxLength={2000}
                 value={form.message}
                 onChange={(e) => setForm({ ...form, message: e.target.value })}
-                placeholder="Conte sobre seu interesse — investimento, parceria estratégica ou capital de impacto."
+                placeholder="Conte sobre seu interesse — parceria, comunidade de empreendedoras ou o produto."
               />
             </div>
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-3 pt-2">
+            <div className="flex flex-col items-center justify-center gap-3 pt-2 sm:flex-row">
               <Button
                 type="submit"
                 size="lg"
                 disabled={sending}
-                className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                {sending ? "Enviando..." : (<>Solicitar o deck <Send size={16} /></>)}
+                {sending ? "Enviando..." : (<>Enviar mensagem <Send size={16} /></>)}
               </Button>
               <a
-                href={`mailto:${INVESTOR_EMAIL}?subject=Interesse%20EmpowerFI`}
-                className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                href={`mailto:${CONTACT_EMAIL}?subject=Contato%20EmpowerFI`}
+                className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
-                <Mail size={16} /> ou escreva para {INVESTOR_EMAIL}
+                <Mail size={16} /> ou escreva para {CONTACT_EMAIL}
               </a>
             </div>
           </form>
-
-          <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground text-center">
-            <Lock size={12} /> Projeções e termos financeiros detalhados são compartilhados sob NDA.
-          </p>
         </div>
       </div>
     </section>

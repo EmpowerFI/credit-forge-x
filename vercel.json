@@ -3,6 +3,12 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/en", "destination": "/", "permanent": true },
+    { "source": "/en/about", "destination": "/about", "permanent": true },
+    { "source": "/en/privacy", "destination": "/privacy", "permanent": true },
+    { "source": "/en/terms", "destination": "/terms", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

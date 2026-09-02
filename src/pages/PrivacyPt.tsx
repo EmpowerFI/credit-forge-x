@@ -1,5 +1,5 @@
 import LegalPage from "@/components/legal/LegalPage";
-import { privacyEn } from "@/content/legal";
+import { privacyPt } from "@/content/legal";
 
 const alternates = [
   { hreflang: "en", path: "/privacy" },
@@ -7,8 +7,8 @@ const alternates = [
   { hreflang: "x-default", path: "/privacy" },
 ];
 
-const Privacy = () => (
-  <LegalPage doc={privacyEn} lang="en" path="/privacy" alternates={alternates} />
+const PrivacyPt = () => (
+  <LegalPage doc={privacyPt} lang="pt-BR" path="/privacidade" alternates={alternates} />
 );
 
-export default Privacy;
+export default PrivacyPt;

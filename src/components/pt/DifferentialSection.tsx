@@ -3,7 +3,7 @@ import { Network, Gauge, ShieldCheck } from "lucide-react";
 const intersection = [
   "Marketplace de MEIs",
   "Score alternativo invisível",
-  "Capital RWA on-chain",
+  "Capital produtivo on-chain",
   "IA contextual",
   "Jornada evolutiva",
 ];

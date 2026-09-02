@@ -22,8 +22,8 @@ interface InstitutionalFooterProps {
  */
 const InstitutionalFooter = ({ footer, homePath, lang }: InstitutionalFooterProps) => {
   const pt = lang === "pt-BR";
-  const privacyPath = pt ? "/privacidade" : "/en/privacy";
-  const termsPath = pt ? "/termos" : "/en/terms";
+  const privacyPath = pt ? "/privacidade" : "/privacy";
+  const termsPath = pt ? "/termos" : "/terms";
 
   return (
   <footer className="border-t border-border py-14 px-4 gradient-subtle">

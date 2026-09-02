@@ -1,58 +1,95 @@
 import { useState } from "react";
-import { Menu, X, Languages } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Languages, Menu, X } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
+// Anchors are written absolute ("/#impact") so the nav works identically from
+// /investors and the legal routes. ScrollToTop performs the scroll.
 const navLinks = [
-  { label: "The problem", href: "#problem" },
-  { label: "How it works", href: "#how-it-works" },
-  { label: "Difference", href: "#difference" },
-  { label: "Investors", href: "#investors" },
+  { label: "Home", to: "/" },
+  { label: "How It Works", to: "/#how-it-works" },
+  { label: "Impact", to: "/#impact" },
+  { label: "For Entrepreneurs", to: "/#for-entrepreneurs" },
+  { label: "For Partners", to: "/#for-partners" },
+  { label: "Investors", to: "/investors" },
+  { label: "About", to: "/about" },
 ];
 
 const NavbarEn = () => {
   const [open, setOpen] = useState(false);
+  const { pathname } = useLocation();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass">
-      <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <Link to="/en" className="text-xl font-bold font-heading text-gradient">EmpowerFI</Link>
+    <nav className="fixed left-0 right-0 top-0 z-50 glass">
+      <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
+        <Link to="/" className="font-heading text-xl font-bold text-gradient">
+          EmpowerFI
+        </Link>
 
-        <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((l) => (
-            <a key={l.href} href={l.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {l.label}
-            </a>
+        <div className="hidden items-center gap-6 lg:flex">
+          {navLinks.map(({ label, to }) => (
+            <Link
+              key={to}
+              to={to}
+              className={`text-sm transition-colors hover:text-foreground ${
+                pathname === to ? "text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {label}
+            </Link>
           ))}
-          {/* A route, not an anchor: the other links jump within this page. */}
-          <Link to="/en/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            About
-          </Link>
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5">
+          <Link
+            to="/pt"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
             <Languages size={14} /> PT
           </Link>
+          <Button
+            asChild
+            size="sm"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Link to="/investors#waitlist">Investor Waitlist</Link>
+          </Button>
         </div>
 
-        <button className="md:hidden text-foreground" onClick={() => setOpen(!open)}>
+        <button
+          className="text-foreground lg:hidden"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-label="Menu"
+        >
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
       {open && (
-        <div className="md:hidden glass border-t border-border px-4 pb-4">
-          {navLinks.map((l) => (
-            <a key={l.href} href={l.href} onClick={() => setOpen(false)}
-              className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {l.label}
-            </a>
+        <div className="border-t border-border px-4 pb-5 glass lg:hidden">
+          {navLinks.map(({ label, to }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setOpen(false)}
+              className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {label}
+            </Link>
           ))}
-          <Link to="/en/about" onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            About
-          </Link>
-          <Link to="/" onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <Link
+            to="/pt"
+            onClick={() => setOpen(false)}
+            className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
             Português
           </Link>
+          <Button
+            asChild
+            className="mt-3 w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Link to="/investors#waitlist" onClick={() => setOpen(false)}>
+              Investor Waitlist
+            </Link>
+          </Button>
         </div>
       )}
     </nav>

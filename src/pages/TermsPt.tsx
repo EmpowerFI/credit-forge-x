@@ -1,5 +1,5 @@
 import LegalPage from "@/components/legal/LegalPage";
-import { termsEn } from "@/content/legal";
+import { termsPt } from "@/content/legal";
 
 const alternates = [
   { hreflang: "en", path: "/terms" },
@@ -7,6 +7,6 @@ const alternates = [
   { hreflang: "x-default", path: "/terms" },
 ];
 
-const Terms = () => <LegalPage doc={termsEn} lang="en" path="/terms" alternates={alternates} />;
+const TermsPt = () => <LegalPage doc={termsPt} lang="pt-BR" path="/termos" alternates={alternates} />;
 
-export default Terms;
+export default TermsPt;

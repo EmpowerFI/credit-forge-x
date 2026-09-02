@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The site moved English to the root and Portuguese to /pt. A sitemap gives
+  crawlers the new URL set directly instead of waiting for them to rediscover it
+  through the 308s on /en/*.
+-->
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+>
+  <url>
+    <loc>https://empowerfi.io/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://empowerfi.io/" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://empowerfi.io/pt" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://empowerfi.io/" />
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://empowerfi.io/investors</loc>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://empowerfi.io/about</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://empowerfi.io/about" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://empowerfi.io/pt/sobre" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://empowerfi.io/about" />
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://empowerfi.io/pt</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://empowerfi.io/" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://empowerfi.io/pt" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://empowerfi.io/" />
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://empowerfi.io/pt/sobre</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://empowerfi.io/privacy</loc>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://empowerfi.io/terms</loc>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://empowerfi.io/privacidade</loc>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://empowerfi.io/termos</loc>
+    <priority>0.3</priority>
+  </url>
+</urlset>

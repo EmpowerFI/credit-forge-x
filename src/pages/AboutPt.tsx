@@ -12,44 +12,44 @@ import AboutFaq from "@/components/about/AboutFaq";
 import AboutContact from "@/components/about/AboutContact";
 import InstitutionalFooter from "@/components/InstitutionalFooter";
 import founderPhoto from "@/assets/founder-daniele.png";
-import { aboutEn } from "@/content/about";
+import { aboutPt } from "@/content/about";
 import { faqSchema, organizationSchema, softwareApplicationSchema } from "@/config/structuredData";
 
 const jsonLd = [
   organizationSchema(),
   softwareApplicationSchema(),
-  faqSchema(aboutEn.faq.items),
+  faqSchema(aboutPt.faq.items),
 ];
 
 const alternates = [
-  { hreflang: "pt-BR", path: "/about" },
-  { hreflang: "en", path: "/en/about" },
+  { hreflang: "en", path: "/about" },
+  { hreflang: "pt-BR", path: "/pt/sobre" },
   { hreflang: "x-default", path: "/about" },
 ];
 
-const AboutEn = () => (
+const AboutPt = () => (
   <div className="min-h-screen bg-background">
     <Seo
-      title={aboutEn.meta.title}
-      description={aboutEn.meta.description}
-      path="/en/about"
-      lang="en"
+      title={aboutPt.meta.title}
+      description={aboutPt.meta.description}
+      path="/pt/sobre"
+      lang="pt-BR"
       alternates={alternates}
       jsonLd={jsonLd}
     />
-    <AboutNavbar nav={aboutEn.nav} homePath="/en" langSwitchPath="/about" />
-    <AboutHero hero={aboutEn.hero} />
-    <AboutStory story={aboutEn.story} />
-    <AboutProblem problem={aboutEn.problem} />
-    <AboutSolution solution={aboutEn.solution} />
-    <AboutMissionVision missionVision={aboutEn.missionVision} />
-    <AboutValues values={aboutEn.values} />
-    <AboutFounder founder={aboutEn.founder} photoSrc={founderPhoto} />
-    <AboutRecognitions recognitions={aboutEn.recognitions} />
-    <AboutFaq faq={aboutEn.faq} />
-    <AboutContact contact={aboutEn.contact} />
-    <InstitutionalFooter footer={aboutEn.footer} homePath="/en" lang="en" />
+    <AboutNavbar nav={aboutPt.nav} homePath="/pt" langSwitchPath="/about" />
+    <AboutHero hero={aboutPt.hero} />
+    <AboutStory story={aboutPt.story} />
+    <AboutProblem problem={aboutPt.problem} />
+    <AboutSolution solution={aboutPt.solution} />
+    <AboutMissionVision missionVision={aboutPt.missionVision} />
+    <AboutValues values={aboutPt.values} />
+    <AboutFounder founder={aboutPt.founder} photoSrc={founderPhoto} />
+    <AboutRecognitions recognitions={aboutPt.recognitions} />
+    <AboutFaq faq={aboutPt.faq} />
+    <AboutContact contact={aboutPt.contact} />
+    <InstitutionalFooter footer={aboutPt.footer} homePath="/pt" lang="pt-BR" />
   </div>
 );
 
-export default AboutEn;
+export default AboutPt;

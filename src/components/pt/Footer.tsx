@@ -29,10 +29,11 @@ const Footer = () => (
         </div>
 
         <div className="flex flex-wrap justify-center gap-6">
-          <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Sobre</Link>
+          <Link to="/pt/sobre" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Sobre</Link>
           <Link to="/termos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Termos</Link>
           <Link to="/privacidade" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacidade</Link>
           <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contato</a>
+          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">English</Link>
         </div>
       </div>
       <p className="text-xs text-muted-foreground text-center md:text-left">© {new Date().getFullYear()} EmpowerFI. Todos os direitos reservados.</p>
