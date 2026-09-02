@@ -12,8 +12,8 @@ const items = [
   },
   {
     icon: Award,
-    title: "Field validation with Sebrae",
-    desc: "Thesis validated in the field with Sebrae and currently in the Sebrae Ginga Prototipa accelerator — one of Brazil's leading innovation references.",
+    title: "Built and refined with Sebrae",
+    desc: "Thesis validated in the field with Sebrae, one of Brazil's leading innovation references. EmpowerFI completed Ginga Prototipa, which produced the working prototype, and is now in PIER — a Sebrae programme for refining the business model with specialist consulting.",
   },
   {
     icon: Building2,

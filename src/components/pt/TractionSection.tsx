@@ -6,14 +6,14 @@ const items = [
   {
     icon: Smartphone,
     title: "O app está no ar",
-    desc: "Publicado na Google Play e funcionando. Não é maquete nem protótipo: dá para baixar e usar hoje.",
+    desc: "Publicado na Google Play e funcionando. Não é demonstração: dá para baixar e usar hoje.",
     href: PLAY_STORE_URL,
     linkLabel: "Ver na Google Play",
   },
   {
     icon: Award,
-    title: "Validação de campo com o Sebrae",
-    desc: "Tese validada em campo junto ao Sebrae e, atualmente, na aceleradora Sebrae Ginga Prototipa — uma das principais referências de inovação do país.",
+    title: "Construído e refinado com o Sebrae",
+    desc: "Tese validada em campo junto ao Sebrae, uma das principais referências de inovação do país. A EmpowerFI concluiu o Ginga Prototipa, que resultou no protótipo em funcionamento, e está agora no PIER — programa do Sebrae para refinar o modelo de negócios com consultoria especializada.",
   },
   {
     icon: Building2,

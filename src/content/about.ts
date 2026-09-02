@@ -317,14 +317,14 @@ export const aboutPt: AboutContent = {
       {
         icon: Smartphone,
         title: "Aplicativo disponível na Google Play",
-        desc: "O Marketplace está publicado e em funcionamento. Não é mockup nem protótipo: dá para baixar e usar hoje.",
+        desc: "O aplicativo está publicado e em funcionamento. Não é demonstração: dá para baixar e usar hoje.",
         href: PLAY_STORE_URL,
         linkLabel: "Ver no Google Play",
       },
       {
         icon: BarChart3,
-        title: "Programa Ginga Prototipa (Sebrae)",
-        desc: "Tese validada em campo junto ao Sebrae e participação no Ginga Prototipa — uma das principais referências de inovação e prototipagem do país.",
+        title: "Programas do Sebrae: Ginga Prototipa e PIER",
+        desc: "Tese validada em campo junto ao Sebrae. O Ginga Prototipa foi concluído com a construção do protótipo, e a empresa segue agora no PIER, refinando o modelo de negócios com consultoria especializada.",
       },
       {
         icon: Building2,
@@ -590,14 +590,14 @@ export const aboutEn: AboutContent = {
       {
         icon: Smartphone,
         title: "App available on Google Play",
-        desc: "The Marketplace is published and running. Not a mockup, not a prototype: you can download and use it today.",
+        desc: "The app is published and running. It is not a demo: you can download and use it today.",
         href: PLAY_STORE_URL,
         linkLabel: "View on Google Play",
       },
       {
         icon: BarChart3,
-        title: "Ginga Prototipa programme (Sebrae)",
-        desc: "Thesis validated in the field with Sebrae and participation in Ginga Prototipa — one of Brazil's leading innovation and prototyping programmes.",
+        title: "Sebrae programmes: Ginga Prototipa and PIER",
+        desc: "Thesis validated in the field with Sebrae. Ginga Prototipa concluded with the prototype built, and the company is now in PIER, refining the business model with specialist consulting.",
       },
       {
         icon: Building2,
