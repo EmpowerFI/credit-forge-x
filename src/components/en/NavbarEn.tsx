@@ -9,6 +9,7 @@ const navLinks = [
   { label: "Home", to: "/" },
   { label: "How It Works", to: "/#how-it-works" },
   { label: "Impact", to: "/#impact" },
+  { label: "Pilot", to: "/#pilot" },
   { label: "For Entrepreneurs", to: "/#for-entrepreneurs" },
   { label: "For Partners", to: "/#for-partners" },
   { label: "Investors", to: "/investors" },
@@ -26,7 +27,7 @@ const NavbarEn = () => {
           EmpowerFI
         </Link>
 
-        <div className="hidden items-center gap-6 lg:flex">
+        <div className="hidden items-center gap-6 xl:flex">
           {navLinks.map(({ label, to }) => (
             <Link
               key={to}
@@ -54,7 +55,7 @@ const NavbarEn = () => {
         </div>
 
         <button
-          className="text-foreground lg:hidden"
+          className="text-foreground xl:hidden"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
           aria-label="Menu"
@@ -64,7 +65,7 @@ const NavbarEn = () => {
       </div>
 
       {open && (
-        <div className="border-t border-border px-4 pb-5 glass lg:hidden">
+        <div className="border-t border-border px-4 pb-5 glass xl:hidden">
           {navLinks.map(({ label, to }) => (
             <Link
               key={to}
