@@ -34,3 +34,6 @@ dist-ssr
 # Supabase CLI local state
 supabase/.temp
 .env*
+
+# WSL: metadado que o Windows anexa a arquivos baixados
+*:Zone.Identifier

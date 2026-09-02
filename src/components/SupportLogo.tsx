@@ -39,7 +39,7 @@ const SupportLogo = ({ src, alt, label }: SupportLogoProps) => {
         decoding="async"
         onLoad={() => setStatus("loaded")}
         onError={() => setStatus("failed")}
-        className="h-9 w-auto max-w-[160px] object-contain object-left"
+        className="h-12 w-auto max-w-[180px] object-contain object-left"
       />
     </div>
   );
