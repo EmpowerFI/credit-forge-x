@@ -7,12 +7,14 @@ import AboutSolution from "@/components/about/AboutSolution";
 import AboutMissionVision from "@/components/about/AboutMissionVision";
 import AboutValues from "@/components/about/AboutValues";
 import AboutFounder from "@/components/about/AboutFounder";
+import AboutMedia from "@/components/about/AboutMedia";
 import AboutRecognitions from "@/components/about/AboutRecognitions";
 import AboutFaq from "@/components/about/AboutFaq";
 import AboutContact from "@/components/about/AboutContact";
 import InstitutionalFooter from "@/components/InstitutionalFooter";
 import founderPhoto from "@/assets/founder-daniele.png";
 import { aboutPt } from "@/content/about";
+import { mediaPt, mediaItemsPt } from "@/content/media";
 import { faqSchema, organizationSchema, softwareApplicationSchema } from "@/config/structuredData";
 
 const jsonLd = [
@@ -46,6 +48,7 @@ const AboutPt = () => (
     <AboutValues values={aboutPt.values} />
     <AboutFounder founder={aboutPt.founder} photoSrc={founderPhoto} />
     <AboutRecognitions recognitions={aboutPt.recognitions} />
+    <AboutMedia media={mediaPt} items={mediaItemsPt} pageLang="pt-BR" />
     <AboutFaq faq={aboutPt.faq} />
     <AboutContact contact={aboutPt.contact} />
     <InstitutionalFooter footer={aboutPt.footer} homePath="/pt" lang="pt-BR" />
