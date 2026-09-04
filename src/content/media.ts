@@ -27,6 +27,12 @@ export interface MediaItem {
   lang: "pt-BR" | "en";
   /** Display date, already formatted for its language. Omit if unknown. */
   date?: string;
+  /**
+   * Episode announced but not yet aired. Shows the date as a premiere instead
+   * of listing it as something that already happened. Flip to false — or drop
+   * the field — once it is live.
+   */
+  upcoming?: boolean;
 }
 
 export interface MediaContent {
@@ -39,6 +45,8 @@ export interface MediaContent {
   otherLanguageLabel: string;
   /** Accessible name for the play button, "{title}" substituted in. */
   playLabel: string;
+  /** Prefix for an unaired piece, e.g. "Estreia" -> "Estreia 10/09/2026". */
+  upcomingLabel: string;
 }
 
 export const mediaPt: MediaContent = {
@@ -46,10 +54,11 @@ export const mediaPt: MediaContent = {
   titleLead: "EmpowerFI ",
   titleAccent: "por aí",
   subtitle:
-    "Podcasts, TV e imprensa em que a EmpowerFI e sua fundadora falaram sobre acesso a crédito e empreendedorismo feminino.",
+    "Podcasts, TV e imprensa em que a EmpowerFI e sua fundadora falam sobre acesso a crédito e empreendedorismo feminino.",
   kindLabels: { podcast: "Podcast", tv: "TV", press: "Imprensa" },
   otherLanguageLabel: "Em inglês",
   playLabel: "Assistir: {title}",
+  upcomingLabel: "Estreia",
 };
 
 export const mediaEn: MediaContent = {
@@ -57,20 +66,23 @@ export const mediaEn: MediaContent = {
   titleLead: "EmpowerFI ",
   titleAccent: "out in the world",
   subtitle:
-    "Podcasts, television and press where EmpowerFI and its founder discussed credit access and women's entrepreneurship.",
+    "Podcasts, television and press where EmpowerFI and its founder discuss credit access and women's entrepreneurship.",
   kindLabels: { podcast: "Podcast", tv: "TV", press: "Press" },
   otherLanguageLabel: "In Portuguese",
   playLabel: "Play: {title}",
+  upcomingLabel: "Premieres",
 };
 
 export const mediaItemsPt: MediaItem[] = [
   {
     kind: "podcast",
     outlet: "Protagonismo Mulher",
-    title: "Daniele Santos no Protagonismo Mulher",
-    desc: "Painel apresentado por Roberta Stock, com a fundadora e CEO da EmpowerFI ao lado de Fernando Blanco e Daniel Branco.",
+    title: "EmpowerFI: crédito, educação financeira e oportunidades para mulheres",
+    desc: "Painel apresentado por Roberta Stock sobre empreendedorismo feminino, acesso a crédito e educação financeira, com Fernando Blanco e Daniel Branco. A conversa gira em torno do ponto que sustenta a EmpowerFI: ter acesso ao dinheiro importa, mas é a capacidade de decidir que transforma recurso em crescimento sustentável.",
     youtubeId: "m9YNq-fOdQQ",
     lang: "pt-BR",
+    date: "10/09/2026",
+    upcoming: true,
   },
 ];
 
@@ -78,9 +90,11 @@ export const mediaItemsEn: MediaItem[] = [
   {
     kind: "podcast",
     outlet: "Protagonismo Mulher",
-    title: "Daniele Santos on Protagonismo Mulher",
-    desc: "A panel hosted by Roberta Stock, with EmpowerFI's founder and CEO alongside Fernando Blanco and Daniel Branco.",
+    title: "EmpowerFI: credit, financial education and opportunity for women",
+    desc: "A panel hosted by Roberta Stock on women's entrepreneurship, credit access and financial education, with Fernando Blanco and Daniel Branco. It turns on the point EmpowerFI is built around: access to money matters, but it is the capacity to decide that turns a resource into sustainable growth.",
     youtubeId: "m9YNq-fOdQQ",
     lang: "pt-BR",
+    date: "10 September 2026",
+    upcoming: true,
   },
 ];

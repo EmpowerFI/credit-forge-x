@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ExternalLink, Languages, Play } from "lucide-react";
+import { CalendarClock, ExternalLink, Languages, Play } from "lucide-react";
 import type { MediaContent, MediaItem } from "@/content/media";
 
 /**
@@ -100,9 +100,15 @@ const AboutMedia = ({ media, items, pageLang }: AboutMediaProps) => {
                     {media.kindLabels[item.kind]}
                   </span>
                   <span className="text-sm font-medium text-foreground">{item.outlet}</span>
-                  {item.date && (
-                    <span className="text-sm text-muted-foreground">· {item.date}</span>
-                  )}
+                  {item.date &&
+                    (item.upcoming ? (
+                      <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-accent glow-border">
+                        <CalendarClock size={11} aria-hidden /> {media.upcomingLabel}{" "}
+                        {item.date}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">· {item.date}</span>
+                    ))}
                   {item.lang !== pageLang && (
                     <span className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
                       <Languages size={11} aria-hidden /> {media.otherLanguageLabel}
