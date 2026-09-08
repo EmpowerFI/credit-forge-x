@@ -391,7 +391,8 @@ The mobile repo's non-negotiable — *engagement data never reaches the score* �
 - [x] `db push` on `xifczvaiedmokdpjevsf` — **was already done**; full cutover verified 2026-09-08 (§1)
 - [x] Old `yczodofprsgjsffemkac` project **deleted** 2026-09-08 — stale cron settled
 - [ ] Check that Vercel's **Preview** env vars point at `xifczvaiedmokdpjevsf` (Production is confirmed; Preview was never verified and would now fail against a deleted project)
-- [x] Generate the program keypair and back it up outside the repo (§D7) — done 2026-09-08. **Generate only — do not commit `Anchor.toml` before 14 Sep**; a keypair is a credential, not code, but a committed config file is a repo artifact created outside the window. `anchor keys sync` and the commit happen on day 1.
+- [x] Generate the program keypair and back it up outside the repo (§D7) — done 2026-09-08.
+- [x] Off-machine backup of all three keypairs in 1Password — done 2026-09-08. WSL2 keeps `$HOME` inside a VHDX, so a distro reset would otherwise be unrecoverable. **Generate only — do not commit `Anchor.toml` before 14 Sep**; a keypair is a credential, not code, but a committed config file is a repo artifact created outside the window. `anchor keys sync` and the commit happen on day 1.
 - [x] Create the working branch (`hackathon`), cut from `main` — done 2026-09-08
 - [ ] Draft the demo script from backlog §19 — knowing the last frame shapes the first commit
 
