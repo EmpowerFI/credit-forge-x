@@ -44,7 +44,7 @@ The toolchain being already installed removes the most common Week-1 sinkhole. T
 
 **Previously flagged as an open blocker, now closed:** the `xifczvaiedmokdpjevsf` cutover was in fact already finished. Verified read-only on 2026-09-08 — all 5 migrations applied, the 3 email Edge Functions deployed, `RESEND_API_KEY` set, the Vault secret `email_queue_service_role_key` present, the `process-email-queue` cron active on a 5-second schedule, `investor_waitlist` existing with 1 signup, and the live bundle at `www.empowerfi.io` built against that project ref. **The waitlist form works.** Nothing to push.
 
-One tail left: the old `yczodofprsgjsffemkac` project may still run its own `process-email-queue` cron. It no longer receives new messages, so duplicate sends are unlikely, but the job should be unscheduled (§12).
+The old `yczodofprsgjsffemkac` project was **deleted on 2026-09-08**, which settles the stale-cron question outright — there is no job left to unschedule and no second sender. Nothing in the codebase referenced it.
 
 ---
 
@@ -389,7 +389,8 @@ The mobile repo's non-negotiable — *engagement data never reaches the score* �
 - [x] Disconnect the Lovable / `gpt-engineer-app` integration — done 2026-09-08
 - [x] Create the `empowerfi-hackathon` Supabase project — ref **`yuxrujoghizcfdmbkqfg`**
 - [x] `db push` on `xifczvaiedmokdpjevsf` — **was already done**; full cutover verified 2026-09-08 (§1)
-- [ ] Unschedule `process-email-queue` on the old `yczodofprsgjsffemkac` project
+- [x] Old `yczodofprsgjsffemkac` project **deleted** 2026-09-08 — stale cron settled
+- [ ] Check that Vercel's **Preview** env vars point at `xifczvaiedmokdpjevsf` (Production is confirmed; Preview was never verified and would now fail against a deleted project)
 - [x] Generate the program keypair and back it up outside the repo (§D7) — done 2026-09-08. **Generate only — do not commit `Anchor.toml` before 14 Sep**; a keypair is a credential, not code, but a committed config file is a repo artifact created outside the window. `anchor keys sync` and the commit happen on day 1.
 - [x] Create the working branch (`hackathon`), cut from `main` — done 2026-09-08
 - [ ] Draft the demo script from backlog §19 — knowing the last frame shapes the first commit

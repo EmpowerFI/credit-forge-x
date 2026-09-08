@@ -4,7 +4,8 @@ Target Supabase project: **EmpowerFI admin dashboard** — `xifczvaiedmokdpjevsf
 (`https://xifczvaiedmokdpjevsf.supabase.co`)
 
 > The backend was consolidated here from `yczodofprsgjsffemkac` (which the site
-> used) and `tfjxvliinkhlimxfrkpr`. Domain verification (step 1) lives in the
+> used, and which was **deleted on 2026-09-08** once the cutover was verified)
+> and `tfjxvliinkhlimxfrkpr`. Domain verification (step 1) lives in the
 > **Resend account**, not in Supabase — if `empowerfi.io` is already verified,
 > skip it. What *is* per-project and must be redone here: the Vault secret
 > (step 4, holding **this** project's service_role key) and `RESEND_API_KEY`
