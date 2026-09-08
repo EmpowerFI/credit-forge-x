@@ -306,7 +306,7 @@ In parallel, and not by the founder's spare evenings: **the go-to-market, demand
 ### Submission — Fri 9 → Mon 12 Oct
 End-to-end run on a clean seed · README + architecture doc + privacy doc · **both final videos (pitch ≤3 min, technical demo ≤3 min)** · logo/graphic · devnet deploy verified from a machine that is not yours · repository access granted to `hackathon@colosseum.com` · submission form.
 
-**Submit on Sun 11, not Mon 12.** Submission portals fall over on deadline day, and the last hour is not when you want to discover a required field you have not prepared.
+**Submit on Sun 11 Oct, not Mon 12 — decided, not merely advised.** Submission portals fall over on deadline day, and the last hour is not when you want to discover a required field you have not prepared. The 12th exists as margin for a failure, not as working time.
 
 ---
 
@@ -383,18 +383,18 @@ The mobile repo's non-negotiable — *engagement data never reaches the score* �
 ## 12. Week 0 checklist — this week
 
 - [x] Confirm the hackathon rules — **Colosseum Crypto World's Fair**; private repo allowed with access to `hackathon@colosseum.com`; pre-existing work allowed but judged only on in-window progress and must be disclosed; **two videos** required (§3, D8)
-- [ ] Confirm the above against the actual submission form, and record the exact deadline with timezone
+- [x] Deadline confirmed: official close **12 Oct**; **internal target Sun 11 Oct, BRT** — deliberately a day early, so the deadline is not also the first time the submission flow is exercised
 - [x] Answer D1–D8 and write the answers into §2 of this file — done 2026-09-08
 - [x] `.env` purged from git history and force-pushed (§11.1) — rotation still optional, see §11.1
 - [x] Disconnect the Lovable / `gpt-engineer-app` integration — done 2026-09-08
 - [x] Create the `empowerfi-hackathon` Supabase project — ref **`yuxrujoghizcfdmbkqfg`**
 - [x] `db push` on `xifczvaiedmokdpjevsf` — **was already done**; full cutover verified 2026-09-08 (§1)
 - [x] Old `yczodofprsgjsffemkac` project **deleted** 2026-09-08 — stale cron settled
-- [ ] Check that Vercel's **Preview** env vars point at `xifczvaiedmokdpjevsf` (Production is confirmed; Preview was never verified and would now fail against a deleted project)
+- [x] Vercel env vars — **all are Production; no Preview variables exist**, so a stale ref cannot break a branch deploy (2026-09-08)
 - [x] Generate the program keypair and back it up outside the repo (§D7) — done 2026-09-08.
 - [x] Off-machine backup of all three keypairs in 1Password — done 2026-09-08. WSL2 keeps `$HOME` inside a VHDX, so a distro reset would otherwise be unrecoverable. **Generate only — do not commit `Anchor.toml` before 14 Sep**; a keypair is a credential, not code, but a committed config file is a repo artifact created outside the window. `anchor keys sync` and the commit happen on day 1.
 - [x] Create the working branch (`hackathon`), cut from `main` — done 2026-09-08
-- [ ] Draft the demo script from backlog §19 — knowing the last frame shapes the first commit
+- [~] Draft the two video scripts from backlog §19 — **deferred by founder decision 2026-09-08**, to be written once the build has shape. Both are due in Week 3 as rough cuts (§8), which is the real deadline for this.
 
 ---
 
