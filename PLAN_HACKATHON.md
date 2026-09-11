@@ -1,413 +1,489 @@
-# EmpowerFI — Solana Hackathon 2026 Work Plan
+# EmpowerFI — Solana Hackathon Work Plan · v2
 
 **Hackathon:** Colosseum — **Crypto World's Fair**, online. Solana track supported by the Solana Foundation.
-**Window:** Mon 14 Sep 2026 → Mon 12 Oct 2026 (29 days, 4 full Mon–Sun weeks + submission day)
-**Source of scope:** `EmpowerFI_Backlog_Tecnico_Hackathon_Solana_2026_v1.docx` (the backlog is the *what*; this file is the *how, in what order, and what gets cut*)
-**Repository:** this one (`credit-forge-x`) — Anchor program, restricted dashboard area, credit engine, hackathon backend
-**Written in English** per the project-wide documentation convention (`CLAUDE.md` → "Project Language"), and because judges are international.
+**Window:** Mon 14 Sep 2026 → Mon 12 Oct 2026. **Internal submission target: Sun 11 Oct, BRT.**
+**Repository:** this one (`credit-forge-x`), branch `hackathon`.
+**Sources of scope:** `EmpowerFI_Piloto_Modelo_Negocios_2026_v1.pdf` (business model, Sept 2026) and the Product & Architecture Update spec, which supersede the original technical backlog wherever they disagree.
+**Written in English** per the project documentation convention; judges are international.
 
 ---
 
-## 0. What this plan changes relative to the backlog
+## v2 — what changed and why
 
-The backlog is sound. Four things need a decision it does not make, and they change the schedule materially. Each is written up in §2 with a recommendation.
+v1 planned against the original technical backlog: community → check-in → score → eligibility → loan → dashboards. The business model has since sharpened, and the change is not cosmetic. Three things are genuinely new, and they are the *thesis*, not decoration:
 
-1. **Where the entrepreneur check-in UI lives** — mobile app repo vs. the web restricted area. This is the single largest schedule lever in the whole project.
-2. **Which database the hackathon runs on** — production has 23 real users and LGPD-sensitive data; the backlog assumes a greenfield schema.
-3. **Whether there is a Node API service at all** — the backlog says "Node/TypeScript REST"; both existing repos are Supabase Edge Functions and have no Node service to speak of.
-4. **Whether the repo goes public** — hackathons usually require it, and this repo has `.env` in its git history.
+1. **Readiness is separated from eligibility, and both are separated from lender approval.** Three distinct judgements, three distinct owners. v1 collapsed them into one "Credit Engine".
+2. **Credit intent is an explicit, separate act.** `CREDIT_READY` with no credit intent is a valid and successful outcome. The platform must be able to *not* push debt.
+3. **The Qualified Credit Opportunity is a first-class entity** — it is the commercial product (Product 2), not an intermediate step between eligibility and a loan.
 
-And two things the backlog omits that will bite during the demo, added here as first-class work: **judges must be able to log in** (§5.3), and **the "recompute this proof" screen is the demo's money shot** and must be a real endpoint, not a slide (§6.4).
+Everything else in this plan follows from those three.
+
+**The decisions taken in Week 0 (D1–D8) survive unchanged.** The new model changes what is built, not where it is built, which database backs it, or what Colosseum requires. They are restated in §2 in condensed form.
 
 ---
 
-## 1. Ground truth as of 2026-09-08
+## A · CURRENT STATE
 
-Verified on this machine, not assumed:
+### A.1 The spec assumes an MVP that does not exist
 
-| Thing | State |
+The Product & Architecture Update is written as a refactor: "refactor the current hackathon MVP", "do not rewrite working functionality", "inspect existing Anchor programs, dashboards, seed data". **Verified on 2026-09-11: none of that exists.**
+
+| Expected by the spec | Actual |
 |---|---|
-| Rust / Cargo | 1.95.0 ✅ |
-| Solana CLI | 3.1.13 (Agave) ✅ |
-| Anchor CLI | 1.0.0, via avm 0.31.1 ✅ |
-| Node / pnpm | v24.10.0 / 10.11.0 ✅ |
-| Docker | 28.5.1 ✅ (needed for `supabase start`) |
-| Devnet reachable | ✅ cluster 4.3.0-beta.3 |
-| Devnet wallet | `4qQbMCTknaYS7EwUMM42h2RfQjYRYT7RwtkbvCa3FBRW`, **26.8 SOL** — no airdrop pressure |
-| This repo | Vite 5 + React 18 SPA, shadcn/ui, TanStack Query, Zod, react-router 6. **No auth, no Rust, no monorepo.** |
-| Supabase in this repo | pgmq + pg_cron + pg_net + Vault + DLQ already wired for the email queue — **the anchoring pipeline is the same pattern** (§7) |
-| Repo visibility | **PRIVATE**, `github.com/EmpowerFI/credit-forge-x` |
-| Website backend | **Cutover to `xifczvaiedmokdpjevsf` is COMPLETE** — verified 2026-09-08 (§12) |
-| `.env` in git history | **Purged 2026-09-08** — history rewritten and force-pushed, `9a80e20` → `8b97a0b`. See §11.1. |
+| `programs/` (Anchor) | absent |
+| `packages/` (engines) | absent |
+| `tests/` | absent |
+| `src/app/` (restricted area) | absent |
+| `Anchor.toml` / `Cargo.toml` | absent |
+| Domain migrations | absent — the 5 migrations present are the website's email stack and investor waitlist |
 
-The toolchain being already installed removes the most common Week-1 sinkhole. Treat that as a day gained, not as slack.
+This is **good news, and it should be read as such**: there is no wrong-model implementation to unwind, no migration from a collapsed readiness/eligibility concept, no naming debt. The spec's instruction to prefer refactoring over rewrites has an empty set on the hackathon side.
 
-**Previously flagged as an open blocker, now closed:** the `xifczvaiedmokdpjevsf` cutover was in fact already finished. Verified read-only on 2026-09-08 — all 5 migrations applied, the 3 email Edge Functions deployed, `RESEND_API_KEY` set, the Vault secret `email_queue_service_role_key` present, the `process-email-queue` cron active on a 5-second schedule, `investor_waitlist` existing with 1 signup, and the live bundle at `www.empowerfi.io` built against that project ref. **The waitlist form works.** Nothing to push.
+It also means the honest framing of §B is not "what do we change" but **"what fits in 28 days"**.
 
-The old `yczodofprsgjsffemkac` project was **deleted on 2026-09-08**, which settles the stale-cron question outright — there is no job left to unschedule and no second sender. Nothing in the codebase referenced it.
+### A.2 What exists and is reusable
+
+| Asset | Reuse |
+|---|---|
+| Vite 5 + React 18 + shadcn/ui + Tailwind design system | the whole `/app` restricted area inherits it — zero design cost |
+| `src/components/Seo.tsx`, routing, `ScrollToTop` | reusable as-is |
+| Supabase client pattern + generated types | pattern reused for the second (hackathon) client |
+| **pgmq + pg_cron + pg_net + Vault + DLQ email queue** | **the anchoring pipeline is this same pattern** — worth ~2 days (§F.4) |
+| Playwright + Vitest configured | test harness exists |
+| Marketing site (public narrative) | needs a narrative update (§K) — not hackathon code |
+
+### A.3 Infrastructure already provisioned (Week 0)
+
+Supabase `yuxrujoghizcfdmbkqfg` · Program ID `4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR` · operator `2gHyXDj9q4vzQh4xeniLejhGedF9vfTq99yPv3R2PRQa` · deployer with 26.8 devnet SOL · Rust 1.95 / Solana CLI 3.1.13 / Anchor 1.0.0 · branch `hackathon` · keys backed up in 1Password.
 
 ---
 
-## 2. Decisions to lock before Mon 14 Sep
+## B · GAP ANALYSIS
 
-**All of these were decided on 2026-09-08.** Each heading carries its outcome; the reasoning is kept because it is what makes the decision revisitable.
+### B.1 Model delta — original backlog → new spec
 
-### D1 — Where does the entrepreneur check-in live? → ✅ **DECIDED: the web restricted area, in this repo**
+| Domain | Backlog v1 | New spec | Delta |
+|---|---|---|---|
+| Readiness | did not exist; folded into the score | own deterministic engine, versioned, emits `missing_requirements[]` | **NEW · M** |
+| Credit intent | an input field to the score | own entity and lifecycle; `READY` without intent is a valid terminal state | **NEW · S** |
+| Qualified Credit Opportunity | did not exist (eligibility → loan) | first-class entity; *this is Product 2* | **NEW · M** |
+| Partner | a `provider_id` column | entity with types, ticket ranges, accepted purposes, decision method | **NEW · M** |
+| Partner decision | conflated with eligibility | separate by design, stored separately | **NEW · S** |
+| Education | a loose table | product layer with explicit states | expanded · S |
+| CTS | "instrumentation" | 13 stages, `cost_events`, 9 required metrics | expanded · M |
+| Productive outcomes | an EVC proxy on one card | entity + EVC/EVM + on-chain commitment | expanded · M |
+| Dashboards | 3 (leader, ESG, investor) | 4; **Credit Partner enters P0, ESG drops to P1** | substitution + **L** |
+| On-chain accounts | 8 | 11 (+Readiness, +Opportunity, +Outcome) | +3 · M |
+| Instructions | 11 | 13 | +3 · M |
+| Capital Route | did not exist | rail-comparison abstraction | NEW · P1 · M |
+| Funnel states | 8 (loan only) | 21 (participant lifecycle) | expanded · S |
 
-The backlog's Week-2 deliverable is a check-in that produces a financial snapshot. The obvious home is the existing mobile app. Against that:
+### B.2 The arithmetic, stated plainly
 
-- The mobile repo's `phase-2` branch is mid-flight with its own release gate (`main` deploys the website *and* is what store builds are cut from). Cutting a hackathon feature through that gate costs device testing on two platforms.
-- Play Store review is 1–7 days. Nothing in the hackathon deliverable requires a store build — the deliverable is a **video and a live devnet demo**.
-- The demo script (§19 of the backlog) gives the check-in 50 seconds. It needs to *look* like a phone, not *be* an APK.
+v1 already estimated **~30 working days of P0 against 29 calendar days**, solo. The new P0 adds, bottom-up:
 
-Build the check-in as a mobile-first web route (`/app/checkin`, 380px-first, the app's visual language) inside the restricted area. Demo it in a phone-shaped browser frame or an actual phone browser. Port to Capacitor after 12 Oct, when the schema has stopped moving.
+readiness engine (2) · credit intent (0.5) · opportunity entity + referral (2) · partners + decision (2) · education programs/progress (1.5) · CTS expansion (1.5) · outcomes + EVC/EVM (1) · 3 extra PDAs, instructions and tests (1.5) · credit-partner dashboard (2.5) · richer seed with 9 distinct cases (1) ≈ **+15.5 days**.
 
-**If you choose mobile instead:** add ~4 days (Capacitor sync, device build, two-platform testing, env plumbing to a new Supabase project) and drop AI Insights (E7) and the selective-disclosure PoC (E6 partial) to pay for it.
+**≈ 45 working days of P0 into 28 calendar days. A ratio of about 1.6×.**
 
-### D2 — Which database? → ✅ **DECIDED: a new dedicated Supabase project `empowerfi-hackathon` (São Paulo)**
+That is not a gap you close by working harder; at that ratio, effort is not the variable. It has to be closed by architecture, or the demo will be wide and broken instead of narrow and true. §C.1 is how.
 
-Not production. Three reasons, in order of weight:
+### B.3 What the new model makes *cheaper*
 
-1. Metric §23 requires **demo reset in under 5 minutes**, which means destructive seeds. You cannot run those next to 23 real users.
-2. The hackathon schema (`communities`, `checkins`, `financial_snapshots`, `scores`, `loans`, `chain_anchors`) is a *different system of record* from the marketplace schema. Grafting it onto prod couples two roadmaps that should stay independent.
-3. During a sprint with daily migrations, blast radius matters more than elegance. A bad migration at 2am should not take down the live app or the website's email queue.
+Worth noting, because it is not all cost:
 
-**Created 2026-09-08: ref `yuxrujoghizcfdmbkqfg`** (`https://yuxrujoghizcfdmbkqfg.supabase.co`).
+- **The eligibility engine shrinks.** Once readiness carries data quality, education and regularity, the eligibility engine only has to answer affordability and risk for a *specific requested amount*. It is a smaller, sharper function than the v1 "Credit Engine" that had to do both jobs.
+- **`ScoreAttestation` becomes redundant** for a rules-based v0 (§F.2).
+- **The ESG dashboard stops being a separate build** — it is the Community dashboard with a cohort filter and two cost metrics (§G.3).
 
-Consequence: the SPA holds **two Supabase clients** — the existing marketing/waitlist one, and `VITE_HACKATHON_SUPABASE_*` for `/app/*`. That is roughly twenty lines and worth it.
+---
 
-*Alternative if you want one project:* a separate `platform` schema in the existing project, with seeds scoped to never truncate outside it. Cleaner ops, worse blast radius. Not recommended during the sprint.
+## C · PROPOSED ARCHITECTURE
 
-### D3 — Is there a Node API service? → ✅ **DECIDED: no. Supabase Edge Functions + Postgres RPC + RLS**
+### C.1 The three moves that make 45 days fit in 28
 
-The backlog's §8 endpoint table is a good *interface* specification and should be honoured as such. But standing up a Node/Hono service means a new deploy target, a CORS surface, a second env-var regime and an auth hop — the exact reasons Phase 0 removed its Node orchestrator (`BLUEPRINT_PHASE_00.md` §2.1). Map the endpoints onto Edge Functions and RPCs one-for-one. Idempotency keys still apply.
+**Move 1 — Seeded breadth, live depth.** The demo needs a 100-participant funnel (§22 of the spec). It does **not** need 100 live journeys.
 
-### D4 — Repo layout → ✅ **DECIDED: directories + tsconfig path aliases, not a package-manager workspace**
+- **One entrepreneur walks the full path live** during the demo, computed in real time, with real commitments anchored on devnet: check-in → readiness → intent → eligibility → opportunity → referral → partner decision → loan → payment → outcome.
+- **The other 99 are deterministic seed**, occupying every other funnel state, including all nine cases the spec requires. Their commitments are anchored once in a batch pre-run and stored with real signatures and slots, so the audit screen works on any of them.
+
+This buys the full funnel visualisation, rich dashboards and the nine cases at a fraction of the build. It is also honest: every seeded figure is labelled SIMULATED, which the spec requires anyway. **Worth ~10 days.**
+
+**Move 2 — Engines deep, UI thin.** The readiness and eligibility engines are pure, deterministic, versioned TypeScript with golden-vector tests. They are cheap to build, cheap to test, and they are the *intellectual* core a judge will probe. UI is the expensive part. So: engines get full treatment and real test coverage; screens get one honest path each and no polish budget.
+
+**Move 3 — Anchor nine account types live, not eleven.** §F.2. Fold `ScoreAttestation` into `EligibilityAttestation`; defer `OutcomeCommitment` to P1.
+
+### C.2 The boundary, unchanged and non-negotiable
+
+> PostgreSQL is the operational system of record. Solana is the proof layer.
+
+On-chain: 32-byte commitments, enum states, versions, timestamps. Never a name, CPF, phone, email, bank detail, Pix data, raw revenue, raw expense, raw check-in or raw score. `borrower_ref` is **random 32 bytes generated server-side**, never derived from anything — a hash of an email is reversible by dictionary; random bytes are not.
+
+Enforced by an automated test that fetches every program account on devnet and regex-scans raw bytes for CPF/CNPJ/email/phone patterns, asserting zero hits (§H.4).
+
+### C.3 Layout
 
 ```
 credit-forge-x/
-├─ src/                        # existing marketing site — untouched
-│  └─ app/                     # NEW restricted area (auth, dashboards, check-in)
+├─ src/
+│  ├─ (marketing site — narrative update in §K)
+│  └─ app/                       # restricted area: auth, check-in, dashboards, audit
 ├─ packages/
-│  ├─ audit-commitments/       # canonical JSON + SHA-256 + domain separation
-│  ├─ credit-engine/           # pure, deterministic, versioned
+│  ├─ audit-commitments/         # canonical JSON + SHA-256 + domain separation
+│  ├─ readiness-engine/          # deterministic, versioned
+│  ├─ eligibility-engine/        # deterministic, versioned
+│  ├─ cts/                       # cost events → CTS metrics
 │  └─ shared-types/
-├─ programs/empowerfi-audit/   # Anchor
-├─ tests/                      # Anchor integration tests (ts-mocha)
+├─ programs/empowerfi-audit/     # Anchor
 ├─ supabase/{migrations,functions,seeds}/
-├─ Anchor.toml
-└─ PLAN_HACKATHON.md
+└─ tests/
 ```
 
-Converting to pnpm workspaces mid-sprint is churn with no payoff — this repo carries both `package-lock.json` and `bun.lock` already. Edge Functions import the packages by relative path (Supabase bundles them); the browser imports them via `@/packages/*` aliases.
-
-⚠️ **The drift trap:** the same credit-engine code running in the browser and in a Deno Edge Function is exactly the failure the mobile repo hit with `premium_monthly` and the account-id hash. Mitigation is the one they landed on: **a golden-vector test pinned on both sides**, so the two cannot silently diverge.
-
-### D5 — Hash & canonicalization → **as the backlog says.** SHA-256, domain separation (`EMPOWERFI:CHECKIN:v1 || canonical_payload`), cents as integers, ISO-8601 UTC, sorted keys, null-stripping. No deviation.
-
-### D6 — `borrower_ref` → **random 32 bytes generated server-side, stored off-chain, never derived from anything.**
-
-The backlog says "não reversível por dicionário". The only way to guarantee that is for it to be random rather than a hash of anything a dictionary could contain. A hash of an email is reversible by dictionary; random bytes are not.
-
-### D7 — Program ID discipline → **generate the program keypair once, in Week 0, and never regenerate it.**
-
-If the program ID changes mid-sprint, every `chain_anchors.program_id` already written goes stale and the reconciliation job reports MISMATCH on data that is actually fine. `anchor keys sync`, commit `Anchor.toml`, keep `target/deploy/empowerfi_audit-keypair.json` **out of git and backed up outside the repo**. Redeploys use `anchor upgrade`, never a fresh deploy.
-
-**Generated 2026-09-08**, kept in `~/empowerfi-hackathon-keys/` (mode 700, files 600), outside the repo:
-
-| Key | Address | Role |
-|---|---|---|
-| `empowerfi_audit-keypair.json` | `4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR` | the program ID, fixed for the whole hackathon |
-| `operator-keypair.json` | `2gHyXDj9q4vzQh4xeniLejhGedF9vfTq99yPv3R2PRQa` | signs anchoring txs; goes into Supabase Vault, never the browser |
-| (existing CLI key) | `4qQbMCTknaYS7EwUMM42h2RfQjYRYT7RwtkbvCa3FBRW` | deployer / payer, 26.8 devnet SOL |
-
-On day 1: copy the program keypair to `target/deploy/`, run `anchor keys sync`, commit `Anchor.toml`, and fund the operator with ~0.5 devnet SOL for fees.
-
-### D8 — Public repo and pre-existing code → ⚠️ **REVISED 2026-09-08, after reading Colosseum's actual rules**
-
-The first answer to this was taken on a premise that turned out to be wrong. Colosseum's published rules say:
-
-- **Private repositories are acceptable**, provided access is granted to `hackathon@colosseum.com`. Open source is encouraged, not required.
-- **Projects need not be brand new.** Teams may begin development before the hackathon. But "products are judged only on the work completed between the competition's start and end dates", and entrants must **disclose all relevant past development work in the submission form** — misrepresentation risks disqualification or a ban.
-
-So the revised decision:
-
-- **The repo may stay private.** Grant access to `hackathon@colosseum.com` at submission. Keep it private through the sprint; publishing is a separate choice that can wait until after 12 Oct.
-- **Pre-window code is permitted, but it does not count for judging.** That inverts the earlier constraint into a question of *where the hours pay off*: anything built before 14 Sep is invisible to the judges. Week 0 should therefore go into **scaffolding that removes Week 1 friction but is not itself the differentiator** — repo layout, empty Anchor project that compiles, CI, Supabase bootstrap — and the substance (program logic, credit engine, dashboards) should land inside the window where it is credited.
-- **The existing EmpowerFI product is pre-existing work and must be disclosed.** The live Play Store app, the website, the 23 real users and the Sebrae programmes all predate the hackathon. Disclosing them is mandatory — and it is an asset, not a liability: Traction is one of the judging criteria (§3, Submission requirements).
-
-**The `.env` history purge was still the right call**, even though it was done under a mistaken premise: reviewers get repository access either way, so the history was always going to be read by someone outside the company.
-
-**Net effect on the schedule:** the "Week 1 starts from zero lines of code" risk flagged earlier is **lifted**. Week 0 can now scaffold.
+⚠️ **The drift trap.** Both engines run in the browser *and* inside Deno Edge Functions. That is exactly the failure the mobile repo hit twice. Mitigation: **golden-vector tests pinned on both sides**, so the two cannot silently diverge.
 
 ---
 
-## 3. Scope
+## D · DATABASE MIGRATION PLAN
 
-### Ships (P0)
-E1 Community & eligibility foundation · E2 Check-in · E3 Credit Engine v0 · E4 Loan lifecycle · E5 Three dashboards · E6 Privacy & audit · E8 Demo & observability.
+Greenfield on `yuxrujoghizcfdmbkqfg` — additive migrations only, RLS on every table from the first one.
 
-### Ships if the schedule holds (P1)
-E7 AI Insights (with the deterministic fallback built **first**, so the LLM is an upgrade and never a dependency).
+**M1 · identity & community** — `users`(profile+role), `communities`, `community_memberships`, `entrepreneurs`(with `borrower_ref`), `partners`
+**M2 · education** — `education_programs`, `education_modules`, `education_progress`
+**M3 · business data** — `checkins`, `financial_snapshots`, `feature_snapshots`
+**M4 · readiness & intent** — `readiness_assessments`, `credit_intents`
+**M5 · eligibility & opportunity** — `eligibility_assessments`, `qualified_credit_opportunities`, `partner_decisions`
+**M6 · servicing** — `loans`, `payments`, `servicing_events`, `productive_outcomes`
+**M7 · instrumentation** — `cost_events`, `chain_anchors`, `ai_insights`
+**M8 · anchoring pipeline** — pgmq queue, DLQ, cron dispatcher, Vault secret (clone of the email stack)
 
-### Explicitly does not ship
-Real funding · real Pix · paid KYC · self-custody wallet · ML scoring · full ZK · Confidential Balances beyond a documented spike · multi-community/multi-cohort · mobile store release · anything touching the live marketplace's data.
+Two structural constraints, both from the thesis rather than from convenience:
 
-### Submission requirements (Colosseum, Crypto World's Fair)
+- **`readiness_assessments` and `eligibility_assessments` are separate tables**, never one table with a `kind` column. They answer different questions, are produced by different engines with independent `model_version`s, and are read by different roles. Merging them is the exact conceptual collapse the new model exists to correct.
+- **`partner_decisions` is separate from `eligibility_assessments`.** EmpowerFI eligibility and partner approval are different facts with different owners. A schema that cannot represent "eligible but rejected by the partner" cannot represent the business model.
 
-Per Colosseum's published rules. **Confirm each against the submission form itself before Week 4** — these are the general hackathon rules, not necessarily World's Fair-specific.
+---
 
-| Artifact | Note |
+## E · API CHANGES
+
+Per D3, the spec's REST endpoints map one-for-one onto Supabase Edge Functions and Postgres RPCs. No Node service.
+
+| Spec endpoint | Implementation |
 |---|---|
-| Product name + description | |
-| Blockchain and tool integrations | Solana track: the integration must be substantive, not decorative |
-| Team members, backgrounds, location | Solo entries allowed; teams encouraged. One project per builder. |
-| Product logo or graphic | |
-| GitHub repository link | Private is fine — grant access to `hackathon@colosseum.com` |
-| **Presentation video, 2–3 min** | the *why* — thesis, market, founder |
-| **Product-demo video, max 3 min** | the *how* — technical, specific to implementation, and specifically how it leverages Solana |
-| Go-to-market, demand validation, distribution | business, not engineering — needs its own preparation time |
-| Disclosure of all prior development work | mandatory; see D8 |
+| `POST /communities`, `/members` | RPC + RLS |
+| `POST /education/:id/progress` | RPC |
+| `POST /entrepreneurs/:id/checkins` | Edge Fn — validate, snapshot, enqueue anchor |
+| `POST /readiness/:id/evaluate` | Edge Fn — readiness engine, persist, enqueue attestation |
+| `GET /readiness/:id` | RPC + RLS |
+| `POST /credit-intents` | RPC |
+| `POST /eligibility/:id/evaluate` | Edge Fn — eligibility engine, persist, enqueue attestation |
+| `POST /opportunities`, `/refer`, `/partner-decision` | Edge Fn (state machine + idempotency) |
+| `POST /loans`, `/transition`, `/payments`, `/outcomes` | Edge Fn |
+| `GET /dashboards/{community,esg,credit-partner,capital}/:id` | RPC over views, role-filtered |
+| `GET /audit/:entityType/:id` | Edge Fn — canonical payload + local hash + on-chain hash + verdict |
 
-⚠️ **Two videos, not one — and the backlog's §19 script does not fit either.** That script is a single five-minute walkthrough. It has to be cut into a ≤3 min pitch and a ≤3 min technical demo, with different arguments. The technical demo is where the Solana content belongs: commitments, the recompute-the-proof screen, the privacy boundary.
-
-**Judging criteria:** Founder + Market Fit · Insight · Product + Execution · Potential Market Size · Founder Communication · Viability · Traction. Several evaluation rounds, then a panel; selected teams get a 15-minute interview.
-
-Read that list again against this plan: **it is majority non-engineering.** A technically perfect demo with no go-to-market story scores badly. Budget real time for the business artifacts — they are not a Week 4 afterthought.
-
-**Prizes:** $100,000 across the top 10 Solana-integrating submissions (Solana Foundation). Winners overall are admitted to Colosseum's accelerator with $250,000 in funding.
+Idempotency keys on every state-changing call; `{ data, error }` return shape throughout.
 
 ---
 
-## 4. The boundary that the whole thesis rests on
+## F · SOLANA / ANCHOR CHANGES
 
-> Postgres is the operational system of record. Solana is the proof layer. Nothing is duplicated on-chain.
+### F.1 Accounts — P0
 
-Concretely, what goes on-chain is **32-byte commitments, enum states, versions and timestamps** — and nothing else. Never a name, an email, a CPF, a phone number, a personal wallet, or a currency amount.
+`PlatformConfig` · `CommunityAudit` · `BorrowerAudit` · `CheckinCommitment` · **`ReadinessAttestation`** · `EligibilityAttestation` · **`OpportunityCommitment`** · `LoanAccount` · `PaymentCommitment` — nine.
 
-This is not a nice-to-have; it is the differentiator judges will test. §23 sets **PII on-chain = 0**, and §17 asks for a scan. Implement that as an automated test that fetches every program account on devnet and regex-scans the raw bytes for CPF/CNPJ/email/phone patterns, asserting zero hits. It is cheap, it is a regression test for a guarantee rather than a feature, and it is worth showing on screen during the demo.
+**P1:** `OutcomeCommitment`.
 
----
+### F.2 `ScoreAttestation` is folded into `EligibilityAttestation`
 
-## 5. The restricted area
+The spec lists both. For a rules-based v0 they carry the same payload: `risk_band` and `confidence` are *produced by* the eligibility evaluation and have no independent lifecycle. Two accounts would mean two writes, two anchor jobs and two reconciliation paths for one fact.
 
-### 5.1 Routes
+Keep the two attestations that *are* distinct — **readiness** and **eligibility** — and record the split of score-from-eligibility as a documented future change, due when an ML model gains a release cadence of its own. Worth stating in the README: it is a deliberate simplification with a named trigger, not an omission.
 
-`/app` is a new authenticated shell in this SPA, separate from the marketing site, sharing the design system.
+### F.3 Instructions — P0
 
-| Route | Role |
-|---|---|
-| `/app/login` | public |
-| `/app/checkin` | entrepreneur |
-| `/app/me` | entrepreneur — own report, insight, eligibility |
-| `/app/community` `/app/community/new` | community leader (create + manage) |
-| `/app/dashboards/community` | community leader |
-| `/app/dashboards/esg` | ESG sponsor |
-| `/app/dashboards/investor` | capital provider |
-| `/app/audit/:entityType/:id` | auditor — commitment, tx, recomputation |
-| `/app/admin` | operator/admin — verify community, transition loan |
+`initialize_platform` · `register_community` · `verify_community` · `register_borrower_ref` · `anchor_checkin` · `attest_readiness` · `attest_eligibility` · `anchor_opportunity` · `create_loan` · `transition_loan` · `anchor_payment`. **P1:** `anchor_outcome`.
 
-### 5.2 Auth & RBAC
+Domain separation: `EMPOWERFI:CHECKIN:v1`, `EMPOWERFI:READINESS:v1`, `EMPOWERFI:ELIGIBILITY:v1`, `EMPOWERFI:OPPORTUNITY:v1`, `EMPOWERFI:OUTCOME:v1`.
 
-Supabase Auth on the hackathon project. `profiles(user_id, role, entrepreneur_id, community_id)`, RLS on every table from the first migration — the roles in backlog §14 map one-to-one onto policies. RBAC is enforced in **RLS**, not in the router; the route guard is UX only.
+Idempotency comes free from PDA seeds: `anchor_checkin` unique per `(borrower_ref_hash, period)`, `anchor_payment` per `(loan_hash, installment_no)`. A second init fails — surface that as a clean error, not a 500.
 
-### 5.3 Judges must be able to log in — and this is not a detail
+The loan state machine is enforced **on-chain and in Postgres**. Two enforcement points is deliberate: the DB stops bad UI, the program stops a bad DB.
 
-Magic-link auth requires inbox access that judges do not have. Seed **demo accounts with fixed passwords**, list them in the README, and enable email+password on the hackathon project alongside magic link:
-
-```
-leader@demo.empowerfi.io      Community Leader
-investor@demo.empowerfi.io    Capital Provider
-esg@demo.empowerfi.io         ESG Sponsor
-auditor@demo.empowerfi.io     Auditor
-maria@demo.empowerfi.io       Entrepreneur
-```
-
-Plus a **read-only fallback**: if auth breaks during judging, `/app/dashboards/*?demo=1` renders the seeded dataset without a session. Backlog §17 asks for demo resilience; this is the cheapest form of it.
-
-Every screen carries a visible "Demo data — Solana Devnet" marker. All figures are synthetic and must be unmistakably labelled as such, so nobody believes they are looking at real entrepreneurs' finances.
-
----
-
-## 6. On-chain design
-
-Accounts, seeds and instructions are specified in backlog §3 and §4 and are adopted unchanged. Notes that matter for building them:
-
-### 6.1 Sequencing
-The eleven instructions are individually small — most write a 32-byte hash plus two enums. The cost is not the instructions; it is the tests, the TS client and the indexer. So they land in three waves matching the weekly plan: config/community/borrower (W1) → checkin/score/eligibility (W2) → loan/payment/transitions (W3).
-
-### 6.2 State machine
-Backlog §5 in `transition_loan`, enforced on-chain **and** in Postgres. Two enforcement points is deliberate: the DB stops bad UI, the program stops a bad DB.
-
-### 6.3 Idempotency
-`anchor_checkin` unique per `(borrower_ref_hash, period)`; `anchor_payment` unique per `(loan_hash, installment_no)`. PDA seeds give this for free — a second init fails. Surface that as a clean error, not a 500.
-
-### 6.4 The audit screen is the money shot
-Demo minutes 2:00–2:40 are "show the commitment and recompute it without revealing the data". That screen must genuinely: fetch the canonical payload from Postgres → recompute SHA-256 in the browser → fetch the on-chain account → compare → render **VERIFIED** with the tx signature, slot and an Explorer link. Built as a real endpoint (`GET /audit/:entityType/:id`), never a mock. Budget a full day for it in W3, not an hour in W4.
-
----
-
-## 7. The anchoring pipeline — reuse, don't rebuild
-
-This repo already runs a durable queue with retry, DLQ, a Vault-held service-role key and a `pg_cron` + `pg_net` dispatcher, built for transactional email (`20260428212516_email_infra.sql`). The anchoring pipeline is the same shape:
+### F.4 The anchoring pipeline — clone, don't invent
 
 ```
 write to Postgres
-  → enqueue_anchor(entity_type, entity_id, payload_hash)   [pgmq]
-  → pg_cron every 10s → pg_net → anchor-submit Edge Function
+  → enqueue_anchor(entity_type, entity_id, payload_hash)      [pgmq]
+  → pg_cron 10s → pg_net → anchor-submit Edge Function
        operator keypair from Vault → build tx → send → confirm
-  → chain_anchors(entity_type, entity_id, hash, signature, slot, status)
-  → anchor-reconcile (cron, 1 min): local vs chain → VERIFIED | MISSING | MISMATCH
+  → chain_anchors(entity_type, entity_id, hash, sig, slot, status)
+  → anchor-reconcile (1 min): local vs chain → VERIFIED | MISSING | MISMATCH
   → failures → DLQ, retried idempotently
 ```
 
-Cloning the email queue rather than inventing one is worth roughly two days, and it inherits retry semantics that have already been debugged in production.
+⚠️ The email dispatcher **hardcodes the project URL inside the cron job body**. Copy it without editing that URL and every job POSTs to the wrong project, silently, forever. Check it on day one.
 
-⚠️ One trap carried over from that migration: **the dispatcher hardcodes the project URL inside the cron job body**. Copy it to a new project without editing that URL and every job POSTs to the wrong project — silently, forever, with jobs stuck at `pending`. Check it the day the hackathon project is created.
+### F.5 Program ID discipline
 
-The operator keypair signs everything on devnet. It is a demo authority, held in Vault, never in the browser, never in git.
-
----
-
-## 8. Week-by-week
-
-Each week ends with a **Friday gate**: a thing that must be demonstrable live, not described. If a gate slips, the cut line (§9) fires the same day rather than the following week.
-
-### Week 0 — Tue 8 → Sun 13 Sep · Decisions and accounts, no feature code
-Locks D1–D8. Creates the Supabase project, the program keypair, the branch. Confirms the hackathon rules on public repos and on code written before the window. Resolves the pending `db push` (§12). **No program code and no migrations if the rules forbid pre-window code.**
-**Gate (Sun 13):** every decision in §2 has an answer written into this file.
-
-### Week 1 — Mon 14 → Sun 20 Sep · Foundation, and a thin end-to-end spine
-DB migrations + RLS + roles · Supabase Auth + `/app` shell + route guards · community create/verify/membership · Anchor program wave 1 (`initialize_platform`, `register_community`, `set_community_verification`, `register_borrower_ref`) deployed to devnet · `packages/audit-commitments` with canonical JSON + hash + golden vectors · anchoring queue cloned from the email pattern · seed script v1.
-
-Prioritise **depth over breadth**: one path all the way through beats four paths half-built. By Friday, a real login must produce a real PDA.
-
-**Gate (Fri 18):** log in as the leader → create a community → verify it → the `CommunityAudit` PDA is visible on Solana Explorer, and the audit screen recomputes its hash.
-
-### Week 2 — Mon 21 → Sun 27 Sep · Data becomes intelligence
-Check-in UI (2–4 min completion, backlog §10 payload) · financial snapshot computation · feature snapshot + commitment · `packages/credit-engine` v0.1.0 with reason codes, affordability, confidence · `attest_score` on-chain · unit tests on the formulas and every reason-code branch · deterministic insight templates (E7 fallback, **before** any LLM).
-
-**Gate (Fri 25):** a check-in produces a cash-flow view, a risk band with reason codes, and a score attestation whose commitment verifies on-chain.
-
-### Week 3 — Mon 28 Sep → Sun 4 Oct · Credit becomes capital
-Eligibility policy + `attest_eligibility` · loan state machine (DB + program) · `create_loan`, `transition_loan`, `anchor_payment` · the three dashboards against real APIs with empty/loading/error states · the audit/recompute screen (§6.4) · CTS and cost-to-deploy instrumentation · reconciliation job.
-
-**Record rough cuts of BOTH videos this week, while the flow works.** The most common way a hackathon submission fails is leaving the video to the last 48 hours and discovering the flow breaks on camera. Two videos double that exposure.
-
-**Gate (Fri 2 Oct):** an originator sees a demo loan move DRAFT → ELIGIBLE → APPROVED → DISBURSED → ACTIVE → PAID, with each transition anchored and reconciled, and all three dashboards showing the same operation under different permissions.
-
-### Week 4 — Mon 5 → Thu 8 Oct · Privacy, resilience, hardening
-Selective-disclosure PoC · the on-chain PII scan test (§4) · reconciliation edge cases (RPC timeout, pending, failed, retry) · role-access tests · error states · Confidential Balances **spike written up as documentation, timeboxed to one day, cut without hesitation if it resists** · seed/reset under 5 minutes · health checks.
-
-In parallel, and not by the founder's spare evenings: **the go-to-market, demand-validation and distribution write-ups**, plus the prior-work disclosure. These are graded artifacts (§3) and they compete for the same week as hardening.
-
-**FEATURE FREEZE — Thu 8 Oct, end of day.** Nothing new after this. Bugs only.
-
-### Submission — Fri 9 → Mon 12 Oct
-End-to-end run on a clean seed · README + architecture doc + privacy doc · **both final videos (pitch ≤3 min, technical demo ≤3 min)** · logo/graphic · devnet deploy verified from a machine that is not yours · repository access granted to `hackathon@colosseum.com` · submission form.
-
-**Submit on Sun 11 Oct, not Mon 12 — decided, not merely advised.** Submission portals fall over on deadline day, and the last hour is not when you want to discover a required field you have not prepared. The 12th exists as margin for a failure, not as working time.
+`4rqhx…` is fixed for the whole hackathon. If it changes mid-sprint, every `chain_anchors.program_id` already written goes stale and reconciliation reports MISMATCH on data that is fine. `anchor keys sync`, commit `Anchor.toml` on day 1, redeploy with `anchor upgrade` — never a fresh deploy.
 
 ---
 
-## 9. The cut line, as dated gates
+## G · FRONTEND CHANGES
 
-Backlog §18 gives the order. It only works if it fires on a date rather than on a feeling:
+### G.1 Restricted area
 
-| If this gate slips | Cut, that same day |
+`/app/login` (public) · `/app/checkin` · `/app/me` · `/app/community`, `/app/community/new` · `/app/dashboards/{community,credit-partner,capital}` · `/app/dashboards/esg` (P1) · `/app/opportunities/:id` (partner view) · `/app/audit/:entityType/:id` · `/app/admin`
+
+Mobile-first at 380px for the entrepreneur routes (D1: the check-in is web, styled as the app, ported to Capacitor after 12 Oct).
+
+### G.2 Judges must be able to log in — still true, still first-class
+
+Magic links need an inbox judges do not have. Seed **demo accounts with fixed passwords**, listed in the README: `maria@`, `leader@`, `partner@`, `investor@`, `auditor@demo.empowerfi.io`. Plus a read-only fallback at `?demo=1` that renders seeded dashboards with no session, for when auth breaks during judging.
+
+Every screen carries a visible **"Demo data · Solana Devnet · SIMULATED"** marker.
+
+### G.3 ESG dashboard is derived, not built
+
+It is the Community dashboard with a cohort filter plus cost-per-participant and cost-per-ready-participant. Building it as a fourth screen would cost ~1.5 days for a view the spec itself rates P1.
+
+### G.4 The audit screen is the technical demo's money shot
+
+It must genuinely: fetch the canonical payload from Postgres → recompute SHA-256 in the browser → fetch the on-chain account → compare → render **VERIFIED** with signature, slot and an Explorer link. A real endpoint, never a mock. Budget a full day in Week 3.
+
+---
+
+## H · TEST PLAN
+
+| Layer | Cases |
 |---|---|
-| Fri 25 Sep (score) | AI Insights → deterministic templates only |
-| Fri 2 Oct (loan + dashboards) | Confidential Balances spike → one paragraph in the README |
-| Mon 5 Oct | Advanced charts → KPI cards only |
-| Wed 7 Oct | Payment-amount privacy → commitment + status only |
-| Thu 8 Oct | Multiple communities → one deeply instrumented demo community |
-
-**Never cut:** the audit trail, score versioning, the privacy boundary, the end-to-end flow. Those four *are* the thesis. A demo that shows three of them completely beats one that shows eight partially.
-
----
-
-## 10. Effort, honestly
-
-Summed bottom-up, the P0 scope is roughly **30 working days** against **29 calendar days**, solo, with agent leverage. That is not comfortable, and it assumes nothing goes badly wrong.
-
-Two consequences worth internalising now:
-
-- **The cut line is not a contingency, it is part of the plan.** Expect to use it at least twice.
-- **The demo is a deliverable with its own budget**, not a byproduct of the code. Seed script, video, README and architecture doc are ~4 of those 30 days. Judges score what they can see and reproduce.
+| **Unit (vitest)** | canonical hash + golden vectors (browser and Deno); financial formulas; **readiness engine incl. every `missing_requirements` branch**; **eligibility engine incl. every reason code**; CTS aggregation; funnel state transitions |
+| **Anchor (ts-mocha)** | authority checks; duplicate period rejected; invalid loan transition rejected; PDA seed derivation; payment idempotency; readiness-before-eligibility ordering |
+| **Integration** | check-in → snapshot → readiness → attestation; readiness → intent → eligibility → opportunity; opportunity → referral → partner decision → loan; payment → dashboard |
+| **Privacy (H.4)** | fetch all program accounts, regex-scan for CPF/CNPJ/email/phone → **assert zero**; `borrower_ref` not derivable; per-role access matrix |
+| **Reconciliation** | tx pending / failed / retry; RPC timeout; slot confirmation |
+| **Thesis regression** | **a participant who is `CREDIT_READY` with no credit intent stays `CREDIT_READY`** and never appears in the partner pipeline. This is a test for a *principle*, and it is the one that must never go red. |
+| **Demo resilience** | RPC failure fallback; seed reset under 5 min; preloaded scenario |
 
 ---
 
-## 11. Risks the backlog does not cover
+## I · DEMO PLAN
 
-### 11.1 `.env` in git history — ✅ RESOLVED 2026-09-08
+Two videos (Colosseum requires both — §2):
 
-`.env` had been committed in `2b0c5fd` (2026-04-28) and was present in 61 of 121 commits. It was never tracked in the working tree (it is gitignored), so this was purely a history problem — and D8 turned it into a blocker, since the repo must be published.
+**Pitch, ≤3 min — the *why*.** Problem is unit economics, not "women can't get credit". Prepare before credit. Three product layers. Traction that already exists: live Play Store app, real users, Sebrae PIER. The emotional beat is §I.1.
 
-**What was done:** the whole history was rewritten with `git filter-branch --index-filter` on a mirror clone, verified, then force-pushed.
+**Technical demo, ≤3 min — the *how*.** The funnel spine running live, the readiness/eligibility separation in the data, a commitment recomputed on screen, the zero-PII scan, the partner dashboard, the audit trail.
 
-| Check | Result |
+### I.1 The beat that makes the pitch memorable
+
+Almost every lending demo pushes debt. This one should show a participant who reaches `CREDIT_READY` **and is not offered credit, because she did not ask for it** — and a second who is ready but whose data says *wait*.
+
+That is the clearest possible statement of the thesis, it maps directly onto Colosseum's "Insight" criterion, and it costs nothing extra to demo because the seed already contains both cases.
+
+---
+
+## J · PRIORITISED BACKLOG
+
+### P0 — the demo does not exist without these
+
+| # | Item | Size |
+|---|---|---|
+| 1 | Schema M1–M8 + RLS + role matrix | L |
+| 2 | Supabase Auth + `/app` shell + route guards + demo accounts | M |
+| 3 | Communities, memberships, verification | M |
+| 4 | Education programs + progress | S |
+| 5 | Check-in UI + financial snapshot + feature snapshot | M |
+| 6 | `packages/audit-commitments` + golden vectors | M |
+| 7 | **`packages/readiness-engine` v0** | M |
+| 8 | Credit intent entity + UI | S |
+| 9 | **`packages/eligibility-engine` v0** | M |
+| 10 | **QualifiedCreditOpportunity + referral + partner decision** | M |
+| 11 | Partners entity + seeded partners | S |
+| 12 | Loan lifecycle + payments + servicing events | M |
+| 13 | Anchor program: 9 accounts, 11 instructions, tests | L |
+| 14 | Anchoring queue + reconciliation (clone of email stack) | M |
+| 15 | `cost_events` + CTS metrics | M |
+| 16 | Community dashboard | M |
+| 17 | **Credit Partner dashboard** | L |
+| 18 | Capital dashboard (seeded) | M |
+| 19 | Audit / recompute screen | M |
+| 20 | Deterministic seed: 100 participants, 9 cases | M |
+| 21 | Zero-PII on-chain scan test | S |
+| 22 | README + architecture + privacy docs | M |
+| 23 | Both videos + submission artifacts | L |
+
+### P1 — ships if the schedule holds
+
+ESG view (derived, S) · productive outcomes + EVC/EVM (M) · `OutcomeCommitment` + `anchor_outcome` (S) · Capital Route simulator (M, timeboxed 1 day) · AI insights over the deterministic fallback (M) · report export (S) · devnet token demonstration (M)
+
+### P2 — explicitly not this month
+
+Real Pix · real Open Finance · real on/off-ramp · real P2P capital · production stablecoins · ML credit model · confidential transfers · multi-country · mobile store release · anything touching the live marketplace's data
+
+---
+
+## K · WEBSITE NARRATIVE
+
+The new business model contradicts the live site in ways that matter, and the contradictions are not cosmetic. Full list in §5.
+
+---
+
+# EXECUTION
+
+## 1 · Decisions
+
+D1–D8 were taken in Week 0 and **survive the model change unchanged**, condensed here:
+
+| | Decision |
 |---|---|
-| Commits containing `.env` | 61 → **0** |
-| Reachable `.env` objects | **0** |
-| `.env.example` | preserved |
-| Commits | 121, none lost |
-| HEAD tree | **byte-identical** (`9ddd19e`) — no content changed, only SHAs |
-| HEAD | `9a80e20` → `8b97a0b` |
+| **D1** | Check-in lives in the web restricted area (`/app/checkin`), mobile-first, ported to Capacitor after 12 Oct |
+| **D2** | Dedicated Supabase project `yuxrujoghizcfdmbkqfg` — destructive seeds, isolated blast radius |
+| **D3** | No Node service — Edge Functions + Postgres RPC + RLS |
+| **D4** | `packages/` + path aliases, not a package-manager workspace |
+| **D5** | SHA-256, canonical JSON, domain separation |
+| **D6** | `borrower_ref` = random 32 bytes, never derived |
+| **D7** | Program ID `4rqhx…` fixed for the whole hackathon |
+| **D8** | Private repo with access to `hackathon@colosseum.com`; pre-existing work allowed but judged only on in-window progress, and must be disclosed |
 
-`.env` still exists on disk locally, untracked and ignored, for local testing.
+Two new decisions follow from the model change:
 
-**Backup:** `~/credit-forge-x-PRE-REWRITE-20260908.bundle` (3.9 MB, `git bundle verify` clean). It is the **only remaining copy of the historical `.env`**. Two things follow:
+### D9 — Seeded breadth, live depth ✅
 
-1. **It is outside the repo and must stay there.** Never commit it, never move it into the working tree.
-2. **If you ever want to know what that April file contained** — to decide whether any key deserves rotating — the bundle is the last place it exists. The file was never read during this operation, so that question is still open. Given the repo was private throughout and the documented shape (`.env.example`) is all public-safe `VITE_` values, the risk is low; rotation is hygiene, not urgency.
+One entrepreneur walks the funnel live during the demo with real devnet commitments; 99 others are deterministic seed occupying every other state, including all nine cases the spec requires. Their anchors are real, written once in a batch pre-run.
 
-**Still open — do before publishing:** this repo was generated by Lovable, and `gpt-engineer-app[bot]` authored 97 of the 121 commits. **If that integration is still connected and holds its own copy, a future sync could reintroduce the old history.** Disconnect it before flipping the repo to public. Also note GitHub may serve old commits by direct SHA for a while until its own GC runs — irrelevant while the repo is private, worth knowing before it is not.
+**Why:** the funnel visualisation is the demo's centrepiece and it needs 100 people. Building 100 live journeys is not a demo, it is a product launch. This is the difference between a plan that fits in 28 days and one that does not (§B.2).
 
-### 11.2 Devnet is not reliable, and the demo depends on it
-Devnet has outages and degraded periods. Mitigations, all cheap: a preloaded fallback dataset that renders every dashboard with no RPC; cached tx signatures and slots in `chain_anchors` so the audit screen works read-only; a locally recorded screen capture of the on-chain steps as a last resort. Backlog §17 asks for this — build it in Week 4, not on the day.
+### D10 — `ScoreAttestation` folds into `EligibilityAttestation` ✅
 
-### 11.3 Two implementations of the credit engine will drift
-Browser and Edge Function. Mitigation in D4: golden-vector tests pinned on both sides. This is not hypothetical — the mobile repo shipped a broken account-id link for exactly this reason.
-
-### 11.4 The `/investors` page already promises this
-The live site tells investors a "Public Investor Dashboard" and a "Devnet Investor App" are coming. The hackathon builds precisely those. Two consequences: the narrative continuity is free and worth using in the pitch, and after 12 Oct the site should link to the demo. Keep the site's disclosure language intact — the waitlist is still non-binding interest, and a working devnet dashboard does not change that.
-
-### 11.5 Scope creep from the marketplace
-The mobile app's Communities/Events pivot (`CLAUDE.md` → BUSINESS MODEL PIVOT, 2026-08-26) uses the word "community" for a different thing than this hackathon does. They are not the same entity and must not be unified during the sprint. Note the collision, keep the schemas separate, resolve it afterwards.
-
-### 11.6 The engagement/score invariant applies here too
-The mobile repo's non-negotiable — *engagement data never reaches the score* — is a commitment this project has already made in writing. The credit engine's inputs are business signals: revenue, margin, cash-flow proxy, check-in completeness, education progress, community verification. Not opens, not clicks, not session counts, not "did she upgrade". Available time is not creditworthiness, and using it as a proxy would penalise exactly the users this exists to serve.
+For a rules-based v0 they carry the same payload with no independent lifecycle. **Trigger for revisiting:** the first ML model with its own release cadence. Documented in the README as a deliberate simplification with a named trigger — not an omission, because a judge who knows the domain will ask.
 
 ---
 
-## 12. Week 0 checklist — this week
+## 2 · Schedule and gates
 
-- [x] Confirm the hackathon rules — **Colosseum Crypto World's Fair**; private repo allowed with access to `hackathon@colosseum.com`; pre-existing work allowed but judged only on in-window progress and must be disclosed; **two videos** required (§3, D8)
-- [x] Deadline confirmed: official close **12 Oct**; **internal target Sun 11 Oct, BRT** — deliberately a day early, so the deadline is not also the first time the submission flow is exercised
-- [x] Answer D1–D8 and write the answers into §2 of this file — done 2026-09-08
-- [x] `.env` purged from git history and force-pushed (§11.1) — rotation still optional, see §11.1
-- [x] Disconnect the Lovable / `gpt-engineer-app` integration — done 2026-09-08
-- [x] Create the `empowerfi-hackathon` Supabase project — ref **`yuxrujoghizcfdmbkqfg`**
-- [x] `db push` on `xifczvaiedmokdpjevsf` — **was already done**; full cutover verified 2026-09-08 (§1)
-- [x] Old `yczodofprsgjsffemkac` project **deleted** 2026-09-08 — stale cron settled
-- [x] Vercel env vars — **all are Production; no Preview variables exist**, so a stale ref cannot break a branch deploy (2026-09-08)
-- [x] Generate the program keypair and back it up outside the repo (§D7) — done 2026-09-08.
-- [x] Off-machine backup of all three keypairs in 1Password — done 2026-09-08. WSL2 keeps `$HOME` inside a VHDX, so a distro reset would otherwise be unrecoverable. **Generate only — do not commit `Anchor.toml` before 14 Sep**; a keypair is a credential, not code, but a committed config file is a repo artifact created outside the window. `anchor keys sync` and the commit happen on day 1.
-- [x] Create the working branch (`hackathon`), cut from `main` — done 2026-09-08
-- [~] Draft the two video scripts from backlog §19 — **deferred by founder decision 2026-09-08**, to be written once the build has shape. Both are due in Week 3 as rough cuts (§8), which is the real deadline for this.
+Each week ends with a **Friday gate**: something demonstrable live, not described. A slipped gate fires the cut line the same day (§3).
+
+### Week 0 · Fri 11 → Sun 13 Sep — website narrative, no hackathon code
+D8 forbids product code before the window. It does **not** touch the marketing site, which is pre-existing product — and the site is exactly what feeds the pitch video and three of Colosseum's judging criteria. So the pre-window days go to §5, plus drafting both video scripts.
+
+### Week 1 · Mon 14 → Sun 20 Sep — foundation and the spine
+Schema M1–M8 + RLS + roles · Auth + `/app` shell + demo accounts · communities, membership, verification · education programs and progress · `packages/audit-commitments` with golden vectors · Anchor wave 1 (config, community, borrower) deployed to devnet · anchoring queue cloned from the email stack · seed v1.
+
+**Depth over breadth: one path all the way through beats four half-built.**
+
+**Gate · Fri 18:** log in as the leader → create a community → verify it → register a borrower ref → the PDA is visible on Solana Explorer → the audit screen recomputes its hash and says VERIFIED.
+
+### Week 2 · Mon 21 → Sun 27 Sep — data becomes readiness
+Check-in UI (2–4 min) + financial snapshot + feature snapshot · **readiness engine v0** + `readiness_assessments` + `attest_readiness` · credit intent entity and UI · deterministic insight templates (the AI fallback, built *first*).
+
+**Gate · Fri 25:** a check-in produces a cash-flow view and a readiness assessment with real `missing_requirements`; one participant reaches `CREDIT_READY` and declares intent; **a second reaches `CREDIT_READY` and declares none, and the system leaves her alone.** The readiness commitment verifies on-chain.
+
+That second half of the gate is the thesis. If it does not work, nothing else in the demo means what it claims.
+
+### Week 3 · Mon 28 Sep → Sun 4 Oct — readiness becomes capital
+Eligibility engine v0 · QualifiedCreditOpportunity + referral + partner decision · partners entity · loan lifecycle + payments · Community and Credit Partner dashboards · CTS cost events across stages · the audit screen (a full day, §G.4).
+
+**Record rough cuts of BOTH videos this week, while the flow works.** Two videos double the exposure to the classic failure: leaving it to the last 48 hours and discovering the flow breaks on camera.
+
+**Gate · Fri 2 Oct:** a partner opens a qualified opportunity in its own dashboard, approves it, a loan is created and moves DRAFT → … → ACTIVE, a payment is recorded, and both dashboards show the same operation under different permissions.
+
+### Week 4 · Mon 5 → Thu 8 Oct — capital, privacy, hardening
+Capital dashboard (seeded) · productive outcomes + EVC/EVM, labelled simulated · Capital Route simulator (P1, timeboxed to one day, cut without hesitation) · zero-PII scan · reconciliation edge cases · RBAC tests · error states · seed reset under 5 min.
+
+In parallel, and not in spare evenings: **go-to-market, demand validation, distribution and the prior-work disclosure.** These are graded artifacts and they compete for this same week.
+
+**FEATURE FREEZE — Thu 8 Oct, end of day.** Bugs only.
+
+### Submission · Fri 9 → Sun 11 Oct
+Clean-seed end-to-end run · README + architecture + privacy docs · both final videos · logo · devnet deploy verified from a machine that is not yours · repository access granted to `hackathon@colosseum.com` · **submit Sunday 11**. The 12th is margin for a failure, not working time.
 
 ---
 
-## 13. Definition of Done
+## 3 · The cut line, as dated gates
 
-Adopted verbatim from backlog §1 and §23. Restated as the checklist to run on Fri 9 Oct:
+| If this slips | Cut, that day |
+|---|---|
+| Fri 25 Sep (readiness) | AI insights → deterministic templates only; Capital Route simulator |
+| Fri 2 Oct (opportunity + partner) | Productive outcomes / EVC; `OutcomeCommitment` stays off-chain |
+| Mon 5 Oct | Capital dashboard becomes a static seeded view; advanced charts → KPI cards |
+| Wed 7 Oct | ESG view; report export |
+| Thu 8 Oct | Second community, second partner — one of each, deeply instrumented |
 
-- [ ] Leader creates a community; a member belongs to a verified community; education status is available
+**Never cut:** the funnel spine (community → education → check-in → readiness → intent → eligibility → opportunity → partner decision → loan → payment); the readiness / eligibility / partner-approval separation; the privacy boundary; the recompute-a-proof screen; CTS measured from the top of the funnel.
+
+Those five *are* the thesis. A demo that shows three of them completely beats one that gestures at twelve.
+
+---
+
+## 4 · Risks
+
+**4.1 · Scope is 1.6× the window.** §B.2. The three moves in §C.1 are what close it. If any of them is abandoned mid-sprint, the cut line must fire immediately rather than at the next gate — this is the risk most likely to end in a wide, broken demo.
+
+**4.2 · Two engines running in two runtimes will drift.** Browser and Deno. Golden vectors pinned on both sides, or it happens again.
+
+**4.3 · Devnet is not reliable.** Preloaded fallback dataset; cached signatures and slots in `chain_anchors` so the audit screen works read-only; a recorded capture of the on-chain steps as last resort.
+
+**4.4 · Colosseum's judging is majority non-engineering.** Founder + Market Fit, Insight, Product + Execution, Market Size, Communication, Viability, Traction. The traction exists — live Play Store app, real users, Sebrae PIER — and must be foregrounded, not left implicit.
+
+**4.5 · The readiness/eligibility distinction is invisible unless demonstrated.** It is the intellectual core, and on a dashboard it looks like two columns. §I.1 is how it becomes legible: show the system declining to push debt.
+
+**4.6 · Marketplace vocabulary collision.** The mobile app's Communities/Events pivot uses "community" for a different entity. Keep the schemas separate; resolve after 12 Oct.
+
+**4.7 · The engagement/score invariant still binds.** Engagement data never reaches readiness or eligibility. Opens, clicks, session counts and "did she upgrade" are not creditworthiness — using them would penalise the users with the least available time, which is the opposite of the product's purpose. Readiness inputs are business signals only.
+
+---
+
+## 5 · Website narrative — what the new model changes
+
+The live site was written for the previous thesis. The business-model document (p. 25, 28) sets explicit positioning rules that the current site breaks in three places.
+
+| # | Where | Change | Priority |
+|---|---|---|---|
+| 1 | `ProblemSectionEn` | "Small businesses lack access to capital" → **the unit-economics problem** (World Bank WPS8252, median US$14 opex per US$100 of portfolio). Specific, sourced, and it is the problem EmpowerFI actually solves | **High** |
+| 2 | `HowItWorksSectionEn` | "Three participants, one chain of capital" → **the funnel that starts before the credit request** (conventional flow vs EmpowerFI flow, p. 7) | **High** |
+| 3 | *new section* | **The three product layers** and who pays for each (p. 13). The largest hole in the current site: it never says how the business earns money in a form an investor can hold | **High** |
+| 4 | `CreditIntelligenceSectionEn` | → **readiness ≠ eligibility ≠ lender approval**. Remove anything implying score quality; the avoid-list forbids "our score reduces default" before evidence | **High** |
+| 5 | *new section* | **Market evidence** — 9.96M women-led businesses, 39.7%, 2.6% vs 4.6% formal-loan access, US$15.8bn gap, Crediamigo 3.89M disbursements at R$3,101 average. The site has no numbers today because none were sourced. Now they are | **High** |
+| 6 | `WhySolanaSectionEn` + `ProductiveCapitalSectionEn` | **Merge and demote.** p. 12: "optimize the economics of credit — not the blockchain", and Pix may be the better domestic rail. p. 25: do not position the differentiator as blockchain. Two prominent sections become one, later on the page, framed as the future capital rail | **Medium-high** |
+| 7 | `/investors` → `InvestorThesis` | Three revenue layers, asset-light framing, "partner today, capital platform tomorrow" regulatory roadmap | Medium |
+| 8 | *new page* | **Sources / due diligence** — the ten official references on p. 30. Real value for an investor doing diligence | Medium |
+| 9 | `FirstMarketSectionEn` | Keep, but ensure Brazil and women read as *first market*, never as identity (p. 25) | Low |
+| 10 | whole site | **Enforce the avoid-list**: no "97.4% of women are denied credit"; no "blockchain is cheaper"; no score-quality claim; no "we are a P2P" before the regulatory structure | **High** |
+| 11 | PT site | The entrepreneur page gains the readiness framing and must continue to promise no credit | Medium |
+
+**Item 6 will feel like a demotion, and it is.** It is also what the document says, and it is the more credible position: a credit-infrastructure company that claims blockchain is always cheaper invites exactly the question it cannot answer. Saying Pix may win domestically is what makes the stablecoin argument believable where it does apply — cross-border capital.
+
+**Recommended timing: now, in the pre-window days.** The marketing site is pre-existing product, so D8 does not bind it, and it feeds the pitch video and three judging criteria directly.
+
+---
+
+## 6 · Week 0 remaining
+
+- [ ] §5 — website narrative update (11–13 Sep)
+- [ ] Draft both video scripts (pitch ≤3 min, technical demo ≤3 min)
+- [ ] Confirm the submission form: exact deadline with timezone, required artifacts, World's Fair specifics
+- [x] Decisions D1–D10 recorded
+- [x] Infrastructure provisioned, keys backed up, branch cut
+
+---
+
+## 7 · Definition of Done
+
+Run this on Fri 9 Oct:
+
+- [ ] A leader creates a community; a member belongs to a verified community; education progress is visible
 - [ ] An entrepreneur submits a check-in; indicators are computed; a snapshot is persisted
-- [ ] The canonical payload produces a commitment; tx signature and slot are persisted; an auditor can recompute it
-- [ ] Score v0 is explainable, with confidence, affordability, eligibility and reason codes
-- [ ] A demo loan is created, approved, disbursed (simulated), receives payment events and closes
-- [ ] All three dashboards load real data from the database, not screenshots
-- [ ] **Zero PII and zero raw financial values in the program's accounts** — asserted by an automated scan
-- [ ] Seed builds the scenario in under 5 minutes; the video shows the flow in 3–5 minutes; the local fallback works
+- [ ] The readiness engine produces a status, a band, `missing_requirements` and reason codes — deterministic and versioned
+- [ ] **A participant reaches `CREDIT_READY` without credit intent and is never referred to a partner**
+- [ ] Credit intent is a separate, explicit act
+- [ ] The eligibility engine produces affordability, ticket range, risk band, confidence and reason codes for a *requested amount*
+- [ ] A Qualified Credit Opportunity is created, referred, and receives a **partner decision stored separately from eligibility**
+- [ ] A demo loan moves DRAFT → PARTNER_APPROVED → DISBURSED → ACTIVE → PAID, with payments recorded
+- [ ] CTS is measured from the top of the funnel, not from disbursement
+- [ ] Community, Credit Partner and Capital dashboards load real data under different permissions
+- [ ] Canonical payloads produce commitments; signature and slot persisted; an auditor recomputes and gets VERIFIED
+- [ ] **Zero PII and zero raw financial values in program accounts** — asserted by an automated scan
 - [ ] Every anchored entity reconciles VERIFIED in the demo scenario
+- [ ] Seed builds the scenario in under 5 minutes; both videos are under 3 minutes; the local fallback works
+- [ ] Every simulated figure is visibly labelled SIMULATED
