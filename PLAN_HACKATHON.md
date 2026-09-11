@@ -1,7 +1,7 @@
 # EmpowerFI — Solana Hackathon Work Plan · v2
 
 **Hackathon:** Colosseum — **Crypto World's Fair**, online. Solana track supported by the Solana Foundation.
-**Window:** Mon 14 Sep 2026 → Mon 12 Oct 2026. **Internal submission target: Sun 11 Oct, BRT.**
+**Window:** Mon 14 Sep 2026 → Mon 12 Oct 2026 (official). **Internal deadline: Sat 10 Oct, 23:59 BRT** — founder decision 2026-09-13, two days inside the official close.
 **Repository:** this one (`credit-forge-x`), branch `hackathon`.
 **Sources of scope:** `EmpowerFI_Piloto_Modelo_Negocios_2026_v1.pdf` (business model, Sept 2026) and the Product & Architecture Update spec, which supersede the original technical backlog wherever they disagree.
 **Written in English** per the project documentation convention; judges are international.
@@ -39,7 +39,7 @@ The Product & Architecture Update is written as a refactor: "refactor the curren
 
 This is **good news, and it should be read as such**: there is no wrong-model implementation to unwind, no migration from a collapsed readiness/eligibility concept, no naming debt. The spec's instruction to prefer refactoring over rewrites has an empty set on the hackathon side.
 
-It also means the honest framing of §B is not "what do we change" but **"what fits in 28 days"**.
+It also means the honest framing of §B is not "what do we change" but **"what fits in 27 days"**.
 
 ### A.2 What exists and is reusable
 
@@ -84,7 +84,7 @@ v1 already estimated **~30 working days of P0 against 29 calendar days**, solo. 
 
 readiness engine (2) · credit intent (0.5) · opportunity entity + referral (2) · partners + decision (2) · education programs/progress (1.5) · CTS expansion (1.5) · outcomes + EVC/EVM (1) · 3 extra PDAs, instructions and tests (1.5) · credit-partner dashboard (2.5) · richer seed with 9 distinct cases (1) ≈ **+15.5 days**.
 
-**≈ 45 working days of P0 into 28 calendar days. A ratio of about 1.6×.**
+**≈ 45 working days of P0 into 27 calendar days. A ratio of about 1.7×.**
 
 That is not a gap you close by working harder; at that ratio, effort is not the variable. It has to be closed by architecture, or the demo will be wide and broken instead of narrow and true. §C.1 is how.
 
@@ -100,7 +100,7 @@ Worth noting, because it is not all cost:
 
 ## C · PROPOSED ARCHITECTURE
 
-### C.1 The three moves that make 45 days fit in 28
+### C.1 The three moves that make 45 days fit in 27
 
 **Move 1 — Seeded breadth, live depth.** The demo needs a 100-participant funnel (§22 of the spec). It does **not** need 100 live journeys.
 
@@ -354,7 +354,7 @@ Two new decisions follow from the model change:
 
 One entrepreneur walks the funnel live during the demo with real devnet commitments; 99 others are deterministic seed occupying every other state, including all nine cases the spec requires. Their anchors are real, written once in a batch pre-run.
 
-**Why:** the funnel visualisation is the demo's centrepiece and it needs 100 people. Building 100 live journeys is not a demo, it is a product launch. This is the difference between a plan that fits in 28 days and one that does not (§B.2).
+**Why:** the funnel visualisation is the demo's centrepiece and it needs 100 people. Building 100 live journeys is not a demo, it is a product launch. This is the difference between a plan that fits in 27 days and one that does not (§B.2).
 
 ### D10 — `ScoreAttestation` folds into `EligibilityAttestation` ✅
 
@@ -397,8 +397,12 @@ In parallel, and not in spare evenings: **go-to-market, demand validation, distr
 
 **FEATURE FREEZE — Thu 8 Oct, end of day.** Bugs only.
 
-### Submission · Fri 9 → Sun 11 Oct
-Clean-seed end-to-end run · README + architecture + privacy docs · logo · devnet deploy verified from a machine that is not yours · repository access granted to `hackathon@colosseum.com` · both videos (founder-owned, §I) · **submit Sunday 11**. The 12th is margin for a failure, not working time.
+### Submission · Fri 9 → Sat 10 Oct · deadline 23:59 BRT
+Clean-seed end-to-end run · README + architecture + privacy docs · logo · devnet deploy verified from a machine that is not yours · repository access granted to `hackathon@colosseum.com` · both videos (founder-owned, §I) · **submit by Saturday 10, 23:59 BRT.**
+
+Sunday 11 and Monday 12 are margin for a failure, not working time. The build loses nothing to the earlier date — feature freeze stays Thursday 8 — but the submission window shrinks from three days to two, so nothing that belongs to Week 4 may slide into it.
+
+The internal deadline is safe whatever timezone Colosseum's official close turns out to use: even an Oct 12 00:00 UTC close falls on Oct 11 at 21:00 BRT, a full day after ours.
 
 ---
 
