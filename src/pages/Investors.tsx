@@ -27,7 +27,7 @@ const Investors = () => (
   <div className="min-h-screen bg-background">
     <Seo
       title="Investors — EmpowerFI productive credit pilot"
-      description="Join the waitlist for EmpowerFI's first productive microcredit pilot, connecting global capital with women-led microbusinesses in Brazil. Non-binding interest only."
+      description="Join the waitlist for EmpowerFI's first productive microcredit pilot: readiness-qualified businesses, originated for financial partners and serviced after disbursement. Non-binding interest only."
       path="/investors"
       lang="en"
       alternates={alternates}

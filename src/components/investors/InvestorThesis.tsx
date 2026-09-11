@@ -1,30 +1,32 @@
-import { ArrowRight, Brain, Globe2, Target } from "lucide-react";
+import { ArrowRight, Database, Gauge, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 import CapitalFlow from "@/components/CapitalFlow";
 
 const pillars = [
   {
-    icon: Globe2,
-    title: "A rail that makes small tickets viable",
-    desc: "A $50–$200 loan cannot carry the cost of traditional cross-border infrastructure. Stablecoin settlement on Solana is what moves those economics from impossible to workable.",
+    icon: Layers,
+    title: "Asset-light by design",
+    desc: "EmpowerFI is the technology and servicing layer. The funding, the credit policy and the final lending decision sit with a licensed financial partner. Revenue comes from programmes, origination and servicing — not from carrying loans on our own balance sheet.",
   },
   {
-    icon: Brain,
-    title: "Intelligence built from the business itself",
-    desc: "Underwriting signals come from business activity, management behavior and repayment history — a richer view of capacity than a thin bank file can offer.",
+    icon: Database,
+    title: "The moat is longitudinal data",
+    desc: "Readiness, credit decision, repayment and productive outcome, connected for the same business over time. It cannot be bought or back-filled; it only accumulates by being present before the credit request and staying after it.",
   },
   {
-    icon: Target,
-    title: "Outcomes, not just disbursements",
-    desc: "We track what the capital produced: businesses funded, repayment performance, revenue evolution, businesses still active. Evidence, rather than a self-reported annual claim.",
+    icon: Gauge,
+    title: "Cost to serve is the number that matters",
+    desc: "Measured from the first day of the journey, not from disbursement — acquisition, education, readiness, origination, servicing, collection and outcome. Small tickets fail on operating cost, so that is the cost we instrument.",
   },
 ];
 
 const flow = [
-  { label: "Global capital", sub: "USDC", emphasis: true },
-  { label: "EmpowerFI", sub: "Credit infrastructure", emphasis: true },
-  { label: "Microbusiness", sub: "Local currency", emphasis: true },
-  { label: "Repayment + evidence" },
+  { label: "Community", sub: "Programme or cohort", emphasis: true },
+  { label: "Readiness" },
+  { label: "Qualified opportunity", emphasis: true },
+  { label: "Partner decision" },
+  { label: "Servicing" },
+  { label: "Productive outcome", emphasis: true },
 ];
 
 const InvestorThesis = () => (
@@ -33,17 +35,19 @@ const InvestorThesis = () => (
       <div className="space-y-4 text-center">
         <p className="text-sm font-medium uppercase tracking-widest text-accent">The thesis</p>
         <h2 className="section-title">
-          Turn global liquidity into <span className="text-gradient">productive capital.</span>
+          Small businesses don't only need more capital. The market needs a cheaper way to{" "}
+          <span className="text-gradient">prepare, assess, finance and follow them.</span>
         </h2>
         <p className="section-subtitle">
-          Stablecoins shouldn't only move between wallets and protocols. They can finance
-          businesses in the real economy — if the infrastructure in between actually exists.
+          EmpowerFI turns entrepreneur programmes into measurable credit-readiness pipelines,
+          then originates qualified opportunities for financial partners and services the
+          operations that follow.
         </p>
       </div>
 
       <CapitalFlow
         steps={flow}
-        caption="Global capital in USDC passes through EmpowerFI to a microbusiness in local currency, and returns as repayment and evidence."
+        caption="A community or programme becomes a readiness pipeline, a qualified credit opportunity reaches a financial partner, and the operation is serviced and measured after disbursement."
       />
 
       <div className="grid gap-6 md:grid-cols-3">
@@ -56,6 +60,23 @@ const InvestorThesis = () => (
             <p className="leading-relaxed text-muted-foreground">{desc}</p>
           </div>
         ))}
+      </div>
+
+      <div className="mx-auto max-w-3xl space-y-4 rounded-2xl border border-border bg-card/50 p-8 md:p-10">
+        <p className="text-sm font-medium uppercase tracking-widest text-accent">
+          Where capital fits, and when
+        </p>
+        <p className="leading-relaxed text-muted-foreground">
+          Today EmpowerFI is a technology layer: capital and the final decision come from a
+          licensed partner. A capital platform — connecting investors directly to businesses
+          qualified by the same infrastructure — is the intended evolution, and it depends on
+          a regulatory structure we have not yet built and do not claim to hold.
+        </p>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          We are not a peer-to-peer lender, and nothing here is an offer. The sequence is
+          deliberate: validate distribution, readiness, origination, repayment and unit
+          economics first; add the capital layer only once those hold.
+        </p>
       </div>
 
       <p className="text-center">

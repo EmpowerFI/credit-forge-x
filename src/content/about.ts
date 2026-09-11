@@ -146,7 +146,7 @@ export const aboutPt: AboutContent = {
   meta: {
     title: "Sobre a EmpowerFI — Crédito produtivo para pequenos negócios",
     description:
-      "Conheça a EmpowerFI: nossa missão, nossa história, o problema que resolvemos e a empresa por trás da plataforma. Fundada por Daniele Rodrigues dos Santos em São Paulo, Brasil.",
+      "Conheça a EmpowerFI: nossa missão, nossa história, o problema que resolvemos e a empresa por trás da infraestrutura de crédito produtivo que prepara pequenos negócios antes do crédito. Fundada por Daniele Rodrigues dos Santos em São Paulo, Brasil.",
   },
   nav: {
     links: [
@@ -165,7 +165,7 @@ export const aboutPt: AboutContent = {
     titleLead: "Construindo infraestrutura de crédito para ",
     titleAccent: "quem o sistema não enxerga",
     subtitle:
-      "A EmpowerFI conecta capital global a pequenos negócios sub-atendidos — começando por mulheres empreendedoras no Brasil.",
+      "A EmpowerFI transforma comunidades e programas de capacitação em pequenos negócios preparados para receber capital — começando por mulheres empreendedoras no Brasil.",
     primaryCta: "Falar com a gente",
     secondaryCta: "Ver o aplicativo",
   },
@@ -180,7 +180,7 @@ export const aboutPt: AboutContent = {
       "A partir dessa base, cada camada reforça a seguinte: ferramentas de gestão organizam o negócio, o score alternativo traduz o comportamento em confiança mensurável, e o crédito passa a ser consequência de um histórico real — não de uma garantia que ela nunca teve como oferecer.",
     ],
     pullQuote:
-      "O app é apenas o primeiro passo de uma visão muito maior: infraestrutura de crédito que transforma liquidez global em capital produtivo para milhões de pequenos negócios.",
+      "O app é a porta de entrada de algo maior: uma infraestrutura que prepara o negócio antes do crédito, origina oportunidades qualificadas para parceiros financeiros e acompanha a operação depois do desembolso.",
   },
   problem: {
     eyebrow: "O problema",
@@ -260,11 +260,11 @@ export const aboutPt: AboutContent = {
   missionVision: {
     mission: {
       eyebrow: "Missão",
-      text: "Transformar liquidez global em capital produtivo para os pequenos negócios que o sistema financeiro nunca foi construído para alcançar.",
+      text: "Preparar pequenos negócios para receber capital, e medir o que o capital produz depois — para que o sistema financeiro consiga enxergar quem ele nunca foi construído para alcançar.",
     },
     vision: {
       eyebrow: "Visão",
-      text: "Ser a infraestrutura de crédito que conecta capital global a microempreendedores em mercados emergentes — começando pelo Brasil.",
+      text: "Ser a infraestrutura que transforma comunidades em negócios prontos para crédito, negócios prontos em operações financiáveis, e operações financiadas em evidência para alocar capital cada vez melhor.",
     },
   },
   values: {
@@ -421,7 +421,7 @@ export const aboutEn: AboutContent = {
   meta: {
     title: "About EmpowerFI — Credit infrastructure for underserved entrepreneurs",
     description:
-      "Meet EmpowerFI: our mission, our story, the problem we solve and the company behind the credit infrastructure connecting global capital to microbusinesses. Founded by Daniele Rodrigues dos Santos in São Paulo, Brazil.",
+      "Meet EmpowerFI: our mission, our story, the problem we solve and the company behind the productive-credit infrastructure that prepares small businesses before credit. Founded by Daniele Rodrigues dos Santos in São Paulo, Brazil.",
   },
   nav: {
     links: [
@@ -440,7 +440,7 @@ export const aboutEn: AboutContent = {
     titleLead: "Building credit infrastructure for ",
     titleAccent: "the next generation of entrepreneurs",
     subtitle:
-      "EmpowerFI connects global capital with underserved microbusinesses in emerging markets — starting with women entrepreneurs in Brazil.",
+      "EmpowerFI turns entrepreneur communities and education programmes into small businesses prepared to receive capital — starting with women entrepreneurs in Brazil.",
     primaryCta: "Get in touch",
     secondaryCta: "See the app",
   },
@@ -455,7 +455,7 @@ export const aboutEn: AboutContent = {
       "From that base, each layer reinforces the next: management tools organise the business, the alternative score turns behaviour into measurable trust, and credit becomes the consequence of a real track record — not of collateral she never had to offer.",
     ],
     pullQuote:
-      "The app is only the first step of a much larger vision: credit infrastructure that turns global liquidity into productive capital for millions of small businesses.",
+      "The app is the front door to something larger: infrastructure that prepares a business before credit, originates qualified opportunities for financial partners, and follows the operation after disbursement.",
   },
   problem: {
     eyebrow: "The problem",
@@ -535,11 +535,11 @@ export const aboutEn: AboutContent = {
   missionVision: {
     mission: {
       eyebrow: "Mission",
-      text: "To turn global liquidity into productive capital for the small businesses the financial system was never built to reach.",
+      text: "To prepare small businesses to receive capital, and to measure what that capital produces — so the financial system can finally see the businesses it was never built to reach.",
     },
     vision: {
       eyebrow: "Vision",
-      text: "To become the credit infrastructure connecting global capital to microbusinesses across emerging markets — starting in Brazil.",
+      text: "To become the infrastructure that turns communities into credit-ready businesses, credit-ready businesses into financeable operations, and financed operations into evidence for allocating capital better.",
     },
   },
   values: {

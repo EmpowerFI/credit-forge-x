@@ -14,15 +14,33 @@ const steps = [
   },
   {
     icon: Sparkles,
-    title: "A EmpowerFI olha o negócio, não só a conta",
-    desc: "Atividade, gestão, evolução, pagamentos anteriores. São esses sinais que constroem uma leitura mais justa da sua capacidade de pagamento do que um cadastro vazio no banco.",
+    title: "A EmpowerFI mede o quanto o negócio está preparado",
+    desc: "Atividade, regularidade, organização do dinheiro, evolução. Dessa leitura sai o que já está pronto e o que ainda falta — e o que falta vem escrito, não fica subentendido.",
   },
   {
     icon: Banknote,
     title: "O capital chega em reais, no Pix",
-    desc: "Quando o crédito produtivo estiver disponível, ele chega na sua conta em reais, como qualquer outro recebimento. Você não precisa saber nada de blockchain — essa parte é problema nosso.",
+    desc: "Quando o crédito produtivo estiver disponível, ele chega na sua conta em reais, como qualquer outro recebimento — e quem aprova é a instituição financeira parceira, não o aplicativo. Você não precisa saber nada de blockchain: essa parte é problema nosso.",
   },
 ];
+
+/* A distinção que o modelo inteiro existe para preservar: preparo, elegibilidade
+   e aprovação são três coisas diferentes, e a última não é nossa. Sem esta nota a
+   seção lê como esteira automática para o crédito. */
+const Nota = () => (
+  <div className="mx-auto max-w-3xl space-y-4 rounded-2xl border border-border bg-card/60 p-8 text-center md:p-10">
+    <p className="font-heading text-xl font-bold text-foreground">
+      Estar preparada não é o mesmo que{" "}
+      <span className="text-gradient">ter crédito aprovado.</span>
+    </p>
+    <p className="leading-relaxed text-muted-foreground">
+      Preparo é uma etapa, não uma promessa. E crédito não é o objetivo para todo mundo: se
+      o negócio ainda não precisa de capital, ou se pegar dívida agora não ajudaria, a
+      resposta certa é esperar — e o aplicativo continua servindo para organizar o negócio
+      do mesmo jeito.
+    </p>
+  </div>
+);
 
 const HowItWorksSection = () => (
   <section id="como-funciona" className="section-padding">
@@ -49,8 +67,11 @@ const HowItWorksSection = () => (
           </div>
         ))}
       </div>
+
+      <Nota />
     </div>
   </section>
 );
+
 
 export default HowItWorksSection;

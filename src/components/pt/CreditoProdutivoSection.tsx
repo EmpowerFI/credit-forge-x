@@ -71,8 +71,9 @@ const CreditoProdutivoSection = () => (
         </p>
         <p className="text-sm leading-relaxed text-muted-foreground">
           Organizar o negócio no aplicativo já fortalece o seu histórico desde agora. A
-          eventual concessão de crédito seguirá critérios de análise: o uso do aplicativo
-          não constitui oferta nem garantia de crédito.
+          eventual concessão de crédito seguirá critérios de análise e será decidida pela
+          instituição financeira parceira: o uso do aplicativo não constitui oferta nem
+          garantia de crédito.
         </p>
       </div>
     </div>
