@@ -2,9 +2,9 @@ import { Eye, Receipt, TrendingDown } from "lucide-react";
 import SectionHeading from "@/components/SectionHeading";
 
 const stats = [
-  { value: "29%", label: "do crédito empresarial vai para mulheres — que tocam ~40% das operações" },
-  { value: "68%", label: "das empreendedoras têm pedidos de crédito negados ou só parcialmente atendidos" },
-  { value: "7,1%", label: "de inadimplência entre as mulheres, contra 7,6% entre os homens — elas pagam melhor e ainda assim pagam juros mais altos" },
+  { value: "39,7%", label: "das empresas ativas no Brasil são lideradas por mulheres — quase 10 milhões de negócios" },
+  { value: "2,6%", label: "das micro e pequenas empresas de propriedade feminina acessam empréstimos formais, contra 4,6% das de propriedade masculina" },
+  { value: "US$ 15,8 bi", label: "é o tamanho estimado do crédito que falta para essas empresas no Brasil" },
 ];
 
 const failures = [
@@ -47,7 +47,9 @@ const ProblemSection = () => (
           ))}
         </div>
         <p className="text-center text-xs text-muted-foreground">
-          Fonte: Sebrae e Banco Central, 2024.
+          Fontes: MEMP / Mapa de Empresas (2026) e IFC/Sicredi (2025). O indicador de 2,6%
+          mede acesso a empréstimos formais no recorte citado — não quer dizer que as demais
+          tiveram crédito negado.
         </p>
       </div>
 

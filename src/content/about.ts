@@ -189,16 +189,16 @@ export const aboutPt: AboutContent = {
     subtitle:
       "Não é falta de capacidade nem de disciplina. É uma falha estrutural de infraestrutura de dados — e ela se repete todos os dias.",
     stats: [
-      { value: "~7,4 mi", label: "de mulheres MEI ativas no Brasil — sub-bancarizadas pelo sistema financeiro" },
-      { value: "68%", label: "delas já tiveram um pedido de crédito negado ou só parcialmente atendido" },
-      { value: "7,1%", label: "de inadimplência entre as mulheres, contra 7,6% entre os homens — elas pagam melhor e ainda assim pagam mais caro" },
+      { value: "9,96 mi", label: "empresas ativas no Brasil lideradas por mulheres — 39,7% do total" },
+      { value: "2,6%", label: "das micro e pequenas empresas de propriedade feminina acessam empréstimos formais, contra 4,6% entre as de propriedade masculina" },
+      { value: "US$ 15,8 bi", label: "de gap de financiamento estimado para micro e pequenas empresas de propriedade feminina no Brasil" },
     ],
-    statsSource: "Fonte: Sebrae e Banco Central, 2024.",
+    statsSource: "Fontes: MEMP / Mapa de Empresas (2026) e IFC/Sicredi (2025). O indicador de 2,6% mede acesso a empréstimos formais no recorte citado — não significa que as demais tiveram crédito negado.",
     items: [
       {
         icon: Landmark,
         title: "Dificuldade de acesso ao crédito",
-        desc: "Quando o crédito aparece, vem caro e curto: cheque especial, cartão rotativo, agiota. A mesma empreendedora que paga em dia é empurrada para as linhas mais caras do mercado — e, embora as mulheres inadimplam menos que os homens (7,1% contra 7,6%), são elas que pagam os juros mais altos.",
+        desc: "Quando o crédito aparece, vem caro e curto: cheque especial, cartão rotativo, agiota. A mesma empreendedora que paga em dia é empurrada para as linhas mais caras do mercado — porque originar e acompanhar um ticket pequeno custa quase o mesmo que um grande, e é esse custo, não ela, que define o preço.",
       },
       {
         icon: Eye,
@@ -464,16 +464,16 @@ export const aboutEn: AboutContent = {
     subtitle:
       "It is not a lack of capability or discipline. It is a structural failure of data infrastructure — and it repeats every single day.",
     stats: [
-      { value: "~7.4M", label: "active women-led micro-businesses in Brazil — underbanked by the financial system" },
-      { value: "68%", label: "of them have had a credit request denied or only partially granted" },
-      { value: "7.1%", label: "default rate among women, against 7.6% among men — they pay better and still pay more" },
+      { value: "9.96M", label: "active businesses in Brazil led by women — 39.7% of the total" },
+      { value: "2.6%", label: "of women-owned micro and small enterprises access formal loans, against 4.6% of men-owned ones" },
+      { value: "US$15.8B", label: "estimated financing gap for women-owned micro and small enterprises in Brazil" },
     ],
-    statsSource: "Source: Sebrae and Banco Central (Brazil's central bank), 2024.",
+    statsSource: "Sources: MEMP / Mapa de Empresas (2026) and IFC/Sicredi (2025). The 2.6% figure measures access to formal loans in the cited sample — it does not mean the rest were refused credit.",
     items: [
       {
         icon: Landmark,
         title: "Hard access to credit",
-        desc: "When credit does show up, it is expensive and short: overdraft, revolving card, loan sharks. The same entrepreneur who always pays on time is pushed to the priciest lines on the market — and although women default less than men (7.1% against 7.6%), it is women who pay the higher interest.",
+        desc: "When credit does show up, it is expensive and short: overdraft, revolving card, loan sharks. The same entrepreneur who always pays on time is pushed to the priciest lines on the market — because originating and servicing a small ticket costs almost the same as a large one, and it is that cost, not her, that sets the price.",
       },
       {
         icon: Eye,
