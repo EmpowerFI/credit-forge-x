@@ -48,6 +48,21 @@ const ImpactSectionEn = () => (
           produces them.
         </p>
       </div>
+
+      {/* The pilot is an observational design, not a controlled one. Saying so
+          here is cheaper than being asked, and it is the difference between
+          evidence and a claim. */}
+      <div className="mx-auto max-w-3xl space-y-4 rounded-2xl border border-border bg-card/50 p-8 md:p-10">
+        <p className="text-sm font-medium uppercase tracking-widest text-accent">
+          What we will not claim
+        </p>
+        <p className="leading-relaxed text-muted-foreground">
+          A business that grows after receiving capital has not proven that the capital caused
+          the growth. The pilot is observational, so changes will be reported as observed
+          association and contribution — not as causal impact — unless and until a design that
+          supports a causal claim exists.
+        </p>
+      </div>
     </div>
   </section>
 );
