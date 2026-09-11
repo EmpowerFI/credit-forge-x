@@ -462,7 +462,7 @@ The live site was written for the previous thesis. The business-model document (
 
 ## 6 · Week 0 remaining
 
-- [ ] §5 — website narrative update (11–13 Sep)
+- [x] §5 — website narrative update — done 2026-09-13 (all 11 items, plus a public `/sources` page; every figure on the site now traces to the verified documentation)
 - [ ] Confirm the submission form: exact deadline with timezone, required artifacts, World's Fair specifics
 - [x] Decisions D1–D10 recorded
 - [x] Infrastructure provisioned, keys backed up, branch cut
