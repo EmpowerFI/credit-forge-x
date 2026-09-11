@@ -269,11 +269,13 @@ It must genuinely: fetch the canonical payload from Postgres → recompute SHA-2
 
 ## I · DEMO PLAN
 
-Two videos (Colosseum requires both — §2):
+⚠️ **Scripting and producing the videos is out of this plan's scope (founder decision, 2026-09-13).** They remain **required submission artifacts** — Colosseum asks for a 2–3 minute presentation video and a product demo of at most three minutes — and are owned by the founder, outside the engineering backlog.
 
-**Pitch, ≤3 min — the *why*.** Problem is unit economics, not "women can't get credit". Prepare before credit. Three product layers. Traction that already exists: live Play Store app, real users, Sebrae PIER. The emotional beat is §I.1.
+What this plan still owes them is the thing only the build can provide: **a flow that survives being filmed.** That is what §I.1 and the Friday gates are for. What the videos should contain, if it helps whoever writes them:
 
-**Technical demo, ≤3 min — the *how*.** The funnel spine running live, the readiness/eligibility separation in the data, a commitment recomputed on screen, the zero-PII scan, the partner dashboard, the audit trail.
+**Pitch — the *why*.** Problem is unit economics, not "women can't get credit". Prepare before credit. Three product layers. Traction that already exists: live Play Store app, real users, Sebrae PIER. The beat is §I.1.
+
+**Technical demo — the *how*.** The funnel spine running live, the readiness/eligibility separation in the data, a commitment recomputed on screen, the zero-PII scan, the partner dashboard, the audit trail.
 
 ### I.1 The beat that makes the pitch memorable
 
@@ -311,7 +313,7 @@ That is the clearest possible statement of the thesis, it maps directly onto Col
 | 20 | Deterministic seed: 100 participants, 9 cases | M |
 | 21 | Zero-PII on-chain scan test | S |
 | 22 | README + architecture + privacy docs | M |
-| 23 | Both videos + submission artifacts | L |
+| 23 | Submission artifacts — repo access, logo, disclosures, forms *(videos excluded: founder-owned, §I)* | M |
 
 ### P1 — ships if the schedule holds
 
@@ -365,7 +367,7 @@ For a rules-based v0 they carry the same payload with no independent lifecycle. 
 Each week ends with a **Friday gate**: something demonstrable live, not described. A slipped gate fires the cut line the same day (§3).
 
 ### Week 0 · Fri 11 → Sun 13 Sep — website narrative, no hackathon code
-D8 forbids product code before the window. It does **not** touch the marketing site, which is pre-existing product — and the site is exactly what feeds the pitch video and three of Colosseum's judging criteria. So the pre-window days go to §5, plus drafting both video scripts.
+D8 forbids product code before the window. It does **not** touch the marketing site, which is pre-existing product — and the site is exactly what feeds the pitch and three of Colosseum's judging criteria. So the pre-window days go to §5.
 
 ### Week 1 · Mon 14 → Sun 20 Sep — foundation and the spine
 Schema M1–M8 + RLS + roles · Auth + `/app` shell + demo accounts · communities, membership, verification · education programs and progress · `packages/audit-commitments` with golden vectors · Anchor wave 1 (config, community, borrower) deployed to devnet · anchoring queue cloned from the email stack · seed v1.
@@ -384,7 +386,7 @@ That second half of the gate is the thesis. If it does not work, nothing else in
 ### Week 3 · Mon 28 Sep → Sun 4 Oct — readiness becomes capital
 Eligibility engine v0 · QualifiedCreditOpportunity + referral + partner decision · partners entity · loan lifecycle + payments · Community and Credit Partner dashboards · CTS cost events across stages · the audit screen (a full day, §G.4).
 
-**Record rough cuts of BOTH videos this week, while the flow works.** Two videos double the exposure to the classic failure: leaving it to the last 48 hours and discovering the flow breaks on camera.
+The flow is filmable from this gate onwards, which is the earliest the videos can be recorded against something real. Production is founder-owned (§I); what this week owes is a demo path that does not break on camera.
 
 **Gate · Fri 2 Oct:** a partner opens a qualified opportunity in its own dashboard, approves it, a loan is created and moves DRAFT → … → ACTIVE, a payment is recorded, and both dashboards show the same operation under different permissions.
 
@@ -396,7 +398,7 @@ In parallel, and not in spare evenings: **go-to-market, demand validation, distr
 **FEATURE FREEZE — Thu 8 Oct, end of day.** Bugs only.
 
 ### Submission · Fri 9 → Sun 11 Oct
-Clean-seed end-to-end run · README + architecture + privacy docs · both final videos · logo · devnet deploy verified from a machine that is not yours · repository access granted to `hackathon@colosseum.com` · **submit Sunday 11**. The 12th is margin for a failure, not working time.
+Clean-seed end-to-end run · README + architecture + privacy docs · logo · devnet deploy verified from a machine that is not yours · repository access granted to `hackathon@colosseum.com` · both videos (founder-owned, §I) · **submit Sunday 11**. The 12th is margin for a failure, not working time.
 
 ---
 
@@ -461,7 +463,6 @@ The live site was written for the previous thesis. The business-model document (
 ## 6 · Week 0 remaining
 
 - [ ] §5 — website narrative update (11–13 Sep)
-- [ ] Draft both video scripts (pitch ≤3 min, technical demo ≤3 min)
 - [ ] Confirm the submission form: exact deadline with timezone, required artifacts, World's Fair specifics
 - [x] Decisions D1–D10 recorded
 - [x] Infrastructure provisioned, keys backed up, branch cut
@@ -485,5 +486,6 @@ Run this on Fri 9 Oct:
 - [ ] Canonical payloads produce commitments; signature and slot persisted; an auditor recomputes and gets VERIFIED
 - [ ] **Zero PII and zero raw financial values in program accounts** — asserted by an automated scan
 - [ ] Every anchored entity reconciles VERIFIED in the demo scenario
-- [ ] Seed builds the scenario in under 5 minutes; both videos are under 3 minutes; the local fallback works
+- [ ] Seed builds the scenario in under 5 minutes and the local fallback works
+- [ ] The demo path runs end to end without breaking — the precondition the videos depend on (production itself is founder-owned, §I)
 - [ ] Every simulated figure is visibly labelled SIMULATED
