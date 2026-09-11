@@ -48,7 +48,10 @@ const HowItWorksSectionEn = () => (
           <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
             Conventional flow
           </p>
-          <CapitalFlow steps={conventional} />
+          <CapitalFlow
+            steps={conventional}
+            caption="The conventional flow starts at the credit request: analysis, orientation, disbursement and monitoring all happen after the entrepreneur has already asked for money."
+          />
         </div>
 
         <div className="space-y-3">
