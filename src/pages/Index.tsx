@@ -1,6 +1,6 @@
 import Seo from "@/components/Seo";
 import BusinessModelSectionEn from "@/components/en/BusinessModelSectionEn";
-import CreditIntelligenceSectionEn from "@/components/en/CreditIntelligenceSectionEn";
+import CapitalRailSectionEn from "@/components/en/CapitalRailSectionEn";
 import FirstMarketSectionEn from "@/components/en/FirstMarketSectionEn";
 import FooterEn from "@/components/en/FooterEn";
 import ForEntrepreneursSectionEn from "@/components/en/ForEntrepreneursSectionEn";
@@ -11,10 +11,10 @@ import ImpactSectionEn from "@/components/en/ImpactSectionEn";
 import NavbarEn from "@/components/en/NavbarEn";
 import PilotSectionEn from "@/components/en/PilotSectionEn";
 import ProblemSectionEn from "@/components/en/ProblemSectionEn";
-import ProductiveCapitalSectionEn from "@/components/en/ProductiveCapitalSectionEn";
+import MarketEvidenceSectionEn from "@/components/en/MarketEvidenceSectionEn";
 import SolutionSectionEn from "@/components/en/SolutionSectionEn";
 import TractionSectionEn from "@/components/en/TractionSectionEn";
-import WhySolanaSectionEn from "@/components/en/WhySolanaSectionEn";
+import ReadinessSectionEn from "@/components/en/ReadinessSectionEn";
 import { organizationSchema } from "@/config/structuredData";
 
 // index.html still carries the Portuguese meta it shipped with, so the English
@@ -29,15 +29,22 @@ const alternates = [
 const jsonLd = [organizationSchema()];
 
 /**
- * The corporate site's front door, in English: EmpowerFI as credit
- * infrastructure connecting global capital to microbusinesses. The
- * entrepreneur-facing product lives on at /pt, in Portuguese.
+ * The corporate site's front door, in English: EmpowerFI as productive-credit
+ * infrastructure — preparation before credit, qualified origination, servicing
+ * after disbursement. The entrepreneur-facing product lives on at /pt, in
+ * Portuguese.
+ *
+ * Section order follows the argument an investor reads in: what is broken, what
+ * we built, how it works, why readiness is not eligibility, how it earns money,
+ * how big the market is, where we start, what is already real — and only then
+ * the capital rail, which is infrastructure inside the product rather than the
+ * pitch.
  */
 const Index = () => (
   <div className="min-h-screen bg-background">
     <Seo
-      title="EmpowerFI — Credit infrastructure for the next generation of entrepreneurs"
-      description="EmpowerFI connects global capital with underserved microbusinesses in emerging markets — starting with women entrepreneurs in Brazil. Turning global liquidity into productive capital."
+      title="EmpowerFI — Productive-credit infrastructure, from readiness to capital"
+      description="EmpowerFI is productive-credit infrastructure that turns entrepreneur communities and education programmes into qualified credit pipelines — preparing businesses before credit, originating better, servicing continuously and measuring outcomes."
       path="/"
       lang="en"
       alternates={alternates}
@@ -47,14 +54,14 @@ const Index = () => (
     <HeroSectionEn />
     <ProblemSectionEn />
     <SolutionSectionEn />
-    <WhySolanaSectionEn />
-    <ProductiveCapitalSectionEn />
     <HowItWorksSectionEn />
-    <CreditIntelligenceSectionEn />
-    <ImpactSectionEn />
+    <ReadinessSectionEn />
+    <BusinessModelSectionEn />
+    <MarketEvidenceSectionEn />
     <FirstMarketSectionEn />
     <TractionSectionEn />
-    <BusinessModelSectionEn />
+    <CapitalRailSectionEn />
+    <ImpactSectionEn />
     <PilotSectionEn />
     <ForEntrepreneursSectionEn />
     <ForPartnersSectionEn />

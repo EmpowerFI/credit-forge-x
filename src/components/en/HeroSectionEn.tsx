@@ -14,18 +14,18 @@ const HeroSectionEn = () => (
         <div className="space-y-7">
           <div className="inline-flex animate-fade-in items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-accent opacity-0 glow-border">
             <span className="h-2 w-2 animate-pulse-glow rounded-full bg-accent" />
-            Credit infrastructure · Emerging markets · Brazil first
+            Productive-credit infrastructure · Brazil first
           </div>
 
           <h1 className="section-title !text-4xl !leading-[1.08] opacity-0 animate-fade-in-delay-1 md:!text-6xl">
-            Global capital. Local businesses.{" "}
-            <span className="text-gradient">Real economic impact.</span>
+            From readiness{" "}
+            <span className="text-gradient">to capital.</span>
           </h1>
 
           <p className="max-w-2xl text-lg leading-relaxed text-muted-foreground opacity-0 animate-fade-in-delay-2 md:text-xl">
-            EmpowerFI is building credit infrastructure that connects global capital with
-            underserved microbusinesses in emerging markets — starting with women
-            entrepreneurs in Brazil.
+            EmpowerFI is productive-credit infrastructure that turns entrepreneur
+            communities and education programmes into pipelines of businesses prepared to
+            receive capital — starting with women entrepreneurs in Brazil.
           </p>
 
           <div className="space-y-4 pt-2 opacity-0 animate-fade-in-delay-3">

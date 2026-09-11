@@ -1,31 +1,36 @@
-import { Building2, Layers, Store } from "lucide-react";
 import CapitalFlow from "@/components/CapitalFlow";
 import SectionHeading from "@/components/SectionHeading";
 
-const participants = [
-  {
-    icon: Building2,
-    role: "Investors",
-    desc: "Global investors discover productive credit opportunities and deploy capital using stablecoins.",
-  },
-  {
-    icon: Layers,
-    role: "EmpowerFI",
-    desc: "EmpowerFI provides credit intelligence, underwriting signals, monitoring, servicing and impact measurement.",
-  },
-  {
-    icon: Store,
-    role: "Entrepreneurs",
-    desc: "Entrepreneurs receive local currency, invest in their businesses and repay locally.",
-  },
+const conventional = [
+  { label: "Credit request", emphasis: true },
+  { label: "Analysis" },
+  { label: "Orientation" },
+  { label: "Disbursement" },
+  { label: "Monitoring" },
 ];
 
-const flow = [
-  { label: "Investor", sub: "USDC", emphasis: true },
-  { label: "Solana" },
-  { label: "EmpowerFI", emphasis: true },
-  { label: "Local financial rail" },
-  { label: "Entrepreneur", sub: "Pix / local currency", emphasis: true },
+const empowerfi = [
+  { label: "Community", emphasis: true },
+  { label: "Education" },
+  { label: "Organization" },
+  { label: "Business data" },
+  { label: "Readiness", emphasis: true },
+  { label: "Credit intent", emphasis: true },
+  { label: "Eligibility" },
+  { label: "Credit" },
+  { label: "Servicing" },
+];
+
+// The six answers the system is allowed to give. Most lending products can only
+// say yes or no; being able to say "not yet", "not needed" or "look at this by
+// hand" is the point of preparing before the request.
+const outcomes = [
+  { title: "Ready for credit", desc: "Prepared, with enough data behind the judgement." },
+  { title: "Needs more data", desc: "The business is running; the record of it is too thin." },
+  { title: "Needs more preparation", desc: "Organization or education still in progress." },
+  { title: "No current need for capital", desc: "Ready, and not looking to borrow. A good outcome." },
+  { title: "Manual review", desc: "The rules are not confident enough to decide alone." },
+  { title: "Not eligible right now", desc: "With the reason codes that say what would change it." },
 ];
 
 const HowItWorksSectionEn = () => (
@@ -33,35 +38,50 @@ const HowItWorksSectionEn = () => (
     <div className="container mx-auto space-y-12">
       <SectionHeading
         eyebrow="How it works"
-        title="Three participants,"
-        accent="one chain of capital."
-        subtitle="Capital starts as stablecoins and arrives as local currency in a business bank account. Everything between the two is infrastructure."
+        title="The funnel starts before"
+        accent="the credit request."
+        subtitle="Preparation, organization and business data come first. By the time capital is discussed, there is already a record to discuss it with."
       />
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {participants.map(({ icon: Icon, role, desc }, i) => (
-          <div key={role} className="glass rounded-2xl p-8 glow-border">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
-                <Icon className="text-primary-foreground" size={22} />
-              </div>
-              <span className="font-mono text-xs text-accent">0{i + 1}</span>
-            </div>
-            <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{role}</h3>
-            <p className="leading-relaxed text-muted-foreground">{desc}</p>
+      <div className="space-y-10">
+        <div className="space-y-3">
+          <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground">
+            Conventional flow
+          </p>
+          <CapitalFlow steps={conventional} />
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-sm font-medium uppercase tracking-widest text-accent">
+            EmpowerFI
+          </p>
+          <CapitalFlow
+            steps={empowerfi}
+            caption="The journey does two jobs at once: for the entrepreneur it prepares the business to access capital; for the credit provider it produces a qualified origination pipeline before the final analysis."
+          />
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-3xl space-y-5 rounded-2xl p-10 text-center glass glow-border shadow-glow">
+        <p className="font-heading text-2xl font-bold text-foreground md:text-3xl">
+          Credit is not the goal{" "}
+          <span className="text-gradient">for every entrepreneur.</span>
+        </p>
+        <p className="leading-relaxed text-muted-foreground">
+          A good funnel also identifies who should wait, who should organize the business
+          further, and who should not take on debt at all. Completing the education journey
+          never makes anyone automatically eligible.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {outcomes.map(({ title, desc }) => (
+          <div key={title} className="glass rounded-xl p-6 glow-border">
+            <h3 className="mb-1.5 font-heading font-semibold text-foreground">{title}</h3>
+            <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
           </div>
         ))}
       </div>
-
-      <CapitalFlow
-        steps={flow}
-        caption="An investor's USDC settles on Solana, passes through EmpowerFI, converts on a local financial rail and reaches the entrepreneur as local currency over Pix."
-      />
-
-      <p className="text-center text-sm text-muted-foreground">
-        The entrepreneur does not need to hold a wallet or know that a blockchain was
-        involved.
-      </p>
     </div>
   </section>
 );
