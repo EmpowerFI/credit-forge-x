@@ -3,13 +3,16 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import SectionHeading from "@/components/SectionHeading";
 
+// Hypotheses, phrased as hypotheses. The pilot is large enough to validate a
+// process and its costs, and far too small to support a population claim about
+// default rates — so none of these is written as a result.
 const tests = [
-  "Small-ticket productive credit",
-  "Digital credit monitoring",
-  "Alternative credit intelligence",
-  "Repayment behavior",
-  "Economic outcomes",
-  "Stablecoin-based financial infrastructure",
+  "Whether preparing a business before the request produces useful signals and a better pipeline",
+  "Whether digitalization lowers the cost to serve without degrading credit quality",
+  "Whether programmes and sponsors pay for cohort management, dashboards and evidence",
+  "Whether financial partners value and convert qualified opportunities",
+  "Whether longitudinal data helps explain repayment capacity and exceptions",
+  "Whether capital is used productively and produces observable economic value",
 ];
 
 const PilotSectionEn = () => (
@@ -19,7 +22,7 @@ const PilotSectionEn = () => (
         eyebrow="Pilot"
         title="Building the first"
         accent="real-world pilot."
-        subtitle="EmpowerFI is preparing its first productive microcredit pilot with women entrepreneurs in Brazil."
+        subtitle="EmpowerFI is preparing its first productive microcredit pilot with women entrepreneurs and partner communities in Brazil. It is designed to measure a process and its costs — not to prove a default rate."
       />
 
       <div className="mx-auto max-w-4xl space-y-10 rounded-2xl p-10 glass glow-border shadow-glow md:p-14">

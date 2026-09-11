@@ -4,6 +4,8 @@ import { CONTACT_EMAIL, INSTAGRAM_URL, LINKEDIN_URL, X_URL } from "@/config/link
 
 const siteLinks = [
   { label: "How It Works", to: "/#how-it-works" },
+  { label: "Readiness", to: "/#readiness" },
+  { label: "Business Model", to: "/#business-model" },
   { label: "Impact", to: "/#impact" },
   { label: "For Entrepreneurs", to: "/#for-entrepreneurs" },
   { label: "For Partners", to: "/#for-partners" },
@@ -12,6 +14,7 @@ const siteLinks = [
 
 const companyLinks = [
   { label: "About", to: "/about" },
+  { label: "Sources", to: "/sources" },
   { label: "Terms", to: "/terms" },
   { label: "Privacy", to: "/privacy" },
   { label: "Português", to: "/pt" },

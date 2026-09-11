@@ -1,3 +1,5 @@
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import SectionHeading from "@/components/SectionHeading";
 
 const brazil = [
@@ -86,6 +88,15 @@ const MarketEvidenceSectionEn = () => (
           ))}
         </div>
       </div>
+
+      <p className="text-center">
+        <Link
+          to="/sources"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-colors hover:text-foreground"
+        >
+          Every source, with its year and scope <ArrowRight size={14} />
+        </Link>
+      </p>
     </div>
   </section>
 );

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Send } from "lucide-react";
+import { Building2, HandCoins, Mail, Send, Users } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,13 +16,28 @@ const contactSchema = z.object({
   message: z.string().trim().min(5, "Message too short").max(2000, "Max 2000 characters"),
 });
 
-const audiences = [
-  "Entrepreneurship communities",
-  "NGOs",
-  "Foundations",
-  "Companies",
-  "Financial institutions",
-  "Impact organizations",
+// Three kinds of partner, three different conversations. The previous version
+// listed six audiences as undifferentiated pills, which told none of them what
+// they would actually get.
+const partners = [
+  {
+    icon: Users,
+    title: "Communities, NGOs and ESG programmes",
+    desc: "Run the journey, see who needs what, and show progress that is operational rather than attendance-based. Cohort management, check-ins, readiness measurement and reporting.",
+    value: "You get evidence of participation, organization, readiness and outcomes — whether or not anyone ever borrows.",
+  },
+  {
+    icon: Building2,
+    title: "Financial institutions",
+    desc: "Receive qualified credit opportunities instead of raw leads: readiness, data quality, business history, affordability, purpose, suggested ticket range, risk band, confidence and reason codes.",
+    value: "You keep your own credit policy, your own underwriting and the final decision. We reduce the work that precedes it.",
+  },
+  {
+    icon: HandCoins,
+    title: "Capital providers",
+    desc: "Access operations qualified by the same infrastructure, with portfolio analytics, repayment behaviour, risk distribution, cost to serve and productive outcomes.",
+    value: "Pseudonymous by design, auditable by construction — evidence without exposing anyone's financial life.",
+  },
 ];
 
 const ForPartnersSectionEn = () => {
@@ -81,21 +96,25 @@ const ForPartnersSectionEn = () => {
       <div className="container mx-auto space-y-12">
         <SectionHeading
           eyebrow="For partners"
-          title="Build impact"
-          accent="with us."
-          subtitle="We partner with organizations that already support entrepreneurs and want to connect education, productive capital and measurable economic outcomes."
+          title="Three kinds of partner."
+          accent="Three different conversations."
+          subtitle="The same infrastructure serves a community programme, a lender and a capital provider — but none of them wants to hear the same thing, so here is what each one actually gets."
         />
 
-        <ul className="flex flex-wrap justify-center gap-3">
-          {audiences.map((audience) => (
-            <li
-              key={audience}
-              className="rounded-full px-5 py-2.5 font-heading text-sm font-semibold text-foreground glass glow-border"
-            >
-              {audience}
-            </li>
+        <div className="grid gap-6 lg:grid-cols-3">
+          {partners.map(({ icon: Icon, title, desc, value }) => (
+            <div key={title} className="flex flex-col rounded-2xl p-8 glass glow-border">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
+                <Icon className="text-primary-foreground" size={22} />
+              </div>
+              <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{title}</h3>
+              <p className="flex-1 leading-relaxed text-muted-foreground">{desc}</p>
+              <p className="mt-5 border-t border-border pt-5 text-sm leading-relaxed text-foreground">
+                {value}
+              </p>
+            </div>
           ))}
-        </ul>
+        </div>
 
         <div className="mx-auto max-w-3xl space-y-8 rounded-2xl p-10 glass glow-border shadow-glow md:p-14">
           <div className="space-y-3 text-center">

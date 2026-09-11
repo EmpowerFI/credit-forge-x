@@ -2,12 +2,12 @@ import CapitalFlow from "@/components/CapitalFlow";
 import SectionHeading from "@/components/SectionHeading";
 
 const outcomes = [
-  "Businesses funded",
-  "Productive capital deployed",
-  "Repayment performance",
-  "Business revenue evolution",
-  "Businesses still active",
-  "Jobs maintained or created",
+  "Repayment performance and portfolio at risk",
+  "Share of capital applied to its declared purpose",
+  "Revenue, margin and cash-flow proxy, before and after",
+  "Inventory or capacity change where measurable",
+  "Economic Value Created — incremental profit less the total cost of the credit",
+  "Economic Value Multiple — value created per unit of capital deployed",
 ];
 
 const chain = [
@@ -22,9 +22,9 @@ const ImpactSectionEn = () => (
     <div className="container mx-auto space-y-12">
       <SectionHeading
         eyebrow="Impact"
-        title="Financial return meets"
-        accent="measurable economic impact."
-        subtitle="EmpowerFI does not only measure how much capital was sent. What matters is what happened afterwards."
+        title="Good credit is not only credit"
+        accent="that gets repaid."
+        subtitle="Repayment tells you the operation worked for the lender. It tells you nothing about whether the business is better off. We intend to measure both."
       />
 
       <CapitalFlow

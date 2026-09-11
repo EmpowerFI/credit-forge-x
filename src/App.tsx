@@ -10,6 +10,7 @@ import Index from "./pages/Index.tsx";
 import IndexPt from "./pages/IndexPt.tsx";
 import Investors from "./pages/Investors.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Sources from "./pages/Sources";
 import Privacy from "./pages/Privacy.tsx";
 import PrivacyPt from "./pages/PrivacyPt.tsx";
 import Terms from "./pages/Terms.tsx";
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/sources" element={<Sources />} />
 
           {/* Portuguese: the entrepreneur-facing product communication. */}
           <Route path="/pt" element={<IndexPt />} />

@@ -12,9 +12,9 @@ const FirstMarketSectionEn = () => (
     <div className="container mx-auto space-y-12">
       <SectionHeading
         eyebrow="First market"
-        title="Starting with women entrepreneurs"
-        accent="in Brazil."
-        subtitle="Brazil is EmpowerFI's first market and laboratory."
+        title="Brazil as the laboratory."
+        accent="Architecture ready for more."
+        subtitle="Brazil is the first market because the conditions are unusually good for testing: scale, a mature instant-payment rail, and established microcredit and public programmes. The core travels; compliance, partners and the last mile change by country."
       />
 
       <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
