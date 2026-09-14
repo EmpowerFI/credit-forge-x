@@ -21,7 +21,8 @@ const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
           EmpowerFI
         </Link>
 
-        <div className="hidden md:flex items-center gap-8">
+        {/* Nine entries only fit from lg up; tablets get the menu button. */}
+        <div className="hidden lg:flex items-center gap-8">
           {nav.links.map((l) => (
             <a
               key={l.href}
@@ -46,7 +47,7 @@ const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
         </div>
 
         <button
-          className="md:hidden text-foreground"
+          className="lg:hidden text-foreground"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
           aria-label="Menu"
@@ -56,7 +57,7 @@ const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
       </div>
 
       {open && (
-        <div className="md:hidden glass border-t border-border px-4 pb-4">
+        <div className="lg:hidden glass border-t border-border px-4 pb-4">
           {nav.links.map((l) => (
             <a
               key={l.href}
