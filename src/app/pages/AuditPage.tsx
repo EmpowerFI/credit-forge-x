@@ -114,6 +114,9 @@ interface AuditRecord {
     signature: string | null;
     slot: number | null;
     program_id: string;
+    reconcile: "unchecked" | "verified" | "missing" | "mismatch";
+    reconciled_at: string | null;
+    reconcile_note: string | null;
   };
   payload: CanonicalObject | null;
   /** The community's chain ref: what every account address is derived from. */
@@ -417,6 +420,12 @@ export default function AuditPage() {
                   </a>
                 )}
               </div>
+              {record.anchor.reconciled_at && (
+                <p className={`text-xs ${record.anchor.reconcile === "verified" ? "text-muted-foreground" : "text-red-700"}`}>
+                  Also re-checked by EmpowerFI's reconciliation job on {new Date(record.anchor.reconciled_at).toLocaleString("en-GB")}:{" "}
+                  {record.anchor.reconcile}{record.anchor.reconcile_note ? ` — ${record.anchor.reconcile_note}` : ""}.
+                </p>
+              )}
             </section>
 
             {canonical && (

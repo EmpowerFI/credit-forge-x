@@ -417,3 +417,6 @@ enabled = true
 # Called by pg_cron with a shared secret (x-anchor-secret), not a user JWT.
 [functions.anchor-submit]
 verify_jwt = false
+
+[functions.anchor-reconcile]
+verify_jwt = false
