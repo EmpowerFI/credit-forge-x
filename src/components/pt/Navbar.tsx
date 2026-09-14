@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Languages, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const navLinks = [
@@ -10,6 +10,8 @@ const navLinks = [
   { label: "Contato", href: "#contato" },
 ];
 
+// Botão de menu em qualquer largura, por escolha da fundadora: o painel fica
+// mais limpo que uma fileira de links no cabeçalho.
 const Navbar = () => {
   const [open, setOpen] = useState(false);
 
@@ -20,36 +22,11 @@ const Navbar = () => {
           EmpowerFI
         </Link>
 
-        <div className="hidden items-center gap-7 lg:flex">
-          {navLinks.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {l.label}
-            </a>
-          ))}
-          {/* Rota, não âncora: os outros links saltam dentro desta página. */}
-          <Link
-            to="/pt/sobre"
-            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Sobre
-          </Link>
-          {/* O site institucional — e a página de investidores — vivem em inglês. */}
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <Languages size={14} /> EN
-          </Link>
-        </div>
-
         <button
-          className="text-foreground lg:hidden"
+          className="text-foreground"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
+          aria-controls="menu-site"
           aria-label="Menu"
         >
           {open ? <X size={24} /> : <Menu size={24} />}
@@ -57,31 +34,34 @@ const Navbar = () => {
       </div>
 
       {open && (
-        <div className="border-t border-border px-4 pb-4 glass lg:hidden">
-          {navLinks.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
+        // O container interno alinha os itens com o logo em telas largas.
+        <div id="menu-site" className="border-t border-border glass">
+          <div className="container mx-auto px-4 pb-4">
+            {navLinks.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {l.label}
+              </a>
+            ))}
+            <Link
+              to="/pt/sobre"
               onClick={() => setOpen(false)}
               className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              {l.label}
-            </a>
-          ))}
-          <Link
-            to="/pt/sobre"
-            onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Sobre
-          </Link>
-          <Link
-            to="/"
-            onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            English
-          </Link>
+              Sobre
+            </Link>
+            <Link
+              to="/"
+              onClick={() => setOpen(false)}
+              className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              English
+            </Link>
+          </div>
         </div>
       )}
     </nav>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Languages, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -16,6 +16,8 @@ const navLinks = [
   { label: "About", to: "/about" },
 ];
 
+// The menu button shows at every width, by the founder's choice: a panel reads
+// cleaner than a row of header links and keeps every section one click away.
 const NavbarEn = () => {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
@@ -27,37 +29,11 @@ const NavbarEn = () => {
           EmpowerFI
         </Link>
 
-        <div className="hidden items-center gap-6 xl:flex">
-          {navLinks.map(({ label, to }) => (
-            <Link
-              key={to}
-              to={to}
-              className={`text-sm transition-colors hover:text-foreground ${
-                pathname === to ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
-          <Link
-            to="/pt"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <Languages size={14} /> PT
-          </Link>
-          <Button
-            asChild
-            size="sm"
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Link to="/investors#waitlist">Investor Waitlist</Link>
-          </Button>
-        </div>
-
         <button
-          className="text-foreground xl:hidden"
+          className="text-foreground"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
+          aria-controls="site-menu"
           aria-label="Menu"
         >
           {open ? <X size={24} /> : <Menu size={24} />}
@@ -65,32 +41,38 @@ const NavbarEn = () => {
       </div>
 
       {open && (
-        <div className="border-t border-border px-4 pb-5 glass xl:hidden">
-          {navLinks.map(({ label, to }) => (
+        // Inner container lines the entries up under the logo on wide screens.
+        <div id="site-menu" className="border-t border-border glass">
+          <div className="container mx-auto px-4 pb-5">
+            {navLinks.map(({ label, to }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={() => setOpen(false)}
+                aria-current={pathname === to ? "page" : undefined}
+                className={`block py-3 text-sm transition-colors hover:text-foreground ${
+                  pathname === to ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
             <Link
-              key={to}
-              to={to}
+              to="/pt"
               onClick={() => setOpen(false)}
               className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              {label}
+              Português
             </Link>
-          ))}
-          <Link
-            to="/pt"
-            onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Português
-          </Link>
-          <Button
-            asChild
-            className="mt-3 w-full bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Link to="/investors#waitlist" onClick={() => setOpen(false)}>
-              Investor Waitlist
-            </Link>
-          </Button>
+            <Button
+              asChild
+              className="mt-3 w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
+            >
+              <Link to="/investors#waitlist" onClick={() => setOpen(false)}>
+                Investor Waitlist
+              </Link>
+            </Button>
+          </div>
         </div>
       )}
     </nav>
