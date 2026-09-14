@@ -105,3 +105,113 @@ pub struct ReadinessAttestation {
     pub schema_version: u8,
     pub bump: u8,
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace, Debug)]
+pub enum EligibilityDecision {
+    Eligible,
+    EligibleReduced,
+    ManualReview,
+    NotEligible,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace, Debug)]
+pub enum Grade {
+    Low,
+    Medium,
+    High,
+}
+
+/// One eligibility assessment, for a specific requested amount. It points at
+/// the readiness attestation it relied on, which the program checks was
+/// CreditReady and of the same borrower: eligibility never precedes readiness.
+/// It is EmpowerFI's assessment, not the partner's lending decision.
+#[account]
+#[derive(InitSpace)]
+pub struct EligibilityAttestation {
+    pub borrower: Pubkey,
+    pub readiness: Pubkey,
+    pub eligibility_no: u32,
+    pub decision: EligibilityDecision,
+    pub risk_band: Grade,
+    pub confidence: Grade,
+    /// major * 10000 + minor * 100 + patch: eligibility-v0.1.0 is 100.
+    pub model_version: u16,
+    pub commitment: [u8; 32],
+    pub attested_at: i64,
+    pub schema_version: u8,
+    pub bump: u8,
+}
+
+/// A qualified credit opportunity: what EmpowerFI takes to a partner. Only
+/// from an eligibility that is not NotEligible.
+#[account]
+#[derive(InitSpace)]
+pub struct OpportunityCommitment {
+    pub borrower: Pubkey,
+    pub eligibility: Pubkey,
+    pub opportunity_no: u32,
+    pub commitment: [u8; 32],
+    pub created_at: i64,
+    pub schema_version: u8,
+    pub bump: u8,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace, Debug)]
+pub enum LoanStatus {
+    Draft,
+    PartnerApproved,
+    Disbursed,
+    Active,
+    Paid,
+    Defaulted,
+    Cancelled,
+}
+
+impl LoanStatus {
+    /// The loan state machine. Postgres enforces the same one: the database
+    /// stops a bad screen, the program stops a bad database.
+    pub fn can_become(self, next: LoanStatus) -> bool {
+        use LoanStatus::*;
+        matches!(
+            (self, next),
+            (Draft, PartnerApproved)
+                | (Draft, Cancelled)
+                | (PartnerApproved, Disbursed)
+                | (PartnerApproved, Cancelled)
+                | (Disbursed, Active)
+                | (Active, Paid)
+                | (Active, Defaulted)
+        )
+    }
+}
+
+/// One loan per opportunity. Terms and every status change are commitments
+/// to records held off-chain (amount, rate and the partner's decision are
+/// never written here); the status itself is public.
+#[account]
+#[derive(InitSpace)]
+pub struct LoanAccount {
+    pub borrower: Pubkey,
+    pub opportunity: Pubkey,
+    pub status: LoanStatus,
+    pub terms_commitment: [u8; 32],
+    /// Commitment to the record behind the latest status change.
+    pub last_transition_commitment: [u8; 32],
+    pub transitions: u16,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub schema_version: u8,
+    pub bump: u8,
+}
+
+/// One instalment paid. The amount stays off-chain, in the commitment.
+#[account]
+#[derive(InitSpace)]
+pub struct PaymentCommitment {
+    pub loan: Pubkey,
+    pub instalment_no: u16,
+    pub commitment: [u8; 32],
+    pub recorded_at: i64,
+    pub schema_version: u8,
+    pub bump: u8,
+}

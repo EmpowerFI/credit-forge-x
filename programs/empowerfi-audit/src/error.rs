@@ -20,4 +20,14 @@ pub enum AuditError {
     InvalidPeriod,
     #[msg("Assessments are numbered from 1")]
     InvalidAssessmentNumber,
+    #[msg("Eligibility needs a CreditReady readiness attestation of the same borrower")]
+    ReadinessNotCreditReady,
+    #[msg("An opportunity needs an eligibility that is not NotEligible, of the same borrower")]
+    NotEligible,
+    #[msg("That loan status change is not allowed")]
+    InvalidLoanTransition,
+    #[msg("Payments are recorded only on a disbursed or active loan")]
+    LoanNotRepaying,
+    #[msg("Instalments are numbered from 1")]
+    InvalidInstalmentNumber,
 }

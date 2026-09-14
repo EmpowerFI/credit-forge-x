@@ -11,3 +11,7 @@ export * from "./borrower.ts";
 export * from "./checkin.ts";
 export * from "./community.ts";
 export * from "./config.ts";
+export * from "./eligibility.ts";
+export * from "./loan.ts";
+export * from "./opportunity.ts";
+export * from "./payment.ts";

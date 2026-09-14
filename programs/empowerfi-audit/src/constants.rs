@@ -12,6 +12,14 @@ pub const BORROWER_SEED: &[u8] = b"borrower";
 pub const CHECKIN_SEED: &[u8] = b"checkin";
 #[constant]
 pub const READINESS_SEED: &[u8] = b"readiness";
+#[constant]
+pub const ELIGIBILITY_SEED: &[u8] = b"eligibility";
+#[constant]
+pub const OPPORTUNITY_SEED: &[u8] = b"opportunity";
+#[constant]
+pub const LOAN_SEED: &[u8] = b"loan";
+#[constant]
+pub const PAYMENT_SEED: &[u8] = b"payment";
 
 /// Version of the commitment schemas these accounts carry. It matches the
 /// `:v1` suffix of the domain tags in packages/audit-commitments; a payload

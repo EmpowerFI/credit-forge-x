@@ -7,5 +7,8 @@
  */
 
 export * from "./communityStatus.ts";
+export * from "./eligibilityDecision.ts";
+export * from "./grade.ts";
+export * from "./loanStatus.ts";
 export * from "./readinessBand.ts";
 export * from "./readinessStatus.ts";

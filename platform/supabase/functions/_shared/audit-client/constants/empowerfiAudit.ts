@@ -24,6 +24,22 @@ export const CONFIG_SEED: ReadonlyUint8Array = new Uint8Array([
   99, 111, 110, 102, 105, 103,
 ]);
 
+export const ELIGIBILITY_SEED: ReadonlyUint8Array = new Uint8Array([
+  101, 108, 105, 103, 105, 98, 105, 108, 105, 116, 121,
+]);
+
+export const LOAN_SEED: ReadonlyUint8Array = new Uint8Array([
+  108, 111, 97, 110,
+]);
+
+export const OPPORTUNITY_SEED: ReadonlyUint8Array = new Uint8Array([
+  111, 112, 112, 111, 114, 116, 117, 110, 105, 116, 121,
+]);
+
+export const PAYMENT_SEED: ReadonlyUint8Array = new Uint8Array([
+  112, 97, 121, 109, 101, 110, 116,
+]);
+
 export const READINESS_SEED: ReadonlyUint8Array = new Uint8Array([
   114, 101, 97, 100, 105, 110, 101, 115, 115,
 ]);

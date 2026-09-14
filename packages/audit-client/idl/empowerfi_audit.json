@@ -124,6 +124,393 @@
       ]
     },
     {
+      "name": "anchor_opportunity",
+      "docs": [
+        "Commits a qualified credit opportunity, from an eligibility that is not NotEligible."
+      ],
+      "discriminator": [
+        181,
+        6,
+        247,
+        147,
+        168,
+        144,
+        92,
+        150
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrower",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "borrower.borrower_ref_hash",
+                "account": "BorrowerAudit"
+              }
+            ]
+          }
+        },
+        {
+          "name": "eligibility"
+        },
+        {
+          "name": "opportunity",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  112,
+                  112,
+                  111,
+                  114,
+                  116,
+                  117,
+                  110,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "borrower"
+              },
+              {
+                "kind": "arg",
+                "path": "opportunity_no"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "opportunity_no",
+          "type": "u32"
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "anchor_payment",
+      "docs": [
+        "Commits one paid instalment, once, on a disbursed or active loan."
+      ],
+      "discriminator": [
+        185,
+        26,
+        49,
+        155,
+        134,
+        35,
+        5,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "loan",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  97,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "loan.opportunity",
+                "account": "LoanAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  97,
+                  121,
+                  109,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "loan"
+              },
+              {
+                "kind": "arg",
+                "path": "instalment_no"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "instalment_no",
+          "type": "u16"
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "attest_eligibility",
+      "docs": [
+        "Attests an eligibility assessment. Only against a CreditReady readiness",
+        "attestation of the same borrower: eligibility never precedes readiness."
+      ],
+      "discriminator": [
+        199,
+        54,
+        190,
+        133,
+        207,
+        219,
+        168,
+        98
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrower",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "borrower.borrower_ref_hash",
+                "account": "BorrowerAudit"
+              }
+            ]
+          }
+        },
+        {
+          "name": "readiness"
+        },
+        {
+          "name": "eligibility",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  108,
+                  105,
+                  103,
+                  105,
+                  98,
+                  105,
+                  108,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "borrower"
+              },
+              {
+                "kind": "arg",
+                "path": "eligibility_no"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "eligibility_no",
+          "type": "u32"
+        },
+        {
+          "name": "decision",
+          "type": {
+            "defined": {
+              "name": "EligibilityDecision"
+            }
+          }
+        },
+        {
+          "name": "risk_band",
+          "type": {
+            "defined": {
+              "name": "Grade"
+            }
+          }
+        },
+        {
+          "name": "confidence",
+          "type": {
+            "defined": {
+              "name": "Grade"
+            }
+          }
+        },
+        {
+          "name": "model_version",
+          "type": "u16"
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "attest_readiness",
       "docs": [
         "Attests one readiness assessment: public status and band, private detail."
@@ -252,6 +639,119 @@
         },
         {
           "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "create_loan",
+      "docs": [
+        "Opens the loan for an opportunity, in Draft. One per opportunity."
+      ],
+      "discriminator": [
+        166,
+        131,
+        118,
+        219,
+        138,
+        218,
+        206,
+        140
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "opportunity",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  112,
+                  112,
+                  111,
+                  114,
+                  116,
+                  117,
+                  110,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "opportunity.borrower",
+                "account": "OpportunityCommitment"
+              },
+              {
+                "kind": "account",
+                "path": "opportunity.opportunity_no",
+                "account": "OpportunityCommitment"
+              }
+            ]
+          }
+        },
+        {
+          "name": "loan",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  97,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "opportunity"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "terms_commitment",
           "type": {
             "array": [
               "u8",
@@ -578,6 +1078,90 @@
       ]
     },
     {
+      "name": "transition_loan",
+      "docs": [
+        "Moves a loan along its state machine; anything else is refused."
+      ],
+      "discriminator": [
+        53,
+        30,
+        226,
+        118,
+        198,
+        154,
+        112,
+        240
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "loan",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  97,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "loan.opportunity",
+                "account": "LoanAccount"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "to",
+          "type": {
+            "defined": {
+              "name": "LoanStatus"
+            }
+          }
+        },
+        {
+          "name": "transition_commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "verify_community",
       "discriminator": [
         20,
@@ -697,6 +1281,58 @@
       ]
     },
     {
+      "name": "EligibilityAttestation",
+      "discriminator": [
+        153,
+        11,
+        66,
+        237,
+        172,
+        55,
+        219,
+        62
+      ]
+    },
+    {
+      "name": "LoanAccount",
+      "discriminator": [
+        223,
+        49,
+        62,
+        167,
+        247,
+        182,
+        239,
+        60
+      ]
+    },
+    {
+      "name": "OpportunityCommitment",
+      "discriminator": [
+        224,
+        249,
+        17,
+        85,
+        219,
+        212,
+        30,
+        125
+      ]
+    },
+    {
+      "name": "PaymentCommitment",
+      "discriminator": [
+        131,
+        95,
+        199,
+        99,
+        47,
+        159,
+        31,
+        23
+      ]
+    },
+    {
       "name": "PlatformConfig",
       "discriminator": [
         160,
@@ -768,6 +1404,31 @@
       "code": 6008,
       "name": "InvalidAssessmentNumber",
       "msg": "Assessments are numbered from 1"
+    },
+    {
+      "code": 6009,
+      "name": "ReadinessNotCreditReady",
+      "msg": "Eligibility needs a CreditReady readiness attestation of the same borrower"
+    },
+    {
+      "code": 6010,
+      "name": "NotEligible",
+      "msg": "An opportunity needs an eligibility that is not NotEligible, of the same borrower"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidLoanTransition",
+      "msg": "That loan status change is not allowed"
+    },
+    {
+      "code": 6012,
+      "name": "LoanNotRepaying",
+      "msg": "Payments are recorded only on a disbursed or active loan"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidInstalmentNumber",
+      "msg": "Instalments are numbered from 1"
     }
   ],
   "types": [
@@ -958,6 +1619,305 @@
       }
     },
     {
+      "name": "EligibilityAttestation",
+      "docs": [
+        "One eligibility assessment, for a specific requested amount. It points at",
+        "the readiness attestation it relied on, which the program checks was",
+        "CreditReady and of the same borrower: eligibility never precedes readiness.",
+        "It is EmpowerFI's assessment, not the partner's lending decision."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "borrower",
+            "type": "pubkey"
+          },
+          {
+            "name": "readiness",
+            "type": "pubkey"
+          },
+          {
+            "name": "eligibility_no",
+            "type": "u32"
+          },
+          {
+            "name": "decision",
+            "type": {
+              "defined": {
+                "name": "EligibilityDecision"
+              }
+            }
+          },
+          {
+            "name": "risk_band",
+            "type": {
+              "defined": {
+                "name": "Grade"
+              }
+            }
+          },
+          {
+            "name": "confidence",
+            "type": {
+              "defined": {
+                "name": "Grade"
+              }
+            }
+          },
+          {
+            "name": "model_version",
+            "docs": [
+              "major * 10000 + minor * 100 + patch: eligibility-v0.1.0 is 100."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "attested_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EligibilityDecision",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Eligible"
+          },
+          {
+            "name": "EligibleReduced"
+          },
+          {
+            "name": "ManualReview"
+          },
+          {
+            "name": "NotEligible"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Grade",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Low"
+          },
+          {
+            "name": "Medium"
+          },
+          {
+            "name": "High"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LoanAccount",
+      "docs": [
+        "One loan per opportunity. Terms and every status change are commitments",
+        "to records held off-chain (amount, rate and the partner's decision are",
+        "never written here); the status itself is public."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "borrower",
+            "type": "pubkey"
+          },
+          {
+            "name": "opportunity",
+            "type": "pubkey"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "LoanStatus"
+              }
+            }
+          },
+          {
+            "name": "terms_commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "last_transition_commitment",
+            "docs": [
+              "Commitment to the record behind the latest status change."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "transitions",
+            "type": "u16"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LoanStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Draft"
+          },
+          {
+            "name": "PartnerApproved"
+          },
+          {
+            "name": "Disbursed"
+          },
+          {
+            "name": "Active"
+          },
+          {
+            "name": "Paid"
+          },
+          {
+            "name": "Defaulted"
+          },
+          {
+            "name": "Cancelled"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OpportunityCommitment",
+      "docs": [
+        "A qualified credit opportunity: what EmpowerFI takes to a partner. Only",
+        "from an eligibility that is not NotEligible."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "borrower",
+            "type": "pubkey"
+          },
+          {
+            "name": "eligibility",
+            "type": "pubkey"
+          },
+          {
+            "name": "opportunity_no",
+            "type": "u32"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PaymentCommitment",
+      "docs": [
+        "One instalment paid. The amount stays off-chain, in the commitment."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "loan",
+            "type": "pubkey"
+          },
+          {
+            "name": "instalment_no",
+            "type": "u16"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "recorded_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "PlatformConfig",
       "docs": [
         "Singleton. Who administers the program and which key writes commitments."
@@ -1116,6 +2076,26 @@
       "name": "CONFIG_SEED",
       "type": "bytes",
       "value": "[99, 111, 110, 102, 105, 103]"
+    },
+    {
+      "name": "ELIGIBILITY_SEED",
+      "type": "bytes",
+      "value": "[101, 108, 105, 103, 105, 98, 105, 108, 105, 116, 121]"
+    },
+    {
+      "name": "LOAN_SEED",
+      "type": "bytes",
+      "value": "[108, 111, 97, 110]"
+    },
+    {
+      "name": "OPPORTUNITY_SEED",
+      "type": "bytes",
+      "value": "[111, 112, 112, 111, 114, 116, 117, 110, 105, 116, 121]"
+    },
+    {
+      "name": "PAYMENT_SEED",
+      "type": "bytes",
+      "value": "[112, 97, 121, 109, 101, 110, 116]"
     },
     {
       "name": "READINESS_SEED",

@@ -8,8 +8,11 @@ use {
     },
     empowerfi_audit::{
         error::AuditError, BorrowerAudit, CheckinCommitment, CommunityAudit, CommunityStatus,
-        PlatformConfig, ReadinessAttestation, ReadinessBand, ReadinessStatus, BORROWER_SEED,
-        CHECKIN_SEED, COMMUNITY_SEED, CONFIG_SEED, READINESS_SEED, SCHEMA_VERSION,
+        EligibilityAttestation, EligibilityDecision, Grade, LoanAccount, LoanStatus,
+        OpportunityCommitment, PaymentCommitment, PlatformConfig, ReadinessAttestation,
+        ReadinessBand, ReadinessStatus, BORROWER_SEED, CHECKIN_SEED, COMMUNITY_SEED, CONFIG_SEED,
+        ELIGIBILITY_SEED, LOAN_SEED, OPPORTUNITY_SEED, PAYMENT_SEED, READINESS_SEED,
+        SCHEMA_VERSION,
     },
     litesvm::{types::TransactionResult, LiteSVM},
     solana_keypair::Keypair,
@@ -703,4 +706,417 @@ fn operator_attests_readiness_with_public_status_and_private_detail() {
         &[&op],
     );
     assert_custom_error(res, AuditError::InvalidAssessmentNumber);
+}
+
+// ------------------------------------------- eligibility, opportunity, loan
+
+fn eligibility_pda(borrower: &Pubkey, n: u32) -> Pubkey {
+    Pubkey::find_program_address(
+        &[ELIGIBILITY_SEED, borrower.as_ref(), &n.to_le_bytes()],
+        &empowerfi_audit::ID,
+    )
+    .0
+}
+fn opportunity_pda(borrower: &Pubkey, n: u32) -> Pubkey {
+    Pubkey::find_program_address(
+        &[OPPORTUNITY_SEED, borrower.as_ref(), &n.to_le_bytes()],
+        &empowerfi_audit::ID,
+    )
+    .0
+}
+fn loan_pda(opportunity: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[LOAN_SEED, opportunity.as_ref()], &empowerfi_audit::ID).0
+}
+fn payment_pda(loan: &Pubkey, n: u16) -> Pubkey {
+    Pubkey::find_program_address(
+        &[PAYMENT_SEED, loan.as_ref(), &n.to_le_bytes()],
+        &empowerfi_audit::ID,
+    )
+    .0
+}
+
+fn attest_eligibility_ix(
+    op: &Pubkey,
+    borrower: &Pubkey,
+    readiness: &Pubkey,
+    n: u32,
+    decision: EligibilityDecision,
+) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::AttestEligibility {
+            eligibility_no: n,
+            decision,
+            risk_band: Grade::Low,
+            confidence: Grade::High,
+            model_version: 100,
+            commitment: [31; 32],
+        }
+        .data(),
+        empowerfi_audit::accounts::AttestEligibility {
+            operator: *op,
+            config: config_pda(),
+            borrower: *borrower,
+            readiness: *readiness,
+            eligibility: eligibility_pda(borrower, n),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+fn anchor_opportunity_ix(
+    op: &Pubkey,
+    borrower: &Pubkey,
+    eligibility: &Pubkey,
+    n: u32,
+) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::AnchorOpportunity {
+            opportunity_no: n,
+            commitment: [41; 32],
+        }
+        .data(),
+        empowerfi_audit::accounts::AnchorOpportunity {
+            operator: *op,
+            config: config_pda(),
+            borrower: *borrower,
+            eligibility: *eligibility,
+            opportunity: opportunity_pda(borrower, n),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+fn create_loan_ix(op: &Pubkey, opportunity: &Pubkey) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::CreateLoan {
+            terms_commitment: [51; 32],
+        }
+        .data(),
+        empowerfi_audit::accounts::CreateLoan {
+            operator: *op,
+            config: config_pda(),
+            opportunity: *opportunity,
+            loan: loan_pda(opportunity),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+fn transition_ix(op: &Pubkey, loan: &Pubkey, to: LoanStatus, tag: u8) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::TransitionLoan {
+            to,
+            transition_commitment: [tag; 32],
+        }
+        .data(),
+        empowerfi_audit::accounts::TransitionLoan {
+            operator: *op,
+            config: config_pda(),
+            loan: *loan,
+        }
+        .to_account_metas(None),
+    )
+}
+
+fn payment_ix(op: &Pubkey, loan: &Pubkey, n: u16) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::AnchorPayment {
+            instalment_no: n,
+            commitment: [61; 32],
+        }
+        .data(),
+        empowerfi_audit::accounts::AnchorPayment {
+            operator: *op,
+            config: config_pda(),
+            loan: *loan,
+            payment: payment_pda(loan, n),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+/// A registered borrower with two readiness attestations: #1 NeedsMoreData, #2 CreditReady.
+fn ready_borrower(env: &mut Env) -> (Pubkey, Pubkey, Pubkey) {
+    let borrower = registered_borrower(env);
+    let op = env.operator.insecure_clone();
+    send(
+        &mut env.svm,
+        attest_readiness_ix(
+            &op.pubkey(),
+            &borrower,
+            1,
+            ReadinessStatus::NeedsMoreData,
+            ReadinessBand::Low,
+            [21; 32],
+        ),
+        &[&op],
+    )
+    .unwrap();
+    send(
+        &mut env.svm,
+        attest_readiness_ix(
+            &op.pubkey(),
+            &borrower,
+            2,
+            ReadinessStatus::CreditReady,
+            ReadinessBand::High,
+            [22; 32],
+        ),
+        &[&op],
+    )
+    .unwrap();
+    (
+        borrower,
+        readiness_pda(&borrower, 1),
+        readiness_pda(&borrower, 2),
+    )
+}
+
+#[test]
+fn eligibility_only_follows_credit_ready_readiness_of_the_same_borrower() {
+    let mut env = initialized();
+    let (borrower, not_ready, ready) = ready_borrower(&mut env);
+    let op = env.operator.insecure_clone();
+
+    let res = send(
+        &mut env.svm,
+        attest_eligibility_ix(
+            &op.pubkey(),
+            &borrower,
+            &not_ready,
+            1,
+            EligibilityDecision::Eligible,
+        ),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::ReadinessNotCreditReady);
+
+    // Someone else's CreditReady attestation does not count for her.
+    verified_community(&mut env, [8; 32]);
+    send(
+        &mut env.svm,
+        register_borrower_ix(&op.pubkey(), [8; 32], [9; 32], [4; 32]),
+        &[&op],
+    )
+    .unwrap();
+    let other = borrower_pda(&[9; 32]);
+    send(
+        &mut env.svm,
+        attest_readiness_ix(
+            &op.pubkey(),
+            &other,
+            1,
+            ReadinessStatus::CreditReady,
+            ReadinessBand::High,
+            [23; 32],
+        ),
+        &[&op],
+    )
+    .unwrap();
+    let res = send(
+        &mut env.svm,
+        attest_eligibility_ix(
+            &op.pubkey(),
+            &borrower,
+            &readiness_pda(&other, 1),
+            1,
+            EligibilityDecision::Eligible,
+        ),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::ReadinessNotCreditReady);
+
+    send(
+        &mut env.svm,
+        attest_eligibility_ix(
+            &op.pubkey(),
+            &borrower,
+            &ready,
+            1,
+            EligibilityDecision::EligibleReduced,
+        ),
+        &[&op],
+    )
+    .unwrap();
+    let e: EligibilityAttestation = fetch(&env.svm, &eligibility_pda(&borrower, 1));
+    assert_eq!(e.readiness, ready);
+    assert_eq!(e.decision, EligibilityDecision::EligibleReduced);
+    assert_eq!(e.risk_band, Grade::Low);
+    assert_eq!(e.confidence, Grade::High);
+}
+
+#[test]
+fn an_opportunity_needs_an_eligibility_that_is_not_not_eligible() {
+    let mut env = initialized();
+    let (borrower, _, ready) = ready_borrower(&mut env);
+    let op = env.operator.insecure_clone();
+    send(
+        &mut env.svm,
+        attest_eligibility_ix(
+            &op.pubkey(),
+            &borrower,
+            &ready,
+            1,
+            EligibilityDecision::NotEligible,
+        ),
+        &[&op],
+    )
+    .unwrap();
+    send(
+        &mut env.svm,
+        attest_eligibility_ix(
+            &op.pubkey(),
+            &borrower,
+            &ready,
+            2,
+            EligibilityDecision::Eligible,
+        ),
+        &[&op],
+    )
+    .unwrap();
+
+    let res = send(
+        &mut env.svm,
+        anchor_opportunity_ix(&op.pubkey(), &borrower, &eligibility_pda(&borrower, 1), 1),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::NotEligible);
+
+    send(
+        &mut env.svm,
+        anchor_opportunity_ix(&op.pubkey(), &borrower, &eligibility_pda(&borrower, 2), 1),
+        &[&op],
+    )
+    .unwrap();
+    let o: OpportunityCommitment = fetch(&env.svm, &opportunity_pda(&borrower, 1));
+    assert_eq!(o.eligibility, eligibility_pda(&borrower, 2));
+    assert_eq!(o.commitment, [41; 32]);
+}
+
+/// An opportunity ready for a loan.
+fn opportunity(env: &mut Env) -> Pubkey {
+    let (borrower, _, ready) = ready_borrower(env);
+    let op = env.operator.insecure_clone();
+    send(
+        &mut env.svm,
+        attest_eligibility_ix(
+            &op.pubkey(),
+            &borrower,
+            &ready,
+            1,
+            EligibilityDecision::Eligible,
+        ),
+        &[&op],
+    )
+    .unwrap();
+    send(
+        &mut env.svm,
+        anchor_opportunity_ix(&op.pubkey(), &borrower, &eligibility_pda(&borrower, 1), 1),
+        &[&op],
+    )
+    .unwrap();
+    opportunity_pda(&borrower, 1)
+}
+
+#[test]
+fn a_loan_follows_its_state_machine_and_nothing_else() {
+    let mut env = initialized();
+    let opp = opportunity(&mut env);
+    let op = env.operator.insecure_clone();
+    send(&mut env.svm, create_loan_ix(&op.pubkey(), &opp), &[&op]).unwrap();
+    let loan = loan_pda(&opp);
+    assert!(
+        send(&mut env.svm, create_loan_ix(&op.pubkey(), &opp), &[&op]).is_err(),
+        "one loan per opportunity"
+    );
+
+    // Draft cannot skip to Disbursed, nor pay an instalment.
+    let res = send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::Disbursed, 70),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::InvalidLoanTransition);
+    let res = send(&mut env.svm, payment_ix(&op.pubkey(), &loan, 1), &[&op]);
+    assert_custom_error(res, AuditError::LoanNotRepaying);
+
+    for (to, tag) in [
+        (LoanStatus::PartnerApproved, 71),
+        (LoanStatus::Disbursed, 72),
+        (LoanStatus::Active, 73),
+    ] {
+        send(
+            &mut env.svm,
+            transition_ix(&op.pubkey(), &loan, to, tag),
+            &[&op],
+        )
+        .unwrap();
+    }
+    send(&mut env.svm, payment_ix(&op.pubkey(), &loan, 1), &[&op]).unwrap();
+    assert!(
+        send(&mut env.svm, payment_ix(&op.pubkey(), &loan, 1), &[&op]).is_err(),
+        "an instalment is paid once"
+    );
+    send(&mut env.svm, payment_ix(&op.pubkey(), &loan, 2), &[&op]).unwrap();
+    let res = send(&mut env.svm, payment_ix(&op.pubkey(), &loan, 0), &[&op]);
+    assert_custom_error(res, AuditError::InvalidInstalmentNumber);
+
+    send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::Paid, 74),
+        &[&op],
+    )
+    .unwrap();
+    let l: LoanAccount = fetch(&env.svm, &loan);
+    assert_eq!(l.status, LoanStatus::Paid);
+    assert_eq!(l.transitions, 4);
+    assert_eq!(l.last_transition_commitment, [74; 32]);
+    assert_eq!(l.terms_commitment, [51; 32]);
+
+    // Paid is final.
+    let res = send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::Active, 75),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::InvalidLoanTransition);
+    let p: PaymentCommitment = fetch(&env.svm, &payment_pda(&loan, 2));
+    assert_eq!(p.instalment_no, 2);
+    assert_eq!(p.loan, loan);
+}
+
+#[test]
+fn a_loan_can_be_cancelled_before_disbursement_only() {
+    let mut env = initialized();
+    let opp = opportunity(&mut env);
+    let op = env.operator.insecure_clone();
+    send(&mut env.svm, create_loan_ix(&op.pubkey(), &opp), &[&op]).unwrap();
+    let loan = loan_pda(&opp);
+    send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::PartnerApproved, 71),
+        &[&op],
+    )
+    .unwrap();
+    send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::Disbursed, 72),
+        &[&op],
+    )
+    .unwrap();
+    let res = send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::Cancelled, 73),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::InvalidLoanTransition);
 }

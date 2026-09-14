@@ -32,13 +32,28 @@ export const EMPOWERFI_AUDIT_ERROR__COMMUNITY_NOT_VERIFIED = 0x1776; // 6006
 export const EMPOWERFI_AUDIT_ERROR__INVALID_PERIOD = 0x1777; // 6007
 /** InvalidAssessmentNumber: Assessments are numbered from 1 */
 export const EMPOWERFI_AUDIT_ERROR__INVALID_ASSESSMENT_NUMBER = 0x1778; // 6008
+/** ReadinessNotCreditReady: Eligibility needs a CreditReady readiness attestation of the same borrower */
+export const EMPOWERFI_AUDIT_ERROR__READINESS_NOT_CREDIT_READY = 0x1779; // 6009
+/** NotEligible: An opportunity needs an eligibility that is not NotEligible, of the same borrower */
+export const EMPOWERFI_AUDIT_ERROR__NOT_ELIGIBLE = 0x177a; // 6010
+/** InvalidLoanTransition: That loan status change is not allowed */
+export const EMPOWERFI_AUDIT_ERROR__INVALID_LOAN_TRANSITION = 0x177b; // 6011
+/** LoanNotRepaying: Payments are recorded only on a disbursed or active loan */
+export const EMPOWERFI_AUDIT_ERROR__LOAN_NOT_REPAYING = 0x177c; // 6012
+/** InvalidInstalmentNumber: Instalments are numbered from 1 */
+export const EMPOWERFI_AUDIT_ERROR__INVALID_INSTALMENT_NUMBER = 0x177d; // 6013
 
 export type EmpowerfiAuditError =
   | typeof EMPOWERFI_AUDIT_ERROR__COMMUNITY_ALREADY_VERIFIED
   | typeof EMPOWERFI_AUDIT_ERROR__COMMUNITY_NOT_VERIFIED
   | typeof EMPOWERFI_AUDIT_ERROR__INVALID_ASSESSMENT_NUMBER
+  | typeof EMPOWERFI_AUDIT_ERROR__INVALID_INSTALMENT_NUMBER
+  | typeof EMPOWERFI_AUDIT_ERROR__INVALID_LOAN_TRANSITION
   | typeof EMPOWERFI_AUDIT_ERROR__INVALID_PERIOD
+  | typeof EMPOWERFI_AUDIT_ERROR__LOAN_NOT_REPAYING
+  | typeof EMPOWERFI_AUDIT_ERROR__NOT_ELIGIBLE
   | typeof EMPOWERFI_AUDIT_ERROR__NOT_UPGRADE_AUTHORITY
+  | typeof EMPOWERFI_AUDIT_ERROR__READINESS_NOT_CREDIT_READY
   | typeof EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_AUTHORITY
   | typeof EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_OPERATOR
   | typeof EMPOWERFI_AUDIT_ERROR__ZERO_COMMITMENT
@@ -51,8 +66,13 @@ if (process.env["NODE_ENV"] !== "production") {
     [EMPOWERFI_AUDIT_ERROR__COMMUNITY_ALREADY_VERIFIED]: `Community is already verified`,
     [EMPOWERFI_AUDIT_ERROR__COMMUNITY_NOT_VERIFIED]: `Community must be verified before borrowers are registered in it`,
     [EMPOWERFI_AUDIT_ERROR__INVALID_ASSESSMENT_NUMBER]: `Assessments are numbered from 1`,
+    [EMPOWERFI_AUDIT_ERROR__INVALID_INSTALMENT_NUMBER]: `Instalments are numbered from 1`,
+    [EMPOWERFI_AUDIT_ERROR__INVALID_LOAN_TRANSITION]: `That loan status change is not allowed`,
     [EMPOWERFI_AUDIT_ERROR__INVALID_PERIOD]: `Period must be YYYYMM, between 202001 and 210012`,
+    [EMPOWERFI_AUDIT_ERROR__LOAN_NOT_REPAYING]: `Payments are recorded only on a disbursed or active loan`,
+    [EMPOWERFI_AUDIT_ERROR__NOT_ELIGIBLE]: `An opportunity needs an eligibility that is not NotEligible, of the same borrower`,
     [EMPOWERFI_AUDIT_ERROR__NOT_UPGRADE_AUTHORITY]: `Signer is not the program's upgrade authority`,
+    [EMPOWERFI_AUDIT_ERROR__READINESS_NOT_CREDIT_READY]: `Eligibility needs a CreditReady readiness attestation of the same borrower`,
     [EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_AUTHORITY]: `Signer is not the platform authority`,
     [EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_OPERATOR]: `Signer is not the platform operator`,
     [EMPOWERFI_AUDIT_ERROR__ZERO_COMMITMENT]: `A commitment of all zero bytes is not a commitment`,
