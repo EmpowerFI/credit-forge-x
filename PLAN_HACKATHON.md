@@ -473,6 +473,27 @@ The live site was written for the previous thesis. The business-model document (
 
 ---
 
+## 6b · Progress log
+
+**Mon 14 Sep — Week 1 and Week 2 gates both met on day one of the window.** Every item below was walked in a browser against the hackathon project, with real devnet proofs.
+
+| Gate | Result |
+|---|---|
+| Fri 18 · foundation and the spine | ✅ Leader logs in → creates a community → admin verifies it → leader enrolls an entrepreneur → all three proofs confirm on devnet (~7 s each) → the audit screen recomputes in the browser and says VERIFIED; editing the record in the database turns it to MISMATCH |
+| Fri 25 · data becomes readiness | ✅ Maria's live check-in turns NEEDS_MORE_DATA into CREDIT_READY and she asks for capital; Jaqueline is CREDIT_READY with no request and never enters the credit pipeline; the readiness attestation audits VERIFIED, including a re-run of the engine in the browser |
+
+What exists: program waves 1–2 (5 account types, 7 instructions, 15 LiteSVM tests) upgraded in place at `4rqhx…`; `platform/` Supabase workdir (M1, M2, M3, M4, M7-anchors, M8) with 105 pgTAP tests passing locally and on the remote, the thesis regression among them; `packages/audit-commitments` (golden vectors from an independent Python implementation, pinned in Node and Deno), `packages/readiness-engine` (13 hand-reasoned scenarios), a Codama-generated client; Edge Functions `anchor-submit` and `readiness-evaluate`; the `/app` area (login with demo accounts, communities, review queue, My business, check-in, credit intent, audit); a deterministic seed (100 participants, 6 months of history, 700 devnet proofs in ~9 min).
+
+Deliberate deviations from this plan, each for a reason found in the build:
+
+- **The work queue is `chain_anchors` itself**, not a pgmq clone: one row per fact with status, attempts, backoff and a `depends_on` link (verification waits for registration, enrollment for verification). Same cron → pg_net → Edge Function shape, one moving part fewer.
+- **One anchor worker at a time** (a lease in the database). Parallel runs drew 164 `429 Too Many Requests` from the public devnet RPC on the first seed.
+- **Helius devnet RPC** for the anchoring function (key held as a function secret, never in the repo or the browser): 700 proofs in 9 min, all on the first attempt, against 16.5 min and 173 rate-limited retries on the public RPC.
+- **`set_operator`**, an instruction not in §F.3, so a leaked server key can be rotated without a new program ID.
+- **Feature snapshots live inside `readiness_assessments.features`** rather than a separate table: the snapshot is the engine's input and is only ever read with its assessment.
+
+Found by the tests before reaching the remote: a null access check that let an outsider call the audit function (PL/pgSQL `if not null` passes); `pg-safeupdate` rejecting whole-table deletes in API sessions; `@solana/kit` reading `process.env` in the browser, which blanked `/app`.
+
 ## 7 · Definition of Done
 
 Run this on Fri 9 Oct:
