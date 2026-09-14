@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audit-client:generate": "cp target/idl/empowerfi_audit.json packages/audit-client/idl/ && tsx scripts/generate-audit-client.mts"
+    "audit-client:generate": "cp target/idl/empowerfi_audit.json packages/audit-client/idl/ && tsx scripts/generate-audit-client.mts && node scripts/sync-platform-shared.mjs",
+    "platform:sync-shared": "node scripts/sync-platform-shared.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

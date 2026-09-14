@@ -44,3 +44,4 @@ supabase/.temp
 test-ledger
 .surfpool
 **/*.rs.bk
+/deno.lock
