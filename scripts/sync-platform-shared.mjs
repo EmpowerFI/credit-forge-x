@@ -10,6 +10,7 @@ const targets = [
   ["packages/audit-commitments/src/index.ts", "platform/supabase/functions/_shared/audit-commitments/index.ts"],
   ["packages/audit-client/src/generated", "platform/supabase/functions/_shared/audit-client"],
   ["packages/readiness-engine/src/index.ts", "platform/supabase/functions/_shared/readiness-engine/index.ts"],
+  ["packages/eligibility-engine/src/index.ts", "platform/supabase/functions/_shared/eligibility-engine/index.ts"],
 ];
 
 for (const [from, to] of targets) {

@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => ({
       "@empowerfi/audit-commitments": path.resolve(__dirname, "./packages/audit-commitments/src/index.ts"),
       "@empowerfi/audit-client": path.resolve(__dirname, "./packages/audit-client/src/generated/index.ts"),
       "@empowerfi/readiness-engine": path.resolve(__dirname, "./packages/readiness-engine/src/index.ts"),
+      "@empowerfi/eligibility-engine": path.resolve(__dirname, "./packages/eligibility-engine/src/index.ts"),
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },

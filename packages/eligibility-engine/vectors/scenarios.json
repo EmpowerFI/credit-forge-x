@@ -1,0 +1,263 @@
+{
+  "model_version": "eligibility-v0.1.0",
+  "scenarios": [
+    {
+      "name": "affordable request",
+      "input": {
+        "readiness_status": "CREDIT_READY",
+        "readiness_band": "HIGH",
+        "purpose": "inventory",
+        "months_reported": 6,
+        "records_kept_bps": 10000,
+        "inconsistencies": 0,
+        "avg_revenue_cents": 305000,
+        "avg_net_business_cents": 135000,
+        "avg_household_cents": 80000,
+        "revenue_cv_bps": 1000,
+        "revenue_trend_bps": 0,
+        "household_share_bps": 5926,
+        "requested_amount_cents": 100000
+      },
+      "expect": {
+        "decision": "ELIGIBLE",
+        "proposed_amount_cents": 100000,
+        "term_months": 6,
+        "instalment_cents": 19167,
+        "max_instalment_cents": 27500,
+        "affordability_bps": 1420,
+        "suggested_min_cents": 140000,
+        "suggested_max_cents": 250000,
+        "risk_band": "LOW",
+        "confidence": "HIGH",
+        "reason_codes": [
+          "AFFORDABLE"
+        ]
+      }
+    },
+    {
+      "name": "request above capacity, reduced to what fits",
+      "input": {
+        "readiness_status": "CREDIT_READY",
+        "readiness_band": "HIGH",
+        "purpose": "inventory",
+        "months_reported": 6,
+        "records_kept_bps": 10000,
+        "inconsistencies": 0,
+        "avg_revenue_cents": 305000,
+        "avg_net_business_cents": 135000,
+        "avg_household_cents": 80000,
+        "revenue_cv_bps": 1000,
+        "revenue_trend_bps": 0,
+        "household_share_bps": 5926,
+        "requested_amount_cents": 400000
+      },
+      "expect": {
+        "decision": "ELIGIBLE_REDUCED",
+        "proposed_amount_cents": 250000,
+        "term_months": 12,
+        "instalment_cents": 27084,
+        "affordability_bps": 2006,
+        "risk_band": "LOW",
+        "risk_points": 1,
+        "reason_codes": [
+          "AMOUNT_ABOVE_CAPACITY",
+          "TIGHT_AFFORDABILITY"
+        ]
+      }
+    },
+    {
+      "name": "not ready",
+      "input": {
+        "readiness_status": "NEEDS_MORE_DATA",
+        "readiness_band": "HIGH",
+        "purpose": "inventory",
+        "months_reported": 6,
+        "records_kept_bps": 10000,
+        "inconsistencies": 0,
+        "avg_revenue_cents": 305000,
+        "avg_net_business_cents": 135000,
+        "avg_household_cents": 80000,
+        "revenue_cv_bps": 1000,
+        "revenue_trend_bps": 0,
+        "household_share_bps": 5926,
+        "requested_amount_cents": 100000
+      },
+      "expect": {
+        "decision": "NOT_ELIGIBLE",
+        "proposed_amount_cents": null,
+        "term_months": null,
+        "reason_codes": [
+          "NOT_CREDIT_READY"
+        ]
+      }
+    },
+    {
+      "name": "household takes more than the business makes",
+      "input": {
+        "readiness_status": "CREDIT_READY",
+        "readiness_band": "HIGH",
+        "purpose": "inventory",
+        "months_reported": 6,
+        "records_kept_bps": 10000,
+        "inconsistencies": 0,
+        "avg_revenue_cents": 305000,
+        "avg_net_business_cents": 100000,
+        "avg_household_cents": 110000,
+        "revenue_cv_bps": 1000,
+        "revenue_trend_bps": 0,
+        "household_share_bps": 11000,
+        "requested_amount_cents": 100000
+      },
+      "expect": {
+        "decision": "NOT_ELIGIBLE",
+        "max_instalment_cents": 0,
+        "suggested_max_cents": null,
+        "proposed_amount_cents": null,
+        "risk_points": 1,
+        "reason_codes": [
+          "NO_REPAYMENT_CAPACITY",
+          "HIGH_HOUSEHOLD_DRAW"
+        ]
+      }
+    },
+    {
+      "name": "volatile, falling, short history: too risky",
+      "input": {
+        "readiness_status": "CREDIT_READY",
+        "readiness_band": "HIGH",
+        "purpose": "inventory",
+        "months_reported": 4,
+        "records_kept_bps": 10000,
+        "inconsistencies": 0,
+        "avg_revenue_cents": 305000,
+        "avg_net_business_cents": 135000,
+        "avg_household_cents": 80000,
+        "revenue_cv_bps": 6000,
+        "revenue_trend_bps": -1500,
+        "household_share_bps": 5926,
+        "requested_amount_cents": 100000
+      },
+      "expect": {
+        "decision": "NOT_ELIGIBLE",
+        "risk_band": "HIGH",
+        "risk_points": 4,
+        "confidence": "MEDIUM",
+        "proposed_amount_cents": null,
+        "reason_codes": [
+          "HIGH_RISK",
+          "VOLATILE_INCOME",
+          "DECLINING_REVENUE",
+          "SHORT_HISTORY"
+        ]
+      }
+    },
+    {
+      "name": "three months only: a person decides",
+      "input": {
+        "readiness_status": "CREDIT_READY",
+        "readiness_band": "HIGH",
+        "purpose": "inventory",
+        "months_reported": 3,
+        "records_kept_bps": 10000,
+        "inconsistencies": 0,
+        "avg_revenue_cents": 305000,
+        "avg_net_business_cents": 135000,
+        "avg_household_cents": 80000,
+        "revenue_cv_bps": 1000,
+        "revenue_trend_bps": 0,
+        "household_share_bps": 5926,
+        "requested_amount_cents": 100000
+      },
+      "expect": {
+        "decision": "MANUAL_REVIEW",
+        "confidence": "LOW",
+        "risk_band": "LOW",
+        "proposed_amount_cents": 100000,
+        "term_months": 6,
+        "reason_codes": [
+          "LOW_CONFIDENCE",
+          "SHORT_HISTORY"
+        ]
+      }
+    },
+    {
+      "name": "some volatility, five months: eligible at medium risk",
+      "input": {
+        "readiness_status": "CREDIT_READY",
+        "readiness_band": "HIGH",
+        "purpose": "inventory",
+        "months_reported": 5,
+        "records_kept_bps": 10000,
+        "inconsistencies": 0,
+        "avg_revenue_cents": 305000,
+        "avg_net_business_cents": 135000,
+        "avg_household_cents": 80000,
+        "revenue_cv_bps": 4000,
+        "revenue_trend_bps": 0,
+        "household_share_bps": 5926,
+        "requested_amount_cents": 100000
+      },
+      "expect": {
+        "decision": "ELIGIBLE",
+        "risk_band": "MEDIUM",
+        "risk_points": 2,
+        "confidence": "MEDIUM",
+        "reason_codes": [
+          "AFFORDABLE",
+          "VOLATILE_INCOME",
+          "SHORT_HISTORY"
+        ]
+      }
+    },
+    {
+      "name": "amount outside the product",
+      "input": {
+        "readiness_status": "CREDIT_READY",
+        "readiness_band": "HIGH",
+        "purpose": "inventory",
+        "months_reported": 6,
+        "records_kept_bps": 10000,
+        "inconsistencies": 0,
+        "avg_revenue_cents": 305000,
+        "avg_net_business_cents": 135000,
+        "avg_household_cents": 80000,
+        "revenue_cv_bps": 1000,
+        "revenue_trend_bps": 0,
+        "household_share_bps": 5926,
+        "requested_amount_cents": 6000000
+      },
+      "expect": {
+        "decision": "NOT_ELIGIBLE",
+        "reason_codes": [
+          "AMOUNT_OUTSIDE_PRODUCT_RANGE"
+        ]
+      }
+    },
+    {
+      "name": "ready on a low readiness band",
+      "input": {
+        "readiness_status": "CREDIT_READY",
+        "readiness_band": "LOW",
+        "purpose": "inventory",
+        "months_reported": 6,
+        "records_kept_bps": 10000,
+        "inconsistencies": 0,
+        "avg_revenue_cents": 305000,
+        "avg_net_business_cents": 135000,
+        "avg_household_cents": 80000,
+        "revenue_cv_bps": 1000,
+        "revenue_trend_bps": 0,
+        "household_share_bps": 5926,
+        "requested_amount_cents": 100000
+      },
+      "expect": {
+        "decision": "ELIGIBLE",
+        "risk_points": 1,
+        "reason_codes": [
+          "AFFORDABLE",
+          "LOW_READINESS_BAND"
+        ]
+      }
+    }
+  ]
+}

@@ -28,6 +28,9 @@
       ],
       "@empowerfi/readiness-engine": [
         "./packages/readiness-engine/src/index.ts"
+      ],
+      "@empowerfi/eligibility-engine": [
+        "./packages/eligibility-engine/src/index.ts"
       ]
     },
     "skipLibCheck": true,
