@@ -130,12 +130,12 @@ export default function CommunityFunnel({ communityId, memberIds, coreModules }:
           <div className="flex h-2.5 overflow-hidden rounded-full bg-border" aria-label="Cost by phase">
             <div className="bg-accent" style={{ width: `${(c.by_phase.preparation / phaseTotal) * 100}%` }} />
             <div className="bg-primary" style={{ width: `${(c.by_phase.origination / phaseTotal) * 100}%` }} />
-            <div className="bg-emerald-600" style={{ width: `${(c.by_phase.servicing / phaseTotal) * 100}%` }} />
+            <div className="bg-positive" style={{ width: `${(c.by_phase.servicing / phaseTotal) * 100}%` }} />
           </div>
           <p className="flex flex-wrap gap-x-4 text-xs text-muted-foreground">
             <span>■ <span className="text-accent">Preparation</span> {money(c.by_phase.preparation)}</span>
             <span>■ <span className="text-primary">Origination</span> {money(c.by_phase.origination)}</span>
-            <span>■ <span className="text-emerald-700">Servicing</span> {money(c.by_phase.servicing)}</span>
+            <span>■ <span className="text-positive">Servicing</span> {money(c.by_phase.servicing)}</span>
           </p>
         </div>
         <p className="text-xs text-muted-foreground">

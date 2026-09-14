@@ -9,10 +9,10 @@ export type CapitalUse = Enums["capital_use"];
 // The eligibility engine's codes, and the loan's life, in words.
 
 export const DECISION_LABEL: Record<EligibilityDecision, { title: string; tone: string }> = {
-  ELIGIBLE: { title: "Eligible", tone: "border-emerald-300 bg-emerald-50 text-emerald-900" },
-  ELIGIBLE_REDUCED: { title: "Eligible for a smaller amount", tone: "border-sky-300 bg-sky-50 text-sky-900" },
-  MANUAL_REVIEW: { title: "Under review", tone: "border-slate-300 bg-slate-100 text-slate-900" },
-  NOT_ELIGIBLE: { title: "Not eligible right now", tone: "border-amber-300 bg-amber-50 text-amber-900" },
+  ELIGIBLE: { title: "Eligible", tone: "tone-positive" },
+  ELIGIBLE_REDUCED: { title: "Eligible for a smaller amount", tone: "tone-info" },
+  MANUAL_REVIEW: { title: "Under review", tone: "tone-neutral" },
+  NOT_ELIGIBLE: { title: "Not eligible right now", tone: "tone-caution" },
 };
 
 export const ELIGIBILITY_REASON: Record<string, string> = {

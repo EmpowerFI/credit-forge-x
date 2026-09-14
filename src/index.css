@@ -58,6 +58,65 @@
 
     --font-heading: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
+
+    /* Semantic tones for states: verified/positive, alert, caution, neutral financial data. */
+    --positive: 152 50% 30%;
+    --alert: 3 60% 45%;
+    --caution: 32 80% 36%;
+    --info: 213 70% 40%;
+  }
+
+  /* The product surface (/app): the same brand, in a dark financial workspace.
+     Navy grounds, gold for the primary action, green only for verified or
+     positive, red for alerts, blue for neutral financial data. PlatformApp
+     puts this class on <html> while /app is mounted, so portals follow it. */
+  .dark {
+    --background: 226 49% 8%;
+    --foreground: 40 30% 94%;
+
+    --card: 223 47% 13%;
+    --card-foreground: 40 30% 94%;
+
+    --popover: 223 47% 13%;
+    --popover-foreground: 40 30% 94%;
+
+    --primary: 39 86% 62%;
+    --primary-foreground: 226 49% 8%;
+
+    --secondary: 222 38% 19%;
+    --secondary-foreground: 40 30% 94%;
+
+    --muted: 222 38% 16%;
+    --muted-foreground: 220 16% 67%;
+
+    --accent: 39 86% 62%;
+    --accent-foreground: 226 49% 8%;
+
+    --success: 152 55% 50%;
+    --success-foreground: 226 49% 8%;
+
+    --destructive: 356 75% 64%;
+    --destructive-foreground: 226 49% 8%;
+
+    --warning: 39 86% 62%;
+    --warning-foreground: 226 49% 8%;
+
+    --highlight: 222 38% 19%;
+    --highlight-foreground: 40 30% 94%;
+
+    --border: 222 32% 21%;
+    --input: 222 32% 24%;
+    --ring: 39 86% 62%;
+
+    --sidebar: 223 50% 11%;
+
+    --positive: 152 55% 52%;
+    --alert: 356 75% 66%;
+    --caution: 39 86% 62%;
+    --info: 213 90% 68%;
+
+    --shadow-card: 0 1px 0 hsl(222 32% 21%);
+    color-scheme: dark;
   }
 }
 
@@ -113,6 +172,30 @@
     border: 1px solid hsl(36 75% 47% / 0.28);
     box-shadow: 0 0 20px hsl(36 75% 47% / 0.10), inset 0 0 20px hsl(36 75% 47% / 0.03);
   }
+  /* In the product, the marketing glass becomes a plain panel. */
+  .dark .glass {
+    background: hsl(var(--card));
+    backdrop-filter: none;
+    border: 1px solid hsl(var(--border));
+  }
+  .dark .glow-border {
+    border: 1px solid hsl(var(--border));
+    box-shadow: none;
+  }
+  .panel {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 1rem;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  /* A state, in words and colour: border, tint and text from one tone. */
+  .tone-positive { border-color: hsl(var(--positive) / 0.35); background: hsl(var(--positive) / 0.1); color: hsl(var(--positive)); }
+  .tone-alert { border-color: hsl(var(--alert) / 0.35); background: hsl(var(--alert) / 0.1); color: hsl(var(--alert)); }
+  .tone-caution { border-color: hsl(var(--caution) / 0.35); background: hsl(var(--caution) / 0.1); color: hsl(var(--caution)); }
+  .tone-info { border-color: hsl(var(--info) / 0.35); background: hsl(var(--info) / 0.1); color: hsl(var(--info)); }
+  .tone-neutral { border-color: hsl(var(--border)); background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); }
 }
 
 @layer components {

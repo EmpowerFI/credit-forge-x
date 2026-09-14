@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Languages, Menu, X } from "lucide-react";
+import LaunchAppButton from "@/components/LaunchAppButton";
 import { Link } from "react-router-dom";
 import type { AboutContent } from "@/content/about";
 
@@ -27,15 +28,18 @@ const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
           EmpowerFI
         </Link>
 
-        <button
-          className="text-foreground"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          aria-controls="about-menu"
-          aria-label="Menu"
-        >
-          {open ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-3">
+          <LaunchAppButton label={nav.launchApp} />
+          <button
+            className="text-foreground"
+            onClick={() => setOpen(!open)}
+            aria-expanded={open}
+            aria-controls="about-menu"
+            aria-label="Menu"
+          >
+            {open ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {open && (

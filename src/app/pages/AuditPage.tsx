@@ -349,10 +349,10 @@ async function audit(kind: AnchorKind, entityId: string) {
 }
 
 const VERDICT_STYLE: Record<Verdict, { className: string; icon: typeof CheckCircle2; text: string }> = {
-  VERIFIED: { className: "border-emerald-300 bg-emerald-50 text-emerald-900", icon: CheckCircle2, text: "The record in the database is the one proven on Solana." },
-  MISMATCH: { className: "border-red-300 bg-red-50 text-red-900", icon: XCircle, text: "The record no longer matches its proof. It changed after it was anchored." },
-  MISSING: { className: "border-red-300 bg-red-50 text-red-900", icon: ShieldAlert, text: "The account recorded for this proof does not exist on-chain." },
-  PENDING: { className: "border-amber-300 bg-amber-50 text-amber-900", icon: CircleDashed, text: "This fact has not been anchored yet." },
+  VERIFIED: { className: "tone-positive", icon: CheckCircle2, text: "The record in the database is the one proven on Solana." },
+  MISMATCH: { className: "tone-alert", icon: XCircle, text: "The record no longer matches its proof. It changed after it was anchored." },
+  MISSING: { className: "tone-alert", icon: ShieldAlert, text: "The account recorded for this proof does not exist on-chain." },
+  PENDING: { className: "tone-caution", icon: CircleDashed, text: "This fact has not been anchored yet." },
 };
 
 function Hash({ label, bytes }: { label: string; bytes: Uint8Array | null }) {
@@ -418,8 +418,8 @@ export default function AuditPage() {
                       {c.label}
                       {c.detail && <span className="block text-xs text-muted-foreground">{c.detail}</span>}
                     </span>
-                    {c.ok === true && <CheckCircle2 size={18} className="shrink-0 text-emerald-600" aria-label="passes" />}
-                    {c.ok === false && <XCircle size={18} className="shrink-0 text-red-600" aria-label="fails" />}
+                    {c.ok === true && <CheckCircle2 size={18} className="shrink-0 text-positive" aria-label="passes" />}
+                    {c.ok === false && <XCircle size={18} className="shrink-0 text-alert" aria-label="fails" />}
                     {c.ok === null && <CircleDashed size={18} className="shrink-0 text-muted-foreground" aria-label="not checked" />}
                   </li>
                 ))}
@@ -445,7 +445,7 @@ export default function AuditPage() {
                 )}
               </div>
               {record.anchor.reconciled_at && (
-                <p className={`text-xs ${record.anchor.reconcile === "verified" ? "text-muted-foreground" : "text-red-700"}`}>
+                <p className={`text-xs ${record.anchor.reconcile === "verified" ? "text-muted-foreground" : "text-alert"}`}>
                   Also re-checked by EmpowerFI's reconciliation job on {new Date(record.anchor.reconciled_at).toLocaleString("en-GB")}:{" "}
                   {record.anchor.reconcile}{record.anchor.reconcile_note ? ` — ${record.anchor.reconcile_note}` : ""}.
                 </p>

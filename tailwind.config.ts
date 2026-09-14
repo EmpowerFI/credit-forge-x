@@ -51,6 +51,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        positive: "hsl(var(--positive))",
+        alert: "hsl(var(--alert))",
+        caution: "hsl(var(--caution))",
+        info: "hsl(var(--info))",
+        sidebar: "hsl(var(--sidebar, var(--card)))",
       },
       borderRadius: {
         lg: "var(--radius)",

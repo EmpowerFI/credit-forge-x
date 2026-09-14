@@ -9,22 +9,22 @@ export const STATUS_LABEL: Record<ReadinessStatus, { title: string; summary: str
   CREDIT_READY: {
     title: "Ready for credit",
     summary: "The business is prepared, with enough data behind the judgement.",
-    tone: "border-emerald-300 bg-emerald-50 text-emerald-900",
+    tone: "tone-positive",
   },
   NEEDS_MORE_DATA: {
     title: "Needs more data",
     summary: "The business is running; the record of it is still too thin.",
-    tone: "border-sky-300 bg-sky-50 text-sky-900",
+    tone: "tone-info",
   },
   NEEDS_PREPARATION: {
     title: "Needs more preparation",
     summary: "Organisation or education is still in progress.",
-    tone: "border-amber-300 bg-amber-50 text-amber-900",
+    tone: "tone-caution",
   },
   MANUAL_REVIEW: {
     title: "Manual review",
     summary: "The figures need a person to look at them before the rules decide.",
-    tone: "border-slate-300 bg-slate-100 text-slate-900",
+    tone: "tone-neutral",
   },
 };
 

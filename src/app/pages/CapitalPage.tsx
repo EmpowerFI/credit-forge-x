@@ -49,7 +49,7 @@ interface Portfolio {
 const loans = (n: number) => `${n} ${n === 1 ? "loan" : "loans"}`;
 
 const BAND_LABEL: Record<Band, string> = { LOW: "Low risk", MEDIUM: "Medium risk", HIGH: "High risk" };
-const BAND_TONE: Record<Band, string> = { LOW: "bg-emerald-600", MEDIUM: "bg-amber-500", HIGH: "bg-rose-600" };
+const BAND_TONE: Record<Band, string> = { LOW: "bg-positive", MEDIUM: "bg-caution", HIGH: "bg-alert" };
 
 function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
@@ -108,7 +108,7 @@ export default function CapitalPage() {
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-heading text-3xl font-bold text-foreground">Portfolio</h1>
           {p.is_simulated && (
-            <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900">
+            <span className="rounded-full border tone-caution px-2.5 py-1 text-xs font-medium">
               Simulated capital · demo data
             </span>
           )}
@@ -147,7 +147,7 @@ export default function CapitalPage() {
             <span><span className="block text-xs text-muted-foreground">Paid when due</span>{p.repayment.instalments_due > 0 ? percent(p.repayment.on_time_bps) : "none due yet"}</span>
             <span><span className="block text-xs text-muted-foreground">PAR 30</span>{percent(p.repayment.par30_bps)}</span>
           </div>
-          {p.defaulted_cents > 0 && <p className="text-sm text-rose-700">Defaulted principal: {money(p.defaulted_cents)}</p>}
+          {p.defaulted_cents > 0 && <p className="text-sm text-alert">Defaulted principal: {money(p.defaulted_cents)}</p>}
         </Card>
 
         <Card title="Risk mix" note="EmpowerFI's risk band at eligibility, weighted by principal. The lending decision was the partner's.">
@@ -179,7 +179,7 @@ export default function CapitalPage() {
           <div className="flex h-2.5 overflow-hidden rounded-full bg-border" aria-label="Cost by phase">
             <div className="bg-accent" style={{ width: `${(p.cost.by_phase.preparation / phaseTotal) * 100}%` }} />
             <div className="bg-primary" style={{ width: `${(p.cost.by_phase.origination / phaseTotal) * 100}%` }} />
-            <div className="bg-emerald-600" style={{ width: `${(p.cost.by_phase.servicing / phaseTotal) * 100}%` }} />
+            <div className="bg-positive" style={{ width: `${(p.cost.by_phase.servicing / phaseTotal) * 100}%` }} />
           </div>
           <p className="flex flex-wrap gap-x-4 text-xs text-muted-foreground">
             <span>■ preparation {money(p.cost.by_phase.preparation)}</span>
@@ -223,11 +223,11 @@ export default function CapitalPage() {
 
         <Card title="Audit trail">
           <div className="flex items-start gap-3">
-            <ShieldCheck className="mt-0.5 shrink-0 text-emerald-700" size={20} />
+            <ShieldCheck className="mt-0.5 shrink-0 text-positive" size={20} />
             <p className="text-sm text-foreground">
               {p.audit.confirmed} of {p.audit.facts} loans, status changes, payments and outcome measurements are proven on Solana
               {p.audit.reconciled > 0 && <>; {p.audit.reconciled} re-checked against the chain since</>}
-              {p.audit.discrepancies > 0 && <span className="text-rose-700">; {p.audit.discrepancies} did not match</span>}.
+              {p.audit.discrepancies > 0 && <span className="text-alert">; {p.audit.discrepancies} did not match</span>}.
             </p>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -263,7 +263,7 @@ export default function CapitalPage() {
                   <td className="px-4 py-3">
                     {LOAN_LABEL[l.status]}
                     {["ACTIVE", "PAID", "DEFAULTED"].includes(l.status) && <span className="text-muted-foreground"> · {l.paid}/{l.term_months}</span>}
-                    {l.over_30 && <span className="ml-1 text-rose-700">· late</span>}
+                    {l.over_30 && <span className="ml-1 text-alert">· late</span>}
                     {l.evc_cents !== null && <span className="block text-xs text-muted-foreground">EVC {money(l.evc_cents)}</span>}
                   </td>
                   <td className="px-4 py-3 text-right">

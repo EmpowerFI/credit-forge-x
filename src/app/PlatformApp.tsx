@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useLayoutEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "./AppLayout";
 import { AuthProvider } from "./auth/AuthProvider";
@@ -23,14 +23,20 @@ const AuditPage = lazy(() => import("./pages/AuditPage"));
  * weighs on the marketing site.
  */
 export default function PlatformApp() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.title = "EmpowerFI Platform";
     // Nothing here is for search engines.
     const robots = document.createElement("meta");
     robots.name = "robots";
     robots.content = "noindex";
     document.head.appendChild(robots);
-    return () => robots.remove();
+    // The product's dark theme, on <html> so dialogs and toasts follow it —
+    // before the first paint, so entering from the light site does not flash.
+    document.documentElement.classList.add("dark");
+    return () => {
+      robots.remove();
+      document.documentElement.classList.remove("dark");
+    };
   }, []);
 
   return (

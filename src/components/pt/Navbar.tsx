@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import LaunchAppButton from "@/components/LaunchAppButton";
 import { Link } from "react-router-dom";
 
 const navLinks = [
@@ -22,15 +23,18 @@ const Navbar = () => {
           EmpowerFI
         </Link>
 
-        <button
-          className="text-foreground"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          aria-controls="menu-site"
-          aria-label="Menu"
-        >
-          {open ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-3">
+          <LaunchAppButton label="Acessar a plataforma" />
+          <button
+            className="text-foreground"
+            onClick={() => setOpen(!open)}
+            aria-expanded={open}
+            aria-controls="menu-site"
+            aria-label="Menu"
+          >
+            {open ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {open && (

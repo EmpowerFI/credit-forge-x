@@ -1,73 +1,153 @@
+import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import {
+  ArrowUpRight,
+  Briefcase,
+  CalendarCheck,
+  ClipboardCheck,
+  LogOut,
+  Menu,
+  Store,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import SimulatedBanner from "./components/SimulatedBanner";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import DataLegend from "./components/product/DataLegend";
+import NetworkBadge from "./components/product/NetworkBadge";
 import { useAuth } from "./auth/useAuth";
 import { ROLE_LABEL, type Role } from "./lib/platform";
 
-const NAV: { to: string; label: string; roles?: Role[] }[] = [
-  { to: "/app/me", label: "My business", roles: ["entrepreneur"] },
-  { to: "/app/community", label: "Communities" },
-  { to: "/app/partner", label: "Partner desk", roles: ["partner", "admin", "auditor"] },
-  { to: "/app/capital", label: "Portfolio", roles: ["capital_provider", "admin", "auditor"] },
-  { to: "/app/admin", label: "Review queue", roles: ["admin"] },
-];
+// One workspace per persona: the same brand as the corporate site, in the
+// product's dark financial theme. Each role sees its own navigation.
+
+interface NavItem { to: string; label: string; icon: LucideIcon }
+
+const COMMUNITIES: NavItem = { to: "/app/community", label: "Communities", icon: Users };
+const PIPELINE: NavItem = { to: "/app/partner", label: "Partner pipeline", icon: Briefcase };
+const PORTFOLIO: NavItem = { to: "/app/capital", label: "Portfolio", icon: Wallet };
+
+const NAV: Record<Role, NavItem[]> = {
+  entrepreneur: [
+    { to: "/app/me", label: "My business", icon: Store },
+    { to: "/app/check-in", label: "Monthly check-in", icon: CalendarCheck },
+  ],
+  community_leader: [COMMUNITIES],
+  partner: [{ ...PIPELINE, label: "Pipeline" }],
+  capital_provider: [PORTFOLIO],
+  auditor: [COMMUNITIES, PIPELINE, PORTFOLIO],
+  admin: [{ to: "/app/admin", label: "Review queue", icon: ClipboardCheck }, COMMUNITIES, PIPELINE, PORTFOLIO],
+};
+
+const WORKSPACE: Record<Role, string> = {
+  entrepreneur: "My business",
+  community_leader: "Community Intelligence",
+  partner: "Partner Desk",
+  capital_provider: "Investor Console",
+  auditor: "Audit",
+  admin: "EmpowerFI Admin",
+};
+
+function Sidebar({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {
+  return (
+    <div className="flex h-full flex-col justify-between gap-8 p-4">
+      <nav className="space-y-1" aria-label="Workspace">
+        {items.map(({ to, label, icon: Icon }) => (
+          <NavLink key={to} to={to} onClick={onNavigate}
+            className={({ isActive }) =>
+              `relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                isActive
+                  ? "bg-secondary font-semibold text-foreground before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full before:bg-primary"
+                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+              }`}>
+            <Icon size={17} aria-hidden /> {label}
+          </NavLink>
+        ))}
+      </nav>
+      <div className="space-y-4 border-t border-border pt-4">
+        <DataLegend compact />
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          Demo data on Solana Devnet. Every figure here is simulated; no real money moves.
+        </p>
+        <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+          empowerfi.io <ArrowUpRight size={12} aria-hidden />
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 export default function AppLayout() {
   const { profile, signOut } = useAuth();
-  const links = NAV.filter((n) => !n.roles || (profile && n.roles.includes(profile.role)));
+  const [open, setOpen] = useState(false);
+  const items = profile ? NAV[profile.role] : [];
+  const initials = profile?.display_name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background/90 backdrop-blur">
-        <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
-          <div className="flex items-center gap-6">
-            <Link to="/app" className="font-heading text-xl font-bold text-gradient">
-              EmpowerFI
-            </Link>
-            <nav className="hidden items-center gap-5 sm:flex" aria-label="Platform">
-              {links.map((l) => (
-                <NavLink
-                  key={l.to}
-                  to={l.to}
-                  className={({ isActive }) =>
-                    `text-sm transition-colors hover:text-foreground ${isActive ? "text-foreground" : "text-muted-foreground"}`
-                  }
-                >
-                  {l.label}
-                </NavLink>
-              ))}
-            </nav>
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+        <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            {items.length > 0 && (
+              <button className="rounded-md p-1.5 text-muted-foreground hover:text-foreground lg:hidden" onClick={() => setOpen(true)}
+                aria-label="Open navigation">
+                <Menu size={22} />
+              </button>
+            )}
+            <Link to="/app" className="font-heading text-xl font-bold text-gradient">EmpowerFI</Link>
+            {profile && (
+              <>
+                <span className="hidden h-5 w-px bg-border sm:block" aria-hidden />
+                <span className="hidden truncate font-heading text-base font-semibold text-foreground sm:block">
+                  {WORKSPACE[profile.role]}
+                </span>
+              </>
+            )}
           </div>
-          {profile && (
-            <div className="flex items-center gap-3">
-              <div className="hidden text-right sm:block">
-                <p className="text-sm font-medium text-foreground">{profile.display_name}</p>
-                <p className="text-xs text-muted-foreground">{ROLE_LABEL[profile.role]}</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={signOut} className="gap-2">
-                <LogOut size={14} /> Sign out
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="hidden rounded-full border border-caution/35 px-2.5 py-1 text-xs font-medium text-caution md:inline">
+              Simulated data
+            </span>
+            <NetworkBadge />
+            {profile && (
+              <>
+                <div className="hidden items-center gap-2.5 sm:flex">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-foreground" aria-hidden>
+                    {initials}
+                  </span>
+                  <div className="leading-tight">
+                    <p className="max-w-[10rem] truncate text-sm font-medium text-foreground">{profile.display_name}</p>
+                    <p className="text-xs text-muted-foreground">{ROLE_LABEL[profile.role]}</p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign out" title="Sign out">
+                  <LogOut size={17} />
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-        {/* Phones get the same links under the bar. */}
-        <nav className="flex gap-5 border-t border-border px-4 py-2 sm:hidden" aria-label="Platform">
-          {links.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              className={({ isActive }) => `text-sm ${isActive ? "text-foreground" : "text-muted-foreground"}`}
-            >
-              {l.label}
-            </NavLink>
-          ))}
-        </nav>
       </header>
-      <SimulatedBanner />
-      <main className="container mx-auto px-4 py-8 md:py-10">
-        <Outlet />
-      </main>
+
+      <div className="flex">
+        {items.length > 0 && (
+          <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-60 shrink-0 border-r border-border bg-sidebar lg:block">
+            <Sidebar items={items} />
+          </aside>
+        )}
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent side="left" className="w-72 border-border bg-sidebar p-0">
+            <SheetTitle className="px-7 pt-6 font-heading text-lg text-foreground">{profile ? WORKSPACE[profile.role] : "EmpowerFI"}</SheetTitle>
+            <Sidebar items={items} onNavigate={() => setOpen(false)} />
+          </SheetContent>
+        </Sheet>
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <div className="mx-auto max-w-7xl">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

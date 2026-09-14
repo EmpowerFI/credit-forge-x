@@ -142,7 +142,7 @@ export default function CheckinPage() {
 
           <div className="rounded-xl bg-accent/10 p-3 text-sm">
             <span className="text-muted-foreground">Business result this month: </span>
-            <strong className={net > 0 ? "text-emerald-700" : net < 0 ? "text-red-700" : "text-foreground"}>{money(net)}</strong>
+            <strong className={net > 0 ? "text-positive" : net < 0 ? "text-alert" : "text-foreground"}>{money(net)}</strong>
           </div>
 
           <Button type="submit" disabled={submit.isPending} className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90">

@@ -161,13 +161,13 @@ export default function CommunityDetailPage() {
       </div>
 
       {c.status === "pending_verification" && (
-        <p className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <p className="flex items-start gap-2 rounded-xl border tone-caution p-4 text-sm">
           <Clock size={16} className="mt-0.5 shrink-0" />
           Waiting for EmpowerFI to verify this community. Entrepreneurs can be enrolled once it is verified.
         </p>
       )}
       {c.status === "rejected" && c.review_note && (
-        <p className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-900">Rejected: {c.review_note}</p>
+        <p className="rounded-xl border tone-alert p-4 text-sm">Rejected: {c.review_note}</p>
       )}
 
       <section className="rounded-2xl p-6 glass glow-border">

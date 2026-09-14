@@ -19,8 +19,8 @@ const PART_LABEL: Record<keyof ReturnType<typeof compareRoutes>[number]["compone
   compliance: "Compliance",
 };
 const PART_TONE: Record<keyof typeof PART_LABEL, string> = {
-  capital: "bg-primary", hedge: "bg-rose-500", expected_loss: "bg-amber-500",
-  operating: "bg-accent", rail: "bg-sky-500", compliance: "bg-slate-400",
+  capital: "bg-primary", hedge: "bg-alert", expected_loss: "bg-caution",
+  operating: "bg-accent", rail: "bg-info", compliance: "bg-muted-foreground",
 };
 const ROUTE_TITLE: Record<Route["id"], string> = {
   domestic_pix: "Domestic · partner and Pix",

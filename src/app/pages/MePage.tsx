@@ -279,7 +279,7 @@ export default function MePage() {
               <ul className="space-y-2 rounded-xl border border-border bg-background/60 p-4">
                 {insightsFrom(readiness.features as unknown as ReadinessFeatures).map((i) => (
                   <li key={i.text} className="flex items-start gap-2 text-sm text-foreground">
-                    <Lightbulb size={15} className={`mt-0.5 shrink-0 ${i.tone === "watch" ? "text-amber-600" : i.tone === "good" ? "text-emerald-600" : "text-muted-foreground"}`} />
+                    <Lightbulb size={15} className={`mt-0.5 shrink-0 ${i.tone === "watch" ? "text-caution" : i.tone === "good" ? "text-positive" : "text-muted-foreground"}`} />
                     {i.text}
                   </li>
                 ))}
@@ -291,7 +291,7 @@ export default function MePage() {
                 {readiness.reason_codes.map((code) => {
                   const r = REASON_LABEL[code] ?? { text: code, positive: true };
                   return (
-                    <li key={code} className={`rounded-full border px-3 py-1 text-xs ${r.positive ? "border-emerald-300 text-emerald-800" : "border-amber-300 text-amber-800"}`}>
+                    <li key={code} className={`rounded-full border px-3 py-1 text-xs ${r.positive ? "border-positive/40 text-positive" : "border-caution/40 text-caution"}`}>
                       {r.text}
                     </li>
                   );
@@ -336,7 +336,7 @@ export default function MePage() {
           ) : !asking ? (
             <div className="space-y-3">
               <p className="flex items-start gap-2 text-sm text-foreground">
-                <CircleCheck size={16} className="mt-0.5 shrink-0 text-emerald-600" />
+                <CircleCheck size={16} className="mt-0.5 shrink-0 text-positive" />
                 Your business is ready for a credit conversation. Nothing happens unless you ask — being ready and not
                 needing credit is a good place to be.
               </p>
@@ -391,7 +391,7 @@ export default function MePage() {
                     <span><span className="text-xs text-muted-foreground">Household</span><br />{money(m.household_cents)}</span>
                     <span>
                       <span className="text-xs text-muted-foreground">Business result</span><br />
-                      <span className={(m.net_business_cents ?? 0) > 0 ? "text-emerald-700" : "text-red-700"}>{money(m.net_business_cents)}</span>
+                      <span className={(m.net_business_cents ?? 0) > 0 ? "text-positive" : "text-alert"}>{money(m.net_business_cents)}</span>
                     </span>
                   </div>
                   <ProofStatus loading={anchors.isPending} label="Month anchored" anchor={anchorOf(m.checkin_id!)} />

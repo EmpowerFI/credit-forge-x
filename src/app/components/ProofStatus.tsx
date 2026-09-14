@@ -27,7 +27,7 @@ export default function ProofStatus({
       <span className="text-foreground">{label}</span>
       {anchor.status === "confirmed" && anchor.signature ? (
         <span className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-positive">
             <CheckCircle2 size={14} /> On-chain · slot {anchor.slot}
           </span>
           <a href={explorerTx(anchor.signature)} target="_blank" rel="noopener noreferrer"

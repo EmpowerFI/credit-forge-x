@@ -23,7 +23,7 @@ export default function MemberEducation({ programmes, completed, onCompleteNext,
             <div className="flex items-center justify-between gap-3 text-xs">
               <span className="text-muted-foreground">{p.title}</span>
               <span className="flex items-center gap-2">
-                <span className={done === p.modules.length ? "font-medium text-emerald-700" : "text-foreground"}>
+                <span className={done === p.modules.length ? "font-medium text-positive" : "text-foreground"}>
                   {done}/{p.modules.length}
                 </span>
                 {onCompleteNext && next && (
