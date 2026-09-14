@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "../auth/useAuth";
 import { describeError } from "../lib/errors";
 import { KIND_LABEL, platform } from "../lib/platform";
+import { ELIGIBILITY_REASON, pseudonym } from "../lib/credit";
+import { money, PURPOSE_LABEL } from "../lib/readiness";
 
 export default function AdminReviewPage() {
   const { profile } = useAuth();
@@ -25,6 +27,30 @@ export default function AdminReviewPage() {
       if (error) throw error;
       return data;
     },
+  });
+
+  const flagged = useQuery({
+    queryKey: ["platform", "flagged-opportunities"],
+    queryFn: async () => {
+      const { data, error } = await platform
+        .from("qualified_credit_opportunities")
+        .select("id, entrepreneur_id, amount_cents, term_months, purpose, status, eligibility:eligibility_assessments(reason_codes, confidence)")
+        .in("status", ["in_review", "open"])
+        .order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const refer = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await platform.rpc("refer_opportunity", { p_opportunity_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["platform"] });
+      toast.success("Referred to the matching partner.");
+    },
+    onError: (error) => toast.error(describeError(error)),
   });
 
   const review = useMutation({
@@ -97,6 +123,33 @@ export default function AdminReviewPage() {
             </li>
           );
         })}
+      </ul>
+
+      <div className="space-y-1 pt-4">
+        <h2 className="font-heading text-2xl font-bold text-foreground">Opportunities for review</h2>
+        <p className="text-muted-foreground">
+          Requests the eligibility rules were not confident about, or that no partner covered yet. Review, then refer.
+        </p>
+      </div>
+      {flagged.data?.length === 0 && (
+        <p className="rounded-2xl border border-dashed border-border p-6 text-center text-muted-foreground">Nothing flagged.</p>
+      )}
+      <ul className="space-y-3">
+        {flagged.data?.map((o) => (
+          <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl p-5 glass glow-border">
+            <div className="space-y-1 text-sm">
+              <p className="font-medium text-foreground">
+                {pseudonym(o.entrepreneur_id)} · {money(o.amount_cents)} over {o.term_months} months · {PURPOSE_LABEL[o.purpose].toLowerCase()}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {(o.eligibility?.reason_codes ?? []).map((r) => ELIGIBILITY_REASON[r] ?? r).join(" · ")}
+              </p>
+            </div>
+            <Button disabled={refer.isPending} onClick={() => refer.mutate(o.id)} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+              {refer.isPending && refer.variables === o.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Refer to partner
+            </Button>
+          </li>
+        ))}
       </ul>
     </div>
   );

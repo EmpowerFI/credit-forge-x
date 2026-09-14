@@ -29,6 +29,21 @@ const MESSAGES: Record<string, string> = {
   not_credit_ready: "A credit request comes after the business is ready.",
   intent_already_active: "You already have an open request.",
   no_active_intent: "There is no open request to withdraw.",
+  not_in_credit_pipeline: "Eligibility is assessed once the business is ready and a request is open.",
+  only_admins_refer: "Only EmpowerFI admins refer opportunities.",
+  opportunity_not_referable: "This opportunity cannot be referred now.",
+  no_matching_partner: "No partner currently covers this amount and purpose.",
+  not_your_opportunity: "This opportunity was not referred to you.",
+  opportunity_not_awaiting_decision: "This opportunity is not waiting for a decision.",
+  approval_above_opportunity: "The approved amount cannot exceed the opportunity.",
+  not_your_loan: "This loan is not yours to manage.",
+  approval_comes_from_the_partner_decision: "Approval is recorded through the partner's decision.",
+  invalid_loan_transition: "That status change is not allowed.",
+  instalments_outstanding: "Some instalments are still unpaid.",
+  loan_not_repaying: "Payments start once the loan is disbursed.",
+  invalid_instalment: "That instalment number is outside the term.",
+  instalment_already_paid: "That instalment is already recorded.",
+  not_allowed_to_see_costs: "You cannot see these costs.",
 };
 
 export function describeError(error: unknown): string {

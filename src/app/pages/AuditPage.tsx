@@ -1,6 +1,14 @@
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { address, createSolanaRpc, type Address } from "@solana/kit";
+import {
+  address,
+  createSolanaRpc,
+  getBase64Encoder,
+  getCompiledTransactionMessageDecoder,
+  getTransactionDecoder,
+  type Address,
+  type Signature,
+} from "@solana/kit";
 import { ArrowLeft, CheckCircle2, CircleDashed, ExternalLink, Loader2, ShieldAlert, XCircle } from "lucide-react";
 import {
   ANCHOR_DOMAINS,
@@ -18,14 +26,27 @@ import {
   fetchMaybeBorrowerAudit,
   fetchMaybeCheckinCommitment,
   fetchMaybeCommunityAudit,
+  fetchMaybeEligibilityAttestation,
+  fetchMaybeLoanAccount,
+  fetchMaybeOpportunityCommitment,
+  fetchMaybePaymentCommitment,
   fetchMaybeReadinessAttestation,
   findAttestationPda,
   findBorrowerPda,
   findCheckinPda,
   findCommunityPda,
+  findEligibilityPda,
+  findLoanPda,
+  findOpportunityPda,
+  findPaymentPda,
+  EligibilityDecision,
+  getTransitionLoanInstructionDataDecoder,
+  Grade,
+  LoanStatus,
   ReadinessBand,
   ReadinessStatus,
 } from "@empowerfi/audit-client";
+import { assessEligibility, type EligibilityInput } from "@empowerfi/eligibility-engine";
 import { evaluateReadiness, type ReadinessFeatures } from "@empowerfi/readiness-engine";
 import { describeError } from "../lib/errors";
 import { explorerAddress, explorerTx, platform } from "../lib/platform";
@@ -44,7 +65,38 @@ const KIND_TITLE: Record<AnchorKind, string> = {
   enrollment: "Borrower enrollment",
   checkin: "Monthly check-in",
   readiness: "Readiness assessment",
+  eligibility: "Eligibility assessment",
+  opportunity: "Qualified credit opportunity",
+  loan: "Loan terms",
+  loan_transition: "Loan status change",
+  payment: "Instalment paid",
 };
+
+const ELIGIBILITY_FIELDS = [
+  "model_version", "decision", "requested_amount_cents", "proposed_amount_cents", "term_months", "instalment_cents",
+  "max_instalment_cents", "affordability_bps", "suggested_min_cents", "suggested_max_cents", "risk_band", "risk_points",
+  "confidence", "reason_codes",
+] as const;
+const SNAKE_TO_PASCAL = (v: unknown) =>
+  String(v).toLowerCase().replace(/(^|_)([a-z])/g, (_, __, c: string) => c.toUpperCase());
+
+/**
+ * The commitment a transition_loan transaction actually carried, read from the
+ * transaction itself: the loan account only keeps its latest transition, so
+ * older ones are checked against the instruction that made them.
+ */
+async function transitionInTransaction(signature: string) {
+  const tx = await rpc
+    .getTransaction(signature as Signature, { encoding: "base64", maxSupportedTransactionVersion: 0 })
+    .send();
+  if (!tx) return null;
+  const decoded = getTransactionDecoder().decode(getBase64Encoder().encode(tx.transaction[0]));
+  const message = getCompiledTransactionMessageDecoder().decode(decoded.messageBytes);
+  // Our transactions are version 0; a message in another format is not ours to parse.
+  if (!("instructions" in message)) return null;
+  const ix = message.instructions.find((i) => message.staticAccounts[i.programAddressIndex] === EMPOWERFI_AUDIT_PROGRAM_ADDRESS);
+  return ix?.data ? getTransitionLoanInstructionDataDecoder().decode(ix.data) : null;
+}
 
 const periodNumber = (period: unknown) => Number(String(period).replace("-", ""));
 
@@ -110,7 +162,81 @@ async function audit(kind: AnchorKind, entityId: string) {
     ? (await findBorrowerPda({ borrowerRefHash: await hashBorrowerRef(fromHex(record.borrower_ref)) }))[0]
     : null;
 
-  if (kind === "checkin") {
+  const p = payload;
+  if (kind === "eligibility") {
+    const found = await fetchMaybeEligibilityAttestation(rpc, account);
+    if (found.exists) {
+      onChain = new Uint8Array(found.data.commitment);
+      owner = found.programAddress;
+      checks.push({
+        label: "Decision, risk and confidence on chain match the record",
+        ok:
+          EligibilityDecision[found.data.decision] === SNAKE_TO_PASCAL(p.decision) &&
+          Grade[found.data.riskBand] === SNAKE_TO_PASCAL(p.risk_band) &&
+          Grade[found.data.confidence] === SNAKE_TO_PASCAL(p.confidence),
+      });
+      if (borrower) {
+        [expected] = await findEligibilityPda({ borrower, eligibilityNo: Number(p.eligibility_no) });
+        const [readiness] = await findAttestationPda({ borrower, assessmentNo: Number(p.readiness_assessment_no) });
+        checks.push({ label: "Relies on her own readiness attestation", ok: found.data.readiness === readiness });
+      }
+    }
+    const rerun = assessEligibility(p.inputs as unknown as EligibilityInput);
+    checks.push({
+      label: `Re-running ${rerun.model_version} on the stored inputs gives the same result`,
+      ok: ELIGIBILITY_FIELDS.every((f) => sameJson({ v: rerun[f] }, { v: p[f] })),
+    });
+  } else if (kind === "opportunity") {
+    const found = await fetchMaybeOpportunityCommitment(rpc, account);
+    if (found.exists) {
+      onChain = new Uint8Array(found.data.commitment);
+      owner = found.programAddress;
+      if (borrower) {
+        [expected] = await findOpportunityPda({ borrower, opportunityNo: Number(p.opportunity_no) });
+        const [eligibility] = await findEligibilityPda({ borrower, eligibilityNo: Number(p.eligibility_no) });
+        checks.push({ label: "Comes from her eligibility attestation", ok: found.data.eligibility === eligibility });
+      }
+    }
+  } else if (kind === "loan" || kind === "loan_transition" || kind === "payment") {
+    const opportunity = borrower ? (await findOpportunityPda({ borrower, opportunityNo: Number(p.opportunity_no) }))[0] : null;
+    const loanAddress = opportunity ? (await findLoanPda({ opportunity }))[0] : null;
+    if (kind === "payment") {
+      const found = await fetchMaybePaymentCommitment(rpc, account);
+      if (found.exists) {
+        onChain = new Uint8Array(found.data.commitment);
+        owner = found.programAddress;
+        checks.push({ label: "The instalment on chain is the one on record", ok: found.data.instalmentNo === Number(p.instalment_no) });
+        if (loanAddress) {
+          [expected] = await findPaymentPda({ loan: loanAddress, instalmentNo: Number(p.instalment_no) });
+          checks.push({ label: "Belongs to her loan", ok: found.data.loan === loanAddress });
+        }
+      }
+    } else {
+      const found = await fetchMaybeLoanAccount(rpc, account);
+      if (found.exists) {
+        owner = found.programAddress;
+        if (loanAddress) expected = loanAddress;
+        if (kind === "loan") {
+          onChain = new Uint8Array(found.data.termsCommitment);
+          if (opportunity) checks.push({ label: "Opened from her opportunity", ok: found.data.opportunity === opportunity });
+        } else {
+          // Older transitions are no longer the loan's latest: read the
+          // commitment from the transaction that made the change.
+          const carried = record.anchor.signature ? await transitionInTransaction(record.anchor.signature) : null;
+          onChain = carried ? new Uint8Array(carried.transitionCommitment) : null;
+          checks.push({
+            label: `The transaction moved the loan to ${String(p.to_status).toLowerCase().replace("_", " ")}`,
+            ok: carried !== null && LoanStatus[carried.to] === SNAKE_TO_PASCAL(p.to_status),
+          });
+          checks.push({
+            label: "The loan on chain has moved at least this far",
+            ok: found.data.transitions >= 1,
+            detail: `now ${LoanStatus[found.data.status]}, after ${found.data.transitions} changes`,
+          });
+        }
+      }
+    }
+  } else if (kind === "checkin") {
     const found = await fetchMaybeCheckinCommitment(rpc, account);
     if (found.exists) {
       onChain = new Uint8Array(found.data.commitment);
@@ -187,7 +313,7 @@ async function audit(kind: AnchorKind, entityId: string) {
       : {
           label: "Account address matches its derivation (PDA)",
           ok: null,
-          detail: ["enrollment", "checkin", "readiness"].includes(kind) ? "needs the borrower ref — auditors and admins only" : "community ref unavailable",
+          detail: ["community", "community_verification"].includes(kind) ? "community ref unavailable" : "needs the borrower ref — auditors and admins only",
         },
   );
 

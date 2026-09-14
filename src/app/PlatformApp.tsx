@@ -11,6 +11,7 @@ import HomeRedirect from "./pages/HomeRedirect";
 import LoginPage from "./pages/LoginPage";
 import MePage from "./pages/MePage";
 import NewCommunityPage from "./pages/NewCommunityPage";
+import PartnerPage from "./pages/PartnerPage";
 
 // The Solana client is heavy and only the audit screen needs it in the browser.
 const AuditPage = lazy(() => import("./pages/AuditPage"));
@@ -45,6 +46,7 @@ export default function PlatformApp() {
           <Route path="community/:id" element={<CommunityDetailPage />} />
           {/* Anyone signed in may open one; audit_record decides what they may see. */}
           <Route path="audit/:kind/:entityId" element={<Suspense fallback={null}><AuditPage /></Suspense>} />
+          <Route path="partner" element={<RequireAuth roles={["partner", "admin", "auditor"]}><PartnerPage /></RequireAuth>} />
           <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Route>

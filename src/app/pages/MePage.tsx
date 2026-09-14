@@ -16,7 +16,8 @@ import { anchorsSettled } from "../lib/anchors";
 import { loadEducation } from "../lib/education";
 import { describeError } from "../lib/errors";
 import { insightsFrom } from "../lib/insights";
-import { requestAssessment } from "../lib/assessments";
+import { requestAssessment, requestEligibility } from "../lib/assessments";
+import { DECISION_LABEL, ELIGIBILITY_REASON, LOAN_LABEL, OPPORTUNITY_LABEL } from "../lib/credit";
 import { platform } from "../lib/platform";
 import {
   describeRequirement,
@@ -27,6 +28,64 @@ import {
   STATUS_LABEL,
   type CreditPurpose,
 } from "../lib/readiness";
+
+type Credit = {
+  eligibility: {
+    decision: keyof typeof DECISION_LABEL;
+    proposed_amount_cents: number | null;
+    term_months: number | null;
+    instalment_cents: number | null;
+    reason_codes: string[];
+  } | null;
+  opportunity: {
+    status: keyof typeof OPPORTUNITY_LABEL;
+    partner: { name: string } | null;
+    partner_decisions: { verdict: string; approved_amount_cents: number | null; rate_bps: number | null; term_months: number | null; reason: string | null }[];
+    loans: { status: keyof typeof LOAN_LABEL; principal_cents: number; term_months: number; instalment_cents: number; payments: { instalment_no: number }[] }[];
+  } | null;
+} | null;
+
+/** Her request's path, one line per party: EmpowerFI, the partner, the loan. */
+function CreditProgress({ credit }: { credit: Credit }) {
+  if (!credit?.eligibility) return null;
+  const e = credit.eligibility;
+  const o = credit.opportunity;
+  const decision = o?.partner_decisions?.at(-1);
+  const loan = o?.loans?.[0];
+  return (
+    <ol className="space-y-3 border-l-2 border-accent/40 pl-4 text-sm">
+      <li>
+        <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${DECISION_LABEL[e.decision].tone}`}>
+          EmpowerFI · {DECISION_LABEL[e.decision].title}
+        </span>
+        {e.proposed_amount_cents !== null && (
+          <p className="mt-1 text-foreground">
+            {money(e.proposed_amount_cents)} over {e.term_months} months — about {money(e.instalment_cents)} a month.
+          </p>
+        )}
+        <p className="mt-1 text-xs text-muted-foreground">{e.reason_codes.map((r) => ELIGIBILITY_REASON[r] ?? r).join(" · ")}</p>
+      </li>
+      {o && (
+        <li className="text-foreground">
+          {OPPORTUNITY_LABEL[o.status]}{o.partner ? `: ${o.partner.name}` : ""}.
+          {decision?.verdict === "approved" && (
+            <span className="block text-xs text-muted-foreground">
+              Offered {money(decision.approved_amount_cents)} at {((decision.rate_bps ?? 0) / 100).toFixed(1)}% a month over {decision.term_months} months.
+            </span>
+          )}
+          {decision?.verdict === "declined" && decision.reason && (
+            <span className="block text-xs text-muted-foreground">Reason given: {decision.reason}</span>
+          )}
+        </li>
+      )}
+      {loan && (
+        <li className="text-foreground">
+          Loan · {LOAN_LABEL[loan.status]} — {loan.payments.length} of {loan.term_months} instalments of {money(loan.instalment_cents)} paid.
+        </li>
+      )}
+    </ol>
+  );
+}
 
 export default function MePage() {
   const { profile } = useAuth();
@@ -58,7 +117,21 @@ export default function MePage() {
         platform.from("checkin_cash_flow").select("*").eq("entrepreneur_id", id!).order("period", { ascending: false }).limit(6),
       ]);
       for (const r of [readiness, intent, months]) if (r.error) throw r.error;
-      return { readiness: readiness.data, intent: intent.data, months: months.data ?? [] };
+      // What became of her request: EmpowerFI's eligibility, the opportunity,
+      // the partner's decision, the loan.
+      let credit = null;
+      if (intent.data) {
+        const [eligibility, opportunity] = await Promise.all([
+          platform.from("eligibility_assessments").select("*").eq("intent_id", intent.data.id).order("eligibility_no", { ascending: false }).limit(1).maybeSingle(),
+          platform.from("qualified_credit_opportunities")
+            .select("*, partner:partners(name), partner_decisions(verdict, approved_amount_cents, rate_bps, term_months, reason), loans(id, status, principal_cents, term_months, rate_bps, instalment_cents, payments(instalment_no))")
+            .eq("intent_id", intent.data.id).maybeSingle(),
+        ]);
+        if (eligibility.error) throw eligibility.error;
+        if (opportunity.error) throw opportunity.error;
+        credit = { eligibility: eligibility.data, opportunity: opportunity.data };
+      }
+      return { readiness: readiness.data, intent: intent.data, months: months.data ?? [], credit };
     },
   });
 
@@ -105,11 +178,21 @@ export default function MePage() {
       });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       setAsking(false);
+      try {
+        const e = await requestEligibility(id!);
+        toast.success(`Request recorded. EmpowerFI's assessment: ${DECISION_LABEL[e.result.decision as keyof typeof DECISION_LABEL].title}. Nothing is approved until the partner decides.`);
+      } catch (err) {
+        toast.error(describeError(err));
+      }
       refresh();
-      toast.success("Request recorded. It goes to eligibility next — nothing is approved yet.");
     },
+    onError: (e) => toast.error(describeError(e)),
+  });
+  const checkEligibility = useMutation({
+    mutationFn: () => requestEligibility(id!),
+    onSuccess: refresh,
     onError: (e) => toast.error(describeError(e)),
   });
   const withdraw = useMutation({
@@ -228,15 +311,23 @@ export default function MePage() {
         <section className="space-y-4 rounded-2xl p-6 glass glow-border">
           <h2 className="font-heading text-xl font-bold text-foreground">Capital</h2>
           {intent ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <p className="text-sm text-foreground">
                 You asked for <strong>{money(intent.requested_amount_cents)}</strong> for{" "}
-                {PURPOSE_LABEL[intent.purpose].toLowerCase()}. It goes to an eligibility check next; a financial partner
-                makes any lending decision.
+                {PURPOSE_LABEL[intent.purpose].toLowerCase()}. EmpowerFI assesses whether it fits the business; a
+                financial partner makes any lending decision.
               </p>
-              <Button variant="outline" size="sm" disabled={withdraw.isPending} onClick={() => withdraw.mutate()}>
-                Withdraw the request
-              </Button>
+              <CreditProgress credit={business.data?.credit ?? null} />
+              {!business.data?.credit?.eligibility && (
+                <Button size="sm" variant="outline" disabled={checkEligibility.isPending} onClick={() => checkEligibility.mutate()}>
+                  {checkEligibility.isPending && <Loader2 size={14} className="mr-1 animate-spin" />} Assess my request
+                </Button>
+              )}
+              {!business.data?.credit?.opportunity?.loans?.length && (
+                <Button variant="ghost" size="sm" disabled={withdraw.isPending} onClick={() => withdraw.mutate()}>
+                  Withdraw the request
+                </Button>
+              )}
             </div>
           ) : !asking ? (
             <div className="space-y-3">

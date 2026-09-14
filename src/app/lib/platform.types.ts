@@ -1326,6 +1326,7 @@ export type Database = {
           purpose: Database["public"]["Enums"]["credit_purpose"]
           readiness_band: Database["public"]["Enums"]["readiness_band"]
           referred_at: string
+          requested_amount_cents: number
           revenue_cv_bps: number
           risk_band: Database["public"]["Enums"]["grade"]
           status: Database["public"]["Enums"]["opportunity_status"]

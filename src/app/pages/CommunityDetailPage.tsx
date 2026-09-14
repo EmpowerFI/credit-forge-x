@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import CommunityFunnel from "../components/CommunityFunnel";
 import MemberEducation from "../components/MemberEducation";
 import ProofStatus from "../components/ProofStatus";
 import { anchorsSettled } from "../lib/anchors";
@@ -174,6 +175,22 @@ export default function CommunityDetailPage() {
           <ProofStatus loading={anchors.isPending} label="Community verified" anchor={anchorFor("community_verification", c.id)} />
         </div>
       </section>
+
+      {(leads || profile?.role === "admin" || profile?.role === "auditor") && memberIds && memberIds.length > 0 && education.data && (
+        <CommunityFunnel
+          communityId={c.id}
+          memberIds={memberIds}
+          coreModules={{
+            total: education.data.programmes.filter((p) => p.community_id === null).reduce((n, p) => n + p.modules.length, 0),
+            completedBy: (eid) => {
+              const done = education.data!.completed.get(eid);
+              return education.data!.programmes
+                .filter((p) => p.community_id === null)
+                .reduce((n, p) => n + p.modules.filter((m) => done?.has(m.id)).length, 0);
+            },
+          }}
+        />
+      )}
 
       {canSeeMembers && (
         <section className="space-y-4">

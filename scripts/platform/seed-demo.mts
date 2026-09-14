@@ -18,6 +18,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
 import { assessReadiness, type CheckinRecord } from "../../packages/readiness-engine/src/index.ts";
+import { assessEligibility, type EligibilityInput } from "../../packages/eligibility-engine/src/index.ts";
 
 if (!process.argv.includes("--yes")) {
   console.error("This wipes the demo scenario on the hackathon project. Re-run with --yes.");
@@ -25,6 +26,8 @@ if (!process.argv.includes("--yes")) {
 }
 
 const URL = process.env.PLATFORM_SUPABASE_URL ?? "https://yuxrujoghizcfdmbkqfg.supabase.co";
+// The demo accounts' shared password, public on purpose (see seed-demo-accounts.mts).
+const DEMO_PASSWORD = "EmpowerFI-demo-2026";
 const keyFile = process.env.PLATFORM_SERVICE_KEY_FILE;
 if (!keyFile) throw new Error("set PLATFORM_SERVICE_KEY_FILE");
 const db = createClient(URL, readFileSync(keyFile, "utf8").trim(), {
@@ -382,6 +385,15 @@ for (const m of memberships) {
   }
 }
 
+// One participant in the second community started reporting only in July:
+// ready on three months, which is too little for the eligibility engine to be
+// confident about, so her request waits for a person to review it.
+const recent = memberships.find((m) =>
+  m.community_id === byName.get(COMMUNITIES[1].name)!.id &&
+  histories.get(m.entrepreneur_id)!.profile === "steady" && coreDone.get(m.entrepreneur_id) === 5,
+)?.entrepreneur_id;
+if (recent) histories.get(recent)!.months = histories.get(recent)!.months.slice(-3);
+
 const checkinRows = [...histories.entries()].flatMap(([entrepreneurId, h]) =>
   h.months.map((c) => ({
     ...c,
@@ -438,7 +450,10 @@ const leftAlone = memberships.find(
 
 const intents = memberships
   .filter((m) => statusOf.get(m.entrepreneur_id) === "CREDIT_READY" && m.entrepreneur_id !== leftAlone && m.entrepreneur_id !== maria.id)
-  .filter(() => random() < 0.5)
+  .filter((m) => {
+    const asks = random() < 0.5; // drawn for everyone, so the sequence does not depend on who is forced in
+    return asks || m.entrepreneur_id === recent;
+  })
   .map((m) => ({
     entrepreneur_id: m.entrepreneur_id,
     purpose: PURPOSE_BY_SECTOR[sectorOf.get(m.entrepreneur_id) ?? "retail"],
@@ -447,6 +462,77 @@ const intents = memberships
     created_at: iso(new Date(Date.UTC(2026, 8, 12, 16) + Math.floor(random() * 36) * 3_600_000)),
   }));
 if (intents.length) await must("intents", db.from("credit_intents").insert(intents));
+
+// -------------------------------------------------------------- eligibility
+// Every open request goes through the eligibility engine and the same
+// recording function the live path uses; that function turns eligible ones
+// into opportunities and refers them.
+
+const { data: openIntents, error: intentsError } = await db
+  .from("credit_intents").select("id, entrepreneur_id, requested_amount_cents, purpose").eq("status", "active");
+if (intentsError) throw intentsError;
+for (const intent of openIntents) {
+  const { data: r, error } = await db.from("readiness_assessments")
+    .select("id, status, band, features").eq("entrepreneur_id", intent.entrepreneur_id)
+    .order("assessment_no", { ascending: false }).limit(1).single();
+  if (error) throw error;
+  const f = r.features as Record<string, number | null>;
+  const input: EligibilityInput = {
+    readiness_status: r.status, readiness_band: r.band,
+    requested_amount_cents: intent.requested_amount_cents, purpose: intent.purpose,
+    months_reported: f.months_reported as number, records_kept_bps: f.records_kept_bps, inconsistencies: f.inconsistencies as number,
+    avg_revenue_cents: f.avg_revenue_cents, avg_net_business_cents: f.avg_net_business_cents,
+    avg_household_cents: f.avg_household_cents, revenue_cv_bps: f.revenue_cv_bps,
+    revenue_trend_bps: f.revenue_trend_bps, household_share_bps: f.household_share_bps,
+  };
+  await must(`eligibility ${intent.entrepreneur_id}`, db.rpc("record_eligibility_assessment", {
+    p_entrepreneur_id: intent.entrepreneur_id, p_intent_id: intent.id, p_readiness_assessment_id: r.id,
+    p_inputs: input, p_result: assessEligibility(input), p_is_simulated: true, p_created_at: "2026-09-12T18:00:00Z",
+  }));
+}
+
+// ------------------------------------------------------------- the partner
+// Signed in as the demo partner, through the same RPCs its users call: the
+// lending decision is theirs, so the seed takes it in their name. Three
+// referrals are left waiting, so the desk is never empty on camera.
+
+const publishable = process.env.PLATFORM_PUBLISHABLE_KEY ?? readFileSync(".env", "utf8")
+  .split("\n").find((l) => l.startsWith("VITE_PLATFORM_SUPABASE_PUBLISHABLE_KEY="))?.split("=")[1]?.trim();
+if (!publishable) throw new Error("no publishable key: set PLATFORM_PUBLISHABLE_KEY or VITE_PLATFORM_SUPABASE_PUBLISHABLE_KEY in .env");
+const asPartner = createClient(URL, publishable, { auth: { persistSession: false, autoRefreshToken: false } });
+const { error: partnerLogin } = await asPartner.auth.signInWithPassword({ email: "partner@demo.empowerfi.io", password: DEMO_PASSWORD });
+if (partnerLogin) throw partnerLogin;
+
+const { data: referred, error: referredError } = await db.from("qualified_credit_opportunities")
+  .select("id, amount_cents, term_months").eq("status", "referred").order("created_at").order("id");
+if (referredError) throw referredError;
+const toDecide = referred.slice(0, Math.max(0, referred.length - 3));
+let approved = 0, declined = 0;
+for (const [i, o] of toDecide.entries()) {
+  if (i % 5 === 4) {
+    await must("decline", asPartner.rpc("partner_decide", {
+      p_opportunity_id: o.id, p_verdict: "declined", p_reason: "Outside our current sector focus",
+    }));
+    declined++;
+    continue;
+  }
+  await must("approve", asPartner.rpc("partner_decide", {
+    p_opportunity_id: o.id, p_verdict: "approved", p_approved_amount_cents: o.amount_cents,
+    p_rate_bps: 300, p_term_months: o.term_months, p_reason: "Pilot cohort",
+  }));
+  approved++;
+  // Loans at different points of their life: approved, disbursed, repaying.
+  const { data: loan } = await asPartner.from("loans").select("id, instalment_cents").eq("opportunity_id", o.id).single();
+  const stage = approved % 3;
+  if (stage >= 1) await must("disburse", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "DISBURSED", p_note: "Pix sent" }));
+  if (stage === 2) {
+    await must("activate", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "ACTIVE" }));
+    for (let n = 1; n <= 1 + (approved % 2); n++) {
+      await must("pay", asPartner.rpc("record_payment", { p_loan_id: loan!.id, p_instalment_no: n, p_amount_cents: loan!.instalment_cents }));
+    }
+  }
+}
+await asPartner.auth.signOut();
 
 const tally = [...statusOf.values()].reduce<Record<string, number>>((acc, s) => ({ ...acc, [s]: (acc[s] ?? 0) + 1 }), {});
 const leftAloneName = inserted.find((e) => e.id === leftAlone)?.display_name;
@@ -457,5 +543,8 @@ console.log(`education: ${progress.length} progress records`);
 console.log(`check-ins: ${checkins.length}`);
 console.log(`readiness: ${JSON.stringify(tally)}`);
 console.log(`credit intents: ${intents.length}`);
+console.log(`partner: ${approved} approved, ${declined} declined, ${referred.length - toDecide.length} awaiting decision`);
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
-console.log(`anchors queued: ${registrations.length + verifications.length + memberships.length + checkins.length + memberships.length}`);
+console.log(`short history, awaiting manual review: ${inserted.find((e) => e.id === recent)?.display_name ?? "none"} (${COMMUNITIES[1].name})`);
+const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");
+console.log(`anchors queued: ${queued}`);

@@ -8,6 +8,7 @@ import { ROLE_LABEL, type Role } from "./lib/platform";
 const NAV: { to: string; label: string; roles?: Role[] }[] = [
   { to: "/app/me", label: "My business", roles: ["entrepreneur"] },
   { to: "/app/community", label: "Communities" },
+  { to: "/app/partner", label: "Partner desk", roles: ["partner", "admin", "auditor"] },
   { to: "/app/admin", label: "Review queue", roles: ["admin"] },
 ];
 
