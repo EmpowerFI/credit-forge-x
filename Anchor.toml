@@ -1,0 +1,25 @@
+[toolchain]
+package_manager = "npm"
+
+[features]
+resolution = true
+skip-lint = false
+
+# The program ID is fixed for the whole hackathon (PLAN_HACKATHON.md, D7).
+# Its keypair lives outside the repo; copy it to target/deploy/ before building.
+[programs.localnet]
+empowerfi_audit = "4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR"
+
+[programs.devnet]
+empowerfi_audit = "4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR"
+
+# Localnet by default so no command reaches devnet by accident; deploy with
+# --provider.cluster devnet, and upgrade — never redeploy fresh.
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "cargo test -p empowerfi-audit"
+
+[hooks]

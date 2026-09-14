@@ -37,3 +37,10 @@ supabase/.temp
 
 # WSL: metadado que o Windows anexa a arquivos baixados
 *:Zone.Identifier
+
+# Anchor / Rust
+/target
+.anchor
+test-ledger
+.surfpool
+**/*.rs.bk
