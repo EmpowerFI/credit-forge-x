@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { BadgeCheck, Loader2, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import CapitalRoutes from "../components/CapitalRoutes";
 import { LOAN_LABEL, percent, type LoanStatus } from "../lib/credit";
 import { platform } from "../lib/platform";
 import { money, PURPOSE_LABEL, type CreditPurpose } from "../lib/readiness";
@@ -234,6 +235,8 @@ export default function CapitalPage() {
           </p>
         </Card>
       </div>
+
+      <CapitalRoutes operatingCostCents={p.cost.per_loan_cents} />
 
       <section className="space-y-3">
         <h2 className="font-heading text-xl font-bold text-foreground">Loans</h2>
