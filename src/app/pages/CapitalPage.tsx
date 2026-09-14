@@ -32,11 +32,16 @@ interface Portfolio {
   by_purpose: Partial<Record<CreditPurpose, Slice>>;
   by_community: { name: string; city: string; state: string; verified: boolean; loans: number; principal_cents: number }[];
   cost: { total_cents: number; by_phase: { preparation: number; origination: number; servicing: number }; per_loan_cents: number | null; per_1000_deployed_cents: number | null };
+  outcomes: {
+    measured: number; sales_up: number; profit_up: number; as_declared: number; use_reported: number;
+    avg_revenue_change_bps: number | null; incremental_profit_cents: number; cost_of_credit_cents: number;
+    evc_cents: number; evm_bps: number | null; measured_principal_cents: number; is_simulated: boolean;
+  };
   audit: { facts: number; confirmed: number; reconciled: number; discrepancies: number };
   book: {
     loan_id: string; code: string; status: LoanStatus; principal_cents: number; term_months: number; rate_bps: number;
     instalment_cents: number; paid: number; risk_band: Band; purpose: CreditPurpose; community_name: string | null;
-    disbursed_at: string | null; over_30: boolean;
+    disbursed_at: string | null; over_30: boolean; evc_cents: number | null;
   }[];
 }
 
@@ -197,11 +202,29 @@ export default function CapitalPage() {
           </ul>
         </Card>
 
+        <Card title={`Productive outcomes${p.outcomes.is_simulated ? " · simulated" : ""}`}
+          note="Measured from the months each business reports: three before the loan's month against those after it. EVC is the extra profit less the interest paid; EVM divides it by the capital. What changed after a loan, not what the loan caused.">
+          {p.outcomes.measured === 0 ? (
+            <p className="text-sm text-muted-foreground">No outcome measured yet: a loan needs two reported months after it.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              <span><span className="block text-xs text-muted-foreground">Loans measured</span>{loans(p.outcomes.measured)}</span>
+              <span><span className="block text-xs text-muted-foreground">Sales up · result up</span>{p.outcomes.sales_up} · {p.outcomes.profit_up}</span>
+              <span><span className="block text-xs text-muted-foreground">Average change in sales</span>{p.outcomes.avg_revenue_change_bps !== null && p.outcomes.avg_revenue_change_bps > 0 ? "+" : ""}{percent(p.outcomes.avg_revenue_change_bps)}</span>
+              <span><span className="block text-xs text-muted-foreground">Used as declared</span>{p.outcomes.as_declared} of {p.outcomes.use_reported}</span>
+              <span><span className="block text-xs text-muted-foreground">Extra profit</span>{money(p.outcomes.incremental_profit_cents)}</span>
+              <span><span className="block text-xs text-muted-foreground">Interest paid</span>{money(p.outcomes.cost_of_credit_cents)}</span>
+              <span><span className="block text-xs text-muted-foreground">EVC</span>{money(p.outcomes.evc_cents)}</span>
+              <span><span className="block text-xs text-muted-foreground">EVM</span>{percent(p.outcomes.evm_bps)} of {money(p.outcomes.measured_principal_cents)}</span>
+            </div>
+          )}
+        </Card>
+
         <Card title="Audit trail">
           <div className="flex items-start gap-3">
             <ShieldCheck className="mt-0.5 shrink-0 text-emerald-700" size={20} />
             <p className="text-sm text-foreground">
-              {p.audit.confirmed} of {p.audit.facts} loans, status changes and payments are proven on Solana
+              {p.audit.confirmed} of {p.audit.facts} loans, status changes, payments and outcome measurements are proven on Solana
               {p.audit.reconciled > 0 && <>; {p.audit.reconciled} re-checked against the chain since</>}
               {p.audit.discrepancies > 0 && <span className="text-rose-700">; {p.audit.discrepancies} did not match</span>}.
             </p>
@@ -238,6 +261,7 @@ export default function CapitalPage() {
                     {LOAN_LABEL[l.status]}
                     {["ACTIVE", "PAID", "DEFAULTED"].includes(l.status) && <span className="text-muted-foreground"> · {l.paid}/{l.term_months}</span>}
                     {l.over_30 && <span className="ml-1 text-rose-700">· late</span>}
+                    {l.evc_cents !== null && <span className="block text-xs text-muted-foreground">EVC {money(l.evc_cents)}</span>}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link to={`/app/audit/loan/${l.loan_id}`} className="inline-flex items-center gap-1 text-primary hover:underline">

@@ -78,6 +78,7 @@ export type Database = {
           payload: Json | null
           program_id: string
           reconcile: Database["public"]["Enums"]["reconcile_status"]
+          reconcile_note: string | null
           reconciled_at: string | null
           signature: string | null
           slot: number | null
@@ -99,6 +100,7 @@ export type Database = {
           payload?: Json | null
           program_id?: string
           reconcile?: Database["public"]["Enums"]["reconcile_status"]
+          reconcile_note?: string | null
           reconciled_at?: string | null
           signature?: string | null
           slot?: number | null
@@ -120,6 +122,7 @@ export type Database = {
           payload?: Json | null
           program_id?: string
           reconcile?: Database["public"]["Enums"]["reconcile_status"]
+          reconcile_note?: string | null
           reconciled_at?: string | null
           signature?: string | null
           slot?: number | null
@@ -994,6 +997,97 @@ export type Database = {
           },
         ]
       }
+      productive_outcomes: {
+        Row: {
+          avg_net_after_cents: number
+          avg_net_before_cents: number
+          avg_revenue_after_cents: number
+          avg_revenue_before_cents: number
+          capital_use: Database["public"]["Enums"]["capital_use"]
+          confidence: Database["public"]["Enums"]["grade"]
+          cost_of_credit_cents: number
+          disbursement_period: string
+          entrepreneur_id: string
+          evc_cents: number
+          id: string
+          incremental_profit_cents: number
+          is_simulated: boolean
+          loan_id: string
+          measured_at: string
+          measured_by: string | null
+          model_version: string
+          months_after: number
+          months_before: number
+          outcome_no: number
+        }
+        Insert: {
+          avg_net_after_cents: number
+          avg_net_before_cents: number
+          avg_revenue_after_cents: number
+          avg_revenue_before_cents: number
+          capital_use: Database["public"]["Enums"]["capital_use"]
+          confidence: Database["public"]["Enums"]["grade"]
+          cost_of_credit_cents: number
+          disbursement_period: string
+          entrepreneur_id: string
+          evc_cents: number
+          id?: string
+          incremental_profit_cents: number
+          is_simulated?: boolean
+          loan_id: string
+          measured_at?: string
+          measured_by?: string | null
+          model_version: string
+          months_after: number
+          months_before: number
+          outcome_no: number
+        }
+        Update: {
+          avg_net_after_cents?: number
+          avg_net_before_cents?: number
+          avg_revenue_after_cents?: number
+          avg_revenue_before_cents?: number
+          capital_use?: Database["public"]["Enums"]["capital_use"]
+          confidence?: Database["public"]["Enums"]["grade"]
+          cost_of_credit_cents?: number
+          disbursement_period?: string
+          entrepreneur_id?: string
+          evc_cents?: number
+          id?: string
+          incremental_profit_cents?: number
+          is_simulated?: boolean
+          loan_id?: string
+          measured_at?: string
+          measured_by?: string | null
+          model_version?: string
+          months_after?: number
+          months_before?: number
+          outcome_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "productive_outcomes_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productive_outcomes_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "productive_outcomes_measured_by_fkey"
+            columns: ["measured_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1293,6 +1387,18 @@ export type Database = {
           payload: Json
         }[]
       }
+      claim_reconcile_batch: {
+        Args: { p_limit?: number }
+        Returns: {
+          account_address: string
+          commitment: string
+          entity_id: string
+          id: number
+          kind: Database["public"]["Enums"]["anchor_kind"]
+          payload: Json
+          signature: string
+        }[]
+      }
       complete_anchor_job: {
         Args: {
           p_account_address: string
@@ -1341,6 +1447,13 @@ export type Database = {
         Returns: undefined
       }
       finish_anchor_run: { Args: never; Returns: undefined }
+      measure_outcome: {
+        Args: {
+          p_capital_use?: Database["public"]["Enums"]["capital_use"]
+          p_loan_id: string
+        }
+        Returns: string
+      }
       partner_decide: {
         Args: {
           p_approved_amount_cents?: number
@@ -1425,6 +1538,7 @@ export type Database = {
         }
         Returns: Json
       }
+      record_reconciliation: { Args: { p_results: Json }; Returns: number }
       refer_opportunity: { Args: { p_opportunity_id: string }; Returns: string }
       reject_community: {
         Args: { p_community_id: string; p_note: string }
@@ -1476,6 +1590,7 @@ export type Database = {
         | "loan"
         | "loan_transition"
         | "payment"
+        | "outcome"
       anchor_status: "pending" | "submitted" | "confirmed" | "failed"
       app_role:
         | "entrepreneur"
@@ -1484,6 +1599,11 @@ export type Database = {
         | "capital_provider"
         | "auditor"
         | "admin"
+      capital_use:
+        | "as_declared"
+        | "partly_as_declared"
+        | "other_use"
+        | "not_reported"
       community_kind:
         | "education_programme"
         | "association"
@@ -1507,6 +1627,7 @@ export type Database = {
         | "disbursement"
         | "servicing"
         | "chain_anchoring"
+        | "outcome_measurement"
       credit_intent_status: "active" | "withdrawn"
       credit_purpose:
         | "working_capital"
@@ -1690,6 +1811,7 @@ export const Constants = {
         "loan",
         "loan_transition",
         "payment",
+        "outcome",
       ],
       anchor_status: ["pending", "submitted", "confirmed", "failed"],
       app_role: [
@@ -1699,6 +1821,12 @@ export const Constants = {
         "capital_provider",
         "auditor",
         "admin",
+      ],
+      capital_use: [
+        "as_declared",
+        "partly_as_declared",
+        "other_use",
+        "not_reported",
       ],
       community_kind: [
         "education_programme",
@@ -1724,6 +1852,7 @@ export const Constants = {
         "disbursement",
         "servicing",
         "chain_anchoring",
+        "outcome_measurement",
       ],
       credit_intent_status: ["active", "withdrawn"],
       credit_purpose: [

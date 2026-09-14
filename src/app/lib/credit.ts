@@ -4,6 +4,7 @@ type Enums = Database["public"]["Enums"];
 export type EligibilityDecision = Enums["eligibility_decision"];
 export type LoanStatus = Enums["loan_status"];
 export type OpportunityStatus = Enums["opportunity_status"];
+export type CapitalUse = Enums["capital_use"];
 
 // The eligibility engine's codes, and the loan's life, in words.
 
@@ -47,6 +48,13 @@ export const LOAN_LABEL: Record<LoanStatus, string> = {
   PAID: "Paid off",
   DEFAULTED: "Defaulted",
   CANCELLED: "Cancelled",
+};
+
+export const CAPITAL_USE_LABEL: Record<CapitalUse, string> = {
+  as_declared: "used as declared",
+  partly_as_declared: "partly as declared",
+  other_use: "used for something else",
+  not_reported: "use not reported",
 };
 
 /** The next steps the partner may take — the same state machine as the program. */

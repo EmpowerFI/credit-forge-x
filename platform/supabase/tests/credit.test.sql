@@ -9,7 +9,7 @@ select set_config(
   true
 );
 
-select plan(49);
+select plan(58);
 
 -- ------------------------------------------------------------------ fixtures
 -- Maria, Bea and Cris are ready and asked; Ana is ready and did not ask.
@@ -377,6 +377,65 @@ set local role postgres;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000002a7');
 select throws_ok($$ select capital_portfolio() $$, '42501', 'not_allowed_to_see_portfolio',
   'the portfolio view is for capital providers, auditors and admins');
+set local role postgres;
+
+-- ------------------------------------------------------------------ outcome
+-- Maria's loan reached her business in May; she reported three months on
+-- each side of it.
+
+update loans set disbursed_at = '2026-05-15 12:00-03' where id = (select id from loan);
+insert into checkins (entrepreneur_id, period, revenue_cents, cogs_cents, opex_cents, household_cents, keeps_records, active_days)
+select '00000000-0000-0000-0000-0000000002e1', p, 300000, 100000, 50000, 80000, true, 22
+from unnest(array['2026-02', '2026-03', '2026-04']) p;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002a8');
+select throws_ok($$ select measure_outcome((select id from loan)) $$, '42501', 'not_allowed_to_measure',
+  'another partner cannot measure the loan');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002a7');
+select throws_ok($$ select measure_outcome((select id from loan)) $$, 'P0001', 'not_enough_history',
+  'no outcome without months reported after the loan');
+set local role postgres;
+
+insert into checkins (entrepreneur_id, period, revenue_cents, cogs_cents, opex_cents, household_cents, keeps_records, active_days)
+select '00000000-0000-0000-0000-0000000002e1', p, 360000, 120000, 50000, 80000, true, 23
+from unnest(array['2026-06', '2026-07', '2026-08']) p;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002a7');
+select lives_ok($$ select measure_outcome((select id from loan), 'as_declared') $$, 'the partner measures it');
+set local role postgres;
+
+select results_eq(
+  $$ select months_before, months_after, incremental_profit_cents, cost_of_credit_cents, evc_cents, confidence::text
+     from productive_outcomes where loan_id = (select id from loan) $$,
+  $$ values (3::smallint, 3::smallint, 120000::bigint, 6000::bigint, 114000::bigint, 'HIGH') $$,
+  'EVC: R$ 400 more a month over three months, less R$ 60 of interest paid'
+);
+select results_eq(
+  $$ select (select depends_on from chain_anchors where kind = 'outcome' and entity_id = po.id) = private.latest_loan_anchor(po.loan_id)
+     from productive_outcomes po where po.loan_id = (select id from loan) $$,
+  $$ values (true) $$,
+  'the measurement is queued for the chain after the loan''s last change'
+);
+select ok(exists (select 1 from cost_events where stage = 'outcome_measurement'), 'and its follow-up is counted in the cost to serve');
+
+create temp table outcome as select id from productive_outcomes where loan_id = (select id from loan);
+grant select on outcome to authenticated;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002a3');
+select is((select count(*)::int from productive_outcomes), 1, 'Maria sees her outcome');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002b1');
+select results_eq(
+  $$ select (capital_portfolio() -> 'outcomes' ->> 'measured')::int, (capital_portfolio() -> 'outcomes' ->> 'evm_bps')::int,
+            (select count(*)::int from productive_outcomes) $$,
+  $$ values (1, 5700, 0) $$,
+  'the capital provider sees outcomes in aggregate — EVM 57% — and no row of hers'
+);
+select throws_ok($$ select audit_record('outcome', (select id from outcome)) $$, '42501', 'not_allowed_to_audit',
+  'nor the proof, whose record holds her figures');
 set local role postgres;
 
 select * from finish();

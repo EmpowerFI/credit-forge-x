@@ -29,6 +29,7 @@ import {
   fetchMaybeEligibilityAttestation,
   fetchMaybeLoanAccount,
   fetchMaybeOpportunityCommitment,
+  fetchMaybeOutcomeCommitment,
   fetchMaybePaymentCommitment,
   fetchMaybeReadinessAttestation,
   findAttestationPda,
@@ -38,6 +39,7 @@ import {
   findEligibilityPda,
   findLoanPda,
   findOpportunityPda,
+  findOutcomePda,
   findPaymentPda,
   EligibilityDecision,
   getTransitionLoanInstructionDataDecoder,
@@ -70,6 +72,7 @@ const KIND_TITLE: Record<AnchorKind, string> = {
   loan: "Loan terms",
   loan_transition: "Loan status change",
   payment: "Instalment paid",
+  outcome: "Productive outcome",
 };
 
 const ELIGIBILITY_FIELDS = [
@@ -200,10 +203,31 @@ async function audit(kind: AnchorKind, entityId: string) {
         checks.push({ label: "Comes from her eligibility attestation", ok: found.data.eligibility === eligibility });
       }
     }
-  } else if (kind === "loan" || kind === "loan_transition" || kind === "payment") {
+  } else if (kind === "loan" || kind === "loan_transition" || kind === "payment" || kind === "outcome") {
     const opportunity = borrower ? (await findOpportunityPda({ borrower, opportunityNo: Number(p.opportunity_no) }))[0] : null;
     const loanAddress = opportunity ? (await findLoanPda({ opportunity }))[0] : null;
-    if (kind === "payment") {
+    if (kind === "outcome") {
+      const found = await fetchMaybeOutcomeCommitment(rpc, account);
+      if (found.exists) {
+        onChain = new Uint8Array(found.data.commitment);
+        owner = found.programAddress;
+        checks.push({ label: "The measurement on chain is the one on record", ok: found.data.outcomeNo === Number(p.outcome_no) });
+        if (loanAddress) {
+          [expected] = await findOutcomePda({ loan: loanAddress, outcomeNo: Number(p.outcome_no) });
+          checks.push({ label: "Measures her loan", ok: found.data.loan === loanAddress });
+        }
+      }
+      // The arithmetic, redone here from the figures on record.
+      const incremental = (Number(p.avg_net_after_cents) - Number(p.avg_net_before_cents)) * Number(p.months_after);
+      checks.push({
+        label: "Incremental profit is the change in monthly result times the months after the loan",
+        ok: incremental === Number(p.incremental_profit_cents),
+      });
+      checks.push({
+        label: "EVC is the incremental profit less the cost of credit",
+        ok: Number(p.evc_cents) === Number(p.incremental_profit_cents) - Number(p.cost_of_credit_cents),
+      });
+    } else if (kind === "payment") {
       const found = await fetchMaybePaymentCommitment(rpc, account);
       if (found.exists) {
         onChain = new Uint8Array(found.data.commitment);

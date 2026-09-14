@@ -45,6 +45,9 @@ const MESSAGES: Record<string, string> = {
   invalid_instalment: "That instalment number is outside the term.",
   instalment_already_paid: "That instalment is already recorded.",
   not_allowed_to_see_costs: "You cannot see these costs.",
+  not_allowed_to_measure: "Only EmpowerFI or the loan's partner measures its outcome.",
+  loan_not_disbursed: "An outcome is measured once the loan has reached the business.",
+  not_enough_history: "An outcome needs two reported months on each side of the loan.",
 };
 
 export function describeError(error: unknown): string {

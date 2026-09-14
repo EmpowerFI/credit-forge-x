@@ -43,6 +43,7 @@ import {
   getEligibilityAttestationDecoder,
   getLoanAccountDecoder,
   getOpportunityCommitmentDecoder,
+  getOutcomeCommitmentDecoder,
   getPaymentCommitmentDecoder,
   getReadinessAttestationDecoder,
   getTransitionLoanInstructionDataDecoder,
@@ -94,6 +95,7 @@ const HOLDER: Record<AnchorKind, { type: EmpowerfiAuditAccount; read: (data: Uin
   loan: { type: EmpowerfiAuditAccount.LoanAccount, read: (d) => new Uint8Array(getLoanAccountDecoder().decode(d).termsCommitment) },
   loan_transition: { type: EmpowerfiAuditAccount.LoanAccount, read: (d) => new Uint8Array(getLoanAccountDecoder().decode(d).lastTransitionCommitment) },
   payment: { type: EmpowerfiAuditAccount.PaymentCommitment, read: (d) => new Uint8Array(getPaymentCommitmentDecoder().decode(d).commitment) },
+  outcome: { type: EmpowerfiAuditAccount.OutcomeCommitment, read: (d) => new Uint8Array(getOutcomeCommitmentDecoder().decode(d).commitment) },
 };
 
 /** The commitment a transition_loan transaction carried, if it succeeded. */

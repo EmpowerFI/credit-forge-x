@@ -10,6 +10,7 @@ import ProofStatus from "../components/ProofStatus";
 import { useAuth } from "../auth/useAuth";
 import { anchorsSettled } from "../lib/anchors";
 import {
+  CAPITAL_USE_LABEL,
   DECISION_LABEL,
   ELIGIBILITY_REASON,
   LOAN_LABEL,
@@ -125,14 +126,16 @@ export default function PartnerPage() {
     queryFn: async () => {
       const { data, error } = await platform
         .from("loans")
-        .select("*, payments(instalment_no, amount_cents, paid_at), loan_events(id, to_status, created_at)")
+        .select("*, payments(instalment_no, amount_cents, paid_at), loan_events(id, to_status, created_at), productive_outcomes(id, outcome_no, avg_revenue_before_cents, avg_revenue_after_cents, evc_cents, capital_use, confidence)")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  const proofIds = (loans.data ?? []).flatMap((l) => [l.id, ...(l.loan_events ?? []).map((e) => e.id)]);
+  const proofIds = (loans.data ?? []).flatMap((l) => [
+    l.id, ...(l.loan_events ?? []).map((e) => e.id), ...(l.productive_outcomes ?? []).map((o) => o.id),
+  ]);
   // Admins and auditors can follow the desk; only the partner decides.
   const decides = profile?.role === "partner";
   const anchors = useQuery({
@@ -246,6 +249,7 @@ export default function PartnerPage() {
             const nextInstalment = paid + 1;
             const busy = (move.isPending && move.variables?.id === l.id) || (pay.isPending && pay.variables?.id === l.id);
             const latestEvent = [...(l.loan_events ?? [])].sort((a, b) => a.created_at.localeCompare(b.created_at)).at(-1);
+            const outcome = [...(l.productive_outcomes ?? [])].sort((a, b) => a.outcome_no - b.outcome_no).at(-1);
             return (
               <li key={l.id} className="space-y-3 px-4 py-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -283,6 +287,15 @@ export default function PartnerPage() {
                       anchor={anchors.data?.find((a) => a.entity_id === latestEvent.id)} />
                   )}
                 </div>
+                {outcome && (
+                  <div className="grid gap-x-6 rounded-xl border border-border px-3 py-2 text-sm sm:grid-cols-2">
+                    <p className="text-muted-foreground">
+                      Since the loan: sales {money(outcome.avg_revenue_before_cents)} → {money(outcome.avg_revenue_after_cents)} a month ·
+                      EVC {money(outcome.evc_cents)} · {CAPITAL_USE_LABEL[outcome.capital_use]} · {outcome.confidence.toLowerCase()} confidence
+                    </p>
+                    <ProofStatus loading={anchors.isPending} label="Outcome on chain" anchor={anchors.data?.find((a) => a.entity_id === outcome.id)} />
+                  </div>
+                )}
               </li>
             );
           })}

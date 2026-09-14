@@ -45,6 +45,7 @@ export const ANCHOR_DOMAINS = {
   loan: DOMAINS.LOAN,
   loan_transition: DOMAINS.LOAN_TRANSITION,
   payment: DOMAINS.PAYMENT,
+  outcome: DOMAINS.OUTCOME,
 } as const satisfies Record<string, Domain>;
 
 export type AnchorKind = keyof typeof ANCHOR_DOMAINS;

@@ -14,6 +14,10 @@
 // members, education and anchors — hence --yes. Accounts and partners stay;
 // run seed-demo-accounts.mts first.
 //
+// A first cycle of loans, from July, is recorded through the same functions
+// and then dated to when it happened; the seed holds the anchor worker until
+// it is done, so the proofs carry those dates.
+//
 // Everything is marked is_simulated.
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
@@ -110,6 +114,19 @@ for (const l of SEED_LEADERS) {
   }
   await must(`role ${l.email}`, db.from("profiles").update({ role: "community_leader", display_name: l.name }).eq("id", user.id));
   leaderIds.push(user.id);
+}
+
+// -------------------------------------------------------------- the worker
+// Held for the whole run: the first cycle's facts are dated after the
+// functions record them, and must not reach the chain before that.
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+for (let i = 0; ; i++) {
+  const { data: held, error } = await db.rpc("start_anchor_run", { p_lease_seconds: 1200 });
+  if (error) throw new Error(`anchor worker: ${error.message}`);
+  if (held) break;
+  if (i === 60) throw new Error("the anchor worker stayed busy for two minutes");
+  await sleep(2000);
 }
 
 // ------------------------------------------------------------------- reset
@@ -394,13 +411,63 @@ const recent = memberships.find((m) =>
 )?.entrepreneur_id;
 if (recent) histories.get(recent)!.months = histories.get(recent)!.months.slice(-3);
 
+// -------------------------------------------------------------- first cycle
+// Six participants of the cooperative and the market network were ready by
+// July, borrowed, and have been repaying since: repayment to follow and an
+// outcome to measure. Their extra numbers come from a generator of their
+// own, and none is in Grajaú, where the live demo happens.
+
+const cycleRandom = rng(20260708);
+type Plan = "on_time" | "early_payoff" | "late";
+const PLANS: { plan: Plan; after: number; use: string }[] = [
+  { plan: "on_time", after: 1.14, use: "as_declared" },
+  { plan: "on_time", after: 1.2, use: "as_declared" },
+  { plan: "early_payoff", after: 1.1, use: "as_declared" },
+  { plan: "on_time", after: 1.03, use: "partly_as_declared" },
+  { plan: "late", after: 0.8, use: "other_use" },
+  { plan: "on_time", after: 1.08, use: "as_declared" },
+];
+const cycleCommunities = new Set([byName.get(COMMUNITIES[1].name)!.id, byName.get(COMMUNITIES[2].name)!.id]);
+const firstCycle = memberships
+  .filter((m) =>
+    cycleCommunities.has(m.community_id) && m.entrepreneur_id !== recent &&
+    ["steady", "growing"].includes(histories.get(m.entrepreneur_id)!.profile) && coreDone.get(m.entrepreneur_id) === 5)
+  .slice(0, PLANS.length)
+  .map((membership, i) => ({ membership, ...PLANS[i] }));
+const cycleIds = new Set(firstCycle.map((c) => c.membership.entrepreneur_id));
+
+const scale = (c: CheckinRecord, f: number, period = c.period): CheckinRecord =>
+  ({ ...c, period, revenue_cents: whole(c.revenue_cents * f), cogs_cents: whole(c.cogs_cents * f) });
+for (const c of firstCycle) {
+  const id = c.membership.entrepreneur_id;
+  const h = histories.get(id)!;
+  // Reporting since March; what changed after the loan shows from August.
+  h.months = [
+    scale(h.months[0], 0.94 + cycleRandom() * 0.08, "2026-03"),
+    ...h.months.map((m) => (m.period > "2026-07" ? scale(m, c.after * (0.97 + cycleRandom() * 0.06)) : m)),
+  ];
+  // Joined the day after her community was verified; finished the course in ten days.
+  const community = communities.find((x) => x.id === c.membership.community_id)!;
+  const joined = new Date(new Date(community.verified_at).getTime() + 86_400_000);
+  c.membership.joined_at = iso(joined);
+  await must("first-cycle joined", db.from("community_memberships").update({ joined_at: iso(joined) })
+    .eq("entrepreneur_id", id).eq("community_id", community.id));
+  for (const [i, mod] of readinessModules.entries()) {
+    await must("first-cycle course", db.from("education_progress")
+      .update({ started_at: iso(joined), completed_at: iso(new Date(joined.getTime() + 2 * (i + 1) * 86_400_000)) })
+      .eq("entrepreneur_id", id).eq("module_id", mod.id));
+  }
+}
+
+// Months before she joined were brought in when she did.
+const joinedOf = new Map(memberships.map((m) => [m.entrepreneur_id, new Date(m.joined_at).getTime()]));
 const checkinRows = [...histories.entries()].flatMap(([entrepreneurId, h]) =>
   h.months.map((c) => ({
     ...c,
     entrepreneur_id: entrepreneurId,
     submitted_by: entrepreneurId === maria.id ? mariaProfile?.id : leaderOf.get(memberships.find((m) => m.entrepreneur_id === entrepreneurId)!.community_id),
     is_simulated: true,
-    created_at: reportedAt(c.period),
+    created_at: iso(new Date(Math.max(new Date(reportedAt(c.period)).getTime(), joinedOf.get(entrepreneurId)! + 3_600_000))),
   })),
 );
 const checkins = await must("check-ins", db.from("checkins").insert(checkinRows).select("id, entrepreneur_id"));
@@ -410,6 +477,101 @@ await must(
     kind: "checkin", entity_id: c.id, depends_on: enrollmentOf.get(c.entrepreneur_id),
   }))),
 );
+
+// ------------------------------------------------------ first cycle, credit
+// Their July readiness on the months reported by then, a request, the
+// eligibility engine, the partner's decision in the partner's name, the loan,
+// instalments — then each fact dated to when it happened, and in September
+// the outcome measured. The partner signs in here for this and, later, for
+// September's referrals.
+
+const publishable = process.env.PLATFORM_PUBLISHABLE_KEY ?? readFileSync(".env", "utf8")
+  .split("\n").find((l) => l.startsWith("VITE_PLATFORM_SUPABASE_PUBLISHABLE_KEY="))?.split("=")[1]?.trim();
+if (!publishable) throw new Error("no publishable key: set PLATFORM_PUBLISHABLE_KEY or VITE_PLATFORM_SUPABASE_PUBLISHABLE_KEY in .env");
+const asPartner = createClient(URL, publishable, { auth: { persistSession: false, autoRefreshToken: false } });
+const { error: partnerLogin } = await asPartner.auth.signInWithPassword({ email: "partner@demo.empowerfi.io", password: DEMO_PASSWORD });
+if (partnerLogin) throw partnerLogin;
+
+const PURPOSE_BY_SECTOR: Record<string, string> = {
+  food: "inventory", beauty: "equipment", crafts: "equipment", fashion: "inventory", retail: "working_capital", services: "working_capital",
+};
+const sectorOf = new Map(people.map((p) => [idByName.get(p.row.display_name as string)!, p.row.business_sector as string]));
+
+const JULY = {
+  readiness: "2026-07-06T13:00:00-03:00", intent: "2026-07-07T10:00:00-03:00", eligibility: "2026-07-08T11:00:00-03:00",
+  decision: "2026-07-09T14:00:00-03:00", disbursed: "2026-07-10T10:00:00-03:00", active: "2026-07-10T10:05:00-03:00",
+};
+const PAID_AT = ["2026-08-09T15:00:00-03:00", "2026-09-09T15:00:00-03:00"];
+const PAID_OFF_AT = "2026-09-10T09:00:00-03:00";
+let cycleLoans = 0;
+for (const c of firstCycle) {
+  const id = c.membership.entrepreneur_id;
+  const { features, result } = assessReadiness({
+    as_of_period: "2026-07",
+    community_verified: true,
+    core_modules_total: readinessModules.length,
+    core_modules_completed: readinessModules.length,
+    checkins: histories.get(id)!.months.filter((m) => m.period < "2026-07"),
+  });
+  const r = await must(`first-cycle readiness ${id}`, db.rpc("record_readiness_assessment", {
+    p_entrepreneur_id: id, p_features: features, p_result: result, p_is_simulated: true, p_created_at: JULY.readiness,
+  })) as { id: string };
+  if (result.status !== "CREDIT_READY") continue;
+
+  const [intent] = await must("first-cycle intent", db.from("credit_intents").insert({
+    entrepreneur_id: id, purpose: PURPOSE_BY_SECTOR[sectorOf.get(id) ?? "retail"],
+    requested_amount_cents: (15 + Math.floor(cycleRandom() * 30)) * 10_000, is_simulated: true, created_at: JULY.intent,
+  }).select("id, requested_amount_cents, purpose"));
+  const f = features as unknown as Record<string, number | null>;
+  const input: EligibilityInput = {
+    readiness_status: result.status, readiness_band: result.band,
+    requested_amount_cents: intent.requested_amount_cents, purpose: intent.purpose,
+    months_reported: f.months_reported as number, records_kept_bps: f.records_kept_bps, inconsistencies: f.inconsistencies as number,
+    avg_revenue_cents: f.avg_revenue_cents, avg_net_business_cents: f.avg_net_business_cents,
+    avg_household_cents: f.avg_household_cents, revenue_cv_bps: f.revenue_cv_bps,
+    revenue_trend_bps: f.revenue_trend_bps, household_share_bps: f.household_share_bps,
+  };
+  await must("first-cycle eligibility", db.rpc("record_eligibility_assessment", {
+    p_entrepreneur_id: id, p_intent_id: intent.id, p_readiness_assessment_id: r.id,
+    p_inputs: input, p_result: assessEligibility(input), p_is_simulated: true, p_created_at: JULY.eligibility,
+  }));
+  const { data: opp } = await db.from("qualified_credit_opportunities")
+    .select("id, amount_cents, term_months, status").eq("intent_id", intent.id).maybeSingle();
+  if (!opp || opp.status !== "referred") continue;
+
+  await must("first-cycle approval", asPartner.rpc("partner_decide", {
+    p_opportunity_id: opp.id, p_verdict: "approved", p_approved_amount_cents: opp.amount_cents, p_rate_bps: 300,
+    p_term_months: c.plan === "early_payoff" ? 3 : opp.term_months, p_reason: "First cycle",
+  }));
+  const { data: loan, error: loanError } = await asPartner.from("loans")
+    .select("id, instalment_cents, term_months").eq("opportunity_id", opp.id).single();
+  if (loanError) throw loanError;
+  await must("first-cycle disburse", asPartner.rpc("transition_loan", { p_loan_id: loan.id, p_to: "DISBURSED", p_note: "Pix sent" }));
+  await must("first-cycle activate", asPartner.rpc("transition_loan", { p_loan_id: loan.id, p_to: "ACTIVE" }));
+  const instalments = c.plan === "late" ? 0 : c.plan === "early_payoff" ? loan.term_months : 2;
+  for (let n = 1; n <= instalments; n++) {
+    await must("first-cycle instalment", asPartner.rpc("record_payment", {
+      p_loan_id: loan.id, p_instalment_no: n, p_amount_cents: loan.instalment_cents, p_paid_at: PAID_AT[Math.min(n, 2) - 1],
+    }));
+  }
+  if (c.plan === "early_payoff") {
+    await must("first-cycle paid off", asPartner.rpc("transition_loan", { p_loan_id: loan.id, p_to: "PAID", p_note: "Paid off early" }));
+  }
+
+  // Dated to when it happened.
+  await must("date decision", db.from("partner_decisions").update({ created_at: JULY.decision }).eq("opportunity_id", opp.id));
+  await must("date loan", db.from("loans").update({
+    created_at: JULY.decision, disbursed_at: JULY.disbursed, updated_at: c.plan === "early_payoff" ? PAID_OFF_AT : JULY.active,
+  }).eq("id", loan.id));
+  for (const [status, at] of Object.entries({ PARTNER_APPROVED: JULY.decision, DISBURSED: JULY.disbursed, ACTIVE: JULY.active, PAID: PAID_OFF_AT })) {
+    await must("date event", db.from("loan_events").update({ created_at: at }).eq("loan_id", loan.id).eq("to_status", status));
+  }
+
+  // September: what changed in the business since.
+  const outcomeId = await must("first-cycle outcome", db.rpc("measure_outcome", { p_loan_id: loan.id, p_capital_use: c.use }));
+  await must("date outcome", db.from("productive_outcomes").update({ measured_at: "2026-09-12T16:00:00-03:00" }).eq("id", outcomeId as string));
+  cycleLoans++;
+}
 
 // ---------------------------------------------------------------- readiness
 // The same engine and the same recording function the live path uses; the
@@ -439,17 +601,15 @@ for (const m of memberships) {
 // moves them. The first ready participant in Grajaú is kept without a request
 // so the demo can show exactly that.
 
-const PURPOSE_BY_SECTOR: Record<string, string> = {
-  food: "inventory", beauty: "equipment", crafts: "equipment", fashion: "inventory", retail: "working_capital", services: "working_capital",
-};
-const sectorOf = new Map(people.map((p) => [idByName.get(p.row.display_name as string)!, p.row.business_sector as string]));
 const grajau = byName.get(COMMUNITIES[0].name)!;
 const leftAlone = memberships.find(
   (m) => m.community_id === grajau.id && m.entrepreneur_id !== maria.id && statusOf.get(m.entrepreneur_id) === "CREDIT_READY",
 )?.entrepreneur_id;
 
 const intents = memberships
-  .filter((m) => statusOf.get(m.entrepreneur_id) === "CREDIT_READY" && m.entrepreneur_id !== leftAlone && m.entrepreneur_id !== maria.id)
+  .filter((m) =>
+    statusOf.get(m.entrepreneur_id) === "CREDIT_READY" && m.entrepreneur_id !== leftAlone && m.entrepreneur_id !== maria.id &&
+    !cycleIds.has(m.entrepreneur_id)) // borrowing already
   .filter((m) => {
     const asks = random() < 0.5; // drawn for everyone, so the sequence does not depend on who is forced in
     return asks || m.entrepreneur_id === recent;
@@ -471,7 +631,7 @@ if (intents.length) await must("intents", db.from("credit_intents").insert(inten
 const { data: openIntents, error: intentsError } = await db
   .from("credit_intents").select("id, entrepreneur_id, requested_amount_cents, purpose").eq("status", "active");
 if (intentsError) throw intentsError;
-for (const intent of openIntents) {
+for (const intent of openIntents.filter((i) => !cycleIds.has(i.entrepreneur_id))) {
   const { data: r, error } = await db.from("readiness_assessments")
     .select("id, status, band, features").eq("entrepreneur_id", intent.entrepreneur_id)
     .order("assessment_no", { ascending: false }).limit(1).single();
@@ -496,12 +656,6 @@ for (const intent of openIntents) {
 // lending decision is theirs, so the seed takes it in their name. Three
 // referrals are left waiting, so the desk is never empty on camera.
 
-const publishable = process.env.PLATFORM_PUBLISHABLE_KEY ?? readFileSync(".env", "utf8")
-  .split("\n").find((l) => l.startsWith("VITE_PLATFORM_SUPABASE_PUBLISHABLE_KEY="))?.split("=")[1]?.trim();
-if (!publishable) throw new Error("no publishable key: set PLATFORM_PUBLISHABLE_KEY or VITE_PLATFORM_SUPABASE_PUBLISHABLE_KEY in .env");
-const asPartner = createClient(URL, publishable, { auth: { persistSession: false, autoRefreshToken: false } });
-const { error: partnerLogin } = await asPartner.auth.signInWithPassword({ email: "partner@demo.empowerfi.io", password: DEMO_PASSWORD });
-if (partnerLogin) throw partnerLogin;
 
 const { data: referred, error: referredError } = await db.from("qualified_credit_opportunities")
   .select("id, amount_cents, term_months").eq("status", "referred").order("created_at").order("id");
@@ -558,5 +712,7 @@ console.log(`partner: ${approved} approved, ${declined} declined, ${referred.len
 console.log(`capital: ${investor ? "R$ 50,000 committed by the demo investor (simulated)" : "no capital provider account"}`);
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
 console.log(`short history, awaiting manual review: ${inserted.find((e) => e.id === recent)?.display_name ?? "none"} (${COMMUNITIES[1].name})`);
+console.log(`first cycle: ${cycleLoans} loans since July, outcomes measured in September`);
+await must("release the anchor worker", db.rpc("finish_anchor_run"));
 const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");
 console.log(`anchors queued: ${queued}`);

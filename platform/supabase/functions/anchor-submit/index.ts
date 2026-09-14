@@ -53,6 +53,7 @@ import {
   fetchMaybeEligibilityAttestation,
   fetchMaybeLoanAccount,
   fetchMaybeOpportunityCommitment,
+  fetchMaybeOutcomeCommitment,
   fetchMaybePaymentCommitment,
   fetchMaybeReadinessAttestation,
   findAttestationPda,
@@ -62,9 +63,11 @@ import {
   findEligibilityPda,
   findLoanPda,
   findOpportunityPda,
+  findOutcomePda,
   findPaymentPda,
   getAnchorCheckinInstructionAsync,
   getAnchorOpportunityInstructionAsync,
+  getAnchorOutcomeInstructionAsync,
   getAnchorPaymentInstructionAsync,
   getAttestEligibilityInstructionAsync,
   getAttestReadinessInstructionAsync,
@@ -307,7 +310,7 @@ async function anchor(job: Job): Promise<Proof> {
       return { ...(await send(ix)), account, commitment, recovered: false };
     }
 
-    if (job.kind === "loan" || job.kind === "loan_transition" || job.kind === "payment") {
+    if (job.kind === "loan" || job.kind === "loan_transition" || job.kind === "payment" || job.kind === "outcome") {
       const [opportunity] = await findOpportunityPda({ borrower, opportunityNo: int(p.opportunity_no, "opportunity number") });
       const [loan] = await findLoanPda({ opportunity });
 
@@ -334,6 +337,18 @@ async function anchor(job: Job): Promise<Proof> {
         }
         const ix = await getTransitionLoanInstructionAsync({ operator: signer, loan, to, transitionCommitment: commitment });
         return { ...(await send(ix)), account: loan, commitment, recovered: false };
+      }
+
+      if (job.kind === "outcome") {
+        const outcomeNo = int(p.outcome_no, "outcome number");
+        const [account] = await findOutcomePda({ loan, outcomeNo });
+        const existing = await fetchMaybeOutcomeCommitment(rpc, account);
+        if (existing.exists) {
+          if (!sameCommitment(new Uint8Array(existing.data.commitment), commitment)) throw mismatch("outcome commitment", account);
+          return { ...(await recoverSignature(account, "first")), account, commitment, recovered: true };
+        }
+        const ix = await getAnchorOutcomeInstructionAsync({ operator: signer, loan, outcomeNo, commitment });
+        return { ...(await send(ix)), account, commitment, recovered: false };
       }
 
       const instalmentNo = int(p.instalment_no, "instalment number");
