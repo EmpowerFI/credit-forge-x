@@ -19,6 +19,12 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@empowerfi/audit-commitments": [
+        "./packages/audit-commitments/src/index.ts"
+      ],
+      "@empowerfi/audit-client": [
+        "./packages/audit-client/src/generated/index.ts"
       ]
     },
     "skipLibCheck": true,
@@ -27,9 +33,11 @@
     "types": [
       "vitest/globals"
     ],
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    "resolveJsonModule": true
   },
   "include": [
-    "src"
+    "src",
+    "packages"
   ]
 }

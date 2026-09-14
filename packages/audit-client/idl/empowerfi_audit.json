@@ -1,0 +1,684 @@
+{
+  "address": "4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR",
+  "metadata": {
+    "name": "empowerfi_audit",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "EmpowerFI proof layer: commitments and state for productive-credit operations"
+  },
+  "instructions": [
+    {
+      "name": "initialize_platform",
+      "docs": [
+        "Creates the singleton config. Upgrade authority only."
+      ],
+      "discriminator": [
+        119,
+        201,
+        101,
+        45,
+        75,
+        122,
+        89,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program",
+          "address": "4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR"
+        },
+        {
+          "name": "program_data"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "operator",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "register_borrower_ref",
+      "discriminator": [
+        237,
+        66,
+        168,
+        86,
+        122,
+        77,
+        249,
+        130
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "community",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  117,
+                  110,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "community.community_ref",
+                "account": "CommunityAudit"
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrower",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "borrower_ref_hash"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "borrower_ref_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "enrollment_commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "register_community",
+      "discriminator": [
+        37,
+        95,
+        179,
+        249,
+        145,
+        183,
+        247,
+        180
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "community",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  117,
+                  110,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "community_ref"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "community_ref",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_operator",
+      "docs": [
+        "Replaces the operator key. Platform authority only."
+      ],
+      "discriminator": [
+        238,
+        153,
+        101,
+        169,
+        243,
+        131,
+        36,
+        1
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "operator",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "verify_community",
+      "discriminator": [
+        20,
+        199,
+        137,
+        11,
+        205,
+        181,
+        244,
+        188
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "community",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  109,
+                  109,
+                  117,
+                  110,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "community.community_ref",
+                "account": "CommunityAudit"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "verification_commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "BorrowerAudit",
+      "discriminator": [
+        103,
+        199,
+        172,
+        160,
+        205,
+        121,
+        124,
+        234
+      ]
+    },
+    {
+      "name": "CommunityAudit",
+      "discriminator": [
+        84,
+        251,
+        150,
+        98,
+        114,
+        27,
+        191,
+        124
+      ]
+    },
+    {
+      "name": "PlatformConfig",
+      "discriminator": [
+        160,
+        78,
+        128,
+        0,
+        248,
+        83,
+        230,
+        160
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NotUpgradeAuthority",
+      "msg": "Signer is not the program's upgrade authority"
+    },
+    {
+      "code": 6001,
+      "name": "UnauthorizedAuthority",
+      "msg": "Signer is not the platform authority"
+    },
+    {
+      "code": 6002,
+      "name": "UnauthorizedOperator",
+      "msg": "Signer is not the platform operator"
+    },
+    {
+      "code": 6003,
+      "name": "ZeroCommitment",
+      "msg": "A commitment of all zero bytes is not a commitment"
+    },
+    {
+      "code": 6004,
+      "name": "ZeroReference",
+      "msg": "A reference of all zero bytes is not a reference"
+    },
+    {
+      "code": 6005,
+      "name": "CommunityAlreadyVerified",
+      "msg": "Community is already verified"
+    },
+    {
+      "code": 6006,
+      "name": "CommunityNotVerified",
+      "msg": "Community must be verified before borrowers are registered in it"
+    }
+  ],
+  "types": [
+    {
+      "name": "BorrowerAudit",
+      "docs": [
+        "One per entrepreneur. Keyed by the hash of her `borrower_ref`, never the",
+        "ref itself, so the chain cannot be joined back to the database by anyone",
+        "who does not already hold the database row."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "borrower_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "community",
+            "docs": [
+              "The CommunityAudit she was enrolled through."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "enrollment_commitment",
+            "docs": [
+              "Commitment to the enrollment record (who, which community, when)."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "registered_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CommunityAudit",
+      "docs": [
+        "One per community. `community_ref` is 32 random bytes generated server-side,",
+        "so the address reveals nothing about the community it stands for."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "community_ref",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "commitment",
+            "docs": [
+              "Commitment to the community's canonical record at registration."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "CommunityStatus"
+              }
+            }
+          },
+          {
+            "name": "verification_commitment",
+            "docs": [
+              "Commitment to the verification record; zero until verified."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "registered_at",
+            "type": "i64"
+          },
+          {
+            "name": "verified_at",
+            "docs": [
+              "Zero until verified."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CommunityStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Registered"
+          },
+          {
+            "name": "Verified"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PlatformConfig",
+      "docs": [
+        "Singleton. Who administers the program and which key writes commitments."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "Program upgrade authority at initialisation; rotates the operator."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "operator",
+            "docs": [
+              "Server-side key that submits every commitment."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "BORROWER_SEED",
+      "type": "bytes",
+      "value": "[98, 111, 114, 114, 111, 119, 101, 114]"
+    },
+    {
+      "name": "COMMUNITY_SEED",
+      "type": "bytes",
+      "value": "[99, 111, 109, 109, 117, 110, 105, 116, 121]"
+    },
+    {
+      "name": "CONFIG_SEED",
+      "type": "bytes",
+      "value": "[99, 111, 110, 102, 105, 103]"
+    },
+    {
+      "name": "SCHEMA_VERSION",
+      "docs": [
+        "Version of the commitment schemas these accounts carry. It matches the",
+        "`:v1` suffix of the domain tags in packages/audit-commitments; a payload",
+        "change bumps both together."
+      ],
+      "type": "u8",
+      "value": "1"
+    }
+  ]
+}

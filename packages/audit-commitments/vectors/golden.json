@@ -1,0 +1,93 @@
+{
+  "commitments": [
+    {
+      "name": "community record",
+      "domain": "EMPOWERFI:COMMUNITY:v1",
+      "payload": {
+        "community_id": "3f1c2a9e-8b4d-4e7a-9c1f-2d5b6a7e8f90",
+        "community_ref": "a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+        "created_at": "2026-09-14T15:00:00.000Z",
+        "kind": "programme",
+        "name": "Mulheres Empreendedoras do Grajaú"
+      },
+      "canonical": "{\"community_id\":\"3f1c2a9e-8b4d-4e7a-9c1f-2d5b6a7e8f90\",\"community_ref\":\"a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1\",\"created_at\":\"2026-09-14T15:00:00.000Z\",\"kind\":\"programme\",\"name\":\"Mulheres Empreendedoras do Grajaú\"}",
+      "commitment": "094dc7f27c563ef4cfdabbc62d3b2487c1a51c7772fed49cdd56333972269108"
+    },
+    {
+      "name": "key ordering",
+      "domain": "EMPOWERFI:COMMUNITY:v1",
+      "payload": {
+        "b": 1,
+        "a": 2,
+        "B": 3,
+        "_": 4,
+        "aa": 5,
+        "a_b": 6
+      },
+      "canonical": "{\"B\":3,\"_\":4,\"a\":2,\"a_b\":6,\"aa\":5,\"b\":1}",
+      "commitment": "55830c7f17e80d92722a85d0ca7b944dc120cc41c4c65ca1bb4958d5bdc17baa"
+    },
+    {
+      "name": "nesting, arrays, null, booleans, negatives",
+      "domain": "EMPOWERFI:CHECKIN:v1",
+      "payload": {
+        "z": [
+          3,
+          1,
+          2
+        ],
+        "nested": {
+          "y": null,
+          "x": true,
+          "w": false
+        },
+        "n": -42,
+        "zero": 0
+      },
+      "canonical": "{\"n\":-42,\"nested\":{\"w\":false,\"x\":true,\"y\":null},\"z\":[3,1,2],\"zero\":0}",
+      "commitment": "3b9a81840269d336a032dbce9e9e285ab486ec22bee82f32794b8033addf593a"
+    },
+    {
+      "name": "string escapes and unicode",
+      "domain": "EMPOWERFI:ENROLLMENT:v1",
+      "payload": {
+        "quote": "she said \"yes\"",
+        "newline": "line1\nline2",
+        "tab": "a\tb",
+        "backslash": "c:\\path",
+        "emoji": "🌱",
+        "accent": "coração"
+      },
+      "canonical": "{\"accent\":\"coração\",\"backslash\":\"c:\\\\path\",\"emoji\":\"🌱\",\"newline\":\"line1\\nline2\",\"quote\":\"she said \\\"yes\\\"\",\"tab\":\"a\\tb\"}",
+      "commitment": "89c4e043904cdf9b9343482161355840ab818f419827a6a3ffef0a4dfb4ba86b"
+    },
+    {
+      "name": "empty object",
+      "domain": "EMPOWERFI:CHECKIN:v1",
+      "payload": {},
+      "canonical": "{}",
+      "commitment": "a701b212a40b0bdfcbfbd312b8378786c810490e1ca378f68544a1ff98799fc8"
+    },
+    {
+      "name": "largest safe integer",
+      "domain": "EMPOWERFI:PAYMENT:v1",
+      "payload": {
+        "amount_cents": 9007199254740991
+      },
+      "canonical": "{\"amount_cents\":9007199254740991}",
+      "commitment": "bb3142ba50ee2181b416099d37ca4bafaa718824f5fd201f41727d85946df024"
+    }
+  ],
+  "borrower_ref_hashes": [
+    {
+      "name": "bytes 0..31",
+      "borrower_ref": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "hash": "2bd97dfa4f3477f90e41fc1b5d0d32a230c2526161cf74cec500ef3aa52481b8"
+    },
+    {
+      "name": "all 0xff",
+      "borrower_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "hash": "ba1756048b27c56aeade1f06efff801c3e248cc3e4a051f846941202669e05f6"
+    }
+  ]
+}

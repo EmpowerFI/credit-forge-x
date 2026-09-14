@@ -16,6 +16,8 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@empowerfi/audit-commitments": path.resolve(__dirname, "./packages/audit-commitments/src/index.ts"),
+      "@empowerfi/audit-client": path.resolve(__dirname, "./packages/audit-client/src/generated/index.ts"),
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
