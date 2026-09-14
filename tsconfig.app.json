@@ -25,6 +25,9 @@
       ],
       "@empowerfi/audit-client": [
         "./packages/audit-client/src/generated/index.ts"
+      ],
+      "@empowerfi/readiness-engine": [
+        "./packages/readiness-engine/src/index.ts"
       ]
     },
     "skipLibCheck": true,

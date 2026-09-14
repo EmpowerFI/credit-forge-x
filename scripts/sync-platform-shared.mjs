@@ -9,6 +9,7 @@ import { cpSync, mkdirSync, rmSync } from "node:fs";
 const targets = [
   ["packages/audit-commitments/src/index.ts", "platform/supabase/functions/_shared/audit-commitments/index.ts"],
   ["packages/audit-client/src/generated", "platform/supabase/functions/_shared/audit-client"],
+  ["packages/readiness-engine/src/index.ts", "platform/supabase/functions/_shared/readiness-engine/index.ts"],
 ];
 
 for (const [from, to] of targets) {

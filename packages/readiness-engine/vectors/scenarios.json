@@ -1,0 +1,895 @@
+{
+  "model_version": "readiness-v0.1.0",
+  "scenarios": [
+    {
+      "name": "prepared, steady, six months of reporting",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": [
+          {
+            "period": "2026-04",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-05",
+            "revenue_cents": 310000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-06",
+            "revenue_cents": 295000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-07",
+            "revenue_cents": 305000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-08",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-09",
+            "revenue_cents": 320000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "CREDIT_READY",
+        "band": "HIGH",
+        "score": 97,
+        "missing": [],
+        "reasons": [
+          "EDUCATION_COMPLETE",
+          "KEEPS_RECORDS",
+          "CONSISTENT_REPORTING",
+          "POSITIVE_CASH_FLOW",
+          "STEADY_REVENUE"
+        ]
+      }
+    },
+    {
+      "name": "no check-ins yet",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": []
+      },
+      "expect": {
+        "status": "NEEDS_MORE_DATA",
+        "band": "LOW",
+        "score": 20,
+        "missing": [
+          {
+            "code": "INSUFFICIENT_HISTORY",
+            "current": 0,
+            "required": 3
+          },
+          {
+            "code": "IRREGULAR_REPORTING",
+            "current": 0,
+            "required": 3
+          },
+          {
+            "code": "STALE_REPORTING",
+            "current": null,
+            "required": 1
+          }
+        ],
+        "reasons": [
+          "EDUCATION_COMPLETE"
+        ]
+      }
+    },
+    {
+      "name": "core education incomplete, business otherwise ready",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 3,
+        "checkins": [
+          {
+            "period": "2026-04",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-05",
+            "revenue_cents": 310000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-06",
+            "revenue_cents": 295000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-07",
+            "revenue_cents": 305000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-08",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-09",
+            "revenue_cents": 320000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "NEEDS_PREPARATION",
+        "missing": [
+          {
+            "code": "CORE_EDUCATION_INCOMPLETE",
+            "current": 3,
+            "required": 5
+          }
+        ],
+        "reasons": [
+          "KEEPS_RECORDS",
+          "CONSISTENT_REPORTING",
+          "POSITIVE_CASH_FLOW",
+          "STEADY_REVENUE"
+        ]
+      }
+    },
+    {
+      "name": "community not verified",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": false,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": [
+          {
+            "period": "2026-04",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-05",
+            "revenue_cents": 310000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-06",
+            "revenue_cents": 295000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-07",
+            "revenue_cents": 305000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-08",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-09",
+            "revenue_cents": 320000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "NEEDS_PREPARATION",
+        "missing": [
+          {
+            "code": "COMMUNITY_NOT_VERIFIED",
+            "current": 0,
+            "required": 1
+          }
+        ],
+        "reasons": [
+          "EDUCATION_COMPLETE",
+          "KEEPS_RECORDS",
+          "CONSISTENT_REPORTING",
+          "POSITIVE_CASH_FLOW",
+          "STEADY_REVENUE"
+        ]
+      }
+    },
+    {
+      "name": "sales recorded in only half the months",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": [
+          {
+            "period": "2026-04",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-05",
+            "revenue_cents": 310000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": false,
+            "active_days": 22
+          },
+          {
+            "period": "2026-06",
+            "revenue_cents": 295000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-07",
+            "revenue_cents": 305000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": false,
+            "active_days": 22
+          },
+          {
+            "period": "2026-08",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-09",
+            "revenue_cents": 320000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": false,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "NEEDS_PREPARATION",
+        "missing": [
+          {
+            "code": "RECORD_KEEPING",
+            "current": 5000,
+            "required": 6667
+          }
+        ],
+        "reasons": [
+          "EDUCATION_COMPLETE",
+          "CONSISTENT_REPORTING",
+          "POSITIVE_CASH_FLOW",
+          "STEADY_REVENUE"
+        ]
+      }
+    },
+    {
+      "name": "only two months of history",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": [
+          {
+            "period": "2026-08",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-09",
+            "revenue_cents": 320000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "NEEDS_MORE_DATA",
+        "missing": [
+          {
+            "code": "INSUFFICIENT_HISTORY",
+            "current": 2,
+            "required": 3
+          },
+          {
+            "code": "IRREGULAR_REPORTING",
+            "current": 2,
+            "required": 3
+          }
+        ],
+        "reasons": [
+          "EDUCATION_COMPLETE",
+          "KEEPS_RECORDS"
+        ]
+      }
+    },
+    {
+      "name": "stopped reporting three months ago",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": [
+          {
+            "period": "2026-03",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-04",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-05",
+            "revenue_cents": 310000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-06",
+            "revenue_cents": 295000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "NEEDS_MORE_DATA",
+        "missing": [
+          {
+            "code": "STALE_REPORTING",
+            "current": 3,
+            "required": 1
+          }
+        ],
+        "reasons": [
+          "EDUCATION_COMPLETE",
+          "KEEPS_RECORDS",
+          "POSITIVE_CASH_FLOW",
+          "STEADY_REVENUE"
+        ]
+      }
+    },
+    {
+      "name": "reports with gaps",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": [
+          {
+            "period": "2026-04",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-05",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-07",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-09",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "NEEDS_MORE_DATA",
+        "missing": [
+          {
+            "code": "IRREGULAR_REPORTING",
+            "current": 1,
+            "required": 3
+          }
+        ],
+        "reasons": [
+          "EDUCATION_COMPLETE",
+          "KEEPS_RECORDS",
+          "POSITIVE_CASH_FLOW",
+          "STEADY_REVENUE"
+        ]
+      }
+    },
+    {
+      "name": "costs overtook sales in the last two months",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": [
+          {
+            "period": "2026-04",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-05",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-06",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-07",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-08",
+            "revenue_cents": 200000,
+            "cogs_cents": 150000,
+            "opex_cents": 80000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-09",
+            "revenue_cents": 200000,
+            "cogs_cents": 150000,
+            "opex_cents": 80000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "NEEDS_PREPARATION",
+        "band": "HIGH",
+        "score": 86,
+        "missing": [
+          {
+            "code": "CASH_FLOW_NOT_POSITIVE",
+            "current": 1,
+            "required": 2
+          }
+        ],
+        "reasons": [
+          "EDUCATION_COMPLETE",
+          "KEEPS_RECORDS",
+          "CONSISTENT_REPORTING",
+          "STEADY_REVENUE",
+          "DECLINING_REVENUE",
+          "HIGH_HOUSEHOLD_DRAW"
+        ]
+      },
+      "note": "Household draws stay at 80k while average net falls to 76,667: she takes out more than the business makes (10,435 bps)."
+    },
+    {
+      "name": "figures that contradict each other",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": [
+          {
+            "period": "2026-04",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-05",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-06",
+            "revenue_cents": 0,
+            "cogs_cents": 0,
+            "opex_cents": 0,
+            "household_cents": 0,
+            "keeps_records": true,
+            "active_days": 20
+          },
+          {
+            "period": "2026-07",
+            "revenue_cents": 0,
+            "cogs_cents": 0,
+            "opex_cents": 0,
+            "household_cents": 0,
+            "keeps_records": true,
+            "active_days": 20
+          },
+          {
+            "period": "2026-08",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-09",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "MANUAL_REVIEW",
+        "missing": [],
+        "reasons": [
+          "EDUCATION_COMPLETE",
+          "KEEPS_RECORDS",
+          "CONSISTENT_REPORTING",
+          "VOLATILE_REVENUE",
+          "DATA_INCONSISTENT"
+        ]
+      }
+    },
+    {
+      "name": "revenue swings too far for fixed rules",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": [
+          {
+            "period": "2026-04",
+            "revenue_cents": 50000,
+            "cogs_cents": 15000,
+            "opex_cents": 10000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-05",
+            "revenue_cents": 900000,
+            "cogs_cents": 270000,
+            "opex_cents": 10000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-06",
+            "revenue_cents": 40000,
+            "cogs_cents": 12000,
+            "opex_cents": 10000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-07",
+            "revenue_cents": 950000,
+            "cogs_cents": 285000,
+            "opex_cents": 10000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-08",
+            "revenue_cents": 30000,
+            "cogs_cents": 9000,
+            "opex_cents": 10000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-09",
+            "revenue_cents": 1000000,
+            "cogs_cents": 300000,
+            "opex_cents": 10000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "MANUAL_REVIEW",
+        "missing": [],
+        "reasons": [
+          "EDUCATION_COMPLETE",
+          "KEEPS_RECORDS",
+          "CONSISTENT_REPORTING",
+          "POSITIVE_CASH_FLOW",
+          "GROWING_REVENUE",
+          "VOLATILE_REVENUE"
+        ]
+      }
+    },
+    {
+      "name": "ready, drawing most of the profit for the household",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 5,
+        "checkins": [
+          {
+            "period": "2026-04",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 120000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-05",
+            "revenue_cents": 310000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 120000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-06",
+            "revenue_cents": 295000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 120000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-07",
+            "revenue_cents": 305000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 120000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-08",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 120000,
+            "keeps_records": true,
+            "active_days": 22
+          },
+          {
+            "period": "2026-09",
+            "revenue_cents": 320000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 120000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "CREDIT_READY",
+        "missing": [],
+        "reasons": [
+          "EDUCATION_COMPLETE",
+          "KEEPS_RECORDS",
+          "CONSISTENT_REPORTING",
+          "POSITIVE_CASH_FLOW",
+          "STEADY_REVENUE",
+          "HIGH_HOUSEHOLD_DRAW"
+        ]
+      }
+    },
+    {
+      "name": "just started: little education, one month",
+      "input": {
+        "as_of_period": "2026-09",
+        "community_verified": true,
+        "core_modules_total": 5,
+        "core_modules_completed": 2,
+        "checkins": [
+          {
+            "period": "2026-09",
+            "revenue_cents": 300000,
+            "cogs_cents": 120000,
+            "opex_cents": 50000,
+            "household_cents": 80000,
+            "keeps_records": true,
+            "active_days": 22
+          }
+        ]
+      },
+      "expect": {
+        "status": "NEEDS_PREPARATION",
+        "missing": [
+          {
+            "code": "CORE_EDUCATION_INCOMPLETE",
+            "current": 2,
+            "required": 5
+          },
+          {
+            "code": "INSUFFICIENT_HISTORY",
+            "current": 1,
+            "required": 3
+          },
+          {
+            "code": "IRREGULAR_REPORTING",
+            "current": 1,
+            "required": 3
+          }
+        ],
+        "reasons": [
+          "KEEPS_RECORDS"
+        ]
+      }
+    }
+  ]
+}
