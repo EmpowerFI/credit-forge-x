@@ -11,8 +11,14 @@ interface AboutNavbarProps {
   langSwitchPath: string;
 }
 
+const itemClass = "py-3 text-sm text-muted-foreground hover:text-foreground transition-colors";
+
+// The menu button shows at every width, by the founder's choice: with nine
+// entries a row of header links read as clutter, and the panel keeps every
+// section one click away.
 const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
   const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
@@ -21,35 +27,11 @@ const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
           EmpowerFI
         </Link>
 
-        {/* Nine entries only fit from lg up; tablets get the menu button. */}
-        <div className="hidden lg:flex items-center gap-8">
-          {nav.links.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {l.label}
-            </a>
-          ))}
-          <Link
-            to={homePath}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {nav.home}
-          </Link>
-          <Link
-            to={langSwitchPath}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1.5"
-          >
-            <Languages size={14} /> {nav.langSwitch}
-          </Link>
-        </div>
-
         <button
-          className="lg:hidden text-foreground"
+          className="text-foreground"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
+          aria-controls="about-menu"
           aria-label="Menu"
         >
           {open ? <X size={24} /> : <Menu size={24} />}
@@ -57,31 +39,21 @@ const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
       </div>
 
       {open && (
-        <div className="lg:hidden glass border-t border-border px-4 pb-4">
-          {nav.links.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              onClick={() => setOpen(false)}
-              className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {l.label}
-            </a>
-          ))}
-          <Link
-            to={homePath}
-            onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {nav.home}
-          </Link>
-          <Link
-            to={langSwitchPath}
-            onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {nav.langSwitch}
-          </Link>
+        // Inner container lines the entries up under the logo on wide screens.
+        <div id="about-menu" className="glass border-t border-border">
+          <div className="container mx-auto px-4 pb-4">
+            {nav.links.map((l) => (
+              <a key={l.href} href={l.href} onClick={close} className={`block ${itemClass}`}>
+                {l.label}
+              </a>
+            ))}
+            <Link to={homePath} onClick={close} className={`block ${itemClass}`}>
+              {nav.home}
+            </Link>
+            <Link to={langSwitchPath} onClick={close} className={`flex items-center gap-1.5 ${itemClass}`}>
+              <Languages size={14} /> {nav.langSwitch}
+            </Link>
+          </div>
         </div>
       )}
     </nav>
