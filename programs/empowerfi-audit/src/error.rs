@@ -16,4 +16,8 @@ pub enum AuditError {
     CommunityAlreadyVerified,
     #[msg("Community must be verified before borrowers are registered in it")]
     CommunityNotVerified,
+    #[msg("Period must be YYYYMM, between 202001 and 210012")]
+    InvalidPeriod,
+    #[msg("Assessments are numbered from 1")]
+    InvalidAssessmentNumber,
 }

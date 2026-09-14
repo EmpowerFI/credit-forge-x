@@ -8,6 +8,10 @@ pub const CONFIG_SEED: &[u8] = b"config";
 pub const COMMUNITY_SEED: &[u8] = b"community";
 #[constant]
 pub const BORROWER_SEED: &[u8] = b"borrower";
+#[constant]
+pub const CHECKIN_SEED: &[u8] = b"checkin";
+#[constant]
+pub const READINESS_SEED: &[u8] = b"readiness";
 
 /// Version of the commitment schemas these accounts carry. It matches the
 /// `:v1` suffix of the domain tags in packages/audit-commitments; a payload

@@ -8,6 +8,260 @@
   },
   "instructions": [
     {
+      "name": "anchor_checkin",
+      "docs": [
+        "Commits one month of a registered borrower's business. Once per month."
+      ],
+      "discriminator": [
+        231,
+        111,
+        38,
+        124,
+        230,
+        131,
+        22,
+        219
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrower",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "borrower.borrower_ref_hash",
+                "account": "BorrowerAudit"
+              }
+            ]
+          }
+        },
+        {
+          "name": "checkin",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  104,
+                  101,
+                  99,
+                  107,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "borrower"
+              },
+              {
+                "kind": "arg",
+                "path": "period"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "period",
+          "type": "u32"
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "attest_readiness",
+      "docs": [
+        "Attests one readiness assessment: public status and band, private detail."
+      ],
+      "discriminator": [
+        192,
+        219,
+        150,
+        110,
+        139,
+        47,
+        138,
+        18
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrower",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "borrower.borrower_ref_hash",
+                "account": "BorrowerAudit"
+              }
+            ]
+          }
+        },
+        {
+          "name": "attestation",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  97,
+                  100,
+                  105,
+                  110,
+                  101,
+                  115,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "borrower"
+              },
+              {
+                "kind": "arg",
+                "path": "assessment_no"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "assessment_no",
+          "type": "u32"
+        },
+        {
+          "name": "status",
+          "type": {
+            "defined": {
+              "name": "ReadinessStatus"
+            }
+          }
+        },
+        {
+          "name": "band",
+          "type": {
+            "defined": {
+              "name": "ReadinessBand"
+            }
+          }
+        },
+        {
+          "name": "model_version",
+          "type": "u16"
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "initialize_platform",
       "docs": [
         "Creates the singleton config. Upgrade authority only."
@@ -417,6 +671,19 @@
       ]
     },
     {
+      "name": "CheckinCommitment",
+      "discriminator": [
+        146,
+        23,
+        113,
+        44,
+        66,
+        57,
+        60,
+        198
+      ]
+    },
+    {
       "name": "CommunityAudit",
       "discriminator": [
         84,
@@ -440,6 +707,19 @@
         83,
         230,
         160
+      ]
+    },
+    {
+      "name": "ReadinessAttestation",
+      "discriminator": [
+        158,
+        83,
+        113,
+        34,
+        226,
+        43,
+        188,
+        147
       ]
     }
   ],
@@ -478,6 +758,16 @@
       "code": 6006,
       "name": "CommunityNotVerified",
       "msg": "Community must be verified before borrowers are registered in it"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidPeriod",
+      "msg": "Period must be YYYYMM, between 202001 and 210012"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidAssessmentNumber",
+      "msg": "Assessments are numbered from 1"
     }
   ],
   "types": [
@@ -521,6 +811,53 @@
           },
           {
             "name": "registered_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CheckinCommitment",
+      "docs": [
+        "One month of one business. The commitment covers the figures she reported;",
+        "the figures themselves never leave the database."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "borrower",
+            "docs": [
+              "The BorrowerAudit it belongs to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "period",
+            "docs": [
+              "YYYYMM. Part of the address, so a month is anchored once."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "anchored_at",
             "type": "i64"
           },
           {
@@ -652,6 +989,111 @@
           }
         ]
       }
+    },
+    {
+      "name": "ReadinessAttestation",
+      "docs": [
+        "One readiness assessment. Status and band are public enums; the score,",
+        "the features and the reasons stay in the database behind the commitment.",
+        "Readiness is not eligibility, and neither is a lending decision."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "borrower",
+            "type": "pubkey"
+          },
+          {
+            "name": "assessment_no",
+            "docs": [
+              "1, 2, 3 … per borrower. Part of the address."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "ReadinessStatus"
+              }
+            }
+          },
+          {
+            "name": "band",
+            "type": {
+              "defined": {
+                "name": "ReadinessBand"
+              }
+            }
+          },
+          {
+            "name": "model_version",
+            "docs": [
+              "major * 10000 + minor * 100 + patch: readiness-v0.1.0 is 100."
+            ],
+            "type": "u16"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "attested_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReadinessBand",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Low"
+          },
+          {
+            "name": "Medium"
+          },
+          {
+            "name": "High"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReadinessStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "CreditReady"
+          },
+          {
+            "name": "NeedsMoreData"
+          },
+          {
+            "name": "NeedsPreparation"
+          },
+          {
+            "name": "ManualReview"
+          }
+        ]
+      }
     }
   ],
   "constants": [
@@ -659,6 +1101,11 @@
       "name": "BORROWER_SEED",
       "type": "bytes",
       "value": "[98, 111, 114, 114, 111, 119, 101, 114]"
+    },
+    {
+      "name": "CHECKIN_SEED",
+      "type": "bytes",
+      "value": "[99, 104, 101, 99, 107, 105, 110]"
     },
     {
       "name": "COMMUNITY_SEED",
@@ -669,6 +1116,11 @@
       "name": "CONFIG_SEED",
       "type": "bytes",
       "value": "[99, 111, 110, 102, 105, 103]"
+    },
+    {
+      "name": "READINESS_SEED",
+      "type": "bytes",
+      "value": "[114, 101, 97, 100, 105, 110, 101, 115, 115]"
     },
     {
       "name": "SCHEMA_VERSION",

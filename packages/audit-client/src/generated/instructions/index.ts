@@ -6,6 +6,8 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from "./anchorCheckin.ts";
+export * from "./attestReadiness.ts";
 export * from "./initializePlatform.ts";
 export * from "./registerBorrowerRef.ts";
 export * from "./registerCommunity.ts";

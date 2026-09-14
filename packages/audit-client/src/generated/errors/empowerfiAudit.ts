@@ -28,10 +28,16 @@ export const EMPOWERFI_AUDIT_ERROR__ZERO_REFERENCE = 0x1774; // 6004
 export const EMPOWERFI_AUDIT_ERROR__COMMUNITY_ALREADY_VERIFIED = 0x1775; // 6005
 /** CommunityNotVerified: Community must be verified before borrowers are registered in it */
 export const EMPOWERFI_AUDIT_ERROR__COMMUNITY_NOT_VERIFIED = 0x1776; // 6006
+/** InvalidPeriod: Period must be YYYYMM, between 202001 and 210012 */
+export const EMPOWERFI_AUDIT_ERROR__INVALID_PERIOD = 0x1777; // 6007
+/** InvalidAssessmentNumber: Assessments are numbered from 1 */
+export const EMPOWERFI_AUDIT_ERROR__INVALID_ASSESSMENT_NUMBER = 0x1778; // 6008
 
 export type EmpowerfiAuditError =
   | typeof EMPOWERFI_AUDIT_ERROR__COMMUNITY_ALREADY_VERIFIED
   | typeof EMPOWERFI_AUDIT_ERROR__COMMUNITY_NOT_VERIFIED
+  | typeof EMPOWERFI_AUDIT_ERROR__INVALID_ASSESSMENT_NUMBER
+  | typeof EMPOWERFI_AUDIT_ERROR__INVALID_PERIOD
   | typeof EMPOWERFI_AUDIT_ERROR__NOT_UPGRADE_AUTHORITY
   | typeof EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_AUTHORITY
   | typeof EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_OPERATOR
@@ -44,6 +50,8 @@ if (process.env["NODE_ENV"] !== "production") {
   empowerfiAuditErrorMessages = {
     [EMPOWERFI_AUDIT_ERROR__COMMUNITY_ALREADY_VERIFIED]: `Community is already verified`,
     [EMPOWERFI_AUDIT_ERROR__COMMUNITY_NOT_VERIFIED]: `Community must be verified before borrowers are registered in it`,
+    [EMPOWERFI_AUDIT_ERROR__INVALID_ASSESSMENT_NUMBER]: `Assessments are numbered from 1`,
+    [EMPOWERFI_AUDIT_ERROR__INVALID_PERIOD]: `Period must be YYYYMM, between 202001 and 210012`,
     [EMPOWERFI_AUDIT_ERROR__NOT_UPGRADE_AUTHORITY]: `Signer is not the program's upgrade authority`,
     [EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_AUTHORITY]: `Signer is not the platform authority`,
     [EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_OPERATOR]: `Signer is not the platform operator`,

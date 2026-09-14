@@ -12,12 +12,20 @@ export const BORROWER_SEED: ReadonlyUint8Array = new Uint8Array([
   98, 111, 114, 114, 111, 119, 101, 114,
 ]);
 
+export const CHECKIN_SEED: ReadonlyUint8Array = new Uint8Array([
+  99, 104, 101, 99, 107, 105, 110,
+]);
+
 export const COMMUNITY_SEED: ReadonlyUint8Array = new Uint8Array([
   99, 111, 109, 109, 117, 110, 105, 116, 121,
 ]);
 
 export const CONFIG_SEED: ReadonlyUint8Array = new Uint8Array([
   99, 111, 110, 102, 105, 103,
+]);
+
+export const READINESS_SEED: ReadonlyUint8Array = new Uint8Array([
+  114, 101, 97, 100, 105, 110, 101, 115, 115,
 ]);
 
 export const SCHEMA_VERSION: number = 1;

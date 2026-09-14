@@ -7,8 +7,9 @@ use {
         InstructionData, ToAccountMetas,
     },
     empowerfi_audit::{
-        error::AuditError, BorrowerAudit, CommunityAudit, CommunityStatus, PlatformConfig,
-        BORROWER_SEED, COMMUNITY_SEED, CONFIG_SEED, SCHEMA_VERSION,
+        error::AuditError, BorrowerAudit, CheckinCommitment, CommunityAudit, CommunityStatus,
+        PlatformConfig, ReadinessAttestation, ReadinessBand, ReadinessStatus, BORROWER_SEED,
+        CHECKIN_SEED, COMMUNITY_SEED, CONFIG_SEED, READINESS_SEED, SCHEMA_VERSION,
     },
     litesvm::{types::TransactionResult, LiteSVM},
     solana_keypair::Keypair,
@@ -454,4 +455,252 @@ fn operator_registers_a_borrower_in_a_verified_community() {
         &[&op],
     );
     assert!(res.is_err());
+}
+
+// ------------------------------------------------------- check-ins, readiness
+
+fn checkin_pda(borrower: &Pubkey, period: u32) -> Pubkey {
+    Pubkey::find_program_address(
+        &[CHECKIN_SEED, borrower.as_ref(), &period.to_le_bytes()],
+        &empowerfi_audit::ID,
+    )
+    .0
+}
+
+fn readiness_pda(borrower: &Pubkey, assessment_no: u32) -> Pubkey {
+    Pubkey::find_program_address(
+        &[
+            READINESS_SEED,
+            borrower.as_ref(),
+            &assessment_no.to_le_bytes(),
+        ],
+        &empowerfi_audit::ID,
+    )
+    .0
+}
+
+fn anchor_checkin_ix(
+    operator: &Pubkey,
+    borrower: &Pubkey,
+    period: u32,
+    commitment: [u8; 32],
+) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::AnchorCheckin { period, commitment }.data(),
+        empowerfi_audit::accounts::AnchorCheckin {
+            operator: *operator,
+            config: config_pda(),
+            borrower: *borrower,
+            checkin: checkin_pda(borrower, period),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+fn attest_readiness_ix(
+    operator: &Pubkey,
+    borrower: &Pubkey,
+    assessment_no: u32,
+    status: ReadinessStatus,
+    band: ReadinessBand,
+    commitment: [u8; 32],
+) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::AttestReadiness {
+            assessment_no,
+            status,
+            band,
+            model_version: 100,
+            commitment,
+        }
+        .data(),
+        empowerfi_audit::accounts::AttestReadiness {
+            operator: *operator,
+            config: config_pda(),
+            borrower: *borrower,
+            attestation: readiness_pda(borrower, assessment_no),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+/// A registered borrower in a verified community; returns her account.
+fn registered_borrower(env: &mut Env) -> Pubkey {
+    verified_community(env, [7; 32]);
+    let op = env.operator.insecure_clone();
+    send(
+        &mut env.svm,
+        register_borrower_ix(&op.pubkey(), [7; 32], [3; 32], [4; 32]),
+        &[&op],
+    )
+    .unwrap();
+    borrower_pda(&[3; 32])
+}
+
+#[test]
+fn operator_anchors_a_month_once() {
+    let mut env = initialized();
+    let borrower = registered_borrower(&mut env);
+    let op = env.operator.insecure_clone();
+
+    send(
+        &mut env.svm,
+        anchor_checkin_ix(&op.pubkey(), &borrower, 202609, [11; 32]),
+        &[&op],
+    )
+    .unwrap();
+    let checkin: CheckinCommitment = fetch(&env.svm, &checkin_pda(&borrower, 202609));
+    assert_eq!(checkin.borrower, borrower);
+    assert_eq!(checkin.period, 202609);
+    assert_eq!(checkin.commitment, [11; 32]);
+    assert_eq!(checkin.anchored_at, NOW);
+    assert_eq!(checkin.schema_version, SCHEMA_VERSION);
+
+    // The month is the key: a second commitment for September is refused.
+    let res = send(
+        &mut env.svm,
+        anchor_checkin_ix(&op.pubkey(), &borrower, 202609, [12; 32]),
+        &[&op],
+    );
+    assert!(res.is_err());
+    let checkin: CheckinCommitment = fetch(&env.svm, &checkin_pda(&borrower, 202609));
+    assert_eq!(
+        checkin.commitment, [11; 32],
+        "the first commitment must survive"
+    );
+
+    // Another month is another account.
+    send(
+        &mut env.svm,
+        anchor_checkin_ix(&op.pubkey(), &borrower, 202610, [13; 32]),
+        &[&op],
+    )
+    .unwrap();
+}
+
+#[test]
+fn a_checkin_needs_a_valid_period_and_the_operator() {
+    let mut env = initialized();
+    let borrower = registered_borrower(&mut env);
+    let op = env.operator.insecure_clone();
+    for bad in [202613, 202600, 201912, 2026, 0] {
+        let res = send(
+            &mut env.svm,
+            anchor_checkin_ix(&op.pubkey(), &borrower, bad, [11; 32]),
+            &[&op],
+        );
+        assert_custom_error(res, AuditError::InvalidPeriod);
+    }
+    let res = send(
+        &mut env.svm,
+        anchor_checkin_ix(&op.pubkey(), &borrower, 202609, [0; 32]),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::ZeroCommitment);
+
+    let intruder = Keypair::new();
+    env.svm.airdrop(&intruder.pubkey(), 1_000_000_000).unwrap();
+    let res = send(
+        &mut env.svm,
+        anchor_checkin_ix(&intruder.pubkey(), &borrower, 202609, [11; 32]),
+        &[&intruder],
+    );
+    assert_custom_error(res, AuditError::UnauthorizedOperator);
+}
+
+#[test]
+fn only_a_registered_borrower_reports() {
+    let mut env = initialized();
+    verified_community(&mut env, [7; 32]);
+    let op = env.operator.insecure_clone();
+    // A community account is not a borrower: the account type is checked.
+    let not_a_borrower = community_pda(&[7; 32]);
+    let res = send(
+        &mut env.svm,
+        anchor_checkin_ix(&op.pubkey(), &not_a_borrower, 202609, [11; 32]),
+        &[&op],
+    );
+    assert!(res.is_err());
+    // Nor is an address nobody registered.
+    let res = send(
+        &mut env.svm,
+        anchor_checkin_ix(&op.pubkey(), &borrower_pda(&[99; 32]), 202609, [11; 32]),
+        &[&op],
+    );
+    assert!(res.is_err());
+}
+
+#[test]
+fn operator_attests_readiness_with_public_status_and_private_detail() {
+    let mut env = initialized();
+    let borrower = registered_borrower(&mut env);
+    let op = env.operator.insecure_clone();
+
+    send(
+        &mut env.svm,
+        attest_readiness_ix(
+            &op.pubkey(),
+            &borrower,
+            1,
+            ReadinessStatus::NeedsMoreData,
+            ReadinessBand::Low,
+            [21; 32],
+        ),
+        &[&op],
+    )
+    .unwrap();
+    send(
+        &mut env.svm,
+        attest_readiness_ix(
+            &op.pubkey(),
+            &borrower,
+            2,
+            ReadinessStatus::CreditReady,
+            ReadinessBand::High,
+            [22; 32],
+        ),
+        &[&op],
+    )
+    .unwrap();
+
+    let second: ReadinessAttestation = fetch(&env.svm, &readiness_pda(&borrower, 2));
+    assert_eq!(second.borrower, borrower);
+    assert_eq!(second.assessment_no, 2);
+    assert_eq!(second.status, ReadinessStatus::CreditReady);
+    assert_eq!(second.band, ReadinessBand::High);
+    assert_eq!(second.model_version, 100);
+    assert_eq!(second.commitment, [22; 32]);
+    assert_eq!(second.attested_at, NOW);
+
+    // An assessment number is used once, and numbering starts at 1.
+    let res = send(
+        &mut env.svm,
+        attest_readiness_ix(
+            &op.pubkey(),
+            &borrower,
+            2,
+            ReadinessStatus::ManualReview,
+            ReadinessBand::Low,
+            [23; 32],
+        ),
+        &[&op],
+    );
+    assert!(res.is_err());
+    let res = send(
+        &mut env.svm,
+        attest_readiness_ix(
+            &op.pubkey(),
+            &borrower,
+            0,
+            ReadinessStatus::CreditReady,
+            ReadinessBand::High,
+            [24; 32],
+        ),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::InvalidAssessmentNumber);
 }

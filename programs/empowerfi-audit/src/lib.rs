@@ -54,4 +54,25 @@ pub mod empowerfi_audit {
     ) -> Result<()> {
         register_borrower_ref::handler(ctx, borrower_ref_hash, enrollment_commitment)
     }
+
+    /// Commits one month of a registered borrower's business. Once per month.
+    pub fn anchor_checkin(
+        ctx: Context<AnchorCheckin>,
+        period: u32,
+        commitment: [u8; 32],
+    ) -> Result<()> {
+        anchor_checkin::handler(ctx, period, commitment)
+    }
+
+    /// Attests one readiness assessment: public status and band, private detail.
+    pub fn attest_readiness(
+        ctx: Context<AttestReadiness>,
+        assessment_no: u32,
+        status: ReadinessStatus,
+        band: ReadinessBand,
+        model_version: u16,
+        commitment: [u8; 32],
+    ) -> Result<()> {
+        attest_readiness::handler(ctx, assessment_no, status, band, model_version, commitment)
+    }
 }

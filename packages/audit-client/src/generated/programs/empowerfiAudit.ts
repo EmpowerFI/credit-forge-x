@@ -35,27 +35,41 @@ import {
 } from "@solana/kit/program-client-core";
 import {
   getBorrowerAuditCodec,
+  getCheckinCommitmentCodec,
   getCommunityAuditCodec,
   getPlatformConfigCodec,
+  getReadinessAttestationCodec,
   type BorrowerAudit,
   type BorrowerAuditArgs,
+  type CheckinCommitment,
+  type CheckinCommitmentArgs,
   type CommunityAudit,
   type CommunityAuditArgs,
   type PlatformConfig,
   type PlatformConfigArgs,
+  type ReadinessAttestation,
+  type ReadinessAttestationArgs,
 } from "../accounts/index.ts";
 import {
+  getAnchorCheckinInstructionAsync,
+  getAttestReadinessInstructionAsync,
   getInitializePlatformInstructionAsync,
   getRegisterBorrowerRefInstructionAsync,
   getRegisterCommunityInstructionAsync,
   getSetOperatorInstructionAsync,
   getVerifyCommunityInstructionAsync,
+  parseAnchorCheckinInstruction,
+  parseAttestReadinessInstruction,
   parseInitializePlatformInstruction,
   parseRegisterBorrowerRefInstruction,
   parseRegisterCommunityInstruction,
   parseSetOperatorInstruction,
   parseVerifyCommunityInstruction,
+  type AnchorCheckinAsyncInput,
+  type AttestReadinessAsyncInput,
   type InitializePlatformAsyncInput,
+  type ParsedAnchorCheckinInstruction,
+  type ParsedAttestReadinessInstruction,
   type ParsedInitializePlatformInstruction,
   type ParsedRegisterBorrowerRefInstruction,
   type ParsedRegisterCommunityInstruction,
@@ -67,7 +81,9 @@ import {
   type VerifyCommunityAsyncInput,
 } from "../instructions/index.ts";
 import {
+  findAttestationPda,
   findBorrowerPda,
+  findCheckinPda,
   findCommunityPda,
   findConfigPda,
 } from "../pdas/index.ts";
@@ -77,11 +93,15 @@ export const EMPOWERFI_AUDIT_PROGRAM_ADDRESS =
 
 export const EmpowerfiAuditAccount = {
   0: "BorrowerAudit",
-  1: "CommunityAudit",
-  2: "PlatformConfig",
+  1: "CheckinCommitment",
+  2: "CommunityAudit",
+  3: "PlatformConfig",
+  4: "ReadinessAttestation",
   BorrowerAudit: 0,
-  CommunityAudit: 1,
-  PlatformConfig: 2,
+  CheckinCommitment: 1,
+  CommunityAudit: 2,
+  PlatformConfig: 3,
+  ReadinessAttestation: 4,
 } as const;
 
 export type EmpowerfiAuditAccount = (typeof EmpowerfiAuditAccount)[Exclude<
@@ -108,6 +128,17 @@ export function identifyEmpowerfiAuditAccount(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([146, 23, 113, 44, 66, 57, 60, 198]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditAccount.CheckinCommitment;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([84, 251, 150, 98, 114, 27, 191, 124]),
       ),
       0,
@@ -126,6 +157,17 @@ export function identifyEmpowerfiAuditAccount(
   ) {
     return EmpowerfiAuditAccount.PlatformConfig;
   }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([158, 83, 113, 34, 226, 43, 188, 147]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditAccount.ReadinessAttestation;
+  }
   throw new SolanaError(
     SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_ACCOUNT,
     { accountData: data, programName: "empowerfiAudit" },
@@ -133,16 +175,20 @@ export function identifyEmpowerfiAuditAccount(
 }
 
 export const EmpowerfiAuditInstruction = {
-  0: "InitializePlatform",
-  1: "RegisterBorrowerRef",
-  2: "RegisterCommunity",
-  3: "SetOperator",
-  4: "VerifyCommunity",
-  InitializePlatform: 0,
-  RegisterBorrowerRef: 1,
-  RegisterCommunity: 2,
-  SetOperator: 3,
-  VerifyCommunity: 4,
+  0: "AnchorCheckin",
+  1: "AttestReadiness",
+  2: "InitializePlatform",
+  3: "RegisterBorrowerRef",
+  4: "RegisterCommunity",
+  5: "SetOperator",
+  6: "VerifyCommunity",
+  AnchorCheckin: 0,
+  AttestReadiness: 1,
+  InitializePlatform: 2,
+  RegisterBorrowerRef: 3,
+  RegisterCommunity: 4,
+  SetOperator: 5,
+  VerifyCommunity: 6,
 } as const;
 
 export type EmpowerfiAuditInstruction =
@@ -155,6 +201,28 @@ export function identifyEmpowerfiAuditInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): EmpowerfiAuditInstruction {
   const data = "data" in instruction ? instruction.data : instruction;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([231, 111, 38, 124, 230, 131, 22, 219]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditInstruction.AnchorCheckin;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([192, 219, 150, 110, 139, 47, 138, 18]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditInstruction.AttestReadiness;
+  }
   if (
     containsBytes(
       data,
@@ -220,6 +288,12 @@ export type ParsedEmpowerfiAuditInstruction<
   TProgram extends string = "4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR",
 > =
   | ({
+      instructionType: typeof EmpowerfiAuditInstruction.AnchorCheckin;
+    } & ParsedAnchorCheckinInstruction<TProgram>)
+  | ({
+      instructionType: typeof EmpowerfiAuditInstruction.AttestReadiness;
+    } & ParsedAttestReadinessInstruction<TProgram>)
+  | ({
       instructionType: typeof EmpowerfiAuditInstruction.InitializePlatform;
     } & ParsedInitializePlatformInstruction<TProgram>)
   | ({
@@ -240,6 +314,20 @@ export function parseEmpowerfiAuditInstruction<TProgram extends string>(
 ): ParsedEmpowerfiAuditInstruction<TProgram> {
   const instructionType = identifyEmpowerfiAuditInstruction(instruction);
   switch (instructionType) {
+    case EmpowerfiAuditInstruction.AnchorCheckin: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EmpowerfiAuditInstruction.AnchorCheckin,
+        ...parseAnchorCheckinInstruction(instruction),
+      };
+    }
+    case EmpowerfiAuditInstruction.AttestReadiness: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EmpowerfiAuditInstruction.AttestReadiness,
+        ...parseAttestReadinessInstruction(instruction),
+      };
+    }
     case EmpowerfiAuditInstruction.InitializePlatform: {
       assertIsInstructionWithAccounts(instruction);
       return {
@@ -298,13 +386,25 @@ export type EmpowerfiAuditPlugin = {
 export type EmpowerfiAuditPluginAccounts = {
   borrowerAudit: ReturnType<typeof getBorrowerAuditCodec> &
     SelfFetchFunctions<BorrowerAuditArgs, BorrowerAudit>;
+  checkinCommitment: ReturnType<typeof getCheckinCommitmentCodec> &
+    SelfFetchFunctions<CheckinCommitmentArgs, CheckinCommitment>;
   communityAudit: ReturnType<typeof getCommunityAuditCodec> &
     SelfFetchFunctions<CommunityAuditArgs, CommunityAudit>;
   platformConfig: ReturnType<typeof getPlatformConfigCodec> &
     SelfFetchFunctions<PlatformConfigArgs, PlatformConfig>;
+  readinessAttestation: ReturnType<typeof getReadinessAttestationCodec> &
+    SelfFetchFunctions<ReadinessAttestationArgs, ReadinessAttestation>;
 };
 
 export type EmpowerfiAuditPluginInstructions = {
+  anchorCheckin: (
+    input: AnchorCheckinAsyncInput,
+  ) => ReturnType<typeof getAnchorCheckinInstructionAsync> &
+    SelfPlanAndSendFunctions;
+  attestReadiness: (
+    input: AttestReadinessAsyncInput,
+  ) => ReturnType<typeof getAttestReadinessInstructionAsync> &
+    SelfPlanAndSendFunctions;
   initializePlatform: (
     input: InitializePlatformAsyncInput,
   ) => ReturnType<typeof getInitializePlatformInstructionAsync> &
@@ -329,6 +429,8 @@ export type EmpowerfiAuditPluginInstructions = {
 
 export type EmpowerfiAuditPluginPdas = {
   config: typeof findConfigPda;
+  checkin: typeof findCheckinPda;
+  attestation: typeof findAttestationPda;
   borrower: typeof findBorrowerPda;
   community: typeof findCommunityPda;
 };
@@ -347,6 +449,10 @@ export function empowerfiAuditProgram() {
       empowerfiAudit: {
         accounts: {
           borrowerAudit: addSelfFetchFunctions(client, getBorrowerAuditCodec()),
+          checkinCommitment: addSelfFetchFunctions(
+            client,
+            getCheckinCommitmentCodec(),
+          ),
           communityAudit: addSelfFetchFunctions(
             client,
             getCommunityAuditCodec(),
@@ -355,8 +461,22 @@ export function empowerfiAuditProgram() {
             client,
             getPlatformConfigCodec(),
           ),
+          readinessAttestation: addSelfFetchFunctions(
+            client,
+            getReadinessAttestationCodec(),
+          ),
         },
         instructions: {
+          anchorCheckin: (input) =>
+            addSelfPlanAndSendFunctions(
+              client,
+              getAnchorCheckinInstructionAsync(input),
+            ),
+          attestReadiness: (input) =>
+            addSelfPlanAndSendFunctions(
+              client,
+              getAttestReadinessInstructionAsync(input),
+            ),
           initializePlatform: (input) =>
             addSelfPlanAndSendFunctions(
               client,
@@ -385,6 +505,8 @@ export function empowerfiAuditProgram() {
         },
         pdas: {
           config: findConfigPda,
+          checkin: findCheckinPda,
+          attestation: findAttestationPda,
           borrower: findBorrowerPda,
           community: findCommunityPda,
         },
