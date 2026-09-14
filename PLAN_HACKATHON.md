@@ -508,6 +508,22 @@ Deviations:
 - **Eligibility runs only for ready participants who asked.** `private.credit_pipeline()` is the single gate; a ready participant without a request never gets an eligibility assessment (tested).
 - **Cost to serve is written by triggers**, one event per fact at pilot rates (R$ 30/h), so no code path can forget to record it. Seeded Grajaú: R$ 55 per participant, R$ 1,102 per loan, R$ 27.54 per R$ 100 lent — the unit-economics problem, measured from the top of the funnel.
 
+**Mon 14 Sep (night) — Week 4 build complete, P1 included.** Feature freeze (Thu 8 Oct) now has three weeks of margin.
+
+| Week 4 item | Result |
+|---|---|
+| Capital dashboard (seeded) | ✅ `capital_portfolio()` for capital providers, auditors and admins: committed, deployed, available, received, outstanding, repayment and PAR 30, risk mix, expected return net of expected loss (labelled simulated), cost to serve per loan and per R$ 1,000, audit coverage. Loans under a code derived from the loan alone (`L-XXXXXX`), unlinkable to the partner's `P-XXXXXX` |
+| Zero-PII scan | ✅ An IDL test pins every account field and instruction argument by name and type; a devnet scan checks every account (3,864, all ten types) for the database's names, e-mails, places and amounts: zero findings |
+| Reconciliation | ✅ `anchor-reconcile`, every minute while anything is due: recomputes each commitment from the record as it is now, against the stored one and the chain. A check-in edited by R$ 1 after proving was flagged within a minute |
+| RBAC tests, error states | ✅ Catalog-wide rules (RLS everywhere, nothing for anon, no direct writes, invoker views, pinned search_path) plus a who-sees-her matrix; they found and removed default grants on two views. Every page says what failed and offers a retry |
+| Productive outcomes + EVC/EVM (P1) | ✅ `measure_outcome` from reported months before and after the loan; `OutcomeCommitment` + `anchor_outcome` on chain (program upgraded in place); partner, leader and capital views; the audit screen redoes the arithmetic. Seeded first cycle of six July loans: on time, paid off early, one late; two negative EVCs |
+| Capital Route simulator (P1) | ✅ Four routes priced honestly; domestic Pix cheapest for reais, stablecoin beats the wire only across a border; every assumption editable |
+| Docs | ✅ README, `docs/ARCHITECTURE.md`, `docs/PRIVACY.md` |
+
+Counts: 191 pgTAP · 20 LiteSVM · 92 Vitest · 38 Deno. Seed in ~30 s, 806 proofs in 11 min, all on the first attempt.
+
+Still open, all founder-owned: where judges reach `/app` (Vercel env + protection), the submission form, videos, GTM and the prior-work disclosure. Re-seed before recording (~0.8 devnet SOL a run; operator at ~5.7).
+
 ## 7 · Definition of Done
 
 Run this on Fri 9 Oct:
