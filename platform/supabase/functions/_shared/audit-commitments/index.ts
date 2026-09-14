@@ -37,6 +37,8 @@ export const ANCHOR_DOMAINS = {
   community: DOMAINS.COMMUNITY,
   community_verification: DOMAINS.COMMUNITY_VERIFICATION,
   enrollment: DOMAINS.ENROLLMENT,
+  checkin: DOMAINS.CHECKIN,
+  readiness: DOMAINS.READINESS,
 } as const satisfies Record<string, Domain>;
 
 export type AnchorKind = keyof typeof ANCHOR_DOMAINS;

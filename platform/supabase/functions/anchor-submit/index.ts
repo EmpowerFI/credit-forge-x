@@ -47,12 +47,20 @@ import {
 import {
   CommunityStatus,
   fetchMaybeBorrowerAudit,
+  fetchMaybeCheckinCommitment,
   fetchMaybeCommunityAudit,
+  fetchMaybeReadinessAttestation,
+  findAttestationPda,
   findBorrowerPda,
+  findCheckinPda,
   findCommunityPda,
+  getAnchorCheckinInstructionAsync,
+  getAttestReadinessInstructionAsync,
   getRegisterBorrowerRefInstructionAsync,
   getRegisterCommunityInstructionAsync,
   getVerifyCommunityInstructionAsync,
+  ReadinessBand,
+  ReadinessStatus,
 } from "../_shared/audit-client/index.ts";
 
 interface Job {
@@ -154,6 +162,28 @@ async function recoverSignature(
 /** The RPC is rate-limiting us: stop this run and let the next one continue. */
 const isRateLimited = (message: string) => message.includes("429");
 
+/** "2026-09" → 202609, as the program keys a month. */
+const periodNumber = (period: unknown) => {
+  const match = /^(\d{4})-(\d{2})$/.exec(String(period));
+  if (!match) throw new PermanentError(`invalid period in payload: ${period}`);
+  return Number(match[1]) * 100 + Number(match[2]);
+};
+
+/** "readiness-v0.1.0" → 100 (major * 10000 + minor * 100 + patch). */
+const modelVersionNumber = (version: unknown) => {
+  const match = /v(\d+)\.(\d+)\.(\d+)$/.exec(String(version));
+  if (!match) throw new PermanentError(`invalid model version in payload: ${version}`);
+  return Number(match[1]) * 10000 + Number(match[2]) * 100 + Number(match[3]);
+};
+
+const STATUS = {
+  CREDIT_READY: ReadinessStatus.CreditReady,
+  NEEDS_MORE_DATA: ReadinessStatus.NeedsMoreData,
+  NEEDS_PREPARATION: ReadinessStatus.NeedsPreparation,
+  MANUAL_REVIEW: ReadinessStatus.ManualReview,
+} as const;
+const BAND = { LOW: ReadinessBand.Low, MEDIUM: ReadinessBand.Medium, HIGH: ReadinessBand.High } as const;
+
 const mismatch = (what: string, account: Address) =>
   new PermanentError(`${what} on chain differs from the database (account ${account})`);
 
@@ -161,12 +191,58 @@ const mismatch = (what: string, account: Address) =>
 
 async function anchor(job: Job): Promise<Proof> {
   if (!job.payload) throw new PermanentError("no payload: the record is missing or not in an anchorable state");
-  if (!job.community_ref) throw new PermanentError("no community ref for this job");
 
   const commitment = await commit(ANCHOR_DOMAINS[job.kind], job.payload);
+  const signer = await getOperator();
+
+  // Check-ins and readiness hang off her borrower account.
+  if (job.kind === "checkin" || job.kind === "readiness") {
+    if (!job.borrower_ref) throw new PermanentError("no borrower ref for this job");
+    const [borrower] = await findBorrowerPda({ borrowerRefHash: await hashBorrowerRef(fromHex(job.borrower_ref)) });
+
+    if (job.kind === "checkin") {
+      const period = periodNumber(job.payload.period);
+      const [account] = await findCheckinPda({ borrower, period });
+      const existing = await fetchMaybeCheckinCommitment(rpc, account);
+      if (existing.exists) {
+        if (!sameCommitment(new Uint8Array(existing.data.commitment), commitment)) {
+          throw mismatch("check-in commitment", account);
+        }
+        return { ...(await recoverSignature(account, "first")), account, commitment, recovered: true };
+      }
+      const ix = await getAnchorCheckinInstructionAsync({ operator: signer, borrower, period, commitment });
+      return { ...(await send(ix)), account, commitment, recovered: false };
+    }
+
+    const assessmentNo = Number(job.payload.assessment_no);
+    const status = STATUS[job.payload.status as keyof typeof STATUS];
+    const band = BAND[job.payload.band as keyof typeof BAND];
+    if (!Number.isInteger(assessmentNo) || status === undefined || band === undefined) {
+      throw new PermanentError("readiness payload lacks a valid number, status or band");
+    }
+    const [account] = await findAttestationPda({ borrower, assessmentNo });
+    const existing = await fetchMaybeReadinessAttestation(rpc, account);
+    if (existing.exists) {
+      if (!sameCommitment(new Uint8Array(existing.data.commitment), commitment)) {
+        throw mismatch("readiness commitment", account);
+      }
+      return { ...(await recoverSignature(account, "first")), account, commitment, recovered: true };
+    }
+    const ix = await getAttestReadinessInstructionAsync({
+      operator: signer,
+      borrower,
+      assessmentNo,
+      status,
+      band,
+      modelVersion: modelVersionNumber(job.payload.model_version),
+      commitment,
+    });
+    return { ...(await send(ix)), account, commitment, recovered: false };
+  }
+
+  if (!job.community_ref) throw new PermanentError("no community ref for this job");
   const communityRef = fromHex(job.community_ref);
   const [community] = await findCommunityPda({ communityRef });
-  const signer = await getOperator();
 
   switch (job.kind) {
     case "community": {

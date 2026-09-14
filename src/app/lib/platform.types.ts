@@ -88,6 +88,69 @@ export type Database = {
           },
         ]
       }
+      checkins: {
+        Row: {
+          active_days: number
+          cogs_cents: number
+          created_at: string
+          entrepreneur_id: string
+          household_cents: number
+          id: string
+          is_simulated: boolean
+          keeps_records: boolean
+          note: string | null
+          opex_cents: number
+          period: string
+          revenue_cents: number
+          submitted_by: string | null
+        }
+        Insert: {
+          active_days: number
+          cogs_cents: number
+          created_at?: string
+          entrepreneur_id: string
+          household_cents: number
+          id?: string
+          is_simulated?: boolean
+          keeps_records: boolean
+          note?: string | null
+          opex_cents: number
+          period: string
+          revenue_cents: number
+          submitted_by?: string | null
+        }
+        Update: {
+          active_days?: number
+          cogs_cents?: number
+          created_at?: string
+          entrepreneur_id?: string
+          household_cents?: number
+          id?: string
+          is_simulated?: boolean
+          keeps_records?: boolean
+          note?: string | null
+          opex_cents?: number
+          period?: string
+          revenue_cents?: number
+          submitted_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checkins_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       communities: {
         Row: {
           chain_ref: string
@@ -183,6 +246,60 @@ export type Database = {
           },
           {
             foreignKeyName: "community_memberships_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_intents: {
+        Row: {
+          created_at: string
+          declared_by: string | null
+          description: string | null
+          entrepreneur_id: string
+          id: string
+          is_simulated: boolean
+          purpose: Database["public"]["Enums"]["credit_purpose"]
+          requested_amount_cents: number
+          status: Database["public"]["Enums"]["credit_intent_status"]
+          withdrawn_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          declared_by?: string | null
+          description?: string | null
+          entrepreneur_id: string
+          id?: string
+          is_simulated?: boolean
+          purpose: Database["public"]["Enums"]["credit_purpose"]
+          requested_amount_cents: number
+          status?: Database["public"]["Enums"]["credit_intent_status"]
+          withdrawn_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          declared_by?: string | null
+          description?: string | null
+          entrepreneur_id?: string
+          id?: string
+          is_simulated?: boolean
+          purpose?: Database["public"]["Enums"]["credit_purpose"]
+          requested_amount_cents?: number
+          status?: Database["public"]["Enums"]["credit_intent_status"]
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_intents_declared_by_fkey"
+            columns: ["declared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_intents_entrepreneur_id_fkey"
             columns: ["entrepreneur_id"]
             isOneToOne: false
             referencedRelation: "entrepreneurs"
@@ -427,9 +544,165 @@ export type Database = {
           },
         ]
       }
+      readiness_assessments: {
+        Row: {
+          as_of_period: string
+          assessment_no: number
+          band: Database["public"]["Enums"]["readiness_band"]
+          components: Json
+          created_at: string
+          entrepreneur_id: string
+          features: Json
+          id: string
+          is_simulated: boolean
+          missing_requirements: Json
+          model_version: string
+          reason_codes: string[]
+          requested_by: string | null
+          score: number
+          status: Database["public"]["Enums"]["readiness_status"]
+        }
+        Insert: {
+          as_of_period: string
+          assessment_no: number
+          band: Database["public"]["Enums"]["readiness_band"]
+          components: Json
+          created_at?: string
+          entrepreneur_id: string
+          features: Json
+          id?: string
+          is_simulated?: boolean
+          missing_requirements: Json
+          model_version: string
+          reason_codes: string[]
+          requested_by?: string | null
+          score: number
+          status: Database["public"]["Enums"]["readiness_status"]
+        }
+        Update: {
+          as_of_period?: string
+          assessment_no?: number
+          band?: Database["public"]["Enums"]["readiness_band"]
+          components?: Json
+          created_at?: string
+          entrepreneur_id?: string
+          features?: Json
+          id?: string
+          is_simulated?: boolean
+          missing_requirements?: Json
+          model_version?: string
+          reason_codes?: string[]
+          requested_by?: string | null
+          score?: number
+          status?: Database["public"]["Enums"]["readiness_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "readiness_assessments_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "readiness_assessments_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      checkin_cash_flow: {
+        Row: {
+          active_days: number | null
+          checkin_id: string | null
+          cogs_cents: number | null
+          entrepreneur_id: string | null
+          gross_margin_bps: number | null
+          household_cents: number | null
+          keeps_records: boolean | null
+          net_after_household_cents: number | null
+          net_business_cents: number | null
+          opex_cents: number | null
+          period: string | null
+          revenue_cents: number | null
+        }
+        Insert: {
+          active_days?: number | null
+          checkin_id?: string | null
+          cogs_cents?: number | null
+          entrepreneur_id?: string | null
+          gross_margin_bps?: never
+          household_cents?: number | null
+          keeps_records?: boolean | null
+          net_after_household_cents?: never
+          net_business_cents?: never
+          opex_cents?: number | null
+          period?: string | null
+          revenue_cents?: number | null
+        }
+        Update: {
+          active_days?: number | null
+          checkin_id?: string | null
+          cogs_cents?: number | null
+          entrepreneur_id?: string | null
+          gross_margin_bps?: never
+          household_cents?: number | null
+          keeps_records?: boolean | null
+          net_after_household_cents?: never
+          net_business_cents?: never
+          opex_cents?: number | null
+          period?: string | null
+          revenue_cents?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      latest_readiness: {
+        Row: {
+          as_of_period: string | null
+          assessment_no: number | null
+          band: Database["public"]["Enums"]["readiness_band"] | null
+          components: Json | null
+          created_at: string | null
+          entrepreneur_id: string | null
+          features: Json | null
+          id: string | null
+          is_simulated: boolean | null
+          missing_requirements: Json | null
+          model_version: string | null
+          reason_codes: string[] | null
+          requested_by: string | null
+          score: number | null
+          status: Database["public"]["Enums"]["readiness_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "readiness_assessments_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "readiness_assessments_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       audit_record: {
@@ -472,6 +745,14 @@ export type Database = {
         }
         Returns: string
       }
+      declare_credit_intent: {
+        Args: {
+          p_description?: string
+          p_purpose: Database["public"]["Enums"]["credit_purpose"]
+          p_requested_amount_cents: number
+        }
+        Returns: string
+      }
       enroll_entrepreneur: {
         Args: {
           p_business_name?: string
@@ -489,6 +770,7 @@ export type Database = {
         Returns: undefined
       }
       finish_anchor_run: { Args: never; Returns: undefined }
+      readiness_inputs: { Args: { p_entrepreneur_id: string }; Returns: Json }
       record_education_progress: {
         Args: {
           p_entrepreneur_id: string
@@ -496,6 +778,17 @@ export type Database = {
           p_status: Database["public"]["Enums"]["education_status"]
         }
         Returns: undefined
+      }
+      record_readiness_assessment: {
+        Args: {
+          p_created_at?: string
+          p_entrepreneur_id: string
+          p_features: Json
+          p_is_simulated?: boolean
+          p_requested_by?: string
+          p_result: Json
+        }
+        Returns: Json
       }
       reject_community: {
         Args: { p_community_id: string; p_note: string }
@@ -507,13 +800,33 @@ export type Database = {
       }
       reset_demo_data: { Args: { p_confirm: string }; Returns: Json }
       start_anchor_run: { Args: { p_lease_seconds?: number }; Returns: boolean }
+      submit_checkin: {
+        Args: {
+          p_active_days: number
+          p_cogs_cents: number
+          p_entrepreneur_id?: string
+          p_household_cents: number
+          p_keeps_records: boolean
+          p_note?: string
+          p_opex_cents: number
+          p_period: string
+          p_revenue_cents: number
+        }
+        Returns: string
+      }
       verify_community: {
         Args: { p_community_id: string; p_note?: string }
         Returns: undefined
       }
+      withdraw_credit_intent: { Args: never; Returns: undefined }
     }
     Enums: {
-      anchor_kind: "community" | "community_verification" | "enrollment"
+      anchor_kind:
+        | "community"
+        | "community_verification"
+        | "enrollment"
+        | "checkin"
+        | "readiness"
       anchor_status: "pending" | "submitted" | "confirmed" | "failed"
       app_role:
         | "entrepreneur"
@@ -529,6 +842,13 @@ export type Database = {
         | "collective"
         | "other"
       community_status: "pending_verification" | "verified" | "rejected"
+      credit_intent_status: "active" | "withdrawn"
+      credit_purpose:
+        | "working_capital"
+        | "inventory"
+        | "equipment"
+        | "renovation"
+        | "other"
       education_status: "in_progress" | "completed"
       membership_status: "active" | "left"
       partner_kind:
@@ -538,6 +858,12 @@ export type Database = {
         | "bank"
         | "impact_fund"
         | "other"
+      readiness_band: "LOW" | "MEDIUM" | "HIGH"
+      readiness_status:
+        | "CREDIT_READY"
+        | "NEEDS_MORE_DATA"
+        | "NEEDS_PREPARATION"
+        | "MANUAL_REVIEW"
       reconcile_status: "unchecked" | "verified" | "missing" | "mismatch"
     }
     CompositeTypes: {
@@ -666,7 +992,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      anchor_kind: ["community", "community_verification", "enrollment"],
+      anchor_kind: [
+        "community",
+        "community_verification",
+        "enrollment",
+        "checkin",
+        "readiness",
+      ],
       anchor_status: ["pending", "submitted", "confirmed", "failed"],
       app_role: [
         "entrepreneur",
@@ -684,6 +1016,14 @@ export const Constants = {
         "other",
       ],
       community_status: ["pending_verification", "verified", "rejected"],
+      credit_intent_status: ["active", "withdrawn"],
+      credit_purpose: [
+        "working_capital",
+        "inventory",
+        "equipment",
+        "renovation",
+        "other",
+      ],
       education_status: ["in_progress", "completed"],
       membership_status: ["active", "left"],
       partner_kind: [
@@ -693,6 +1033,13 @@ export const Constants = {
         "bank",
         "impact_fund",
         "other",
+      ],
+      readiness_band: ["LOW", "MEDIUM", "HIGH"],
+      readiness_status: [
+        "CREDIT_READY",
+        "NEEDS_MORE_DATA",
+        "NEEDS_PREPARATION",
+        "MANUAL_REVIEW",
       ],
       reconcile_status: ["unchecked", "verified", "missing", "mismatch"],
     },
