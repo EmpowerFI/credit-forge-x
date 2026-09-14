@@ -20,7 +20,13 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import advisorFernando from "@/assets/advisor-fernando-blanco.webp";
+import advisorRoberta from "@/assets/advisor-roberta-stock.webp";
 import { PLAY_STORE_URL, SEBRAE_LOGO_SRC } from "@/config/links";
+
+const ROBERTA_LINKEDIN_URL = "https://www.linkedin.com/in/robertastock/";
+const ROBERTA_WEBSITE = { href: "https://www.triunna.com.br/", label: "triunna.com.br" };
+const FERNANDO_LINKEDIN_URL = "https://www.linkedin.com/in/fernando-blanco/";
 
 // Content for the institutional /about (EN) and /pt/sobre (PT) routes.
 //
@@ -77,14 +83,50 @@ export interface AboutContent {
     subtitle: string;
     items: { icon: LucideIcon; title: string; desc: string }[];
   };
-  founder: {
+  team: {
     eyebrow: string;
-    name: string;
-    role: string;
-    paragraphs: string[];
-    linkedinLabel: string;
-    instagramLabel: string;
-    photoAlt: string;
+    titleLead: string;
+    titleAccent: string;
+    founder: {
+      name: string;
+      role: string;
+      paragraphs: string[];
+      /** Labelled lists under the bio: where she studied, where she worked. */
+      facts: { label: string; items: string[] }[];
+      linkedinLabel: string;
+      instagramLabel: string;
+      photoAlt: string;
+    };
+    advisory: {
+      heading: string;
+      /** Why these two: what each side of the board brings to the pilot. */
+      note: string;
+      linkedinLabel: string;
+      advisors: {
+        name: string;
+        title: string;
+        focus: string;
+        bio: string;
+        tags: string[];
+        photo: string;
+        photoAlt: string;
+        linkedinUrl: string;
+        website?: { href: string; label: string };
+      }[];
+    };
+  };
+  partners: {
+    eyebrow: string;
+    titleLead: string;
+    titleAccent: string;
+    subtitle: string;
+    testimonials: {
+      quote: string;
+      name: string;
+      role: string;
+      /** Shown when the quote is a translation of what the person said. */
+      note?: string;
+    }[];
   };
   recognitions: {
     eyebrow: string;
@@ -146,14 +188,15 @@ export const aboutPt: AboutContent = {
   meta: {
     title: "Sobre a EmpowerFI — Crédito produtivo para pequenos negócios",
     description:
-      "Conheça a EmpowerFI: nossa missão, nossa história, o problema que resolvemos e a empresa por trás da infraestrutura de crédito produtivo que prepara pequenos negócios antes do crédito. Fundada por Daniele Rodrigues dos Santos em São Paulo, Brasil.",
+      "Conheça a EmpowerFI: nossa missão, nossa história, o problema que resolvemos e o time por trás da infraestrutura de crédito produtivo que prepara pequenos negócios antes do crédito. Fundada por Daniele Rodrigues dos Santos em São Paulo, Brasil.",
   },
   nav: {
     links: [
       { label: "História", href: "#historia" },
       { label: "Problema", href: "#problema" },
       { label: "Solução", href: "#solucao" },
-      { label: "Fundadora", href: "#fundadora" },
+      { label: "Time", href: "#time" },
+      { label: "Parceiros", href: "#parceiros" },
       { label: "Mídia", href: "#midia" },
       { label: "Contato", href: "#contato" },
     ],
@@ -305,17 +348,67 @@ export const aboutPt: AboutContent = {
       },
     ],
   },
-  founder: {
-    eyebrow: "Fundadora",
-    name: "Daniele Rodrigues dos Santos",
-    role: "Fundadora & CEO",
-    paragraphs: [
-      "Daniele Rodrigues dos Santos é Engenheira da Computação formada pela Unicamp, com mais de 20 anos de experiência em tecnologia, desenvolvimento de software e liderança de produtos digitais.",
-      "Após construir uma carreira em grandes empresas de tecnologia, fundou a EmpowerFI para desenvolver infraestrutura financeira voltada às mulheres empreendedoras.",
+  team: {
+    eyebrow: "Time",
+    titleLead: "Execução técnica na fundação. ",
+    titleAccent: "Mercado e educação financeira no conselho.",
+    founder: {
+      name: "Daniele Rodrigues dos Santos",
+      role: "Fundadora & CEO",
+      paragraphs: [
+        "Daniele Rodrigues dos Santos é Engenheira da Computação formada pela Unicamp, com MBA em Big Data & Analytics e pós-graduação em Marketing pela FIA Business School. São mais de 20 anos de experiência em tecnologia: delivery, Big Data e machine learning, produto, marketing e infraestrutura.",
+        "Construiu sua carreira em grandes empresas de tecnologia, como a Capgemini e a Dell Technologies, e fundou a EmpowerFI para conectar capital produtivo, dados e impacto econômico.",
+      ],
+      facts: [
+        { label: "Formação", items: ["Unicamp", "FIA Business School"] },
+        { label: "Trajetória", items: ["Capgemini", "Dell Technologies"] },
+      ],
+      linkedinLabel: "LinkedIn",
+      instagramLabel: "Instagram",
+      photoAlt: "Daniele Rodrigues dos Santos, fundadora e CEO da EmpowerFI",
+    },
+    advisory: {
+      heading: "Conselho consultivo",
+      note: "O conselho cobre as duas frentes que o piloto exige: acesso a instituições financeiras e governança de um lado, educação e gestão financeira da empreendedora do outro.",
+      linkedinLabel: "LinkedIn",
+      advisors: [
+        {
+          name: "Roberta Stock de Oliveira",
+          title: "Conselheira",
+          focus: "Gestão & educação financeira",
+          bio: "Mais de 20 anos no mercado financeiro, de grandes instituições a projetos de impacto social e cultural. No Protagonismo Mulher, une gestão financeira estratégica, grandes eventos e redes de relacionamento, como no Fórum Brasil de Turismo Cultural.",
+          tags: ["Educação financeira", "Impacto"],
+          photo: advisorRoberta,
+          photoAlt: "Roberta Stock de Oliveira, conselheira da EmpowerFI",
+          linkedinUrl: ROBERTA_LINKEDIN_URL,
+          website: ROBERTA_WEBSITE,
+        },
+        {
+          name: "Fernando Blanco",
+          title: "Conselheiro",
+          focus: "Mercado financeiro & governança",
+          bio: "Quatro décadas em bancos, seguradoras, gestoras e crédito, em posições C-level e conselhos de administração. Senior Partner de Financial Services na Junto Executive Search; fundador e professor da Banking School e docente da Fundação Dom Cabral.",
+          tags: ["Banking & crédito", "Governança"],
+          photo: advisorFernando,
+          photoAlt: "Fernando Blanco, conselheiro da EmpowerFI",
+          linkedinUrl: FERNANDO_LINKEDIN_URL,
+        },
+      ],
+    },
+  },
+  partners: {
+    eyebrow: "Parceiros de negócio",
+    titleLead: "O que dizem ",
+    titleAccent: "nossos parceiros",
+    subtitle: "Na palavra de quem constrói com a gente.",
+    testimonials: [
+      {
+        quote:
+          "Nossa fintech busca uma solução como a EmpowerFI há anos. Um motor de crédito que realmente entende e se dedica a esse nicho de mercado tão promissor e subatendido.",
+        name: "Daniel Branco",
+        role: "CEO & Founder da Vister",
+      },
     ],
-    linkedinLabel: "LinkedIn",
-    instagramLabel: "Instagram",
-    photoAlt: "Daniele Rodrigues dos Santos, fundadora e CEO da EmpowerFI",
   },
   recognitions: {
     eyebrow: "Reconhecimentos",
@@ -421,14 +514,15 @@ export const aboutEn: AboutContent = {
   meta: {
     title: "About EmpowerFI — Credit infrastructure for underserved entrepreneurs",
     description:
-      "Meet EmpowerFI: our mission, our story, the problem we solve and the company behind the productive-credit infrastructure that prepares small businesses before credit. Founded by Daniele Rodrigues dos Santos in São Paulo, Brazil.",
+      "Meet EmpowerFI: our mission, our story, the problem we solve and the team behind the productive-credit infrastructure that prepares small businesses before credit. Founded by Daniele Rodrigues dos Santos in São Paulo, Brazil.",
   },
   nav: {
     links: [
       { label: "Story", href: "#historia" },
       { label: "Problem", href: "#problema" },
       { label: "Solution", href: "#solucao" },
-      { label: "Founder", href: "#fundadora" },
+      { label: "Team", href: "#time" },
+      { label: "Partners", href: "#parceiros" },
       { label: "Media", href: "#midia" },
       { label: "Contact", href: "#contato" },
     ],
@@ -580,17 +674,68 @@ export const aboutEn: AboutContent = {
       },
     ],
   },
-  founder: {
-    eyebrow: "Founder",
-    name: "Daniele Rodrigues dos Santos",
-    role: "Founder & CEO",
-    paragraphs: [
-      "Daniele Rodrigues dos Santos holds a Computer Engineering degree from Unicamp and has more than 20 years of experience in technology, software development and digital product leadership.",
-      "After building a career at major technology companies, she founded EmpowerFI to develop financial infrastructure for women entrepreneurs.",
+  team: {
+    eyebrow: "Team",
+    titleLead: "Technical execution at the founding. ",
+    titleAccent: "Finance and financial education on the advisory board.",
+    founder: {
+      name: "Daniele Rodrigues dos Santos",
+      role: "Founder & CEO",
+      paragraphs: [
+        "Daniele Rodrigues dos Santos holds a Computer Engineering degree from Unicamp, and an MBA in Big Data & Analytics and a postgraduate degree in Marketing from FIA Business School. She has more than 20 years in technology: delivery, big data and machine learning, product, marketing and infrastructure.",
+        "She built her career at major technology companies, including Capgemini and Dell Technologies, and founded EmpowerFI to connect productive capital, data and economic impact.",
+      ],
+      facts: [
+        { label: "Education", items: ["Unicamp", "FIA Business School"] },
+        { label: "Career", items: ["Capgemini", "Dell Technologies"] },
+      ],
+      linkedinLabel: "LinkedIn",
+      instagramLabel: "Instagram",
+      photoAlt: "Daniele Rodrigues dos Santos, founder and CEO of EmpowerFI",
+    },
+    advisory: {
+      heading: "Advisory board",
+      note: "Between them, the advisors cover the two fronts the pilot depends on: access to financial institutions and governance on one side, the entrepreneur's financial education and management on the other.",
+      linkedinLabel: "LinkedIn",
+      advisors: [
+        {
+          name: "Roberta Stock de Oliveira",
+          title: "Advisor",
+          focus: "Financial management & education",
+          bio: "More than 20 years in the financial market, from major institutions to social and cultural impact projects. At Protagonismo Mulher she brings together strategic financial management, large-scale events and relationship networks, as at the Fórum Brasil de Turismo Cultural.",
+          tags: ["Financial education", "Impact"],
+          photo: advisorRoberta,
+          photoAlt: "Roberta Stock de Oliveira, EmpowerFI advisor",
+          linkedinUrl: ROBERTA_LINKEDIN_URL,
+          website: ROBERTA_WEBSITE,
+        },
+        {
+          name: "Fernando Blanco",
+          title: "Advisor",
+          focus: "Financial markets & governance",
+          bio: "Four decades across banks, insurers, asset managers and credit, in C-level roles and on boards of directors. Senior Partner for Financial Services at Junto Executive Search; founder of and professor at Banking School, and faculty member at Fundação Dom Cabral.",
+          tags: ["Banking & credit", "Governance"],
+          photo: advisorFernando,
+          photoAlt: "Fernando Blanco, EmpowerFI advisor",
+          linkedinUrl: FERNANDO_LINKEDIN_URL,
+        },
+      ],
+    },
+  },
+  partners: {
+    eyebrow: "Business partners",
+    titleLead: "What our ",
+    titleAccent: "partners say",
+    subtitle: "In the words of the people building with us.",
+    testimonials: [
+      {
+        quote:
+          "Our fintech has been looking for a solution like EmpowerFI for years. A credit engine that truly understands, and is dedicated to, this promising and underserved market niche.",
+        name: "Daniel Branco",
+        role: "CEO & Founder, Vister",
+        note: "Translated from Portuguese.",
+      },
     ],
-    linkedinLabel: "LinkedIn",
-    instagramLabel: "Instagram",
-    photoAlt: "Daniele Rodrigues dos Santos, founder and CEO of EmpowerFI",
   },
   recognitions: {
     eyebrow: "Recognition",
