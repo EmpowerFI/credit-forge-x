@@ -253,6 +253,96 @@ export type Database = {
           },
         ]
       }
+      cost_events: {
+        Row: {
+          amount_cents: number
+          borne_by: Database["public"]["Enums"]["cost_bearer"]
+          community_id: string | null
+          created_at: string
+          entrepreneur_id: string | null
+          fact_id: string
+          id: number
+          is_simulated: boolean
+          phase: string
+          staff_minutes: number
+          stage: Database["public"]["Enums"]["cost_stage"]
+        }
+        Insert: {
+          amount_cents: number
+          borne_by: Database["public"]["Enums"]["cost_bearer"]
+          community_id?: string | null
+          created_at?: string
+          entrepreneur_id?: string | null
+          fact_id: string
+          id?: never
+          is_simulated?: boolean
+          phase: string
+          staff_minutes: number
+          stage: Database["public"]["Enums"]["cost_stage"]
+        }
+        Update: {
+          amount_cents?: number
+          borne_by?: Database["public"]["Enums"]["cost_bearer"]
+          community_id?: string | null
+          created_at?: string
+          entrepreneur_id?: string | null
+          fact_id?: string
+          id?: never
+          is_simulated?: boolean
+          phase?: string
+          staff_minutes?: number
+          stage?: Database["public"]["Enums"]["cost_stage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_events_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cost_events_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_rates: {
+        Row: {
+          borne_by: Database["public"]["Enums"]["cost_bearer"]
+          fixed_cents: number
+          hourly_rate_cents: number
+          is_assumption: boolean
+          note: string
+          phase: string
+          staff_minutes: number
+          stage: Database["public"]["Enums"]["cost_stage"]
+        }
+        Insert: {
+          borne_by: Database["public"]["Enums"]["cost_bearer"]
+          fixed_cents: number
+          hourly_rate_cents: number
+          is_assumption?: boolean
+          note: string
+          phase: string
+          staff_minutes: number
+          stage: Database["public"]["Enums"]["cost_stage"]
+        }
+        Update: {
+          borne_by?: Database["public"]["Enums"]["cost_bearer"]
+          fixed_cents?: number
+          hourly_rate_cents?: number
+          is_assumption?: boolean
+          note?: string
+          phase?: string
+          staff_minutes?: number
+          stage?: Database["public"]["Enums"]["cost_stage"]
+        }
+        Relationships: []
+      }
       credit_intents: {
         Row: {
           created_at: string
@@ -426,6 +516,110 @@ export type Database = {
           },
         ]
       }
+      eligibility_assessments: {
+        Row: {
+          affordability_bps: number | null
+          confidence: Database["public"]["Enums"]["grade"]
+          created_at: string
+          decision: Database["public"]["Enums"]["eligibility_decision"]
+          eligibility_no: number
+          entrepreneur_id: string
+          id: string
+          inputs: Json
+          instalment_cents: number | null
+          intent_id: string
+          is_simulated: boolean
+          max_instalment_cents: number
+          model_version: string
+          proposed_amount_cents: number | null
+          readiness_assessment_id: string
+          reason_codes: string[]
+          requested_amount_cents: number
+          risk_band: Database["public"]["Enums"]["grade"]
+          risk_points: number
+          suggested_max_cents: number | null
+          suggested_min_cents: number | null
+          term_months: number | null
+        }
+        Insert: {
+          affordability_bps?: number | null
+          confidence: Database["public"]["Enums"]["grade"]
+          created_at?: string
+          decision: Database["public"]["Enums"]["eligibility_decision"]
+          eligibility_no: number
+          entrepreneur_id: string
+          id?: string
+          inputs: Json
+          instalment_cents?: number | null
+          intent_id: string
+          is_simulated?: boolean
+          max_instalment_cents: number
+          model_version: string
+          proposed_amount_cents?: number | null
+          readiness_assessment_id: string
+          reason_codes: string[]
+          requested_amount_cents: number
+          risk_band: Database["public"]["Enums"]["grade"]
+          risk_points: number
+          suggested_max_cents?: number | null
+          suggested_min_cents?: number | null
+          term_months?: number | null
+        }
+        Update: {
+          affordability_bps?: number | null
+          confidence?: Database["public"]["Enums"]["grade"]
+          created_at?: string
+          decision?: Database["public"]["Enums"]["eligibility_decision"]
+          eligibility_no?: number
+          entrepreneur_id?: string
+          id?: string
+          inputs?: Json
+          instalment_cents?: number | null
+          intent_id?: string
+          is_simulated?: boolean
+          max_instalment_cents?: number
+          model_version?: string
+          proposed_amount_cents?: number | null
+          readiness_assessment_id?: string
+          reason_codes?: string[]
+          requested_amount_cents?: number
+          risk_band?: Database["public"]["Enums"]["grade"]
+          risk_points?: number
+          suggested_max_cents?: number | null
+          suggested_min_cents?: number | null
+          term_months?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eligibility_assessments_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eligibility_assessments_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "credit_intents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eligibility_assessments_readiness_assessment_id_fkey"
+            columns: ["readiness_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "latest_readiness"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eligibility_assessments_readiness_assessment_id_fkey"
+            columns: ["readiness_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "readiness_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entrepreneurs: {
         Row: {
           borrower_ref: string
@@ -473,6 +667,198 @@ export type Database = {
           },
         ]
       }
+      loan_events: {
+        Row: {
+          actor: string | null
+          created_at: string
+          from_status: Database["public"]["Enums"]["loan_status"]
+          id: string
+          is_simulated: boolean
+          loan_id: string
+          note: string | null
+          to_status: Database["public"]["Enums"]["loan_status"]
+        }
+        Insert: {
+          actor?: string | null
+          created_at?: string
+          from_status: Database["public"]["Enums"]["loan_status"]
+          id?: string
+          is_simulated?: boolean
+          loan_id: string
+          note?: string | null
+          to_status: Database["public"]["Enums"]["loan_status"]
+        }
+        Update: {
+          actor?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["loan_status"]
+          id?: string
+          is_simulated?: boolean
+          loan_id?: string
+          note?: string | null
+          to_status?: Database["public"]["Enums"]["loan_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_events_actor_fkey"
+            columns: ["actor"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_events_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loans: {
+        Row: {
+          created_at: string
+          decision_id: string
+          disbursed_at: string | null
+          entrepreneur_id: string
+          id: string
+          instalment_cents: number
+          is_simulated: boolean
+          opportunity_id: string
+          partner_id: string
+          principal_cents: number
+          rate_bps: number
+          status: Database["public"]["Enums"]["loan_status"]
+          term_months: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decision_id: string
+          disbursed_at?: string | null
+          entrepreneur_id: string
+          id?: string
+          instalment_cents: number
+          is_simulated?: boolean
+          opportunity_id: string
+          partner_id: string
+          principal_cents: number
+          rate_bps: number
+          status?: Database["public"]["Enums"]["loan_status"]
+          term_months: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decision_id?: string
+          disbursed_at?: string | null
+          entrepreneur_id?: string
+          id?: string
+          instalment_cents?: number
+          is_simulated?: boolean
+          opportunity_id?: string
+          partner_id?: string
+          principal_cents?: number
+          rate_bps?: number
+          status?: Database["public"]["Enums"]["loan_status"]
+          term_months?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loans_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "partner_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loans_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loans_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: true
+            referencedRelation: "qualified_credit_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loans_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_decisions: {
+        Row: {
+          approved_amount_cents: number | null
+          created_at: string
+          decided_by: string | null
+          id: string
+          is_simulated: boolean
+          opportunity_id: string
+          partner_id: string
+          rate_bps: number | null
+          reason: string | null
+          term_months: number | null
+          verdict: Database["public"]["Enums"]["partner_verdict"]
+        }
+        Insert: {
+          approved_amount_cents?: number | null
+          created_at?: string
+          decided_by?: string | null
+          id?: string
+          is_simulated?: boolean
+          opportunity_id: string
+          partner_id: string
+          rate_bps?: number | null
+          reason?: string | null
+          term_months?: number | null
+          verdict: Database["public"]["Enums"]["partner_verdict"]
+        }
+        Update: {
+          approved_amount_cents?: number | null
+          created_at?: string
+          decided_by?: string | null
+          id?: string
+          is_simulated?: boolean
+          opportunity_id?: string
+          partner_id?: string
+          rate_bps?: number | null
+          reason?: string | null
+          term_months?: number | null
+          verdict?: Database["public"]["Enums"]["partner_verdict"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_decisions_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "qualified_credit_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_decisions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
           accepted_purposes: string[]
@@ -512,6 +898,54 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          id: string
+          instalment_no: number
+          is_simulated: boolean
+          loan_id: string
+          paid_at: string
+          recorded_by: string | null
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          id?: string
+          instalment_no: number
+          is_simulated?: boolean
+          loan_id: string
+          paid_at: string
+          recorded_by?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          id?: string
+          instalment_no?: number
+          is_simulated?: boolean
+          loan_id?: string
+          paid_at?: string
+          recorded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -537,6 +971,92 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qualified_credit_opportunities: {
+        Row: {
+          amount_cents: number
+          confidence: Database["public"]["Enums"]["grade"]
+          created_at: string
+          eligibility_id: string
+          entrepreneur_id: string
+          id: string
+          instalment_cents: number
+          intent_id: string
+          is_simulated: boolean
+          opportunity_no: number
+          partner_id: string | null
+          purpose: Database["public"]["Enums"]["credit_purpose"]
+          referred_at: string | null
+          risk_band: Database["public"]["Enums"]["grade"]
+          status: Database["public"]["Enums"]["opportunity_status"]
+          term_months: number
+        }
+        Insert: {
+          amount_cents: number
+          confidence: Database["public"]["Enums"]["grade"]
+          created_at?: string
+          eligibility_id: string
+          entrepreneur_id: string
+          id?: string
+          instalment_cents: number
+          intent_id: string
+          is_simulated?: boolean
+          opportunity_no: number
+          partner_id?: string | null
+          purpose: Database["public"]["Enums"]["credit_purpose"]
+          referred_at?: string | null
+          risk_band: Database["public"]["Enums"]["grade"]
+          status: Database["public"]["Enums"]["opportunity_status"]
+          term_months: number
+        }
+        Update: {
+          amount_cents?: number
+          confidence?: Database["public"]["Enums"]["grade"]
+          created_at?: string
+          eligibility_id?: string
+          entrepreneur_id?: string
+          id?: string
+          instalment_cents?: number
+          intent_id?: string
+          is_simulated?: boolean
+          opportunity_no?: number
+          partner_id?: string | null
+          purpose?: Database["public"]["Enums"]["credit_purpose"]
+          referred_at?: string | null
+          risk_band?: Database["public"]["Enums"]["grade"]
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          term_months?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "qualified_credit_opportunities_eligibility_id_fkey"
+            columns: ["eligibility_id"]
+            isOneToOne: false
+            referencedRelation: "eligibility_assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qualified_credit_opportunities_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qualified_credit_opportunities_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: true
+            referencedRelation: "credit_intents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "qualified_credit_opportunities_partner_id_fkey"
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
@@ -745,6 +1265,7 @@ export type Database = {
         }
         Returns: string
       }
+      cts_summary: { Args: { p_community_id?: string }; Returns: Json }
       declare_credit_intent: {
         Args: {
           p_description?: string
@@ -753,6 +1274,7 @@ export type Database = {
         }
         Returns: string
       }
+      eligibility_inputs: { Args: { p_entrepreneur_id: string }; Returns: Json }
       enroll_entrepreneur: {
         Args: {
           p_business_name?: string
@@ -770,6 +1292,48 @@ export type Database = {
         Returns: undefined
       }
       finish_anchor_run: { Args: never; Returns: undefined }
+      partner_decide: {
+        Args: {
+          p_approved_amount_cents?: number
+          p_opportunity_id: string
+          p_rate_bps?: number
+          p_reason?: string
+          p_term_months?: number
+          p_verdict: Database["public"]["Enums"]["partner_verdict"]
+        }
+        Returns: string
+      }
+      partner_pipeline: {
+        Args: never
+        Returns: {
+          affordability_bps: number
+          amount_cents: number
+          avg_net_business_cents: number
+          avg_revenue_cents: number
+          business_sector: string
+          community_city: string
+          community_name: string
+          community_state: string
+          confidence: Database["public"]["Enums"]["grade"]
+          eligibility_decision: Database["public"]["Enums"]["eligibility_decision"]
+          eligibility_reasons: string[]
+          instalment_cents: number
+          is_simulated: boolean
+          max_instalment_cents: number
+          months_reported: number
+          opportunity_id: string
+          participant: string
+          purpose: Database["public"]["Enums"]["credit_purpose"]
+          readiness_band: Database["public"]["Enums"]["readiness_band"]
+          referred_at: string
+          revenue_cv_bps: number
+          risk_band: Database["public"]["Enums"]["grade"]
+          status: Database["public"]["Enums"]["opportunity_status"]
+          suggested_max_cents: number
+          suggested_min_cents: number
+          term_months: number
+        }[]
+      }
       readiness_inputs: { Args: { p_entrepreneur_id: string }; Returns: Json }
       record_education_progress: {
         Args: {
@@ -778,6 +1342,27 @@ export type Database = {
           p_status: Database["public"]["Enums"]["education_status"]
         }
         Returns: undefined
+      }
+      record_eligibility_assessment: {
+        Args: {
+          p_created_at?: string
+          p_entrepreneur_id: string
+          p_inputs: Json
+          p_intent_id: string
+          p_is_simulated?: boolean
+          p_readiness_assessment_id: string
+          p_result: Json
+        }
+        Returns: Json
+      }
+      record_payment: {
+        Args: {
+          p_amount_cents: number
+          p_instalment_no: number
+          p_loan_id: string
+          p_paid_at?: string
+        }
+        Returns: string
       }
       record_readiness_assessment: {
         Args: {
@@ -790,6 +1375,7 @@ export type Database = {
         }
         Returns: Json
       }
+      refer_opportunity: { Args: { p_opportunity_id: string }; Returns: string }
       reject_community: {
         Args: { p_community_id: string; p_note: string }
         Returns: undefined
@@ -814,6 +1400,14 @@ export type Database = {
         }
         Returns: string
       }
+      transition_loan: {
+        Args: {
+          p_loan_id: string
+          p_note?: string
+          p_to: Database["public"]["Enums"]["loan_status"]
+        }
+        Returns: undefined
+      }
       verify_community: {
         Args: { p_community_id: string; p_note?: string }
         Returns: undefined
@@ -827,6 +1421,11 @@ export type Database = {
         | "enrollment"
         | "checkin"
         | "readiness"
+        | "eligibility"
+        | "opportunity"
+        | "loan"
+        | "loan_transition"
+        | "payment"
       anchor_status: "pending" | "submitted" | "confirmed" | "failed"
       app_role:
         | "entrepreneur"
@@ -842,6 +1441,22 @@ export type Database = {
         | "collective"
         | "other"
       community_status: "pending_verification" | "verified" | "rejected"
+      cost_bearer: "empowerfi" | "community" | "partner"
+      cost_stage:
+        | "community_onboarding"
+        | "community_verification"
+        | "enrollment"
+        | "education"
+        | "checkin"
+        | "readiness_assessment"
+        | "credit_intent"
+        | "eligibility_assessment"
+        | "opportunity_preparation"
+        | "partner_referral"
+        | "partner_decision"
+        | "disbursement"
+        | "servicing"
+        | "chain_anchoring"
       credit_intent_status: "active" | "withdrawn"
       credit_purpose:
         | "working_capital"
@@ -850,7 +1465,28 @@ export type Database = {
         | "renovation"
         | "other"
       education_status: "in_progress" | "completed"
+      eligibility_decision:
+        | "ELIGIBLE"
+        | "ELIGIBLE_REDUCED"
+        | "MANUAL_REVIEW"
+        | "NOT_ELIGIBLE"
+      grade: "LOW" | "MEDIUM" | "HIGH"
+      loan_status:
+        | "DRAFT"
+        | "PARTNER_APPROVED"
+        | "DISBURSED"
+        | "ACTIVE"
+        | "PAID"
+        | "DEFAULTED"
+        | "CANCELLED"
       membership_status: "active" | "left"
+      opportunity_status:
+        | "in_review"
+        | "open"
+        | "referred"
+        | "partner_approved"
+        | "partner_declined"
+        | "withdrawn"
       partner_kind:
         | "credit_union"
         | "scd"
@@ -858,6 +1494,7 @@ export type Database = {
         | "bank"
         | "impact_fund"
         | "other"
+      partner_verdict: "approved" | "declined" | "more_information"
       readiness_band: "LOW" | "MEDIUM" | "HIGH"
       readiness_status:
         | "CREDIT_READY"
@@ -998,6 +1635,11 @@ export const Constants = {
         "enrollment",
         "checkin",
         "readiness",
+        "eligibility",
+        "opportunity",
+        "loan",
+        "loan_transition",
+        "payment",
       ],
       anchor_status: ["pending", "submitted", "confirmed", "failed"],
       app_role: [
@@ -1016,6 +1658,23 @@ export const Constants = {
         "other",
       ],
       community_status: ["pending_verification", "verified", "rejected"],
+      cost_bearer: ["empowerfi", "community", "partner"],
+      cost_stage: [
+        "community_onboarding",
+        "community_verification",
+        "enrollment",
+        "education",
+        "checkin",
+        "readiness_assessment",
+        "credit_intent",
+        "eligibility_assessment",
+        "opportunity_preparation",
+        "partner_referral",
+        "partner_decision",
+        "disbursement",
+        "servicing",
+        "chain_anchoring",
+      ],
       credit_intent_status: ["active", "withdrawn"],
       credit_purpose: [
         "working_capital",
@@ -1025,7 +1684,31 @@ export const Constants = {
         "other",
       ],
       education_status: ["in_progress", "completed"],
+      eligibility_decision: [
+        "ELIGIBLE",
+        "ELIGIBLE_REDUCED",
+        "MANUAL_REVIEW",
+        "NOT_ELIGIBLE",
+      ],
+      grade: ["LOW", "MEDIUM", "HIGH"],
+      loan_status: [
+        "DRAFT",
+        "PARTNER_APPROVED",
+        "DISBURSED",
+        "ACTIVE",
+        "PAID",
+        "DEFAULTED",
+        "CANCELLED",
+      ],
       membership_status: ["active", "left"],
+      opportunity_status: [
+        "in_review",
+        "open",
+        "referred",
+        "partner_approved",
+        "partner_declined",
+        "withdrawn",
+      ],
       partner_kind: [
         "credit_union",
         "scd",
@@ -1034,6 +1717,7 @@ export const Constants = {
         "impact_fund",
         "other",
       ],
+      partner_verdict: ["approved", "declined", "more_information"],
       readiness_band: ["LOW", "MEDIUM", "HIGH"],
       readiness_status: [
         "CREDIT_READY",

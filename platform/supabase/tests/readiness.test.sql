@@ -112,7 +112,8 @@ set local role postgres;
 
 select results_eq(
   $$ select a.depends_on = e.id from chain_anchors a, chain_anchors e
-     where a.kind = 'checkin' and e.kind = 'enrollment' and e.entity_id = '00000000-0000-0000-0000-0000000001e1' $$,
+     where a.kind = 'checkin' and e.kind = 'enrollment' and e.entity_id = '00000000-0000-0000-0000-0000000001e1'
+       and a.entity_id in (select id from checkins where entrepreneur_id = '00000000-0000-0000-0000-0000000001e1') $$,
   $$ values (true) $$,
   'her month is queued for the chain behind her own registration'
 );
@@ -235,7 +236,8 @@ set local role postgres;
 -- -------------------------------------------------------------- the thesis
 
 select is(
-  (select array_agg(entrepreneur_id) from private.credit_pipeline()),
+  (select array_agg(entrepreneur_id) from private.credit_pipeline()
+   where entrepreneur_id::text like '00000000-0000-0000-0000-0000000001%'),
   array['00000000-0000-0000-0000-0000000001e1'::uuid],
   'the pipeline holds whoever is ready and asked — Maria'
 );
@@ -251,7 +253,8 @@ select is(
 select pg_temp.act_as('00000000-0000-0000-0000-0000000001a3');
 select lives_ok($$ select withdraw_credit_intent() $$, 'Maria can change her mind');
 set local role postgres;
-select is((select count(*)::int from private.credit_pipeline()), 0, 'and leaves the pipeline');
+select is((select count(*)::int from private.credit_pipeline()
+  where entrepreneur_id::text like '00000000-0000-0000-0000-0000000001%'), 0, 'and leaves the pipeline');
 
 -- -------------------------------------------------------------------- audit
 
