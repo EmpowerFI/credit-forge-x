@@ -10,9 +10,11 @@
 //      and decodes cleanly: hashes, keys, small integers and enums only
 //      (packages/audit-client/privacy.test.ts pins that shape from the IDL).
 //   2. Content. None contains any personal or financial value the database
-//      holds: names, business names, e-mails, community names and cities as
-//      text; reported sales, costs, household spending and loan amounts as
-//      64-bit integers.
+//      holds. Names, business names, e-mails, community names and cities are
+//      searched for as text anywhere in the bytes. Reported sales, costs,
+//      household spending and loan amounts are looked for in every decoded
+//      integer field — not in the raw bytes, where adjacent small fields
+//      (a sequence number 1, then enum zeros) read by chance as an amount.
 //
 // Exits non-zero on any finding. Read-only on both sides.
 
@@ -28,6 +30,7 @@ import {
   getEligibilityAttestationDecoder,
   getLoanAccountDecoder,
   getOpportunityCommitmentDecoder,
+  getOutcomeCommitmentDecoder,
   getPaymentCommitmentDecoder,
   getPlatformConfigDecoder,
   getReadinessAttestationDecoder,
@@ -50,6 +53,7 @@ const DECODERS = {
   [EmpowerfiAuditAccount.OpportunityCommitment]: getOpportunityCommitmentDecoder(),
   [EmpowerfiAuditAccount.LoanAccount]: getLoanAccountDecoder(),
   [EmpowerfiAuditAccount.PaymentCommitment]: getPaymentCommitmentDecoder(),
+  [EmpowerfiAuditAccount.OutcomeCommitment]: getOutcomeCommitmentDecoder(),
 } as const;
 
 // ------------------------------------------------------------------ needles
@@ -98,17 +102,18 @@ for (const l of await all("loans", (a, b) => db.from("loans").select("principal_
 
 const encoder = new TextEncoder();
 const textNeedles = [...texts].flatMap((t) => [...new Set([t, t.toLowerCase(), t.toUpperCase()])].map((s) => ({ what: `text "${s}"`, bytes: encoder.encode(s) })));
-// As u64, the width an amount in centavos would take. Not as u32: four bytes
-// recur by chance (a random key followed by a sequence number 1 reads as an
-// amount between R$ 655 and R$ 1,310 once in 65,536 accounts), and no u32
-// field can hold one anyway — privacy.test.ts pins every integer field by name.
-const u64le = (v: bigint) => {
-  const out = new Uint8Array(8);
-  new DataView(out.buffer).setBigUint64(0, v, true);
-  return out;
-};
-const amountNeedles = [...amounts].map((v) => ({ what: `amount ${v}`, bytes: u64le(v) }));
-const needles = [...textNeedles, ...amountNeedles];
+const needles = textNeedles;
+
+/** Every integer in a decoded account, by field name; months (YYYYMM) aside. */
+function integers(value: unknown, path = ""): [string, bigint][] {
+  if (typeof value === "number" && Number.isInteger(value)) return [[path, BigInt(value)]];
+  if (typeof value === "bigint") return [[path, value]];
+  if (value instanceof Uint8Array || Array.isArray(value)) return []; // hashes and keys
+  if (value && typeof value === "object") {
+    return Object.entries(value).flatMap(([k, v]) => (k === "period" ? [] : integers(v, path ? `${path}.${k}` : k)));
+  }
+  return [];
+}
 
 function indexOf(haystack: Uint8Array, needle: Uint8Array): number {
   outer: for (let i = 0; i + needle.length <= haystack.length; i++) {
@@ -133,10 +138,16 @@ for (const { pubkey, account } of accounts) {
     findings.push(`${pubkey}: not one of the reviewed account types`);
     continue;
   }
-  const decoder = DECODERS[type];
+  const decoder = (DECODERS as Partial<Record<EmpowerfiAuditAccount, (typeof DECODERS)[keyof typeof DECODERS]>>)[type];
+  if (!decoder) {
+    findings.push(`${pubkey}: ${EmpowerfiAuditAccount[type]} has not been reviewed by this scan`);
+    continue;
+  }
   if (data.length !== decoder.fixedSize) findings.push(`${pubkey}: ${EmpowerfiAuditAccount[type]} is ${data.length} bytes, expected ${decoder.fixedSize}`);
   try {
-    decoder.decode(data);
+    for (const [field, v] of integers(decoder.decode(data))) {
+      if (amounts.has(v)) findings.push(`${pubkey} (${EmpowerfiAuditAccount[type]}): field ${field} holds amount ${v}`);
+    }
   } catch (err) {
     findings.push(`${pubkey}: does not decode as ${EmpowerfiAuditAccount[type]} (${(err as Error).message})`);
   }
@@ -152,7 +163,7 @@ for (const { pubkey, account } of accounts) {
 console.log(`program ${EMPOWERFI_AUDIT_PROGRAM_ADDRESS}`);
 console.log(`accounts scanned: ${accounts.length}`);
 for (const [t, n] of [...byType].sort()) console.log(`  ${t}: ${n}`);
-console.log(`searched for: ${texts.size} names, e-mails and places (as written, lower and upper case); ${amounts.size} amounts (as 64-bit integers)`);
+console.log(`searched for: ${texts.size} names, e-mails and places (as written, lower and upper case); ${amounts.size} amounts (in every decoded integer field)`);
 if (findings.length) {
   console.log(`\nFINDINGS: ${findings.length}`);
   for (const f of findings.slice(0, 50)) console.log(`  ${f}`);

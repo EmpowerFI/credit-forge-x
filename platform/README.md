@@ -9,8 +9,11 @@ platform/supabase/
 ├─ migrations/     schema, RLS, RPCs, anchoring pipeline
 ├─ tests/          pgTAP — run locally and against the linked project
 └─ functions/
-   ├─ anchor-submit/   writes queued commitments to the empowerfi_audit program
-   └─ _shared/         vendored copies of packages/ (do not edit, see its README)
+   ├─ readiness-evaluate/    runs the readiness engine for a participant, records the result
+   ├─ eligibility-evaluate/  runs the eligibility engine for her open request, records it
+   ├─ anchor-submit/         writes queued commitments to the empowerfi_audit program
+   ├─ anchor-reconcile/      re-checks confirmed proofs against the chain and the records
+   └─ _shared/               vendored copies of packages/ (do not edit, see its README)
 ```
 
 ## Everyday commands
@@ -21,7 +24,8 @@ npx supabase db reset --workdir platform          # rebuild the local DB from mi
 npx supabase test db --workdir platform           # pgTAP, local
 npx supabase test db --linked --workdir platform  # pgTAP, remote, in a rolled-back transaction
 npx supabase db push --workdir platform           # apply new migrations to the remote
-npx supabase functions deploy anchor-submit --workdir platform
+npx supabase functions deploy <name> --workdir platform  # each of the four
+npm run platform:types                            # regenerate src/app/lib/platform.types.ts
 npm run platform:sync-shared                      # after changing packages/audit-*
 ```
 
@@ -37,12 +41,28 @@ PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo.mts --yes   
 ```
 
 `seed-demo` resets the scenario (`reset_demo_data`) and rebuilds it
-deterministically: 4 verified communities, 100 participants (Maria Oliveira,
-`maria@demo`, among them), education progress, six months of check-ins shaped
-by business profiles, a readiness assessment for everyone (same engine, same
-recording function as the live path) and credit intents for some of those who
-are ready. It prints the ready participant kept without a request, for the
-demo. Every fact is queued for devnet. Everything is `is_simulated`.
+deterministically, in about 30 seconds:
+
+- 4 verified communities, 100 participants (Maria Oliveira, `maria@demo`,
+  among them), education progress, six months of check-ins shaped by business
+  profiles, a readiness assessment for everyone — same engine, same recording
+  function as the live path;
+- requests from some of those who are ready, each through the eligibility
+  engine; the partner's decisions taken in the partner's session (three left
+  awaiting, so the desk is never empty); loans approved, disbursed, repaying;
+  one short-history request held for manual review;
+- a first cycle: six loans in the cooperative from July, repaid on time, paid
+  off early or late, with outcomes measured in September;
+- the demo investor's simulated R$ 50,000 commitment.
+
+It holds the anchor worker's lease while it runs: first-cycle facts are dated
+after the functions record them, and must not be anchored before. About 800
+proofs then confirm in some 11 minutes. It prints the personas: the ready
+participant kept without a request (Jaqueline Pereira) and the one awaiting
+review (Sônia Santos). Everything is `is_simulated`.
+
+Each run writes new devnet accounts (refs are random), about 0.8 SOL of rent
+from the operator. Check `solana balance <operator>` before re-seeding.
 
 Maria has July and August: her September check-in, done live, makes her ready.
 
@@ -73,6 +93,26 @@ Through Helius, a full seed's 700 anchors confirm in about nine minutes, all
 on the first attempt. Through the public RPC it took 16.5 minutes and hundreds
 of rate-limited retries. The browser's audit screen keeps using the public RPC:
 a key in the site's bundle would be visible to every visitor.
+
+## Reconciliation
+
+`anchor-reconcile`, dispatched every minute by `private.dispatch_reconcile()`
+while any confirmed proof is due (never checked, or not for a day), takes up to
+200 at a time. It recomputes each commitment from the record as it is now and
+compares it with the stored one and the account on chain: `verified`,
+`missing` or `mismatch`, with `reconcile_note`. Read-only on chain; same secret
+and URL (with `anchor-submit` replaced) as the anchoring function. The audit
+screen shows the last result.
+
+## Zero-PII scan
+
+```sh
+PLATFORM_SERVICE_KEY_FILE=<file> SOLANA_RPC_URL=<rpc> npx tsx scripts/platform/scan-chain-pii.mts
+```
+
+Reads every account the program owns, checks each is a reviewed type at its
+fixed size, and searches the bytes for every name, e-mail, place and amount in
+the database. Exits non-zero on any finding.
 
 ## Secrets, once per environment
 
