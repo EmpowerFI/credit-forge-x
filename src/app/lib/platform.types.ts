@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      capital_commitments: {
+        Row: {
+          committed_cents: number
+          created_at: string
+          currency: string
+          id: string
+          is_simulated: boolean
+          partner_id: string
+          provider_id: string
+          target_return_bps: number
+        }
+        Insert: {
+          committed_cents: number
+          created_at?: string
+          currency?: string
+          id?: string
+          is_simulated?: boolean
+          partner_id: string
+          provider_id: string
+          target_return_bps: number
+        }
+        Update: {
+          committed_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          is_simulated?: boolean
+          partner_id?: string
+          provider_id?: string
+          target_return_bps?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capital_commitments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "capital_commitments_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chain_anchors: {
         Row: {
           account_address: string | null
@@ -1232,6 +1280,7 @@ export type Database = {
         }
         Returns: Json
       }
+      capital_portfolio: { Args: never; Returns: Json }
       claim_anchor_jobs: {
         Args: { p_limit?: number }
         Returns: {

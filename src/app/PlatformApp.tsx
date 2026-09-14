@@ -4,6 +4,7 @@ import AppLayout from "./AppLayout";
 import { AuthProvider } from "./auth/AuthProvider";
 import RequireAuth from "./auth/RequireAuth";
 import AdminReviewPage from "./pages/AdminReviewPage";
+import CapitalPage from "./pages/CapitalPage";
 import CheckinPage from "./pages/CheckinPage";
 import CommunitiesPage from "./pages/CommunitiesPage";
 import CommunityDetailPage from "./pages/CommunityDetailPage";
@@ -47,6 +48,7 @@ export default function PlatformApp() {
           {/* Anyone signed in may open one; audit_record decides what they may see. */}
           <Route path="audit/:kind/:entityId" element={<Suspense fallback={null}><AuditPage /></Suspense>} />
           <Route path="partner" element={<RequireAuth roles={["partner", "admin", "auditor"]}><PartnerPage /></RequireAuth>} />
+          <Route path="capital" element={<RequireAuth roles={["capital_provider", "admin", "auditor"]}><CapitalPage /></RequireAuth>} />
           <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Route>

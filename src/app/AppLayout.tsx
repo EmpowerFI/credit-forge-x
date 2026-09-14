@@ -9,6 +9,7 @@ const NAV: { to: string; label: string; roles?: Role[] }[] = [
   { to: "/app/me", label: "My business", roles: ["entrepreneur"] },
   { to: "/app/community", label: "Communities" },
   { to: "/app/partner", label: "Partner desk", roles: ["partner", "admin", "auditor"] },
+  { to: "/app/capital", label: "Portfolio", roles: ["capital_provider", "admin", "auditor"] },
   { to: "/app/admin", label: "Review queue", roles: ["admin"] },
 ];
 

@@ -9,7 +9,7 @@ select set_config(
   true
 );
 
-select plan(37);
+select plan(49);
 
 -- ------------------------------------------------------------------ fixtures
 -- Maria, Bea and Cris are ready and asked; Ana is ready and did not ask.
@@ -307,6 +307,76 @@ select ok(
   and (cts_summary() -> 'by_phase' ->> 'preparation')::int > 0,
   'admins see cost per R$ 100 lent, with preparation counted in'
 );
+set local role postgres;
+
+-- ------------------------------------------------------------------ capital
+-- Irene funds Horizonte; Ivo funds Distante.
+
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000002b1', 'c-irene@test'),
+  ('00000000-0000-0000-0000-0000000002b2', 'c-ivo@test');
+update profiles set role = 'capital_provider'
+where id in ('00000000-0000-0000-0000-0000000002b1', '00000000-0000-0000-0000-0000000002b2');
+insert into capital_commitments (provider_id, partner_id, committed_cents, target_return_bps) values
+  ('00000000-0000-0000-0000-0000000002b1', '00000000-0000-0000-0000-0000000002f1', 5000000, 1200),
+  ('00000000-0000-0000-0000-0000000002b2', '00000000-0000-0000-0000-0000000002f2', 3000000, 1000);
+
+create temp table pay as select id from payments where loan_id = (select id from loan);
+grant select on pay to authenticated;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002b1');
+create temp table pf as select capital_portfolio() as p;
+select results_eq(
+  $$ select (p ->> 'loans')::int, (p ->> 'deployed_cents')::bigint, (p ->> 'received_cents')::bigint,
+            (p ->> 'principal_repaid_cents')::bigint, (p ->> 'available_cents')::bigint from pf $$,
+  $$ values (1, 200000::bigint, 21667::bigint, 16667::bigint, 4816667::bigint) $$,
+  'the provider sees the portfolio its capital funds: deployed, received, principal back, still available'
+);
+select ok(
+  (select bool_and(b ->> 'code' ~ '^L-[0-9A-F]{6}$') from pf, jsonb_array_elements(p -> 'book') b)
+  and (select p::text from pf) !~ 'pgTAP Maria'
+  and (select p::text from pf) !~ '00000000-0000-0000-0000-0000000002e1',
+  'loan by loan under a code of the loan''s own: no name, no link to the person'
+);
+select ok(
+  (select (p -> 'expected' ->> 'net_cents')::bigint > 0 and (p ->> 'is_simulated')::boolean from pf),
+  'expected return is shown, and marked simulated'
+);
+select lives_ok(
+  $$ select audit_record('loan', (select id from loan)) $$,
+  'the provider can audit the loan it funds'
+);
+select lives_ok(
+  $$ select audit_record('payment', (select id from pay)) $$,
+  'and its payments'
+);
+select throws_ok(
+  $$ select audit_record('opportunity', (select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000002e1')) $$,
+  '42501', 'not_allowed_to_audit', 'but nothing about the person upstream of the loan'
+);
+select throws_ok(
+  $$ select audit_record('enrollment', '00000000-0000-0000-0000-0000000002e1') $$,
+  '42501', 'not_allowed_to_audit', 'not even her registration'
+);
+select is(
+  (select count(*)::int from loans) + (select count(*)::int from entrepreneurs) + (select count(*)::int from checkins)
+    + (select count(*)::int from qualified_credit_opportunities) + (select count(*)::int from readiness_assessments),
+  0, 'no rows of loans, people, check-ins, opportunities or readiness'
+);
+select is((select count(*)::int from capital_commitments), 1, 'its own commitment only');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002b2');
+select is((capital_portfolio() ->> 'loans')::int, 0, 'another provider does not see a portfolio it does not fund');
+select throws_ok(
+  $$ select audit_record('loan', (select id from loan)) $$,
+  '42501', 'not_allowed_to_audit', 'nor audit its loans'
+);
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002a7');
+select throws_ok($$ select capital_portfolio() $$, '42501', 'not_allowed_to_see_portfolio',
+  'the portfolio view is for capital providers, auditors and admins');
 set local role postgres;
 
 select * from finish();

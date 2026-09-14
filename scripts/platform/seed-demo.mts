@@ -534,6 +534,17 @@ for (const [i, o] of toDecide.entries()) {
 }
 await asPartner.auth.signOut();
 
+// ----------------------------------------------------------------- capital
+// The demo investor funds the partner's book: simulated capital, and marked so.
+
+const investor = profiles.find((p) => p.role === "capital_provider");
+const { data: partnerRow } = await db.from("profiles").select("partner_id").eq("role", "partner").not("partner_id", "is", null).limit(1).single();
+if (investor && partnerRow?.partner_id) {
+  await must("capital", db.from("capital_commitments").insert({
+    provider_id: investor.id, partner_id: partnerRow.partner_id, committed_cents: 5_000_000, target_return_bps: 1200, is_simulated: true,
+  }));
+}
+
 const tally = [...statusOf.values()].reduce<Record<string, number>>((acc, s) => ({ ...acc, [s]: (acc[s] ?? 0) + 1 }), {});
 const leftAloneName = inserted.find((e) => e.id === leftAlone)?.display_name;
 
@@ -544,6 +555,7 @@ console.log(`check-ins: ${checkins.length}`);
 console.log(`readiness: ${JSON.stringify(tally)}`);
 console.log(`credit intents: ${intents.length}`);
 console.log(`partner: ${approved} approved, ${declined} declined, ${referred.length - toDecide.length} awaiting decision`);
+console.log(`capital: ${investor ? "R$ 50,000 committed by the demo investor (simulated)" : "no capital provider account"}`);
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
 console.log(`short history, awaiting manual review: ${inserted.find((e) => e.id === recent)?.display_name ?? "none"} (${COMMUNITIES[1].name})`);
 const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");

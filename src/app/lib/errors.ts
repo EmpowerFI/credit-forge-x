@@ -14,6 +14,7 @@ const MESSAGES: Record<string, string> = {
   entrepreneur_not_found: "Entrepreneur not found.",
   already_a_member: "She is already a member of this community.",
   not_allowed_to_audit: "You do not have access to this proof.",
+  not_allowed_to_see_portfolio: "The portfolio is for capital providers, auditors and EmpowerFI.",
   anchor_not_found: "There is no proof recorded for this yet.",
   not_allowed_to_record_progress: "Only she, or a leader of her community, can record her progress.",
   module_not_found: "Module not found.",
