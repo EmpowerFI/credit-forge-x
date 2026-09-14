@@ -10,7 +10,7 @@ import MemberEducation from "../components/MemberEducation";
 import ProofStatus from "../components/ProofStatus";
 import { anchorsSettled } from "../lib/anchors";
 import { loadEducation } from "../lib/education";
-import { STATUS_LABEL } from "../lib/readiness";
+import { money, STATUS_LABEL } from "../lib/readiness";
 import StatusBadge from "../components/StatusBadge";
 import { useAuth } from "../auth/useAuth";
 import { describeError } from "../lib/errors";
@@ -71,12 +71,14 @@ export default function CommunityDetailPage() {
     queryKey: ["platform", "member-readiness", id, memberIds],
     enabled: Boolean(memberIds?.length),
     queryFn: async () => {
-      const { data, error } = await platform
-        .from("latest_readiness")
-        .select("entrepreneur_id, status, assessment_no")
-        .in("entrepreneur_id", memberIds!);
-      if (error) throw error;
-      return new Map(data.map((r) => [r.entrepreneur_id!, r]));
+      const [latest, intents] = await Promise.all([
+        platform.from("latest_readiness").select("entrepreneur_id, status, assessment_no").in("entrepreneur_id", memberIds!),
+        platform.from("credit_intents").select("entrepreneur_id, requested_amount_cents").eq("status", "active").in("entrepreneur_id", memberIds!),
+      ]);
+      if (latest.error) throw latest.error;
+      if (intents.error) throw intents.error;
+      const asked = new Map(intents.data.map((i) => [i.entrepreneur_id, i.requested_amount_cents]));
+      return new Map(latest.data.map((r) => [r.entrepreneur_id!, { ...r, asked: asked.get(r.entrepreneur_id!) }]));
     },
   });
 
@@ -168,8 +170,8 @@ export default function CommunityDetailPage() {
       <section className="rounded-2xl p-6 glass glow-border">
         <h2 className="mb-2 font-heading text-lg font-bold text-foreground">Proofs on Solana</h2>
         <div className="divide-y divide-border">
-          <ProofStatus label="Community registered" anchor={anchorFor("community", c.id)} />
-          <ProofStatus label="Community verified" anchor={anchorFor("community_verification", c.id)} />
+          <ProofStatus loading={anchors.isPending} label="Community registered" anchor={anchorFor("community", c.id)} />
+          <ProofStatus loading={anchors.isPending} label="Community verified" anchor={anchorFor("community_verification", c.id)} />
         </div>
       </section>
 
@@ -185,11 +187,20 @@ export default function CommunityDetailPage() {
                     {m.entrepreneur.display_name}
                     {(() => {
                       const r = readiness.data?.get(m.entrepreneur.id);
-                      return r?.status ? (
-                        <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${STATUS_LABEL[r.status].tone}`}>
-                          {STATUS_LABEL[r.status].title}
-                        </span>
-                      ) : null;
+                      if (!r?.status) return null;
+                      return (
+                        <>
+                          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${STATUS_LABEL[r.status].tone}`}>
+                            {STATUS_LABEL[r.status].title}
+                          </span>
+                          {/* The thesis, visible: ready is not a request. */}
+                          {r.status === "CREDIT_READY" && (
+                            <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+                              {r.asked ? `Asked for ${money(r.asked)}` : "No credit request"}
+                            </span>
+                          )}
+                        </>
+                      );
                     })()}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -211,7 +222,7 @@ export default function CommunityDetailPage() {
                   <span />
                 )}
                 <div>
-                  <ProofStatus label="Borrower ref" anchor={anchorFor("enrollment", m.entrepreneur.id)} />
+                  <ProofStatus loading={anchors.isPending} label="Borrower ref" anchor={anchorFor("enrollment", m.entrepreneur.id)} />
                 </div>
               </li>
             ))}

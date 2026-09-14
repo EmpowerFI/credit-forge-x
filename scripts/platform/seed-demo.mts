@@ -1,10 +1,12 @@
-// Demo scenario, v1: four verified communities, 100 participants, education
-// progress — and every community, verification and enrollment queued for the
-// chain, so the anchoring pipeline writes real devnet proofs for all of it
-// (plan D9: seeded breadth, real anchors).
+// The demo scenario: four verified communities, 100 participants, education
+// progress, six months of check-ins, a readiness assessment for everyone and
+// credit intents for some of those who are ready — with every community,
+// verification, enrollment, month and assessment queued for the chain, so the
+// anchoring pipeline writes real devnet proofs for all of it (plan D9: seeded
+// breadth, real anchors).
 //
 //   PLATFORM_SERVICE_KEY_FILE=<file with the service role key> \
-//     npx tsx scripts/platform/seed-demo-v1.mts --yes
+//     npx tsx scripts/platform/seed-demo.mts --yes
 //
 // Deterministic: the same names, businesses, dates and progress every run,
 // from a fixed-seed generator. Chain refs and borrower refs are random, as
@@ -15,6 +17,7 @@
 // Everything is marked is_simulated.
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
+import { assessReadiness, type CheckinRecord } from "../../packages/readiness-engine/src/index.ts";
 
 if (!process.argv.includes("--yes")) {
   console.error("This wipes the demo scenario on the hackathon project. Re-run with --yes.");
@@ -251,10 +254,12 @@ coopModules.sort((a, b) => a.position - b.position);
 // finished, a few have not started. Marked by the leader who ran the session.
 const leaderOf = new Map(communities.map((c) => [c.id, c.leader_id]));
 const progress: Record<string, unknown>[] = [];
+const coreDone = new Map<string, number>();
 for (const m of memberships) {
   const isMaria = m.entrepreneur_id === maria.id;
   const r = random();
   const done = isMaria ? 5 : r < 0.12 ? 0 : r < 0.35 ? 5 : 1 + Math.floor(random() * 4);
+  coreDone.set(m.entrepreneur_id, done);
   const joined = new Date(m.joined_at);
   let at = joined;
   readinessModules.forEach((mod, i) => {
@@ -292,14 +297,165 @@ const verifications = await must(
   }))).select("id, entity_id"),
 );
 const verificationOf = new Map(verifications.map((v) => [v.entity_id, v.id]));
-await must(
+const enrollments = await must(
   "enrollment anchors",
   db.from("chain_anchors").insert(memberships.map((m) => ({
     kind: "enrollment", entity_id: m.entrepreneur_id, depends_on: verificationOf.get(m.community_id),
+  }))).select("id, entity_id"),
+);
+const enrollmentOf = new Map(enrollments.map((e) => [e.entity_id, e.id]));
+
+// ---------------------------------------------------------------- check-ins
+// Six months, April to September, shaped by a business profile. Preparation
+// and organisation go together, so the profile depends on education: those
+// who finished the programme run tidier books more often.
+
+const SIX = ["2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"];
+const whole = (cents: number) => Math.round(cents / 100) * 100;
+
+function profileFor(done: number): string {
+  const table: [string, number][] = done === 5
+    ? [["steady", 0.6], ["growing", 0.15], ["gaps", 0.08], ["declining", 0.07], ["messy", 0.04], ["stale", 0.03], ["inconsistent", 0.02], ["volatile", 0.01]]
+    : [["steady", 0.3], ["growing", 0.05], ["new", 0.25], ["gaps", 0.15], ["declining", 0.1], ["stale", 0.08], ["messy", 0.05], ["inconsistent", 0.01], ["volatile", 0.01]];
+  const r = random();
+  let acc = 0;
+  for (const [name, p] of table) if (r < (acc += p)) return name;
+  return "steady";
+}
+
+function history(profile: string): CheckinRecord[] {
+  const base = 150_000 + Math.floor(random() * 450_000); // R$ 1,500–6,000 a month
+  const cogsShare = 0.33 + random() * 0.12;
+  const opexShare = 0.08 + random() * 0.07;
+  const householdShare = 0.18 + random() * 0.15;
+  const days = 18 + Math.floor(random() * 8);
+  const month = (period: string, factor: number, over: Partial<CheckinRecord> = {}): CheckinRecord => ({
+    period,
+    revenue_cents: whole(base * factor),
+    cogs_cents: whole(base * factor * cogsShare),
+    opex_cents: whole(base * opexShare),
+    household_cents: whole(base * householdShare),
+    keeps_records: true,
+    active_days: days,
+    ...over,
+  });
+  const jitter = () => 0.92 + random() * 0.16;
+  switch (profile) {
+    case "growing": return SIX.map((p, i) => month(p, (1 + 0.07 * i) * (0.97 + random() * 0.06)));
+    case "declining": // sales fall and costs overtake them in the last two months
+      return SIX.map((p, i) => i < 4 ? month(p, jitter())
+        : month(p, 0.55, { cogs_cents: whole(base * 0.33), opex_cents: whole(base * 0.35) }));
+    case "gaps": return ["2026-04", "2026-06", "2026-07", "2026-09"].map((p) => month(p, jitter()));
+    case "new": return (random() < 0.5 ? ["2026-09"] : ["2026-08", "2026-09"]).map((p) => month(p, jitter()));
+    case "stale": return ["2026-04", "2026-05", "2026-06"].map((p) => month(p, jitter()));
+    case "messy": return SIX.map((p, i) => month(p, jitter(), { keeps_records: i % 2 === 0 }));
+    case "inconsistent": // two months with no sales but twenty working days
+      return SIX.map((p, i) => i === 2 || i === 3
+        ? month(p, 0, { revenue_cents: 0, cogs_cents: 0, opex_cents: 0, household_cents: 0, active_days: 20 })
+        : month(p, jitter()));
+    case "volatile": return SIX.map((p, i) => month(p, [0.2, 2.8, 0.15, 3.0, 0.1, 3.2][i]));
+    default: return SIX.map((p) => month(p, jitter()));
+  }
+}
+
+// Reported a few days after each month closed; September's during September.
+const reportedAt = (period: string) => {
+  const [y, m] = period.split("-").map(Number);
+  const at = new Date(Date.UTC(y, m, 3 + Math.floor(random() * 4), 12));
+  return iso(at < WINDOW_END ? at : new Date(WINDOW_END.getTime() - random() * 3 * 86_400_000));
+};
+
+// Maria has reported July and August. Her September check-in, done live in
+// the demo, is the one that makes her ready.
+const MARIA_MONTHS: CheckinRecord[] = [
+  { period: "2026-07", revenue_cents: 380_000, cogs_cents: 145_000, opex_cents: 55_000, household_cents: 85_000, keeps_records: true, active_days: 23 },
+  { period: "2026-08", revenue_cents: 405_000, cogs_cents: 152_000, opex_cents: 58_000, household_cents: 90_000, keeps_records: true, active_days: 24 },
+];
+const mariaProfile = profiles.find((p) => p.display_name === "Maria Oliveira");
+
+const histories = new Map<string, { profile: string; months: CheckinRecord[] }>();
+for (const m of memberships) {
+  if (m.entrepreneur_id === maria.id) histories.set(maria.id, { profile: "maria", months: MARIA_MONTHS });
+  else {
+    const profile = profileFor(coreDone.get(m.entrepreneur_id)!);
+    histories.set(m.entrepreneur_id, { profile, months: history(profile) });
+  }
+}
+
+const checkinRows = [...histories.entries()].flatMap(([entrepreneurId, h]) =>
+  h.months.map((c) => ({
+    ...c,
+    entrepreneur_id: entrepreneurId,
+    submitted_by: entrepreneurId === maria.id ? mariaProfile?.id : leaderOf.get(memberships.find((m) => m.entrepreneur_id === entrepreneurId)!.community_id),
+    is_simulated: true,
+    created_at: reportedAt(c.period),
+  })),
+);
+const checkins = await must("check-ins", db.from("checkins").insert(checkinRows).select("id, entrepreneur_id"));
+await must(
+  "check-in anchors",
+  db.from("chain_anchors").insert(checkins.map((c) => ({
+    kind: "checkin", entity_id: c.id, depends_on: enrollmentOf.get(c.entrepreneur_id),
   }))),
 );
+
+// ---------------------------------------------------------------- readiness
+// The same engine and the same recording function the live path uses; the
+// function queues each attestation behind her registration on chain.
+
+const statusOf = new Map<string, string>();
+for (const m of memberships) {
+  const { features, result } = assessReadiness({
+    as_of_period: "2026-09",
+    community_verified: true,
+    core_modules_total: readinessModules.length,
+    core_modules_completed: coreDone.get(m.entrepreneur_id)!,
+    checkins: histories.get(m.entrepreneur_id)!.months,
+  });
+  await must(`assessment ${m.entrepreneur_id}`, db.rpc("record_readiness_assessment", {
+    p_entrepreneur_id: m.entrepreneur_id,
+    p_features: features,
+    p_result: result,
+    p_is_simulated: true,
+    p_created_at: "2026-09-12T15:00:00Z",
+  }));
+  statusOf.set(m.entrepreneur_id, result.status);
+}
+
+// ------------------------------------------------------------------ intents
+// Some of those who are ready ask for capital; the rest do not, and nothing
+// moves them. The first ready participant in Grajaú is kept without a request
+// so the demo can show exactly that.
+
+const PURPOSE_BY_SECTOR: Record<string, string> = {
+  food: "inventory", beauty: "equipment", crafts: "equipment", fashion: "inventory", retail: "working_capital", services: "working_capital",
+};
+const sectorOf = new Map(people.map((p) => [idByName.get(p.row.display_name as string)!, p.row.business_sector as string]));
+const grajau = byName.get(COMMUNITIES[0].name)!;
+const leftAlone = memberships.find(
+  (m) => m.community_id === grajau.id && m.entrepreneur_id !== maria.id && statusOf.get(m.entrepreneur_id) === "CREDIT_READY",
+)?.entrepreneur_id;
+
+const intents = memberships
+  .filter((m) => statusOf.get(m.entrepreneur_id) === "CREDIT_READY" && m.entrepreneur_id !== leftAlone && m.entrepreneur_id !== maria.id)
+  .filter(() => random() < 0.5)
+  .map((m) => ({
+    entrepreneur_id: m.entrepreneur_id,
+    purpose: PURPOSE_BY_SECTOR[sectorOf.get(m.entrepreneur_id) ?? "retail"],
+    requested_amount_cents: (10 + Math.floor(random() * 70)) * 10_000, // R$ 1,000–8,000
+    is_simulated: true,
+    created_at: iso(new Date(Date.UTC(2026, 8, 12, 16) + Math.floor(random() * 36) * 3_600_000)),
+  }));
+if (intents.length) await must("intents", db.from("credit_intents").insert(intents));
+
+const tally = [...statusOf.values()].reduce<Record<string, number>>((acc, s) => ({ ...acc, [s]: (acc[s] ?? 0) + 1 }), {});
+const leftAloneName = inserted.find((e) => e.id === leftAlone)?.display_name;
 
 console.log(`communities: ${communities.length}`);
 console.log(`participants: ${memberships.length} (including Maria Oliveira)`);
 console.log(`education: ${progress.length} progress records`);
-console.log(`anchors queued: ${registrations.length + verifications.length + memberships.length}`);
+console.log(`check-ins: ${checkins.length}`);
+console.log(`readiness: ${JSON.stringify(tally)}`);
+console.log(`credit intents: ${intents.length}`);
+console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
+console.log(`anchors queued: ${registrations.length + verifications.length + memberships.length + checkins.length + memberships.length}`);

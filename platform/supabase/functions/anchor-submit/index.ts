@@ -75,7 +75,8 @@ interface Job {
 
 interface Proof {
   signature: string;
-  slot: number;
+  /** Null for a transaction just sent: the batch confirms them together. */
+  slot: number | null;
   account: Address;
   commitment: Uint8Array;
   recovered: boolean;
@@ -84,7 +85,7 @@ interface Proof {
 /** A failure retrying cannot fix. */
 class PermanentError extends Error {}
 
-const BATCH = 5;
+const BATCH = 8;
 const TIME_BUDGET_MS = 40_000;
 
 const env = (name: string): string => {
@@ -113,7 +114,12 @@ function secretMatches(given: string | null, expected: string): boolean {
 
 // ------------------------------------------------------------------- chain
 
-async function send(instruction: Instruction): Promise<{ signature: string; slot: number }> {
+/**
+ * Signs and sends; does not wait. Jobs in one batch never depend on each
+ * other (a dependent job is only claimable once its dependency confirmed), so
+ * a whole batch can be sent and then confirmed in one status query.
+ */
+async function send(instruction: Instruction): Promise<{ signature: string; slot: null }> {
   const signer = await getOperator();
   const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
   const transaction = await signTransactionMessageWithSigners(
@@ -131,20 +137,32 @@ async function send(instruction: Instruction): Promise<{ signature: string; slot
       preflightCommitment: "confirmed",
     })
     .send();
+  return { signature, slot: null };
+}
 
-  // Poll rather than subscribe: a websocket is one more thing to fail inside
-  // a short-lived function, and devnet confirms in a few seconds.
+type Confirmation = { slot: number } | { error: string };
+
+/**
+ * Waits for a set of signatures together. Polls rather than subscribes: a
+ * websocket is one more thing to fail inside a short-lived function, and
+ * devnet confirms in a few seconds. Missing from the map: not confirmed in time.
+ */
+async function confirmAll(signatures: string[]): Promise<Map<string, Confirmation>> {
+  const settled = new Map<string, Confirmation>();
+  if (!signatures.length) return settled;
   await sleep(1_000);
-  for (let i = 0; i < 30; i++) {
-    const { value } = await rpc.getSignatureStatuses([signature]).send();
-    const status = value[0];
-    if (status?.err) throw new Error(`transaction failed: ${JSON.stringify(status.err)}`);
-    if (status?.confirmationStatus === "confirmed" || status?.confirmationStatus === "finalized") {
-      return { signature, slot: Number(status.slot) };
-    }
-    await sleep(1_500);
+  for (let i = 0; i < 30 && settled.size < signatures.length; i++) {
+    const waiting = signatures.filter((s) => !settled.has(s));
+    const { value } = await rpc.getSignatureStatuses(waiting as never).send();
+    value.forEach((status, k) => {
+      if (status?.err) settled.set(waiting[k], { error: `transaction failed: ${JSON.stringify(status.err)}` });
+      else if (status?.confirmationStatus === "confirmed" || status?.confirmationStatus === "finalized") {
+        settled.set(waiting[k], { slot: Number(status.slot) });
+      }
+    });
+    if (settled.size < signatures.length) await sleep(1_500);
   }
-  throw new Error(`not confirmed in time: ${signature}`);
+  return settled;
 }
 
 /** The signature that wrote an account we found already on chain. */
@@ -296,9 +314,24 @@ async function anchor(job: Job): Promise<Proof> {
   }
 }
 
-async function runJob(job: Job) {
+type Result = {
+  id: number;
+  kind: AnchorKind;
+  outcome: "confirmed" | "recovered" | "retry" | "failed";
+  signature?: string;
+  error?: string;
+  rateLimited?: boolean;
+};
+
+async function failJob(job: Job, err: unknown): Promise<Result> {
+  const message = err instanceof Error ? err.message : String(err);
+  const retryable = !(err instanceof PermanentError);
+  await db.rpc("fail_anchor_job", { p_id: job.id, p_error: message, p_retryable: retryable });
+  return { id: job.id, kind: job.kind, outcome: retryable ? "retry" : "failed", error: message, rateLimited: isRateLimited(message) };
+}
+
+async function completeJob(job: Job, proof: Proof & { slot: number }): Promise<Result> {
   try {
-    const proof = await anchor(job);
     const { error } = await db.rpc("complete_anchor_job", {
       p_id: job.id,
       p_commitment: toHex(proof.commitment),
@@ -310,16 +343,56 @@ async function runJob(job: Job) {
     if (error) throw new Error(`recording the proof failed: ${error.message}`);
     return { id: job.id, kind: job.kind, outcome: proof.recovered ? "recovered" : "confirmed", signature: proof.signature };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    const retryable = !(err instanceof PermanentError);
-    await db.rpc("fail_anchor_job", { p_id: job.id, p_error: message, p_retryable: retryable });
-    return {
-      id: job.id,
-      kind: job.kind,
-      outcome: retryable ? "retry" : "failed",
-      error: message,
-      rateLimited: isRateLimited(message),
-    };
+    // The chain has it; the next attempt finds the account and recovers.
+    return failJob(job, err);
+  }
+}
+
+/**
+ * One claimed batch: prepare and send each job in turn, then confirm every
+ * sent transaction together, then record. Returns true if the RPC started
+ * rate-limiting, having handed back the jobs it did not reach.
+ */
+async function runBatch(batch: Job[], results: Result[]): Promise<boolean> {
+  const prepared: { job: Job; proof: Proof }[] = [];
+  for (const [i, job] of batch.entries()) {
+    try {
+      prepared.push({ job, proof: await anchor(job) });
+    } catch (err) {
+      const result = await failJob(job, err);
+      results.push(result);
+      if (result.rateLimited) {
+        const untouched = batch.slice(i + 1).map((j) => j.id);
+        if (untouched.length) await db.rpc("release_anchor_jobs", { p_ids: untouched });
+        // What was already sent still gets confirmed and recorded below.
+        await settle(prepared, results);
+        return true;
+      }
+    }
+  }
+  await settle(prepared, results);
+  return false;
+}
+
+async function settle(prepared: { job: Job; proof: Proof }[], results: Result[]) {
+  const sent = prepared.filter((p) => p.proof.slot === null).map((p) => p.proof.signature);
+  let confirmations: Map<string, Confirmation>;
+  try {
+    confirmations = await confirmAll(sent);
+  } catch (err) {
+    confirmations = new Map(); // treated as unconfirmed: retried, then recovered
+    for (const p of prepared.filter((p) => p.proof.slot === null)) results.push(await failJob(p.job, err));
+    prepared = prepared.filter((p) => p.proof.slot !== null);
+  }
+  for (const { job, proof } of prepared) {
+    if (proof.slot !== null) {
+      results.push(await completeJob(job, { ...proof, slot: proof.slot }));
+      continue;
+    }
+    const c = confirmations.get(proof.signature);
+    if (!c) results.push(await failJob(job, new Error(`not confirmed in time: ${proof.signature}`)));
+    else if ("error" in c) results.push(await failJob(job, new Error(c.error)));
+    else results.push(await completeJob(job, { ...proof, slot: c.slot }));
   }
 }
 
@@ -338,7 +411,7 @@ Deno.serve(async (req) => {
   if (!acquired) return Response.json({ skipped: "another run is in progress" });
 
   const started = Date.now();
-  const results: Awaited<ReturnType<typeof runJob>>[] = [];
+  const results: Result[] = [];
   try {
     // Several rounds per call, so a registration and the verification waiting
     // on it can both land in one run instead of one per cron tick.
@@ -348,18 +421,7 @@ Deno.serve(async (req) => {
         return Response.json({ error: `claim failed: ${error.message}`, results }, { status: 500 });
       }
       if (!jobs?.length) break;
-      // Sequential: every transaction is signed by the same operator.
-      const batch = jobs as Job[];
-      for (const [i, job] of batch.entries()) {
-        const result = await runJob(job);
-        results.push(result);
-        // Rate-limited: stop here, and hand back what this batch did not reach.
-        if ("rateLimited" in result && result.rateLimited) {
-          const untouched = batch.slice(i + 1).map((j) => j.id);
-          if (untouched.length) await db.rpc("release_anchor_jobs", { p_ids: untouched });
-          break rounds;
-        }
-      }
+      if (await runBatch(jobs as Job[], results)) break rounds;
     }
   } finally {
     await db.rpc("finish_anchor_run");

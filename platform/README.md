@@ -33,13 +33,18 @@ Local ports are 553xx so this stack runs beside the mobile app's (543xx).
 # service key into a mode-600 file, never on a command line
 npx supabase projects api-keys --project-ref yuxrujoghizcfdmbkqfg --reveal -o json  # take the "secret" key
 PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo-accounts.mts        # accounts + partner
-PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo-v1.mts --yes       # scenario
+PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo.mts --yes          # scenario
 ```
 
-`seed-demo-v1` resets the scenario (`reset_demo_data`) and rebuilds it
+`seed-demo` resets the scenario (`reset_demo_data`) and rebuilds it
 deterministically: 4 verified communities, 100 participants (Maria Oliveira,
-`maria@demo`, among them), education progress, and 108 anchors that the
-pipeline writes to devnet in about four minutes. Everything is `is_simulated`.
+`maria@demo`, among them), education progress, six months of check-ins shaped
+by business profiles, a readiness assessment for everyone (same engine, same
+recording function as the live path) and credit intents for some of those who
+are ready. It prints the ready participant kept without a request, for the
+demo. Every fact is queued for devnet. Everything is `is_simulated`.
+
+Maria has July and August: her September check-in, done live, makes her ready.
 
 Demo logins, all with password `EmpowerFI-demo-2026`: `admin@`, `leader@`,
 `maria@`, `partner@`, `investor@`, `auditor@demo.empowerfi.io`.

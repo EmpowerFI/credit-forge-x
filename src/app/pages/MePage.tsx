@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleCheck, CircleDashed, ClipboardPlus, Loader2, RefreshCw } from "lucide-react";
+import { CircleCheck, CircleDashed, ClipboardPlus, Lightbulb, Loader2, RefreshCw } from "lucide-react";
+import type { ReadinessFeatures } from "@empowerfi/readiness-engine";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { useAuth } from "../auth/useAuth";
 import { anchorsSettled } from "../lib/anchors";
 import { loadEducation } from "../lib/education";
 import { describeError } from "../lib/errors";
+import { insightsFrom } from "../lib/insights";
 import { requestAssessment } from "../lib/assessments";
 import { platform } from "../lib/platform";
 import {
@@ -186,6 +188,17 @@ export default function MePage() {
               </div>
             )}
 
+            {insightsFrom(readiness.features as unknown as ReadinessFeatures).length > 0 && (
+              <ul className="space-y-2 rounded-xl border border-border bg-background/60 p-4">
+                {insightsFrom(readiness.features as unknown as ReadinessFeatures).map((i) => (
+                  <li key={i.text} className="flex items-start gap-2 text-sm text-foreground">
+                    <Lightbulb size={15} className={`mt-0.5 shrink-0 ${i.tone === "watch" ? "text-amber-600" : i.tone === "good" ? "text-emerald-600" : "text-muted-foreground"}`} />
+                    {i.text}
+                  </li>
+                ))}
+              </ul>
+            )}
+
             {readiness.reason_codes.length > 0 && (
               <ul className="flex flex-wrap gap-2">
                 {readiness.reason_codes.map((code) => {
@@ -200,7 +213,7 @@ export default function MePage() {
             )}
 
             <div className="rounded-xl border border-border bg-background/60 px-4">
-              <ProofStatus label="Assessment attested" anchor={anchorOf(readiness.id)} />
+              <ProofStatus loading={anchors.isPending} label="Assessment attested" anchor={anchorOf(readiness.id)} />
             </div>
             <p className="text-xs text-muted-foreground">
               Model {readiness.model_version}. Readiness is not a credit decision: it says whether the business is prepared
@@ -286,7 +299,7 @@ export default function MePage() {
                       <span className={(m.net_business_cents ?? 0) > 0 ? "text-emerald-700" : "text-red-700"}>{money(m.net_business_cents)}</span>
                     </span>
                   </div>
-                  <ProofStatus label="Month anchored" anchor={anchorOf(m.checkin_id!)} />
+                  <ProofStatus loading={anchors.isPending} label="Month anchored" anchor={anchorOf(m.checkin_id!)} />
                 </div>
               </li>
             ))}

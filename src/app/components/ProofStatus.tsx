@@ -3,12 +3,21 @@ import { Link } from "react-router-dom";
 import { explorerTx, type ChainAnchor } from "../lib/platform";
 
 /** Where one fact stands on its way to the chain, with the proof once it is there. */
-export default function ProofStatus({ anchor, label }: { anchor: ChainAnchor | undefined; label: string }) {
+export default function ProofStatus({
+  anchor,
+  label,
+  loading = false,
+}: {
+  anchor: ChainAnchor | undefined;
+  label: string;
+  /** While the proofs are still being fetched: never claim "not yet" before knowing. */
+  loading?: boolean;
+}) {
   if (!anchor) {
     return (
       <div className="flex items-center justify-between gap-3 py-2 text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className="text-xs text-muted-foreground">Not yet</span>
+        <span className="text-xs text-muted-foreground">{loading ? "Checking…" : "Not yet"}</span>
       </div>
     );
   }
