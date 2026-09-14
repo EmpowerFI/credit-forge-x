@@ -10,7 +10,7 @@ The marketplace app is live on Google Play; this repository is the Colosseum hac
 
 ## Try it
 
-The platform lives at **`/app`** on the deployed site (or `http://localhost:8080/app` locally). Sign in with one of the demo accounts. The login page lists them, and all share the password **`EmpowerFI-demo-2026`** (public on purpose; every demo record is simulated).
+The platform is live at **[www.empowerfi.io/app](https://www.empowerfi.io/app)** (or `http://localhost:8080/app` locally). Sign in with one of the demo accounts. The login page lists them, and all share the password **`EmpowerFI-demo-2026`** (public on purpose; every demo record is simulated).
 
 | Account | Role | What to look at |
 |---|---|---|
