@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Loader2, Send, Wallet } from "lucide-react";
+import { Check, Loader2, Send } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,12 +43,6 @@ const waitlistSchema = z.object({
   investorType: z.enum(["individual", "institutional"]),
   ticketRange: z.enum(["50", "100", "200", "500_plus", "other"]),
   motivation: z.enum(["financial_return", "economic_impact", "both"]),
-  walletAddress: z
-    .string()
-    .trim()
-    .regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/, "That doesn't look like a Solana address")
-    .optional()
-    .or(z.literal("")),
   consent: z.literal(true, {
     errorMap: () => ({ message: "Please accept to continue" }),
   }),
@@ -65,7 +59,6 @@ const emptyForm = {
   investorType: "",
   ticketRange: "",
   motivation: "",
-  walletAddress: "",
   consent: false,
 };
 
@@ -86,8 +79,7 @@ const InvestorWaitlistForm = () => {
       return;
     }
 
-    const { email, country, investorType, ticketRange, motivation, walletAddress } =
-      parsed.data;
+    const { email, country, investorType, ticketRange, motivation } = parsed.data;
 
     setSending(true);
     try {
@@ -97,7 +89,6 @@ const InvestorWaitlistForm = () => {
         investor_type: investorType,
         ticket_range: ticketRange,
         motivation,
-        wallet_address: walletAddress || null,
         consent: true,
         source: "investors-page",
       });
@@ -121,7 +112,6 @@ const InvestorWaitlistForm = () => {
                 investorType: labelFor(INVESTOR_TYPES, investorType),
                 ticketRange: labelFor(TICKET_RANGES, ticketRange),
                 motivation: labelFor(MOTIVATIONS, motivation),
-                walletAddress,
               },
             },
           })
@@ -265,23 +255,6 @@ const InvestorWaitlistForm = () => {
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="waitlist-wallet" className="flex items-center gap-2">
-          <Wallet size={14} className="text-accent" /> Solana wallet
-          <span className="font-normal text-muted-foreground">— optional</span>
-        </Label>
-        <Input
-          id="waitlist-wallet"
-          maxLength={44}
-          value={form.walletAddress}
-          onChange={(e) => setForm({ ...form, walletAddress: e.target.value })}
-          placeholder="Paste an address if you already have one"
-        />
-        <p className="text-xs text-muted-foreground">
-          A wallet is not required to join the waitlist.
-        </p>
       </div>
 
       <div className="flex items-start gap-3">
