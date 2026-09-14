@@ -494,6 +494,20 @@ Deliberate deviations from this plan, each for a reason found in the build:
 
 Found by the tests before reaching the remote: a null access check that let an outsider call the audit function (PL/pgSQL `if not null` passes); `pg-safeupdate` rejecting whole-table deletes in API sessions; `@solana/kit` reading `process.env` in the browser, which blanked `/app`.
 
+**Mon 14 Sep (evening) — Week 3 gate met.**
+
+| Gate | Result |
+|---|---|
+| Fri 2 Oct · readiness becomes capital | ✅ In the browser: the partner opens P-67B282 (fashion, Grajaú) in its desk, approves it, marks the loan disbursed, starts repayment and records instalment 1; the leader's funnel moves from 3 approved / 2 under way to 4 / 3. All five new proofs (eligibility, opportunity, loan, loan transition, payment) confirm on devnet and audit VERIFIED as auditor — eligibility including a re-run of the engine, the transition decoded from its transaction |
+
+What was added: `packages/eligibility-engine` (9 hand-reasoned scenarios, run in Node and Deno); program wave 3 (4 account types, 5 instructions, 19 LiteSVM tests), upgraded in place; migrations M5 (eligibility, opportunities, partner decisions, loans, payments) and M6 (cost to serve: rates, one cost event per fact, `cts_summary`), 142 pgTAP tests; Edge Function `eligibility-evaluate`; the partner desk, credit progress on the participant's page, the community funnel with cost to serve, the manual-review queue, audits for the five new kinds. The seed now runs every request through eligibility and the partner (9 approved, 2 declined, 3 awaiting, 1 held for manual review; loans approved, disbursed and repaying).
+
+Deviations:
+
+- **Partners see a pseudonym, not a name.** `partner_pipeline()` returns a code (`P-XXXXXX`), the sector, the verified community and indicators rounded to R$ 100; entrepreneurs' rows stay invisible to partners under RLS. The decision is the partner's alone: only the partner's own users can call `partner_decide`, and only on opportunities referred to it.
+- **Eligibility runs only for ready participants who asked.** `private.credit_pipeline()` is the single gate; a ready participant without a request never gets an eligibility assessment (tested).
+- **Cost to serve is written by triggers**, one event per fact at pilot rates (R$ 30/h), so no code path can forget to record it. Seeded Grajaú: R$ 55 per participant, R$ 1,102 per loan, R$ 27.54 per R$ 100 lent — the unit-economics problem, measured from the top of the funnel.
+
 ## 7 · Definition of Done
 
 Run this on Fri 9 Oct:
