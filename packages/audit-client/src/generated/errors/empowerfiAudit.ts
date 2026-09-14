@@ -42,6 +42,10 @@ export const EMPOWERFI_AUDIT_ERROR__INVALID_LOAN_TRANSITION = 0x177b; // 6011
 export const EMPOWERFI_AUDIT_ERROR__LOAN_NOT_REPAYING = 0x177c; // 6012
 /** InvalidInstalmentNumber: Instalments are numbered from 1 */
 export const EMPOWERFI_AUDIT_ERROR__INVALID_INSTALMENT_NUMBER = 0x177d; // 6013
+/** OutcomeBeforeDisbursement: Outcomes are measured only once the loan has been disbursed */
+export const EMPOWERFI_AUDIT_ERROR__OUTCOME_BEFORE_DISBURSEMENT = 0x177e; // 6014
+/** InvalidOutcomeNumber: Outcome measurements are numbered from 1 */
+export const EMPOWERFI_AUDIT_ERROR__INVALID_OUTCOME_NUMBER = 0x177f; // 6015
 
 export type EmpowerfiAuditError =
   | typeof EMPOWERFI_AUDIT_ERROR__COMMUNITY_ALREADY_VERIFIED
@@ -49,10 +53,12 @@ export type EmpowerfiAuditError =
   | typeof EMPOWERFI_AUDIT_ERROR__INVALID_ASSESSMENT_NUMBER
   | typeof EMPOWERFI_AUDIT_ERROR__INVALID_INSTALMENT_NUMBER
   | typeof EMPOWERFI_AUDIT_ERROR__INVALID_LOAN_TRANSITION
+  | typeof EMPOWERFI_AUDIT_ERROR__INVALID_OUTCOME_NUMBER
   | typeof EMPOWERFI_AUDIT_ERROR__INVALID_PERIOD
   | typeof EMPOWERFI_AUDIT_ERROR__LOAN_NOT_REPAYING
   | typeof EMPOWERFI_AUDIT_ERROR__NOT_ELIGIBLE
   | typeof EMPOWERFI_AUDIT_ERROR__NOT_UPGRADE_AUTHORITY
+  | typeof EMPOWERFI_AUDIT_ERROR__OUTCOME_BEFORE_DISBURSEMENT
   | typeof EMPOWERFI_AUDIT_ERROR__READINESS_NOT_CREDIT_READY
   | typeof EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_AUTHORITY
   | typeof EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_OPERATOR
@@ -68,10 +74,12 @@ if (process.env["NODE_ENV"] !== "production") {
     [EMPOWERFI_AUDIT_ERROR__INVALID_ASSESSMENT_NUMBER]: `Assessments are numbered from 1`,
     [EMPOWERFI_AUDIT_ERROR__INVALID_INSTALMENT_NUMBER]: `Instalments are numbered from 1`,
     [EMPOWERFI_AUDIT_ERROR__INVALID_LOAN_TRANSITION]: `That loan status change is not allowed`,
+    [EMPOWERFI_AUDIT_ERROR__INVALID_OUTCOME_NUMBER]: `Outcome measurements are numbered from 1`,
     [EMPOWERFI_AUDIT_ERROR__INVALID_PERIOD]: `Period must be YYYYMM, between 202001 and 210012`,
     [EMPOWERFI_AUDIT_ERROR__LOAN_NOT_REPAYING]: `Payments are recorded only on a disbursed or active loan`,
     [EMPOWERFI_AUDIT_ERROR__NOT_ELIGIBLE]: `An opportunity needs an eligibility that is not NotEligible, of the same borrower`,
     [EMPOWERFI_AUDIT_ERROR__NOT_UPGRADE_AUTHORITY]: `Signer is not the program's upgrade authority`,
+    [EMPOWERFI_AUDIT_ERROR__OUTCOME_BEFORE_DISBURSEMENT]: `Outcomes are measured only once the loan has been disbursed`,
     [EMPOWERFI_AUDIT_ERROR__READINESS_NOT_CREDIT_READY]: `Eligibility needs a CreditReady readiness attestation of the same borrower`,
     [EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_AUTHORITY]: `Signer is not the platform authority`,
     [EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_OPERATOR]: `Signer is not the platform operator`,

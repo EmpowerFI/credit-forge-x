@@ -129,4 +129,13 @@ pub mod empowerfi_audit {
     ) -> Result<()> {
         anchor_payment::handler(ctx, instalment_no, commitment)
     }
+
+    /// Commits a productive-outcome measurement, on a loan that was disbursed.
+    pub fn anchor_outcome(
+        ctx: Context<AnchorOutcome>,
+        outcome_no: u16,
+        commitment: [u8; 32],
+    ) -> Result<()> {
+        anchor_outcome::handler(ctx, outcome_no, commitment)
+    }
 }

@@ -6,6 +6,7 @@
 
 pub mod anchor_checkin;
 pub mod anchor_opportunity;
+pub mod anchor_outcome;
 pub mod anchor_payment;
 pub mod attest_eligibility;
 pub mod attest_readiness;
@@ -19,6 +20,7 @@ pub mod verify_community;
 
 pub use anchor_checkin::*;
 pub use anchor_opportunity::*;
+pub use anchor_outcome::*;
 pub use anchor_payment::*;
 pub use attest_eligibility::*;
 pub use attest_readiness::*;

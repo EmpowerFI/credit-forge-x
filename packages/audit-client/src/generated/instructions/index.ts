@@ -8,6 +8,7 @@
 
 export * from "./anchorCheckin.ts";
 export * from "./anchorOpportunity.ts";
+export * from "./anchorOutcome.ts";
 export * from "./anchorPayment.ts";
 export * from "./attestEligibility.ts";
 export * from "./attestReadiness.ts";

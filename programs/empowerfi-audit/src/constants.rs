@@ -20,6 +20,8 @@ pub const OPPORTUNITY_SEED: &[u8] = b"opportunity";
 pub const LOAN_SEED: &[u8] = b"loan";
 #[constant]
 pub const PAYMENT_SEED: &[u8] = b"payment";
+#[constant]
+pub const OUTCOME_SEED: &[u8] = b"outcome";
 
 /// Version of the commitment schemas these accounts carry. It matches the
 /// `:v1` suffix of the domain tags in packages/audit-commitments; a payload

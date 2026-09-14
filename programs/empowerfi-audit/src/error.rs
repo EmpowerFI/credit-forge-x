@@ -30,4 +30,8 @@ pub enum AuditError {
     LoanNotRepaying,
     #[msg("Instalments are numbered from 1")]
     InvalidInstalmentNumber,
+    #[msg("Outcomes are measured only once the loan has been disbursed")]
+    OutcomeBeforeDisbursement,
+    #[msg("Outcome measurements are numbered from 1")]
+    InvalidOutcomeNumber,
 }

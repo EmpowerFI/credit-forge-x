@@ -36,6 +36,10 @@ export const OPPORTUNITY_SEED: ReadonlyUint8Array = new Uint8Array([
   111, 112, 112, 111, 114, 116, 117, 110, 105, 116, 121,
 ]);
 
+export const OUTCOME_SEED: ReadonlyUint8Array = new Uint8Array([
+  111, 117, 116, 99, 111, 109, 101,
+]);
+
 export const PAYMENT_SEED: ReadonlyUint8Array = new Uint8Array([
   112, 97, 121, 109, 101, 110, 116,
 ]);

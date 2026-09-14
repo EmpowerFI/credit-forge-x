@@ -247,6 +247,118 @@
       ]
     },
     {
+      "name": "anchor_outcome",
+      "docs": [
+        "Commits a productive-outcome measurement, on a loan that was disbursed."
+      ],
+      "discriminator": [
+        252,
+        143,
+        166,
+        43,
+        172,
+        223,
+        25,
+        13
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "loan",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  97,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "loan.opportunity",
+                "account": "LoanAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "outcome",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  117,
+                  116,
+                  99,
+                  111,
+                  109,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "loan"
+              },
+              {
+                "kind": "arg",
+                "path": "outcome_no"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "outcome_no",
+          "type": "u16"
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "anchor_payment",
       "docs": [
         "Commits one paid instalment, once, on a disbursed or active loan."
@@ -1320,6 +1432,19 @@
       ]
     },
     {
+      "name": "OutcomeCommitment",
+      "discriminator": [
+        232,
+        253,
+        228,
+        116,
+        32,
+        163,
+        199,
+        180
+      ]
+    },
+    {
       "name": "PaymentCommitment",
       "discriminator": [
         131,
@@ -1429,6 +1554,16 @@
       "code": 6013,
       "name": "InvalidInstalmentNumber",
       "msg": "Instalments are numbered from 1"
+    },
+    {
+      "code": 6014,
+      "name": "OutcomeBeforeDisbursement",
+      "msg": "Outcomes are measured only once the loan has been disbursed"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidOutcomeNumber",
+      "msg": "Outcome measurements are numbered from 1"
     }
   ],
   "types": [
@@ -1878,6 +2013,48 @@
       }
     },
     {
+      "name": "OutcomeCommitment",
+      "docs": [
+        "A productive-outcome measurement for a loan: what changed in the business",
+        "after it, as a commitment. The figures stay in the database; the numbers",
+        "here only order the measurements."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "loan",
+            "type": "pubkey"
+          },
+          {
+            "name": "outcome_no",
+            "type": "u16"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "measured_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "PaymentCommitment",
       "docs": [
         "One instalment paid. The amount stays off-chain, in the commitment."
@@ -2091,6 +2268,11 @@
       "name": "OPPORTUNITY_SEED",
       "type": "bytes",
       "value": "[111, 112, 112, 111, 114, 116, 117, 110, 105, 116, 121]"
+    },
+    {
+      "name": "OUTCOME_SEED",
+      "type": "bytes",
+      "value": "[111, 117, 116, 99, 111, 109, 101]"
     },
     {
       "name": "PAYMENT_SEED",

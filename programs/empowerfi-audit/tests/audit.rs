@@ -9,9 +9,9 @@ use {
     empowerfi_audit::{
         error::AuditError, BorrowerAudit, CheckinCommitment, CommunityAudit, CommunityStatus,
         EligibilityAttestation, EligibilityDecision, Grade, LoanAccount, LoanStatus,
-        OpportunityCommitment, PaymentCommitment, PlatformConfig, ReadinessAttestation,
+        OpportunityCommitment, OutcomeCommitment, PaymentCommitment, PlatformConfig, ReadinessAttestation,
         ReadinessBand, ReadinessStatus, BORROWER_SEED, CHECKIN_SEED, COMMUNITY_SEED, CONFIG_SEED,
-        ELIGIBILITY_SEED, LOAN_SEED, OPPORTUNITY_SEED, PAYMENT_SEED, READINESS_SEED,
+        ELIGIBILITY_SEED, LOAN_SEED, OPPORTUNITY_SEED, OUTCOME_SEED, PAYMENT_SEED, READINESS_SEED,
         SCHEMA_VERSION,
     },
     litesvm::{types::TransactionResult, LiteSVM},
@@ -1119,4 +1119,94 @@ fn a_loan_can_be_cancelled_before_disbursement_only() {
         &[&op],
     );
     assert_custom_error(res, AuditError::InvalidLoanTransition);
+}
+
+// ------------------------------------------------------------------ outcome
+
+fn outcome_pda(loan: &Pubkey, n: u16) -> Pubkey {
+    Pubkey::find_program_address(
+        &[OUTCOME_SEED, loan.as_ref(), &n.to_le_bytes()],
+        &empowerfi_audit::ID,
+    )
+    .0
+}
+
+fn outcome_ix(op: &Pubkey, loan: &Pubkey, n: u16) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::AnchorOutcome {
+            outcome_no: n,
+            commitment: [81; 32],
+        }
+        .data(),
+        empowerfi_audit::accounts::AnchorOutcome {
+            operator: *op,
+            config: config_pda(),
+            loan: *loan,
+            outcome: outcome_pda(loan, n),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+#[test]
+fn an_outcome_is_measured_only_on_a_loan_that_reached_the_business() {
+    let mut env = initialized();
+    let opp = opportunity(&mut env);
+    let op = env.operator.insecure_clone();
+    send(&mut env.svm, create_loan_ix(&op.pubkey(), &opp), &[&op]).unwrap();
+    let loan = loan_pda(&opp);
+    send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::PartnerApproved, 71),
+        &[&op],
+    )
+    .unwrap();
+
+    // Approved is not disbursed: nothing reached the business yet.
+    let res = send(&mut env.svm, outcome_ix(&op.pubkey(), &loan, 1), &[&op]);
+    assert_custom_error(res, AuditError::OutcomeBeforeDisbursement);
+
+    for (to, tag) in [(LoanStatus::Disbursed, 72), (LoanStatus::Active, 73)] {
+        send(
+            &mut env.svm,
+            transition_ix(&op.pubkey(), &loan, to, tag),
+            &[&op],
+        )
+        .unwrap();
+    }
+    let res = send(&mut env.svm, outcome_ix(&op.pubkey(), &loan, 0), &[&op]);
+    assert_custom_error(res, AuditError::InvalidOutcomeNumber);
+
+    // Only the operator writes it.
+    let intruder = Keypair::new();
+    env.svm.airdrop(&intruder.pubkey(), 1_000_000_000).unwrap();
+    let res = send(
+        &mut env.svm,
+        outcome_ix(&intruder.pubkey(), &loan, 1),
+        &[&intruder],
+    );
+    assert_custom_error(res, AuditError::UnauthorizedOperator);
+
+    send(&mut env.svm, outcome_ix(&op.pubkey(), &loan, 1), &[&op]).unwrap();
+    assert!(
+        send(&mut env.svm, outcome_ix(&op.pubkey(), &loan, 1), &[&op]).is_err(),
+        "a measurement is written once"
+    );
+    let o: OutcomeCommitment = fetch(&env.svm, &outcome_pda(&loan, 1));
+    assert_eq!(o.loan, loan);
+    assert_eq!(o.outcome_no, 1);
+    assert_eq!(o.commitment, [81; 32]);
+    assert_eq!(o.measured_at, NOW);
+    assert_eq!(o.schema_version, SCHEMA_VERSION);
+
+    // And after the loan ends, a later measurement still can be.
+    send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::Defaulted, 74),
+        &[&op],
+    )
+    .unwrap();
+    send(&mut env.svm, outcome_ix(&op.pubkey(), &loan, 2), &[&op]).unwrap();
 }

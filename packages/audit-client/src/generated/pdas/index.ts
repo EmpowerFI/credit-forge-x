@@ -14,4 +14,5 @@ export * from "./config.ts";
 export * from "./eligibility.ts";
 export * from "./loan.ts";
 export * from "./opportunity.ts";
+export * from "./outcome.ts";
 export * from "./payment.ts";

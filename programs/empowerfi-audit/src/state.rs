@@ -215,3 +215,17 @@ pub struct PaymentCommitment {
     pub schema_version: u8,
     pub bump: u8,
 }
+
+/// A productive-outcome measurement for a loan: what changed in the business
+/// after it, as a commitment. The figures stay in the database; the numbers
+/// here only order the measurements.
+#[account]
+#[derive(InitSpace)]
+pub struct OutcomeCommitment {
+    pub loan: Pubkey,
+    pub outcome_no: u16,
+    pub commitment: [u8; 32],
+    pub measured_at: i64,
+    pub schema_version: u8,
+    pub bump: u8,
+}

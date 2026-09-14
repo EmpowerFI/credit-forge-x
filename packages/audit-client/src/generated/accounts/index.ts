@@ -12,6 +12,7 @@ export * from "./communityAudit.ts";
 export * from "./eligibilityAttestation.ts";
 export * from "./loanAccount.ts";
 export * from "./opportunityCommitment.ts";
+export * from "./outcomeCommitment.ts";
 export * from "./paymentCommitment.ts";
 export * from "./platformConfig.ts";
 export * from "./readinessAttestation.ts";
