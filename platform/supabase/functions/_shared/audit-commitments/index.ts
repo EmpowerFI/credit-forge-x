@@ -22,6 +22,7 @@ export const DOMAINS = {
   ELIGIBILITY: "EMPOWERFI:ELIGIBILITY:v1",
   OPPORTUNITY: "EMPOWERFI:OPPORTUNITY:v1",
   LOAN: "EMPOWERFI:LOAN:v1",
+  LOAN_TRANSITION: "EMPOWERFI:LOAN_TRANSITION:v1",
   PAYMENT: "EMPOWERFI:PAYMENT:v1",
   OUTCOME: "EMPOWERFI:OUTCOME:v1",
 } as const;
@@ -39,6 +40,11 @@ export const ANCHOR_DOMAINS = {
   enrollment: DOMAINS.ENROLLMENT,
   checkin: DOMAINS.CHECKIN,
   readiness: DOMAINS.READINESS,
+  eligibility: DOMAINS.ELIGIBILITY,
+  opportunity: DOMAINS.OPPORTUNITY,
+  loan: DOMAINS.LOAN,
+  loan_transition: DOMAINS.LOAN_TRANSITION,
+  payment: DOMAINS.PAYMENT,
 } as const satisfies Record<string, Domain>;
 
 export type AnchorKind = keyof typeof ANCHOR_DOMAINS;

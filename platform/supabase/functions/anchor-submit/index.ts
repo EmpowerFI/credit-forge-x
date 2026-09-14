@@ -46,16 +46,32 @@ import {
 } from "../_shared/audit-commitments/index.ts";
 import {
   CommunityStatus,
+  EligibilityDecision,
   fetchMaybeBorrowerAudit,
   fetchMaybeCheckinCommitment,
   fetchMaybeCommunityAudit,
+  fetchMaybeEligibilityAttestation,
+  fetchMaybeLoanAccount,
+  fetchMaybeOpportunityCommitment,
+  fetchMaybePaymentCommitment,
   fetchMaybeReadinessAttestation,
   findAttestationPda,
   findBorrowerPda,
   findCheckinPda,
   findCommunityPda,
+  findEligibilityPda,
+  findLoanPda,
+  findOpportunityPda,
+  findPaymentPda,
   getAnchorCheckinInstructionAsync,
+  getAnchorOpportunityInstructionAsync,
+  getAnchorPaymentInstructionAsync,
+  getAttestEligibilityInstructionAsync,
   getAttestReadinessInstructionAsync,
+  getCreateLoanInstructionAsync,
+  getTransitionLoanInstructionAsync,
+  Grade,
+  LoanStatus,
   getRegisterBorrowerRefInstructionAsync,
   getRegisterCommunityInstructionAsync,
   getVerifyCommunityInstructionAsync,
@@ -212,6 +228,34 @@ const STATUS = {
   MANUAL_REVIEW: ReadinessStatus.ManualReview,
 } as const;
 const BAND = { LOW: ReadinessBand.Low, MEDIUM: ReadinessBand.Medium, HIGH: ReadinessBand.High } as const;
+const GRADE = { LOW: Grade.Low, MEDIUM: Grade.Medium, HIGH: Grade.High } as const;
+const DECISION = {
+  ELIGIBLE: EligibilityDecision.Eligible,
+  ELIGIBLE_REDUCED: EligibilityDecision.EligibleReduced,
+  MANUAL_REVIEW: EligibilityDecision.ManualReview,
+  NOT_ELIGIBLE: EligibilityDecision.NotEligible,
+} as const;
+const LOAN_STATUS = {
+  DRAFT: LoanStatus.Draft,
+  PARTNER_APPROVED: LoanStatus.PartnerApproved,
+  DISBURSED: LoanStatus.Disbursed,
+  ACTIVE: LoanStatus.Active,
+  PAID: LoanStatus.Paid,
+  DEFAULTED: LoanStatus.Defaulted,
+  CANCELLED: LoanStatus.Cancelled,
+} as const;
+
+/** Looks a value up in a map, or fails the job for good: the payload is wrong. */
+function mapped<T>(map: Record<string, T>, value: unknown, what: string): T {
+  const v = map[String(value)];
+  if (v === undefined) throw new PermanentError(`invalid ${what} in payload: ${value}`);
+  return v;
+}
+const int = (value: unknown, what: string) => {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1) throw new PermanentError(`invalid ${what} in payload: ${value}`);
+  return n;
+};
 
 const mismatch = (what: string, account: Address) =>
   new PermanentError(`${what} on chain differs from the database (account ${account})`);
@@ -224,10 +268,84 @@ async function anchor(job: Job): Promise<Proof> {
   const commitment = await commit(ANCHOR_DOMAINS[job.kind], job.payload);
   const signer = await getOperator();
 
-  // Check-ins and readiness hang off her borrower account.
-  if (job.kind === "checkin" || job.kind === "readiness") {
+  // Everything after enrollment hangs off her borrower account.
+  if (job.kind !== "community" && job.kind !== "community_verification" && job.kind !== "enrollment") {
     if (!job.borrower_ref) throw new PermanentError("no borrower ref for this job");
     const [borrower] = await findBorrowerPda({ borrowerRefHash: await hashBorrowerRef(fromHex(job.borrower_ref)) });
+    const p = job.payload;
+
+    if (job.kind === "eligibility") {
+      const eligibilityNo = int(p.eligibility_no, "eligibility number");
+      const [account] = await findEligibilityPda({ borrower, eligibilityNo });
+      const existing = await fetchMaybeEligibilityAttestation(rpc, account);
+      if (existing.exists) {
+        if (!sameCommitment(new Uint8Array(existing.data.commitment), commitment)) throw mismatch("eligibility commitment", account);
+        return { ...(await recoverSignature(account, "first")), account, commitment, recovered: true };
+      }
+      const [readiness] = await findAttestationPda({ borrower, assessmentNo: int(p.readiness_assessment_no, "readiness number") });
+      const ix = await getAttestEligibilityInstructionAsync({
+        operator: signer, borrower, readiness, eligibilityNo,
+        decision: mapped(DECISION, p.decision, "decision"),
+        riskBand: mapped(GRADE, p.risk_band, "risk band"),
+        confidence: mapped(GRADE, p.confidence, "confidence"),
+        modelVersion: modelVersionNumber(p.model_version),
+        commitment,
+      });
+      return { ...(await send(ix)), account, commitment, recovered: false };
+    }
+
+    if (job.kind === "opportunity") {
+      const opportunityNo = int(p.opportunity_no, "opportunity number");
+      const [account] = await findOpportunityPda({ borrower, opportunityNo });
+      const existing = await fetchMaybeOpportunityCommitment(rpc, account);
+      if (existing.exists) {
+        if (!sameCommitment(new Uint8Array(existing.data.commitment), commitment)) throw mismatch("opportunity commitment", account);
+        return { ...(await recoverSignature(account, "first")), account, commitment, recovered: true };
+      }
+      const [eligibility] = await findEligibilityPda({ borrower, eligibilityNo: int(p.eligibility_no, "eligibility number") });
+      const ix = await getAnchorOpportunityInstructionAsync({ operator: signer, borrower, eligibility, opportunityNo, commitment });
+      return { ...(await send(ix)), account, commitment, recovered: false };
+    }
+
+    if (job.kind === "loan" || job.kind === "loan_transition" || job.kind === "payment") {
+      const [opportunity] = await findOpportunityPda({ borrower, opportunityNo: int(p.opportunity_no, "opportunity number") });
+      const [loan] = await findLoanPda({ opportunity });
+
+      if (job.kind === "loan") {
+        const existing = await fetchMaybeLoanAccount(rpc, loan);
+        if (existing.exists) {
+          if (!sameCommitment(new Uint8Array(existing.data.termsCommitment), commitment)) throw mismatch("loan terms", loan);
+          return { ...(await recoverSignature(loan, "first")), account: loan, commitment, recovered: true };
+        }
+        const ix = await getCreateLoanInstructionAsync({ operator: signer, opportunity, termsCommitment: commitment });
+        return { ...(await send(ix)), account: loan, commitment, recovered: false };
+      }
+
+      if (job.kind === "loan_transition") {
+        const to = mapped(LOAN_STATUS, p.to_status, "status");
+        const existing = await fetchMaybeLoanAccount(rpc, loan);
+        if (!existing.exists) throw new Error("loan is not on chain yet");
+        // Already applied by an earlier run: same status, same commitment.
+        if (existing.data.status === to && sameCommitment(new Uint8Array(existing.data.lastTransitionCommitment), commitment)) {
+          return { ...(await recoverSignature(loan, "latest")), account: loan, commitment, recovered: true };
+        }
+        if (existing.data.status !== mapped(LOAN_STATUS, p.from_status, "status")) {
+          throw mismatch(`loan status (${LoanStatus[existing.data.status]})`, loan);
+        }
+        const ix = await getTransitionLoanInstructionAsync({ operator: signer, loan, to, transitionCommitment: commitment });
+        return { ...(await send(ix)), account: loan, commitment, recovered: false };
+      }
+
+      const instalmentNo = int(p.instalment_no, "instalment number");
+      const [account] = await findPaymentPda({ loan, instalmentNo });
+      const existing = await fetchMaybePaymentCommitment(rpc, account);
+      if (existing.exists) {
+        if (!sameCommitment(new Uint8Array(existing.data.commitment), commitment)) throw mismatch("payment commitment", account);
+        return { ...(await recoverSignature(account, "first")), account, commitment, recovered: true };
+      }
+      const ix = await getAnchorPaymentInstructionAsync({ operator: signer, loan, instalmentNo, commitment });
+      return { ...(await send(ix)), account, commitment, recovered: false };
+    }
 
     if (job.kind === "checkin") {
       const period = periodNumber(job.payload.period);
