@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, BadgeCheck, Loader2, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Loader2, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LOAN_LABEL, percent, type LoanStatus } from "../lib/credit";
-import { describeError } from "../lib/errors";
 import { platform } from "../lib/platform";
 import { money, PURPOSE_LABEL, type CreditPurpose } from "../lib/readiness";
+import LoadError from "../components/LoadError";
 
 // The capital provider's view: what its capital funds, in aggregate and loan
 // by loan under a code of the loan's own. Nothing here names or points to a
@@ -90,14 +90,7 @@ export default function CapitalPage() {
   });
 
   if (portfolio.isPending) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
-  if (portfolio.isError) {
-    return (
-      <div className="flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-900">
-        <AlertTriangle size={20} className="mt-0.5 shrink-0" />
-        <p className="text-sm">{describeError(portfolio.error)}</p>
-      </div>
-    );
-  }
+  if (portfolio.isError) return <LoadError error={portfolio.error} onRetry={() => portfolio.refetch()} />;
   const p = portfolio.data;
   const deployedShare = (cents: number) => (p.deployed_cents > 0 ? cents / p.deployed_cents : 0);
   const phaseTotal = Math.max(1, p.cost.by_phase.preparation + p.cost.by_phase.origination + p.cost.by_phase.servicing);

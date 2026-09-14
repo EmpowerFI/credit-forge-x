@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import StatusBadge from "../components/StatusBadge";
 import { useAuth } from "../auth/useAuth";
 import { KIND_LABEL, platform } from "../lib/platform";
+import LoadError from "../components/LoadError";
 
 export default function CommunitiesPage() {
   const { profile } = useAuth();
@@ -12,7 +13,7 @@ export default function CommunitiesPage() {
 
   // RLS decides what each role sees: the verified directory for everyone,
   // plus a leader's own pending communities, plus everything for admins.
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["platform", "communities"],
     queryFn: async () => {
       const { data, error } = await platform
@@ -41,7 +42,7 @@ export default function CommunitiesPage() {
       </div>
 
       {isLoading && <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />}
-      {error && <p className="text-destructive">Could not load communities.</p>}
+      {error && <LoadError error={error} onRetry={() => refetch()} />}
       {data && data.length === 0 && (
         <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
           No communities yet{canCreate ? " — create the first one." : "."}

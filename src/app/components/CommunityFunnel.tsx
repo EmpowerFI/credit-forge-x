@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { platform } from "../lib/platform";
 import { money } from "../lib/readiness";
+import LoadError from "./LoadError";
 
 // A community's funnel and its cost to serve. Cost is counted from the
 // community's first day, not from disbursement: preparing people who may
@@ -55,6 +56,7 @@ export default function CommunityFunnel({ communityId, memberIds, coreModules }:
     },
   });
 
+  if (data.isError) return <LoadError compact error={data.error} onRetry={() => data.refetch()} />;
   if (!data.data) return null;
   const d = data.data;
   const educated = memberIds.filter((id) => coreModules.total > 0 && coreModules.completedBy(id) >= coreModules.total).length;

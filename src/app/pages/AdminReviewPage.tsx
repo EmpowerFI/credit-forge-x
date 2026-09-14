@@ -10,6 +10,7 @@ import { describeError } from "../lib/errors";
 import { KIND_LABEL, platform } from "../lib/platform";
 import { ELIGIBILITY_REASON, pseudonym } from "../lib/credit";
 import { money, PURPOSE_LABEL } from "../lib/readiness";
+import LoadError from "../components/LoadError";
 
 export default function AdminReviewPage() {
   const { profile } = useAuth();
@@ -80,6 +81,7 @@ export default function AdminReviewPage() {
       </div>
 
       {pending.isLoading && <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />}
+      {pending.isError && <LoadError error={pending.error} onRetry={() => pending.refetch()} />}
       {pending.data?.length === 0 && (
         <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
           Nothing to review.
@@ -131,6 +133,7 @@ export default function AdminReviewPage() {
           Requests the eligibility rules were not confident about, or that no partner covered yet. Review, then refer.
         </p>
       </div>
+      {flagged.isError && <LoadError compact error={flagged.error} onRetry={() => flagged.refetch()} />}
       {flagged.data?.length === 0 && (
         <p className="rounded-2xl border border-dashed border-border p-6 text-center text-muted-foreground">Nothing flagged.</p>
       )}

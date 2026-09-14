@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import LoadError from "../components/LoadError";
 import { ROLE_LABEL, type Role } from "../lib/platform";
 import { useAuth } from "./useAuth";
 
 /** Signed-in users only; with `roles`, only those roles. */
 export default function RequireAuth({ roles, children }: { roles?: Role[]; children: ReactNode }) {
-  const { session, profile, loading } = useAuth();
+  const { session, profile, loading, profileError, retryProfile } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -18,6 +19,13 @@ export default function RequireAuth({ roles, children }: { roles?: Role[]; child
   }
   if (!session) {
     return <Navigate to={`/app/login?next=${encodeURIComponent(location.pathname)}`} replace />;
+  }
+  if (!profile && profileError) {
+    return (
+      <div className="mx-auto max-w-lg py-16">
+        <LoadError error={profileError} onRetry={retryProfile} />
+      </div>
+    );
   }
   if (roles && (!profile || !roles.includes(profile.role))) {
     return (

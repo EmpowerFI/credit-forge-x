@@ -22,6 +22,7 @@ import {
 import { describeError } from "../lib/errors";
 import { platform } from "../lib/platform";
 import { money, PURPOSE_LABEL } from "../lib/readiness";
+import LoadError from "../components/LoadError";
 
 // The partner's desk. Opportunities arrive pseudonymous — a code, the request,
 // EmpowerFI's assessment, readiness indicators, the verified community and the
@@ -163,6 +164,9 @@ export default function PartnerPage() {
   });
 
   if (pipeline.isLoading || loans.isLoading) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
+  if (pipeline.isError || loans.isError) {
+    return <LoadError error={pipeline.error ?? loans.error} onRetry={() => { pipeline.refetch(); loans.refetch(); }} />;
+  }
 
   const waiting = pipeline.data?.filter((o) => o.status === "referred") ?? [];
   const decided = pipeline.data?.filter((o) => o.status !== "referred") ?? [];

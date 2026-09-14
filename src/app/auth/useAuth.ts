@@ -7,6 +7,9 @@ export interface AuthState {
   profile: Profile | null;
   /** True until the stored session has been read, and its profile loaded. */
   loading: boolean;
+  /** Set when the session is valid but the profile could not be loaded. */
+  profileError: unknown;
+  retryProfile: () => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }

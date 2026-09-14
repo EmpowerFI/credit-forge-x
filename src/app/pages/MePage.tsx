@@ -28,6 +28,7 @@ import {
   STATUS_LABEL,
   type CreditPurpose,
 } from "../lib/readiness";
+import LoadError from "../components/LoadError";
 
 type Credit = {
   eligibility: {
@@ -208,6 +209,9 @@ export default function MePage() {
   });
 
   if (me.isLoading || business.isLoading) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
+  if (me.isError || business.isError) {
+    return <LoadError error={me.error ?? business.error} onRetry={() => { me.refetch(); business.refetch(); }} />;
+  }
   if (!me.data) {
     return <p className="text-muted-foreground">This page is for entrepreneurs. Your account has no business on record.</p>;
   }

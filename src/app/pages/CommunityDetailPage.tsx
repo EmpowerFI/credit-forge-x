@@ -16,6 +16,7 @@ import StatusBadge from "../components/StatusBadge";
 import { useAuth } from "../auth/useAuth";
 import { describeError } from "../lib/errors";
 import { KIND_LABEL, platform } from "../lib/platform";
+import LoadError from "../components/LoadError";
 
 export default function CommunityDetailPage() {
   const { id = "" } = useParams();
@@ -122,6 +123,7 @@ export default function CommunityDetailPage() {
   });
 
   if (community.isLoading) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
+  if (community.isError) return <LoadError error={community.error} onRetry={() => community.refetch()} />;
   const c = community.data;
   if (!c) {
     return (
@@ -195,6 +197,7 @@ export default function CommunityDetailPage() {
       {canSeeMembers && (
         <section className="space-y-4">
           <h2 className="font-heading text-xl font-bold text-foreground">Members</h2>
+          {members.isError && <LoadError compact error={members.error} onRetry={() => members.refetch()} />}
           {members.data?.length === 0 && <p className="text-sm text-muted-foreground">No members yet.</p>}
           <ul className="divide-y divide-border rounded-2xl border border-border bg-background/60">
             {members.data?.map((m) => m.entrepreneur && (

@@ -21,7 +21,10 @@ import Unsubscribe from "./pages/Unsubscribe.tsx";
 // The restricted platform area, split out of the marketing bundle.
 const PlatformApp = lazy(() => import("./app/PlatformApp"));
 
-const queryClient = new QueryClient();
+// One retry: the Supabase client already retries a failed read three times,
+// and stacking TanStack's default three on top kept a spinner up for ~40 s
+// before a page could say what went wrong.
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1 } } });
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

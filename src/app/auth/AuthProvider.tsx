@@ -37,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     profile: profileQuery.data ?? null,
     loading: !sessionLoaded || (Boolean(userId) && profileQuery.isLoading),
+    profileError: profileQuery.error,
+    retryProfile: () => void profileQuery.refetch(),
     signIn: async (email, password) => {
       const { error } = await platform.auth.signInWithPassword({ email, password });
       return { error: error ? error.message : null };

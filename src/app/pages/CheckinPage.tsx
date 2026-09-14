@@ -13,6 +13,7 @@ import { requestAssessment } from "../lib/assessments";
 import { describeError } from "../lib/errors";
 import { platform } from "../lib/platform";
 import { money, monthLabel, STATUS_LABEL } from "../lib/readiness";
+import LoadError from "../components/LoadError";
 
 // The monthly check-in: a few numbers about the month, two to four minutes on
 // a phone. Sending it records the month, then asks for a fresh assessment.
@@ -82,6 +83,7 @@ export default function CheckinPage() {
   });
 
   if (me.isLoading) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
+  if (me.isError) return <LoadError error={me.error} onRetry={() => me.refetch()} />;
   if (!me.data) return <p className="text-muted-foreground">Check-ins are for entrepreneurs.</p>;
 
   const onSubmit = (e: FormEvent) => {

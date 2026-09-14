@@ -52,5 +52,10 @@ export function describeError(error: unknown): string {
     typeof error === "object" && error !== null && "message" in error
       ? String((error as { message: unknown }).message)
       : String(error);
-  return MESSAGES[message] ?? message;
+  if (MESSAGES[message]) return MESSAGES[message];
+  if (/failed to fetch|networkerror|load failed|fetch failed/i.test(message)) {
+    return "Cannot reach the platform right now. Check the connection and try again.";
+  }
+  if (/jwt expired|invalid jwt|refresh token/i.test(message)) return "Your session has expired. Sign in again.";
+  return message;
 }
