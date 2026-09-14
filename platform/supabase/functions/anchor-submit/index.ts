@@ -119,9 +119,20 @@ function secretMatches(given: string | null, expected: string): boolean {
  * other (a dependent job is only claimable once its dependency confirmed), so
  * a whole batch can be sent and then confirmed in one status query.
  */
+// A blockhash stays valid for about 150 slots (~60 s); reuse one for 20 s
+// instead of asking for a fresh one per transaction.
+let cachedBlockhash: { value: Parameters<typeof setTransactionMessageLifetimeUsingBlockhash>[0]; at: number } | undefined;
+async function latestBlockhash() {
+  if (!cachedBlockhash || Date.now() - cachedBlockhash.at > 20_000) {
+    const { value } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
+    cachedBlockhash = { value, at: Date.now() };
+  }
+  return cachedBlockhash.value;
+}
+
 async function send(instruction: Instruction): Promise<{ signature: string; slot: null }> {
   const signer = await getOperator();
-  const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
+  const blockhash = await latestBlockhash();
   const transaction = await signTransactionMessageWithSigners(
     pipe(
       createTransactionMessage({ version: 0 }),

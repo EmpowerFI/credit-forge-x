@@ -66,7 +66,13 @@ a different one is a mismatch and fails for good.
 One run at a time: `start_anchor_run` is a lease, and the dispatcher stays
 quiet while it is held. Parallel runs used to hit the public devnet RPC's rate
 limit (429); a run that meets one stops and hands back the jobs it had not
-reached (`release_anchor_jobs`).
+reached (`release_anchor_jobs`). Each claimed batch is sent whole and then
+confirmed in one status query, and a blockhash is reused for 20 s.
+
+Through Helius, a full seed's 700 anchors confirm in about nine minutes, all
+on the first attempt. Through the public RPC it took 16.5 minutes and hundreds
+of rate-limited retries. The browser's audit screen keeps using the public RPC:
+a key in the site's bundle would be visible to every visitor.
 
 ## Secrets, once per environment
 
@@ -76,7 +82,7 @@ Never committed. The operator key is the one in `~/empowerfi-hackathon-keys/`.
 |---|---|---|
 | Function secrets (`supabase secrets set --env-file`) | `OPERATOR_KEYPAIR` | the operator keypair JSON array |
 | | `ANCHOR_CRON_SECRET` | random, 32 bytes hex |
-| | `SOLANA_RPC_URL` | `https://api.devnet.solana.com` |
+| | `SOLANA_RPC_URL` | Helius devnet URL, from `~/empowerfi-hackathon-keys/helius-devnet-rpc.url` (it carries the API key). Falls back to the public devnet RPC if unset |
 | Vault (`select vault.create_secret(value, name)`) | `anchor_submit_url` | `<functions url>/anchor-submit` |
 | | `anchor_cron_secret` | same value as `ANCHOR_CRON_SECRET` |
 
