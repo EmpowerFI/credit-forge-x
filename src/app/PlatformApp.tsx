@@ -4,9 +4,12 @@ import AppLayout from "./AppLayout";
 import { AuthProvider } from "./auth/AuthProvider";
 import RequireAuth from "./auth/RequireAuth";
 import AdminReviewPage from "./pages/AdminReviewPage";
+import CheckinPage from "./pages/CheckinPage";
 import CommunitiesPage from "./pages/CommunitiesPage";
 import CommunityDetailPage from "./pages/CommunityDetailPage";
+import HomeRedirect from "./pages/HomeRedirect";
 import LoginPage from "./pages/LoginPage";
+import MePage from "./pages/MePage";
 import NewCommunityPage from "./pages/NewCommunityPage";
 
 // The Solana client is heavy and only the audit screen needs it in the browser.
@@ -33,7 +36,9 @@ export default function PlatformApp() {
       <Routes>
         <Route path="login" element={<LoginPage />} />
         <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
-          <Route index element={<Navigate to="community" replace />} />
+          <Route index element={<HomeRedirect />} />
+          <Route path="me" element={<MePage />} />
+          <Route path="check-in" element={<CheckinPage />} />
           <Route path="community" element={<CommunitiesPage />} />
           <Route path="community/new"
             element={<RequireAuth roles={["community_leader", "admin"]}><NewCommunityPage /></RequireAuth>} />

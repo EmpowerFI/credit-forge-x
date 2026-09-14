@@ -16,10 +16,17 @@ import {
 import {
   EMPOWERFI_AUDIT_PROGRAM_ADDRESS,
   fetchMaybeBorrowerAudit,
+  fetchMaybeCheckinCommitment,
   fetchMaybeCommunityAudit,
+  fetchMaybeReadinessAttestation,
+  findAttestationPda,
   findBorrowerPda,
+  findCheckinPda,
   findCommunityPda,
+  ReadinessBand,
+  ReadinessStatus,
 } from "@empowerfi/audit-client";
+import { evaluateReadiness, type ReadinessFeatures } from "@empowerfi/readiness-engine";
 import { describeError } from "../lib/errors";
 import { explorerAddress, explorerTx, platform } from "../lib/platform";
 
@@ -35,7 +42,15 @@ const KIND_TITLE: Record<AnchorKind, string> = {
   community: "Community registration",
   community_verification: "Community verification",
   enrollment: "Borrower enrollment",
+  checkin: "Monthly check-in",
+  readiness: "Readiness assessment",
 };
+
+const periodNumber = (period: unknown) => Number(String(period).replace("-", ""));
+
+// The fields an assessment row stores from the engine's result.
+const RESULT_FIELDS = ["model_version", "status", "band", "score", "components", "missing_requirements", "reason_codes"] as const;
+const sameJson = (a: unknown, b: unknown) => canonicalize(a as CanonicalObject) === canonicalize(b as CanonicalObject);
 
 interface AuditRecord {
   anchor: {
@@ -89,7 +104,48 @@ async function audit(kind: AnchorKind, entityId: string) {
   let onChain: Uint8Array | null = null;
   let owner: string | null = null;
 
-  if (kind === "enrollment") {
+  // The borrower account check-ins and assessments hang off, when this viewer
+  // may know which one it is.
+  const borrower = record.borrower_ref
+    ? (await findBorrowerPda({ borrowerRefHash: await hashBorrowerRef(fromHex(record.borrower_ref)) }))[0]
+    : null;
+
+  if (kind === "checkin") {
+    const found = await fetchMaybeCheckinCommitment(rpc, account);
+    if (found.exists) {
+      onChain = new Uint8Array(found.data.commitment);
+      owner = found.programAddress;
+      checks.push({ label: "The month on chain is the month on record", ok: found.data.period === periodNumber(payload.period) });
+      if (borrower) {
+        [expected] = await findCheckinPda({ borrower, period: periodNumber(payload.period) });
+        checks.push({ label: "Belongs to her borrower account", ok: found.data.borrower === borrower });
+      }
+    }
+  } else if (kind === "readiness") {
+    const found = await fetchMaybeReadinessAttestation(rpc, account);
+    if (found.exists) {
+      onChain = new Uint8Array(found.data.commitment);
+      owner = found.programAddress;
+      checks.push({
+        label: "Status and band on chain match the record",
+        ok:
+          ReadinessStatus[found.data.status] === { CREDIT_READY: "CreditReady", NEEDS_MORE_DATA: "NeedsMoreData",
+            NEEDS_PREPARATION: "NeedsPreparation", MANUAL_REVIEW: "ManualReview" }[String(payload.status)] &&
+          ReadinessBand[found.data.band] === { LOW: "Low", MEDIUM: "Medium", HIGH: "High" }[String(payload.band)],
+      });
+      if (borrower) {
+        [expected] = await findAttestationPda({ borrower, assessmentNo: Number(payload.assessment_no) });
+        checks.push({ label: "Belongs to her borrower account", ok: found.data.borrower === borrower });
+      }
+    }
+    // Deterministic and versioned, checked rather than claimed: run the same
+    // engine, here, on the features stored with the assessment.
+    const rerun = evaluateReadiness(payload.features as unknown as ReadinessFeatures);
+    checks.push({
+      label: `Re-running ${rerun.model_version} on the stored features gives the same result`,
+      ok: RESULT_FIELDS.every((f) => sameJson({ v: rerun[f] }, { v: payload[f] })),
+    });
+  } else if (kind === "enrollment") {
     const found = await fetchMaybeBorrowerAudit(rpc, account);
     if (found.exists) {
       onChain = new Uint8Array(found.data.enrollmentCommitment);
@@ -131,7 +187,7 @@ async function audit(kind: AnchorKind, entityId: string) {
       : {
           label: "Account address matches its derivation (PDA)",
           ok: null,
-          detail: kind === "enrollment" ? "needs the borrower ref — auditors and admins only" : "community ref unavailable",
+          detail: ["enrollment", "checkin", "readiness"].includes(kind) ? "needs the borrower ref — auditors and admins only" : "community ref unavailable",
         },
   );
 

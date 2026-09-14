@@ -18,6 +18,17 @@ const MESSAGES: Record<string, string> = {
   not_allowed_to_record_progress: "Only she, or a leader of her community, can record her progress.",
   module_not_found: "Module not found.",
   programme_not_open_to_her: "This programme belongs to another community.",
+  not_allowed_to_report: "Only she, or a leader of her community, can report her months.",
+  not_enrolled: "Check-ins start once you belong to a verified community.",
+  invalid_period: "That month is not valid.",
+  period_in_future: "That month has not happened yet.",
+  period_too_old: "Only the last twelve months can be reported.",
+  checkin_exists_for_period: "That month has already been reported.",
+  not_allowed_to_assess: "You cannot request this assessment.",
+  only_the_entrepreneur_declares_intent: "Only the entrepreneur herself can ask for credit.",
+  not_credit_ready: "A credit request comes after the business is ready.",
+  intent_already_active: "You already have an open request.",
+  no_active_intent: "There is no open request to withdraw.",
 };
 
 export function describeError(error: unknown): string {

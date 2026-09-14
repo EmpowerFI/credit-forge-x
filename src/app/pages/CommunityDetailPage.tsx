@@ -10,6 +10,7 @@ import MemberEducation from "../components/MemberEducation";
 import ProofStatus from "../components/ProofStatus";
 import { anchorsSettled } from "../lib/anchors";
 import { loadEducation } from "../lib/education";
+import { STATUS_LABEL } from "../lib/readiness";
 import StatusBadge from "../components/StatusBadge";
 import { useAuth } from "../auth/useAuth";
 import { describeError } from "../lib/errors";
@@ -64,6 +65,19 @@ export default function CommunityDetailPage() {
     queryKey: ["platform", "education", id, memberIds],
     enabled: members.isSuccess,
     queryFn: () => loadEducation(id, memberIds ?? []),
+  });
+
+  const readiness = useQuery({
+    queryKey: ["platform", "member-readiness", id, memberIds],
+    enabled: Boolean(memberIds?.length),
+    queryFn: async () => {
+      const { data, error } = await platform
+        .from("latest_readiness")
+        .select("entrepreneur_id, status, assessment_no")
+        .in("entrepreneur_id", memberIds!);
+      if (error) throw error;
+      return new Map(data.map((r) => [r.entrepreneur_id!, r]));
+    },
   });
 
   const recordModule = useMutation({
@@ -167,7 +181,17 @@ export default function CommunityDetailPage() {
             {members.data?.map((m) => m.entrepreneur && (
               <li key={m.entrepreneur.id} className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_16rem_25rem] lg:items-center lg:gap-6">
                 <div>
-                  <p className="font-medium text-foreground">{m.entrepreneur.display_name}</p>
+                  <p className="flex flex-wrap items-center gap-2 font-medium text-foreground">
+                    {m.entrepreneur.display_name}
+                    {(() => {
+                      const r = readiness.data?.get(m.entrepreneur.id);
+                      return r?.status ? (
+                        <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${STATUS_LABEL[r.status].tone}`}>
+                          {STATUS_LABEL[r.status].title}
+                        </span>
+                      ) : null;
+                    })()}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {[m.entrepreneur.business_name, m.entrepreneur.business_sector].filter(Boolean).join(" · ") || "—"}
                   </p>
