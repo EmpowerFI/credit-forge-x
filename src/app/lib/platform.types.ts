@@ -190,6 +190,125 @@ export type Database = {
           },
         ]
       }
+      education_modules: {
+        Row: {
+          created_at: string
+          estimated_minutes: number
+          id: string
+          position: number
+          program_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          estimated_minutes: number
+          id?: string
+          position: number
+          program_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          estimated_minutes?: number
+          id?: string
+          position?: number
+          program_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_modules_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "education_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      education_programs: {
+        Row: {
+          community_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_simulated: boolean
+          title: string
+        }
+        Insert: {
+          community_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_simulated?: boolean
+          title: string
+        }
+        Update: {
+          community_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_simulated?: boolean
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_programs_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      education_progress: {
+        Row: {
+          completed_at: string | null
+          entrepreneur_id: string
+          module_id: string
+          recorded_by: string | null
+          started_at: string
+          status: Database["public"]["Enums"]["education_status"]
+        }
+        Insert: {
+          completed_at?: string | null
+          entrepreneur_id: string
+          module_id: string
+          recorded_by?: string | null
+          started_at?: string
+          status: Database["public"]["Enums"]["education_status"]
+        }
+        Update: {
+          completed_at?: string | null
+          entrepreneur_id?: string
+          module_id?: string
+          recorded_by?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["education_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "education_progress_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "education_progress_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "education_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "education_progress_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entrepreneurs: {
         Row: {
           borrower_ref: string
@@ -369,10 +488,25 @@ export type Database = {
         Args: { p_error: string; p_id: number; p_retryable?: boolean }
         Returns: undefined
       }
+      finish_anchor_run: { Args: never; Returns: undefined }
+      record_education_progress: {
+        Args: {
+          p_entrepreneur_id: string
+          p_module_id: string
+          p_status: Database["public"]["Enums"]["education_status"]
+        }
+        Returns: undefined
+      }
       reject_community: {
         Args: { p_community_id: string; p_note: string }
         Returns: undefined
       }
+      release_anchor_jobs: {
+        Args: { p_delay_seconds?: number; p_ids: number[] }
+        Returns: undefined
+      }
+      reset_demo_data: { Args: { p_confirm: string }; Returns: Json }
+      start_anchor_run: { Args: { p_lease_seconds?: number }; Returns: boolean }
       verify_community: {
         Args: { p_community_id: string; p_note?: string }
         Returns: undefined
@@ -395,6 +529,7 @@ export type Database = {
         | "collective"
         | "other"
       community_status: "pending_verification" | "verified" | "rejected"
+      education_status: "in_progress" | "completed"
       membership_status: "active" | "left"
       partner_kind:
         | "credit_union"
@@ -549,6 +684,7 @@ export const Constants = {
         "other",
       ],
       community_status: ["pending_verification", "verified", "rejected"],
+      education_status: ["in_progress", "completed"],
       membership_status: ["active", "left"],
       partner_kind: [
         "credit_union",

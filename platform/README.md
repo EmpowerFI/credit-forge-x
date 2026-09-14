@@ -27,6 +27,23 @@ npm run platform:sync-shared                      # after changing packages/audi
 
 Local ports are 553xx so this stack runs beside the mobile app's (543xx).
 
+## Demo data
+
+```sh
+# service key into a mode-600 file, never on a command line
+npx supabase projects api-keys --project-ref yuxrujoghizcfdmbkqfg --reveal -o json  # take the "secret" key
+PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo-accounts.mts        # accounts + partner
+PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo-v1.mts --yes       # scenario
+```
+
+`seed-demo-v1` resets the scenario (`reset_demo_data`) and rebuilds it
+deterministically: 4 verified communities, 100 participants (Maria Oliveira,
+`maria@demo`, among them), education progress, and 108 anchors that the
+pipeline writes to devnet in about four minutes. Everything is `is_simulated`.
+
+Demo logins, all with password `EmpowerFI-demo-2026`: `admin@`, `leader@`,
+`maria@`, `partner@`, `investor@`, `auditor@demo.empowerfi.io`.
+
 ## The anchoring pipeline
 
 ```
@@ -40,6 +57,11 @@ anchor-submit      →  claim_anchor_jobs → commitment → send → confirm
 Before sending, anchor-submit looks the account up on chain: the same
 commitment means a previous run already wrote it (the signature is recovered);
 a different one is a mismatch and fails for good.
+
+One run at a time: `start_anchor_run` is a lease, and the dispatcher stays
+quiet while it is held. Parallel runs used to hit the public devnet RPC's rate
+limit (429); a run that meets one stops and hands back the jobs it had not
+reached (`release_anchor_jobs`).
 
 ## Secrets, once per environment
 

@@ -15,6 +15,9 @@ const MESSAGES: Record<string, string> = {
   already_a_member: "She is already a member of this community.",
   not_allowed_to_audit: "You do not have access to this proof.",
   anchor_not_found: "There is no proof recorded for this yet.",
+  not_allowed_to_record_progress: "Only she, or a leader of her community, can record her progress.",
+  module_not_found: "Module not found.",
+  programme_not_open_to_her: "This programme belongs to another community.",
 };
 
 export function describeError(error: unknown): string {

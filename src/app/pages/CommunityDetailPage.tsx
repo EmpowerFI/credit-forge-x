@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import MemberEducation from "../components/MemberEducation";
 import ProofStatus from "../components/ProofStatus";
 import { anchorsSettled } from "../lib/anchors";
+import { loadEducation } from "../lib/education";
 import StatusBadge from "../components/StatusBadge";
 import { useAuth } from "../auth/useAuth";
 import { describeError } from "../lib/errors";
@@ -56,6 +58,25 @@ export default function CommunityDetailPage() {
       return data;
     },
     refetchInterval: (q) => (anchorsSettled(q.state.data) ? false : 4000),
+  });
+
+  const education = useQuery({
+    queryKey: ["platform", "education", id, memberIds],
+    enabled: members.isSuccess,
+    queryFn: () => loadEducation(id, memberIds ?? []),
+  });
+
+  const recordModule = useMutation({
+    mutationFn: async ({ entrepreneurId, moduleId }: { entrepreneurId: string; moduleId: string }) => {
+      const { error } = await platform.rpc("record_education_progress", {
+        p_entrepreneur_id: entrepreneurId,
+        p_module_id: moduleId,
+        p_status: "completed",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["platform", "education", id] }),
+    onError: (error) => toast.error(describeError(error)),
   });
 
   const anchorFor = (kind: string, entityId: string) =>
@@ -144,14 +165,28 @@ export default function CommunityDetailPage() {
           {members.data?.length === 0 && <p className="text-sm text-muted-foreground">No members yet.</p>}
           <ul className="divide-y divide-border rounded-2xl border border-border bg-background/60">
             {members.data?.map((m) => m.entrepreneur && (
-              <li key={m.entrepreneur.id} className="grid gap-1 px-4 py-3 md:grid-cols-[1fr_auto] md:items-center md:gap-6">
+              <li key={m.entrepreneur.id} className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_16rem_25rem] lg:items-center lg:gap-6">
                 <div>
                   <p className="font-medium text-foreground">{m.entrepreneur.display_name}</p>
                   <p className="text-xs text-muted-foreground">
                     {[m.entrepreneur.business_name, m.entrepreneur.business_sector].filter(Boolean).join(" · ") || "—"}
                   </p>
                 </div>
-                <div className="min-w-[16rem]">
+                {education.data ? (
+                  <MemberEducation
+                    programmes={education.data.programmes}
+                    completed={education.data.completed.get(m.entrepreneur.id)}
+                    busy={recordModule.isPending && recordModule.variables?.entrepreneurId === m.entrepreneur.id}
+                    onCompleteNext={
+                      leads || profile?.role === "admin"
+                        ? (moduleId) => recordModule.mutate({ entrepreneurId: m.entrepreneur!.id, moduleId })
+                        : undefined
+                    }
+                  />
+                ) : (
+                  <span />
+                )}
+                <div>
                   <ProofStatus label="Borrower ref" anchor={anchorFor("enrollment", m.entrepreneur.id)} />
                 </div>
               </li>

@@ -126,14 +126,15 @@ async function send(instruction: Instruction): Promise<{ signature: string; slot
 
   // Poll rather than subscribe: a websocket is one more thing to fail inside
   // a short-lived function, and devnet confirms in a few seconds.
-  for (let i = 0; i < 45; i++) {
+  await sleep(1_000);
+  for (let i = 0; i < 30; i++) {
     const { value } = await rpc.getSignatureStatuses([signature]).send();
     const status = value[0];
     if (status?.err) throw new Error(`transaction failed: ${JSON.stringify(status.err)}`);
     if (status?.confirmationStatus === "confirmed" || status?.confirmationStatus === "finalized") {
       return { signature, slot: Number(status.slot) };
     }
-    await sleep(1_000);
+    await sleep(1_500);
   }
   throw new Error(`not confirmed in time: ${signature}`);
 }
@@ -149,6 +150,9 @@ async function recoverSignature(
   if (!entry) throw new Error(`account ${account} exists but has no successful signature`);
   return { signature: entry.signature, slot: Number(entry.slot) };
 }
+
+/** The RPC is rate-limiting us: stop this run and let the next one continue. */
+const isRateLimited = (message: string) => message.includes("429");
 
 const mismatch = (what: string, account: Address) =>
   new PermanentError(`${what} on chain differs from the database (account ${account})`);
@@ -233,7 +237,13 @@ async function runJob(job: Job) {
     const message = err instanceof Error ? err.message : String(err);
     const retryable = !(err instanceof PermanentError);
     await db.rpc("fail_anchor_job", { p_id: job.id, p_error: message, p_retryable: retryable });
-    return { id: job.id, kind: job.kind, outcome: retryable ? "retry" : "failed", error: message };
+    return {
+      id: job.id,
+      kind: job.kind,
+      outcome: retryable ? "retry" : "failed",
+      error: message,
+      rateLimited: isRateLimited(message),
+    };
   }
 }
 
@@ -243,19 +253,40 @@ Deno.serve(async (req) => {
     return new Response("unauthorized", { status: 401 });
   }
 
+  // One run at a time (start_anchor_run is a lease): parallel runs multiply
+  // the requests to the devnet RPC and draw 429s.
+  const { data: acquired, error: leaseError } = await db.rpc("start_anchor_run", {
+    p_lease_seconds: Math.ceil(TIME_BUDGET_MS / 1000) + 50,
+  });
+  if (leaseError) return Response.json({ error: `lease failed: ${leaseError.message}` }, { status: 500 });
+  if (!acquired) return Response.json({ skipped: "another run is in progress" });
+
   const started = Date.now();
-  const results = [];
-  // Several rounds per call, so a registration and the verification waiting
-  // on it can both land in one run instead of one per cron tick.
-  while (Date.now() - started < TIME_BUDGET_MS) {
-    const { data: jobs, error } = await db.rpc("claim_anchor_jobs", { p_limit: BATCH });
-    if (error) {
-      return Response.json({ error: `claim failed: ${error.message}`, results }, { status: 500 });
+  const results: Awaited<ReturnType<typeof runJob>>[] = [];
+  try {
+    // Several rounds per call, so a registration and the verification waiting
+    // on it can both land in one run instead of one per cron tick.
+    rounds: while (Date.now() - started < TIME_BUDGET_MS) {
+      const { data: jobs, error } = await db.rpc("claim_anchor_jobs", { p_limit: BATCH });
+      if (error) {
+        return Response.json({ error: `claim failed: ${error.message}`, results }, { status: 500 });
+      }
+      if (!jobs?.length) break;
+      // Sequential: every transaction is signed by the same operator.
+      const batch = jobs as Job[];
+      for (const [i, job] of batch.entries()) {
+        const result = await runJob(job);
+        results.push(result);
+        // Rate-limited: stop here, and hand back what this batch did not reach.
+        if ("rateLimited" in result && result.rateLimited) {
+          const untouched = batch.slice(i + 1).map((j) => j.id);
+          if (untouched.length) await db.rpc("release_anchor_jobs", { p_ids: untouched });
+          break rounds;
+        }
+      }
     }
-    if (!jobs?.length) break;
-    // Sequential: every transaction is signed by the same operator, and devnet
-    // rate-limits bursts from one client.
-    for (const job of jobs as Job[]) results.push(await runJob(job));
+  } finally {
+    await db.rpc("finish_anchor_run");
   }
 
   return Response.json({ processed: results.length, results });
