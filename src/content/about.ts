@@ -356,8 +356,8 @@ export const aboutPt: AboutContent = {
       name: "Daniele Rodrigues dos Santos",
       role: "Fundadora & CEO",
       paragraphs: [
-        "Daniele Rodrigues dos Santos é Engenheira da Computação formada pela Unicamp, com mais de 20 anos de experiência em tecnologia: delivery, Big Data e machine learning, produto, marketing e infraestrutura.",
-        "Construiu sua carreira em grandes empresas de tecnologia, como a Capgemini e a Dell Technologies, e complementou a formação na FIA Business School. Fundou a EmpowerFI para conectar capital produtivo, dados e impacto econômico.",
+        "Daniele Rodrigues dos Santos é Engenheira da Computação formada pela Unicamp, com MBA em Big Data & Analytics e pós-graduação em Marketing pela FIA Business School. São mais de 20 anos de experiência em tecnologia: delivery, Big Data e machine learning, produto, marketing e infraestrutura.",
+        "Construiu sua carreira em grandes empresas de tecnologia, como a Capgemini e a Dell Technologies, e fundou a EmpowerFI para conectar capital produtivo, dados e impacto econômico.",
       ],
       facts: [
         { label: "Formação", items: ["Unicamp", "FIA Business School"] },
@@ -376,7 +376,7 @@ export const aboutPt: AboutContent = {
           name: "Roberta Stock de Oliveira",
           title: "Conselheira",
           focus: "Gestão & educação financeira",
-          bio: "Mais de 20 anos no mercado financeiro, de grandes instituições a projetos de impacto social e cultural. No Protagonismo Cidadão, une gestão financeira estratégica, grandes eventos e redes de relacionamento, como no Fórum Brasil de Turismo Cultural.",
+          bio: "Mais de 20 anos no mercado financeiro, de grandes instituições a projetos de impacto social e cultural. No Protagonismo Mulher, une gestão financeira estratégica, grandes eventos e redes de relacionamento, como no Fórum Brasil de Turismo Cultural.",
           tags: ["Educação financeira", "Impacto"],
           photo: advisorRoberta,
           photoAlt: "Roberta Stock de Oliveira, conselheira da EmpowerFI",
@@ -682,8 +682,8 @@ export const aboutEn: AboutContent = {
       name: "Daniele Rodrigues dos Santos",
       role: "Founder & CEO",
       paragraphs: [
-        "Daniele Rodrigues dos Santos holds a Computer Engineering degree from Unicamp and has more than 20 years in technology: delivery, big data and machine learning, product, marketing and infrastructure.",
-        "She built her career at major technology companies, including Capgemini and Dell Technologies, and furthered her education at FIA Business School. She founded EmpowerFI to connect productive capital, data and economic impact.",
+        "Daniele Rodrigues dos Santos holds a Computer Engineering degree from Unicamp, and an MBA in Big Data & Analytics and a postgraduate degree in Marketing from FIA Business School. She has more than 20 years in technology: delivery, big data and machine learning, product, marketing and infrastructure.",
+        "She built her career at major technology companies, including Capgemini and Dell Technologies, and founded EmpowerFI to connect productive capital, data and economic impact.",
       ],
       facts: [
         { label: "Education", items: ["Unicamp", "FIA Business School"] },
@@ -702,7 +702,7 @@ export const aboutEn: AboutContent = {
           name: "Roberta Stock de Oliveira",
           title: "Advisor",
           focus: "Financial management & education",
-          bio: "More than 20 years in the financial market, from major institutions to social and cultural impact projects. At Protagonismo Cidadão she brings together strategic financial management, large-scale events and relationship networks, as at the Fórum Brasil de Turismo Cultural.",
+          bio: "More than 20 years in the financial market, from major institutions to social and cultural impact projects. At Protagonismo Mulher she brings together strategic financial management, large-scale events and relationship networks, as at the Fórum Brasil de Turismo Cultural.",
           tags: ["Financial education", "Impact"],
           photo: advisorRoberta,
           photoAlt: "Roberta Stock de Oliveira, EmpowerFI advisor",
