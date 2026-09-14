@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -16,6 +17,9 @@ import PrivacyPt from "./pages/PrivacyPt.tsx";
 import Terms from "./pages/Terms.tsx";
 import TermsPt from "./pages/TermsPt.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
+
+// The restricted platform area, split out of the marketing bundle.
+const PlatformApp = lazy(() => import("./app/PlatformApp"));
 
 const queryClient = new QueryClient();
 
@@ -53,6 +57,16 @@ const App = () => (
           <Route path="/en/terms" element={<Navigate to="/terms" replace />} />
 
           <Route path="/unsubscribe" element={<Unsubscribe />} />
+
+          {/* Hackathon platform: login-restricted, its own Supabase project. */}
+          <Route
+            path="/app/*"
+            element={
+              <Suspense fallback={null}>
+                <PlatformApp />
+              </Suspense>
+            }
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

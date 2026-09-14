@@ -13,6 +13,11 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  // @solana/kit reads process.env.NODE_ENV to pick its dev checks; the browser
+  // has no `process`, so give it the value at build time.
+  define: {
+    "process.env.NODE_ENV": JSON.stringify(mode === "production" ? "production" : "development"),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

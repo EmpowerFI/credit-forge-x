@@ -28,6 +28,19 @@ export const DOMAINS = {
 
 export type Domain = (typeof DOMAINS)[keyof typeof DOMAINS];
 
+/**
+ * The domain each kind of anchor (public.anchor_kind) commits under. One table
+ * for the Edge Function that writes and the browser that audits, so the two
+ * cannot pick different tags for the same fact.
+ */
+export const ANCHOR_DOMAINS = {
+  community: DOMAINS.COMMUNITY,
+  community_verification: DOMAINS.COMMUNITY_VERIFICATION,
+  enrollment: DOMAINS.ENROLLMENT,
+} as const satisfies Record<string, Domain>;
+
+export type AnchorKind = keyof typeof ANCHOR_DOMAINS;
+
 export type CanonicalValue =
   | null
   | boolean

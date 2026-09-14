@@ -13,7 +13,7 @@ select set_config(
   true
 );
 
-select plan(40);
+select plan(42);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -26,7 +26,8 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000e', 'auditor@test', '{"display_name":"Aud"}');
 
 select is(
-  (select count(*)::int from profiles where role = 'entrepreneur'), 5,
+  (select count(*)::int from profiles
+   where role = 'entrepreneur' and id::text like '00000000-0000-0000-0000-00000000000_'), 5,
   'every new user gets an entrepreneur profile'
 );
 select is(
@@ -71,19 +72,19 @@ set local role postgres;
 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000b');
 select lives_ok(
-  $$ select create_community('Mulheres do Grajaú', 'education_programme', ' São Paulo ', 'sp', 'Cohort 1') $$,
+  $$ select create_community('pgTAP Grajaú', 'education_programme', ' São Paulo ', 'sp', 'Cohort 1') $$,
   'a leader creates a community'
 );
 select lives_ok(
-  $$ select create_community('Coletivo Pendente', 'collective', 'Recife', 'PE') $$,
+  $$ select create_community('pgTAP Pendente', 'collective', 'Recife', 'PE') $$,
   'and a second one that will stay pending'
 );
 set local role postgres;
 
 create temp table ids as
 select
-  (select id from communities where name = 'Mulheres do Grajaú') as grajau,
-  (select id from communities where name = 'Coletivo Pendente') as pendente;
+  (select id from communities where name = 'pgTAP Grajaú') as grajau,
+  (select id from communities where name = 'pgTAP Pendente') as pendente;
 grant select on ids to authenticated;
 
 select results_eq(
@@ -118,11 +119,11 @@ select throws_ok(
   'P0001', 'community_already_reviewed', 'once'
 );
 select lives_ok(
-  $$ select create_community('Admin Own', 'other', 'Salvador', 'BA') $$,
+  $$ select create_community('pgTAP Admin Own', 'other', 'Salvador', 'BA') $$,
   'an admin can also lead a community'
 );
 select throws_ok(
-  $$ select verify_community((select id from communities where name = 'Admin Own')) $$,
+  $$ select verify_community((select id from communities where name = 'pgTAP Admin Own')) $$,
   '42501', 'cannot_verify_own_community', 'but cannot verify one she leads'
 );
 select throws_ok(
@@ -156,12 +157,12 @@ select throws_ok(
   '22023', 'entrepreneur_needs_a_name', 'a new entrepreneur needs a name'
 );
 select lives_ok(
-  $$ select enroll_entrepreneur((select grajau from ids), 'Joana Costa', 'Doces da Jô', 'food', 'São Paulo', 'SP') $$,
+  $$ select enroll_entrepreneur((select grajau from ids), 'pgTAP Joana', 'Doces da Jô', 'food', 'São Paulo', 'SP') $$,
   'the leader enrolls an entrepreneur in her verified community'
 );
 set local role postgres;
 
-create temp table joana as select id from entrepreneurs where display_name = 'Joana Costa';
+create temp table joana as select id from entrepreneurs where display_name = 'pgTAP Joana';
 grant select on joana to authenticated;
 
 select is(
@@ -198,7 +199,7 @@ select throws_ok(
 select is((select count(*)::int from entrepreneurs), 0, 'an outsider sees no entrepreneurs');
 select is((select count(*)::int from chain_anchors), 0, 'and no proofs');
 select is(
-  (select array_agg(name order by name) from communities), array['Mulheres do Grajaú'],
+  (select array_agg(name order by name) from communities where name like 'pgTAP %'), array['pgTAP Grajaú'],
   'and only verified communities'
 );
 select throws_ok(
@@ -210,10 +211,24 @@ set local role postgres;
 -- -------------------------------------------------------------------- audit
 
 select pg_temp.act_as('00000000-0000-0000-0000-00000000000e');
-select is((select count(*)::int from chain_anchors), 5, 'an auditor sees every proof');
+select is(
+  (select count(*)::int from chain_anchors
+   where entity_id in (select id from communities where name like 'pgTAP %') or entity_id = (select id from joana)),
+  5, 'an auditor sees every proof'
+);
 select is(
   length(audit_record('enrollment', (select id from joana)) ->> 'borrower_ref'), 64,
   'and gets the borrower ref, to recompute the account seed'
+);
+select is(
+  audit_record('community_verification', (select grajau from ids)) ->> 'community_ref',
+  (select encode(chain_ref, 'hex') from communities where id = (select grajau from ids)),
+  'every audit record carries the community ref its accounts derive from'
+);
+select is(
+  audit_record('enrollment', (select id from joana)) ->> 'community_ref',
+  (select encode(chain_ref, 'hex') from communities where id = (select grajau from ids)),
+  'for an enrollment, the community she joined'
 );
 set local role postgres;
 

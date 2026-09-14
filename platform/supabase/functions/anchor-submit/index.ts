@@ -35,9 +35,10 @@ import {
   signTransactionMessageWithSigners,
 } from "@solana/kit";
 import {
+  ANCHOR_DOMAINS,
+  type AnchorKind,
   type CanonicalObject,
   commit,
-  DOMAINS,
   fromHex,
   hashBorrowerRef,
   sameCommitment,
@@ -54,11 +55,9 @@ import {
   getVerifyCommunityInstructionAsync,
 } from "../_shared/audit-client/index.ts";
 
-type Kind = "community" | "community_verification" | "enrollment";
-
 interface Job {
   id: number;
-  kind: Kind;
+  kind: AnchorKind;
   entity_id: string;
   attempts: number;
   payload: CanonicalObject | null;
@@ -76,12 +75,6 @@ interface Proof {
 
 /** A failure retrying cannot fix. */
 class PermanentError extends Error {}
-
-const DOMAIN: Record<Kind, (typeof DOMAINS)[keyof typeof DOMAINS]> = {
-  community: DOMAINS.COMMUNITY,
-  community_verification: DOMAINS.COMMUNITY_VERIFICATION,
-  enrollment: DOMAINS.ENROLLMENT,
-};
 
 const BATCH = 5;
 const TIME_BUDGET_MS = 40_000;
@@ -166,7 +159,7 @@ async function anchor(job: Job): Promise<Proof> {
   if (!job.payload) throw new PermanentError("no payload: the record is missing or not in an anchorable state");
   if (!job.community_ref) throw new PermanentError("no community ref for this job");
 
-  const commitment = await commit(DOMAIN[job.kind], job.payload);
+  const commitment = await commit(ANCHOR_DOMAINS[job.kind], job.payload);
   const communityRef = fromHex(job.community_ref);
   const [community] = await findCommunityPda({ communityRef });
   const signer = await getOperator();
