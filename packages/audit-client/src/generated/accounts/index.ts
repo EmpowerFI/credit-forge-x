@@ -10,6 +10,7 @@ export * from "./allocationCommitment.ts";
 export * from "./borrowerAudit.ts";
 export * from "./checkinCommitment.ts";
 export * from "./communityAudit.ts";
+export * from "./consentCommitment.ts";
 export * from "./eligibilityAttestation.ts";
 export * from "./loanAccount.ts";
 export * from "./opportunityCommitment.ts";

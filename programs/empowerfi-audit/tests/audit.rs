@@ -8,9 +8,10 @@ use {
     },
     empowerfi_audit::{
         error::AuditError, AllocationCommitment, BorrowerAudit, CheckinCommitment, CommunityAudit, CommunityStatus,
-        EligibilityAttestation, EligibilityDecision, Grade, LoanAccount, LoanStatus,
+        ConsentCommitment, EligibilityAttestation, EligibilityDecision, Grade, LoanAccount, LoanStatus,
         OpportunityCommitment, OutcomeCommitment, PaymentCommitment, PlatformConfig, ReadinessAttestation,
         ReadinessBand, ReadinessStatus, ALLOCATION_SEED, BORROWER_SEED, CHECKIN_SEED, COMMUNITY_SEED, CONFIG_SEED,
+        CONSENT_SEED,
         ELIGIBILITY_SEED, LOAN_SEED, OPPORTUNITY_SEED, OUTCOME_SEED, PAYMENT_SEED, READINESS_SEED,
         SCHEMA_VERSION,
     },
@@ -613,6 +614,115 @@ fn a_checkin_needs_a_valid_period_and_the_operator() {
         &[&intruder],
     );
     assert_custom_error(res, AuditError::UnauthorizedOperator);
+}
+
+// ------------------------------------------------------------------ consent
+
+fn consent_pda(borrower: &Pubkey, consent_no: u32) -> Pubkey {
+    Pubkey::find_program_address(
+        &[CONSENT_SEED, borrower.as_ref(), &consent_no.to_le_bytes()],
+        &empowerfi_audit::ID,
+    )
+    .0
+}
+
+fn anchor_consent_ix(
+    operator: &Pubkey,
+    borrower: &Pubkey,
+    consent_no: u32,
+    commitment: [u8; 32],
+) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::AnchorConsent {
+            consent_no,
+            commitment,
+        }
+        .data(),
+        empowerfi_audit::accounts::AnchorConsent {
+            operator: *operator,
+            config: config_pda(),
+            borrower: *borrower,
+            consent: consent_pda(borrower, consent_no),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+#[test]
+fn each_consent_record_is_anchored_once_and_never_replaced() {
+    let mut env = initialized();
+    let borrower = registered_borrower(&mut env);
+    let op = env.operator.insecure_clone();
+
+    send(
+        &mut env.svm,
+        anchor_consent_ix(&op.pubkey(), &borrower, 1, [21; 32]),
+        &[&op],
+    )
+    .unwrap();
+    let consent: ConsentCommitment = fetch(&env.svm, &consent_pda(&borrower, 1));
+    assert_eq!(consent.borrower, borrower);
+    assert_eq!(consent.consent_no, 1);
+    assert_eq!(consent.commitment, [21; 32]);
+    assert_eq!(consent.recorded_at, NOW);
+    assert_eq!(consent.schema_version, SCHEMA_VERSION);
+
+    // What she agreed to cannot be rewritten: record 1 is refused a second time.
+    let res = send(
+        &mut env.svm,
+        anchor_consent_ix(&op.pubkey(), &borrower, 1, [22; 32]),
+        &[&op],
+    );
+    assert!(res.is_err());
+    let consent: ConsentCommitment = fetch(&env.svm, &consent_pda(&borrower, 1));
+    assert_eq!(consent.commitment, [21; 32], "the first record must survive");
+
+    // A change of mind is the next record.
+    send(
+        &mut env.svm,
+        anchor_consent_ix(&op.pubkey(), &borrower, 2, [22; 32]),
+        &[&op],
+    )
+    .unwrap();
+}
+
+#[test]
+fn consent_needs_a_number_a_commitment_the_operator_and_a_borrower() {
+    let mut env = initialized();
+    let borrower = registered_borrower(&mut env);
+    let op = env.operator.insecure_clone();
+
+    let res = send(
+        &mut env.svm,
+        anchor_consent_ix(&op.pubkey(), &borrower, 0, [21; 32]),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::InvalidConsentNumber);
+    let res = send(
+        &mut env.svm,
+        anchor_consent_ix(&op.pubkey(), &borrower, 1, [0; 32]),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::ZeroCommitment);
+
+    let intruder = Keypair::new();
+    env.svm.airdrop(&intruder.pubkey(), 1_000_000_000).unwrap();
+    let res = send(
+        &mut env.svm,
+        anchor_consent_ix(&intruder.pubkey(), &borrower, 1, [21; 32]),
+        &[&intruder],
+    );
+    assert_custom_error(res, AuditError::UnauthorizedOperator);
+
+    // Nobody unregistered gives consent.
+    let res = send(
+        &mut env.svm,
+        anchor_consent_ix(&op.pubkey(), &borrower_pda(&[99; 32]), 1, [21; 32]),
+        &[&op],
+    );
+    assert!(res.is_err());
 }
 
 #[test]

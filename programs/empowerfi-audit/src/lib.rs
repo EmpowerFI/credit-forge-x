@@ -154,4 +154,14 @@ pub mod empowerfi_audit {
     ) -> Result<()> {
         anchor_outcome::handler(ctx, outcome_no, commitment)
     }
+
+    /// Commits one consent record of a registered borrower. Each change of
+    /// mind is the next record; none is ever overwritten.
+    pub fn anchor_consent(
+        ctx: Context<AnchorConsent>,
+        consent_no: u32,
+        commitment: [u8; 32],
+    ) -> Result<()> {
+        anchor_consent::handler(ctx, consent_no, commitment)
+    }
 }

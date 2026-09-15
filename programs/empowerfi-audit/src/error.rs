@@ -38,4 +38,6 @@ pub enum AuditError {
     ZeroAmount,
     #[msg("The mint account is not an SPL mint")]
     NotAMint,
+    #[msg("Consent records are numbered from 1")]
+    InvalidConsentNumber,
 }

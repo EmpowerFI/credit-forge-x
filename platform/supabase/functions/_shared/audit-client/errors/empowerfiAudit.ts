@@ -50,11 +50,14 @@ export const EMPOWERFI_AUDIT_ERROR__INVALID_OUTCOME_NUMBER = 0x177f; // 6015
 export const EMPOWERFI_AUDIT_ERROR__ZERO_AMOUNT = 0x1780; // 6016
 /** NotAMint: The mint account is not an SPL mint */
 export const EMPOWERFI_AUDIT_ERROR__NOT_A_MINT = 0x1781; // 6017
+/** InvalidConsentNumber: Consent records are numbered from 1 */
+export const EMPOWERFI_AUDIT_ERROR__INVALID_CONSENT_NUMBER = 0x1782; // 6018
 
 export type EmpowerfiAuditError =
   | typeof EMPOWERFI_AUDIT_ERROR__COMMUNITY_ALREADY_VERIFIED
   | typeof EMPOWERFI_AUDIT_ERROR__COMMUNITY_NOT_VERIFIED
   | typeof EMPOWERFI_AUDIT_ERROR__INVALID_ASSESSMENT_NUMBER
+  | typeof EMPOWERFI_AUDIT_ERROR__INVALID_CONSENT_NUMBER
   | typeof EMPOWERFI_AUDIT_ERROR__INVALID_INSTALMENT_NUMBER
   | typeof EMPOWERFI_AUDIT_ERROR__INVALID_LOAN_TRANSITION
   | typeof EMPOWERFI_AUDIT_ERROR__INVALID_OUTCOME_NUMBER
@@ -78,6 +81,7 @@ if (process.env["NODE_ENV"] !== "production") {
     [EMPOWERFI_AUDIT_ERROR__COMMUNITY_ALREADY_VERIFIED]: `Community is already verified`,
     [EMPOWERFI_AUDIT_ERROR__COMMUNITY_NOT_VERIFIED]: `Community must be verified before borrowers are registered in it`,
     [EMPOWERFI_AUDIT_ERROR__INVALID_ASSESSMENT_NUMBER]: `Assessments are numbered from 1`,
+    [EMPOWERFI_AUDIT_ERROR__INVALID_CONSENT_NUMBER]: `Consent records are numbered from 1`,
     [EMPOWERFI_AUDIT_ERROR__INVALID_INSTALMENT_NUMBER]: `Instalments are numbered from 1`,
     [EMPOWERFI_AUDIT_ERROR__INVALID_LOAN_TRANSITION]: `That loan status change is not allowed`,
     [EMPOWERFI_AUDIT_ERROR__INVALID_OUTCOME_NUMBER]: `Outcome measurements are numbered from 1`,

@@ -6,6 +6,7 @@
 
 pub mod anchor_allocation;
 pub mod anchor_checkin;
+pub mod anchor_consent;
 pub mod anchor_opportunity;
 pub mod anchor_outcome;
 pub mod anchor_payment;
@@ -22,6 +23,7 @@ pub mod verify_community;
 
 pub use anchor_allocation::*;
 pub use anchor_checkin::*;
+pub use anchor_consent::*;
 pub use anchor_opportunity::*;
 pub use anchor_outcome::*;
 pub use anchor_payment::*;

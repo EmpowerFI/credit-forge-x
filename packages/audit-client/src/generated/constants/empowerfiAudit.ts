@@ -28,6 +28,10 @@ export const CONFIG_SEED: ReadonlyUint8Array = new Uint8Array([
   99, 111, 110, 102, 105, 103,
 ]);
 
+export const CONSENT_SEED: ReadonlyUint8Array = new Uint8Array([
+  99, 111, 110, 115, 101, 110, 116,
+]);
+
 export const ELIGIBILITY_SEED: ReadonlyUint8Array = new Uint8Array([
   101, 108, 105, 103, 105, 98, 105, 108, 105, 116, 121,
 ]);

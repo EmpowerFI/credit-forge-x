@@ -24,9 +24,11 @@ import { createSolanaRpc, type Address } from "@solana/kit";
 import {
   EMPOWERFI_AUDIT_PROGRAM_ADDRESS,
   EmpowerfiAuditAccount,
+  getAllocationCommitmentDecoder,
   getBorrowerAuditDecoder,
   getCheckinCommitmentDecoder,
   getCommunityAuditDecoder,
+  getConsentCommitmentDecoder,
   getEligibilityAttestationDecoder,
   getLoanAccountDecoder,
   getOpportunityCommitmentDecoder,
@@ -54,6 +56,8 @@ const DECODERS = {
   [EmpowerfiAuditAccount.LoanAccount]: getLoanAccountDecoder(),
   [EmpowerfiAuditAccount.PaymentCommitment]: getPaymentCommitmentDecoder(),
   [EmpowerfiAuditAccount.OutcomeCommitment]: getOutcomeCommitmentDecoder(),
+  [EmpowerfiAuditAccount.AllocationCommitment]: getAllocationCommitmentDecoder(),
+  [EmpowerfiAuditAccount.ConsentCommitment]: getConsentCommitmentDecoder(),
 } as const;
 
 // ------------------------------------------------------------------ needles

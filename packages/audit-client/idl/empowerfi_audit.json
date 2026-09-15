@@ -220,6 +220,123 @@
       ]
     },
     {
+      "name": "anchor_consent",
+      "docs": [
+        "Commits one consent record of a registered borrower. Each change of",
+        "mind is the next record; none is ever overwritten."
+      ],
+      "discriminator": [
+        184,
+        226,
+        221,
+        184,
+        204,
+        187,
+        242,
+        37
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "borrower",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  111,
+                  114,
+                  114,
+                  111,
+                  119,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "borrower.borrower_ref_hash",
+                "account": "BorrowerAudit"
+              }
+            ]
+          }
+        },
+        {
+          "name": "consent",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  115,
+                  101,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "borrower"
+              },
+              {
+                "kind": "arg",
+                "path": "consent_no"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "consent_no",
+          "type": "u32"
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "anchor_opportunity",
       "docs": [
         "Commits a qualified credit opportunity, from an eligibility that is not NotEligible."
@@ -1587,6 +1704,19 @@
       ]
     },
     {
+      "name": "ConsentCommitment",
+      "discriminator": [
+        31,
+        117,
+        162,
+        52,
+        234,
+        25,
+        80,
+        87
+      ]
+    },
+    {
       "name": "EligibilityAttestation",
       "discriminator": [
         153,
@@ -1768,6 +1898,11 @@
       "code": 6017,
       "name": "NotAMint",
       "msg": "The mint account is not an SPL mint"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidConsentNumber",
+      "msg": "Consent records are numbered from 1"
     }
   ],
   "types": [
@@ -1996,6 +2131,48 @@
           },
           {
             "name": "Verified"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ConsentCommitment",
+      "docs": [
+        "One consent record of a borrower: what she allowed her data to be used",
+        "for, as a commitment. Every change is a new record, so what she agreed to",
+        "and when stays provable; which choices she made stays in the database."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "borrower",
+            "type": "pubkey"
+          },
+          {
+            "name": "consent_no",
+            "type": "u32"
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "recorded_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
           }
         ]
       }
@@ -2505,6 +2682,11 @@
       "name": "CONFIG_SEED",
       "type": "bytes",
       "value": "[99, 111, 110, 102, 105, 103]"
+    },
+    {
+      "name": "CONSENT_SEED",
+      "type": "bytes",
+      "value": "[99, 111, 110, 115, 101, 110, 116]"
     },
     {
       "name": "ELIGIBILITY_SEED",

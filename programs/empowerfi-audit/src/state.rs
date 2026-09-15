@@ -242,3 +242,17 @@ pub struct AllocationCommitment {
     pub schema_version: u8,
     pub bump: u8,
 }
+
+/// One consent record of a borrower: what she allowed her data to be used
+/// for, as a commitment. Every change is a new record, so what she agreed to
+/// and when stays provable; which choices she made stays in the database.
+#[account]
+#[derive(InitSpace)]
+pub struct ConsentCommitment {
+    pub borrower: Pubkey,
+    pub consent_no: u32,
+    pub commitment: [u8; 32],
+    pub recorded_at: i64,
+    pub schema_version: u8,
+    pub bump: u8,
+}

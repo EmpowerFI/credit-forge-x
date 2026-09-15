@@ -27,6 +27,7 @@ export const DOMAINS = {
   OUTCOME: "EMPOWERFI:OUTCOME:v1",
   ALLOCATION: "EMPOWERFI:ALLOCATION:v1",
   ALLOCATION_REF: "EMPOWERFI:ALLOCATION_REF:v1",
+  CONSENT: "EMPOWERFI:CONSENT:v1",
 } as const;
 
 export type Domain = (typeof DOMAINS)[keyof typeof DOMAINS];
@@ -49,6 +50,7 @@ export const ANCHOR_DOMAINS = {
   payment: DOMAINS.PAYMENT,
   outcome: DOMAINS.OUTCOME,
   allocation: DOMAINS.ALLOCATION,
+  consent: DOMAINS.CONSENT,
 } as const satisfies Record<string, Domain>;
 
 export type AnchorKind = keyof typeof ANCHOR_DOMAINS;

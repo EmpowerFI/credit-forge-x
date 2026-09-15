@@ -38,6 +38,7 @@ import {
   getBorrowerAuditCodec,
   getCheckinCommitmentCodec,
   getCommunityAuditCodec,
+  getConsentCommitmentCodec,
   getEligibilityAttestationCodec,
   getLoanAccountCodec,
   getOpportunityCommitmentCodec,
@@ -53,6 +54,8 @@ import {
   type CheckinCommitmentArgs,
   type CommunityAudit,
   type CommunityAuditArgs,
+  type ConsentCommitment,
+  type ConsentCommitmentArgs,
   type EligibilityAttestation,
   type EligibilityAttestationArgs,
   type LoanAccount,
@@ -71,6 +74,7 @@ import {
 import {
   getAnchorAllocationInstructionAsync,
   getAnchorCheckinInstructionAsync,
+  getAnchorConsentInstructionAsync,
   getAnchorOpportunityInstructionAsync,
   getAnchorOutcomeInstructionAsync,
   getAnchorPaymentInstructionAsync,
@@ -86,6 +90,7 @@ import {
   getVerifyCommunityInstructionAsync,
   parseAnchorAllocationInstruction,
   parseAnchorCheckinInstruction,
+  parseAnchorConsentInstruction,
   parseAnchorOpportunityInstruction,
   parseAnchorOutcomeInstruction,
   parseAnchorPaymentInstruction,
@@ -101,6 +106,7 @@ import {
   parseVerifyCommunityInstruction,
   type AnchorAllocationAsyncInput,
   type AnchorCheckinAsyncInput,
+  type AnchorConsentAsyncInput,
   type AnchorOpportunityAsyncInput,
   type AnchorOutcomeAsyncInput,
   type AnchorPaymentAsyncInput,
@@ -110,6 +116,7 @@ import {
   type InitializePlatformAsyncInput,
   type ParsedAnchorAllocationInstruction,
   type ParsedAnchorCheckinInstruction,
+  type ParsedAnchorConsentInstruction,
   type ParsedAnchorOpportunityInstruction,
   type ParsedAnchorOutcomeInstruction,
   type ParsedAnchorPaymentInstruction,
@@ -137,6 +144,7 @@ import {
   findCheckinPda,
   findCommunityPda,
   findConfigPda,
+  findConsentPda,
   findEligibilityPda,
   findLoanPda,
   findOpportunityPda,
@@ -153,24 +161,26 @@ export const EmpowerfiAuditAccount = {
   1: "BorrowerAudit",
   2: "CheckinCommitment",
   3: "CommunityAudit",
-  4: "EligibilityAttestation",
-  5: "LoanAccount",
-  6: "OpportunityCommitment",
-  7: "OutcomeCommitment",
-  8: "PaymentCommitment",
-  9: "PlatformConfig",
-  10: "ReadinessAttestation",
+  4: "ConsentCommitment",
+  5: "EligibilityAttestation",
+  6: "LoanAccount",
+  7: "OpportunityCommitment",
+  8: "OutcomeCommitment",
+  9: "PaymentCommitment",
+  10: "PlatformConfig",
+  11: "ReadinessAttestation",
   AllocationCommitment: 0,
   BorrowerAudit: 1,
   CheckinCommitment: 2,
   CommunityAudit: 3,
-  EligibilityAttestation: 4,
-  LoanAccount: 5,
-  OpportunityCommitment: 6,
-  OutcomeCommitment: 7,
-  PaymentCommitment: 8,
-  PlatformConfig: 9,
-  ReadinessAttestation: 10,
+  ConsentCommitment: 4,
+  EligibilityAttestation: 5,
+  LoanAccount: 6,
+  OpportunityCommitment: 7,
+  OutcomeCommitment: 8,
+  PaymentCommitment: 9,
+  PlatformConfig: 10,
+  ReadinessAttestation: 11,
 } as const;
 
 export type EmpowerfiAuditAccount = (typeof EmpowerfiAuditAccount)[Exclude<
@@ -225,6 +235,17 @@ export function identifyEmpowerfiAuditAccount(
     )
   ) {
     return EmpowerfiAuditAccount.CommunityAudit;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([31, 117, 162, 52, 234, 25, 80, 87]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditAccount.ConsentCommitment;
   }
   if (
     containsBytes(
@@ -312,34 +333,36 @@ export function identifyEmpowerfiAuditAccount(
 export const EmpowerfiAuditInstruction = {
   0: "AnchorAllocation",
   1: "AnchorCheckin",
-  2: "AnchorOpportunity",
-  3: "AnchorOutcome",
-  4: "AnchorPayment",
-  5: "AttestEligibility",
-  6: "AttestReadiness",
-  7: "CreateLoan",
-  8: "InitializePlatform",
-  9: "RegisterBorrowerRef",
-  10: "RegisterCommunity",
-  11: "SetOperator",
-  12: "TransitionLoan",
-  13: "VaultTransfer",
-  14: "VerifyCommunity",
+  2: "AnchorConsent",
+  3: "AnchorOpportunity",
+  4: "AnchorOutcome",
+  5: "AnchorPayment",
+  6: "AttestEligibility",
+  7: "AttestReadiness",
+  8: "CreateLoan",
+  9: "InitializePlatform",
+  10: "RegisterBorrowerRef",
+  11: "RegisterCommunity",
+  12: "SetOperator",
+  13: "TransitionLoan",
+  14: "VaultTransfer",
+  15: "VerifyCommunity",
   AnchorAllocation: 0,
   AnchorCheckin: 1,
-  AnchorOpportunity: 2,
-  AnchorOutcome: 3,
-  AnchorPayment: 4,
-  AttestEligibility: 5,
-  AttestReadiness: 6,
-  CreateLoan: 7,
-  InitializePlatform: 8,
-  RegisterBorrowerRef: 9,
-  RegisterCommunity: 10,
-  SetOperator: 11,
-  TransitionLoan: 12,
-  VaultTransfer: 13,
-  VerifyCommunity: 14,
+  AnchorConsent: 2,
+  AnchorOpportunity: 3,
+  AnchorOutcome: 4,
+  AnchorPayment: 5,
+  AttestEligibility: 6,
+  AttestReadiness: 7,
+  CreateLoan: 8,
+  InitializePlatform: 9,
+  RegisterBorrowerRef: 10,
+  RegisterCommunity: 11,
+  SetOperator: 12,
+  TransitionLoan: 13,
+  VaultTransfer: 14,
+  VerifyCommunity: 15,
 } as const;
 
 export type EmpowerfiAuditInstruction =
@@ -373,6 +396,17 @@ export function identifyEmpowerfiAuditInstruction(
     )
   ) {
     return EmpowerfiAuditInstruction.AnchorCheckin;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([184, 226, 221, 184, 204, 187, 242, 37]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditInstruction.AnchorConsent;
   }
   if (
     containsBytes(
@@ -533,6 +567,9 @@ export type ParsedEmpowerfiAuditInstruction<
       instructionType: typeof EmpowerfiAuditInstruction.AnchorCheckin;
     } & ParsedAnchorCheckinInstruction<TProgram>)
   | ({
+      instructionType: typeof EmpowerfiAuditInstruction.AnchorConsent;
+    } & ParsedAnchorConsentInstruction<TProgram>)
+  | ({
       instructionType: typeof EmpowerfiAuditInstruction.AnchorOpportunity;
     } & ParsedAnchorOpportunityInstruction<TProgram>)
   | ({
@@ -589,6 +626,13 @@ export function parseEmpowerfiAuditInstruction<TProgram extends string>(
       return {
         instructionType: EmpowerfiAuditInstruction.AnchorCheckin,
         ...parseAnchorCheckinInstruction(instruction),
+      };
+    }
+    case EmpowerfiAuditInstruction.AnchorConsent: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EmpowerfiAuditInstruction.AnchorConsent,
+        ...parseAnchorConsentInstruction(instruction),
       };
     }
     case EmpowerfiAuditInstruction.AnchorOpportunity: {
@@ -711,6 +755,8 @@ export type EmpowerfiAuditPluginAccounts = {
     SelfFetchFunctions<CheckinCommitmentArgs, CheckinCommitment>;
   communityAudit: ReturnType<typeof getCommunityAuditCodec> &
     SelfFetchFunctions<CommunityAuditArgs, CommunityAudit>;
+  consentCommitment: ReturnType<typeof getConsentCommitmentCodec> &
+    SelfFetchFunctions<ConsentCommitmentArgs, ConsentCommitment>;
   eligibilityAttestation: ReturnType<typeof getEligibilityAttestationCodec> &
     SelfFetchFunctions<EligibilityAttestationArgs, EligibilityAttestation>;
   loanAccount: ReturnType<typeof getLoanAccountCodec> &
@@ -735,6 +781,10 @@ export type EmpowerfiAuditPluginInstructions = {
   anchorCheckin: (
     input: AnchorCheckinAsyncInput,
   ) => ReturnType<typeof getAnchorCheckinInstructionAsync> &
+    SelfPlanAndSendFunctions;
+  anchorConsent: (
+    input: AnchorConsentAsyncInput,
+  ) => ReturnType<typeof getAnchorConsentInstructionAsync> &
     SelfPlanAndSendFunctions;
   anchorOpportunity: (
     input: AnchorOpportunityAsyncInput,
@@ -794,6 +844,7 @@ export type EmpowerfiAuditPluginPdas = {
   config: typeof findConfigPda;
   allocation: typeof findAllocationPda;
   checkin: typeof findCheckinPda;
+  consent: typeof findConsentPda;
   opportunity: typeof findOpportunityPda;
   outcome: typeof findOutcomePda;
   payment: typeof findPaymentPda;
@@ -831,6 +882,10 @@ export function empowerfiAuditProgram() {
             client,
             getCommunityAuditCodec(),
           ),
+          consentCommitment: addSelfFetchFunctions(
+            client,
+            getConsentCommitmentCodec(),
+          ),
           eligibilityAttestation: addSelfFetchFunctions(
             client,
             getEligibilityAttestationCodec(),
@@ -867,6 +922,11 @@ export function empowerfiAuditProgram() {
             addSelfPlanAndSendFunctions(
               client,
               getAnchorCheckinInstructionAsync(input),
+            ),
+          anchorConsent: (input) =>
+            addSelfPlanAndSendFunctions(
+              client,
+              getAnchorConsentInstructionAsync(input),
             ),
           anchorOpportunity: (input) =>
             addSelfPlanAndSendFunctions(
@@ -938,6 +998,7 @@ export function empowerfiAuditProgram() {
           config: findConfigPda,
           allocation: findAllocationPda,
           checkin: findCheckinPda,
+          consent: findConsentPda,
           opportunity: findOpportunityPda,
           outcome: findOutcomePda,
           payment: findPaymentPda,
