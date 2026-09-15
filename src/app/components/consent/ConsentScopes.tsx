@@ -1,9 +1,7 @@
 import { Check, X } from "lucide-react";
-import { Link } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import { DataTag } from "../product/DataLegend";
-import ExplorerLink from "../product/ExplorerLink";
-import StatusPill from "../product/StatusPill";
+import ProofLine from "../product/ProofLine";
 import { CHANNEL_LABEL, type Choices, type ConsentRecord, SCOPE_TEXT, SCOPES, setScope } from "../../lib/consent";
 import { shortDate } from "../../lib/community";
 
@@ -74,14 +72,4 @@ export function ConsentSummary({ record, compact = false }: { record: ConsentRec
   );
 }
 
-export function ProofLine({ proof }: { proof: ConsentRecord["proof"] }) {
-  if (!proof) return <StatusPill tone="neutral">Not queued</StatusPill>;
-  if (proof.status !== "confirmed") return <StatusPill tone="caution">Proof {proof.status}</StatusPill>;
-  return (
-    <span className="inline-flex flex-wrap items-center gap-2">
-      <DataTag kind="proven" withLabel />
-      {proof.signature && <ExplorerLink tx={proof.signature} />}
-      <Link to={`/app/audit/${proof.kind}/${proof.entity_id}`} className="text-info hover:underline">Verify</Link>
-    </span>
-  );
-}
+export { ProofLine };

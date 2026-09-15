@@ -1,37 +1,17 @@
 import { Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { CheckCircle2, Loader2, Play, XCircle } from "lucide-react";
-import { canonicalize, type CanonicalObject } from "@empowerfi/audit-commitments";
-import { assessEligibility, ELIGIBILITY_MODEL_VERSION, type EligibilityInput, RULES as ELIGIBILITY_RULES } from "@empowerfi/eligibility-engine";
-import { evaluateReadiness, READINESS_MODEL_VERSION, type ReadinessFeatures, RULES as READINESS_RULES } from "@empowerfi/readiness-engine";
+import { ELIGIBILITY_MODEL_VERSION, RULES as ELIGIBILITY_RULES } from "@empowerfi/eligibility-engine";
+import { READINESS_MODEL_VERSION, RULES as READINESS_RULES } from "@empowerfi/readiness-engine";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
 import Panel from "../../components/product/Panel";
 import StatusPill from "../../components/product/StatusPill";
-import { ELIGIBILITY_RESULT_FIELDS, READINESS_RESULT_FIELDS } from "../../lib/audit";
 import { shortDate } from "../../lib/community";
 import { describeError } from "../../lib/errors";
-import { fetchModelSample, type ModelVersion, useModels } from "./queries";
-
-const same = (a: unknown, b: unknown) => canonicalize({ v: a } as CanonicalObject) === canonicalize({ v: b } as CanonicalObject);
-
-interface Rerun { kind: "readiness" | "eligibility"; id: string; ok: boolean; version: string }
-
-/** Re-runs the latest decisions through the engines bundled in this page: determinism, checked here. */
-async function rerun(): Promise<Rerun[]> {
-  const sample = await fetchModelSample(12);
-  const out: Rerun[] = [];
-  for (const { id, payload } of sample.readiness) {
-    const r = evaluateReadiness(payload.features as unknown as ReadinessFeatures);
-    out.push({ kind: "readiness", id, version: String(payload.model_version), ok: READINESS_RESULT_FIELDS.every((f) => same(r[f], payload[f])) });
-  }
-  for (const { id, payload } of sample.eligibility) {
-    const r = assessEligibility(payload.inputs as unknown as EligibilityInput);
-    out.push({ kind: "eligibility", id, version: String(payload.model_version), ok: ELIGIBILITY_RESULT_FIELDS.every((f) => same(r[f], payload[f])) });
-  }
-  return out;
-}
+import { type ModelVersion, useModels } from "./queries";
+import { rerun } from "./rerun";
 
 function Versions({ rows, current }: { rows: ModelVersion[]; current?: string }) {
   if (rows.length === 0) return <p className="text-sm text-muted-foreground">Not run yet.</p>;

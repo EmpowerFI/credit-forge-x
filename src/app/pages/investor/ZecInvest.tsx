@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, CircleDashed, Copy, ExternalLink, Loader2, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import QrCode from "../../components/QrCode";
 import ExplorerLink from "../../components/product/ExplorerLink";
 import StatusPill from "../../components/product/StatusPill";
@@ -10,8 +12,8 @@ import { describeError } from "../../lib/errors";
 import type { MarketRow } from "../../lib/investor";
 import { usdc } from "../../lib/solana";
 import {
-  checkZcashNow, createZcashRequest, fetchZcashRequest, LIVE, paymentUri, POOL_LABEL, STATUS_LABEL, usdPerZec, zcashExplorerTx,
-  ZCASH_FAUCET, zec, type ZcashRequest,
+  checkZcashNow, createZcashRequest, fetchZcashRequest, isShieldedTestAddress, LIVE, paymentUri, POOL_LABEL, setReturnAddress,
+  STATUS_LABEL, usdPerZec, zcashExplorerTx, ZCASH_FAUCET, zec, type ZcashRequest,
 } from "../../lib/zcash";
 
 function CopyButton({ value, label }: { value: string; label: string }) {
@@ -116,6 +118,8 @@ export default function ZecInvest({ row, micro, problem, requestId, onRequest }:
   const [creating, setCreating] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [returnTo, setReturnTo] = useState("");
+  const returnOk = returnTo.trim() === "" || isShieldedTestAddress(returnTo);
 
   const request = useQuery({
     queryKey: ["platform", "zcash-request", requestId],
@@ -137,6 +141,11 @@ export default function ZecInvest({ row, micro, problem, requestId, onRequest }:
     setCreating(true);
     try {
       const created = await createZcashRequest(row.opportunity_id, micro);
+      if (returnTo.trim()) {
+        // The request stands either way; an address can be given later from the position.
+        await setReturnAddress({ requestId: created.id }, returnTo).catch((e) =>
+          setError(`Request made, but the return address was not saved: ${describeError(e)}`));
+      }
       onRequest(created.id);
     } catch (err) {
       setError(describeError(err));
@@ -160,7 +169,16 @@ export default function ZecInvest({ row, micro, problem, requestId, onRequest }:
   if (!requestId) {
     return (
       <div className="space-y-3">
-        <Button className="h-11 w-full text-base font-semibold" disabled={Boolean(problem) || creating} onClick={create}>
+        <div className="space-y-1.5">
+          <Label htmlFor="zec-return" className="text-xs text-muted-foreground">Shielded address for your returns (optional)</Label>
+          <Input id="zec-return" className="font-mono text-xs" placeholder="utest1… or ztestsapling1…" value={returnTo}
+            onChange={(e) => setReturnTo(e.target.value)} autoComplete="off" spellCheck={false} />
+          <p className={`text-xs ${returnOk ? "text-muted-foreground" : "text-caution"}`}>
+            {returnOk ? "Instalment shares and any refund come back here in shielded ZEC. You can add it later, from your position."
+              : "A unified (utest1…) or Sapling (ztestsapling1…) testnet address: returns stay shielded."}
+          </p>
+        </div>
+        <Button className="h-11 w-full text-base font-semibold" disabled={Boolean(problem) || creating || !returnOk} onClick={create}>
           {creating ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />} Get a shielded payment request
         </Button>
         {error && <p className="text-xs text-alert">{error}</p>}

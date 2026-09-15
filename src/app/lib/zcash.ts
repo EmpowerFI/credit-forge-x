@@ -103,3 +103,49 @@ export async function checkZcashNow(): Promise<void> {
   const { error } = await platform.functions.invoke("zcash-watch", { body: {} });
   if (error) throw error;
 }
+
+// ------------------------------------------------------------ returns in ZEC
+
+/** A shielded testnet address — unified or Sapling — in the database's own check. */
+export const isShieldedTestAddress = (value: string) =>
+  /^(utest1[02-9ac-hj-np-z]{60,}|ztestsapling1[02-9ac-hj-np-z]{60,})$/.test(value.trim().toLowerCase());
+
+export type ReturnStatus = "due" | "sending" | "sent" | "failed";
+
+export interface ZecReturn {
+  id: string;
+  kind: "payout" | "refund";
+  leg_id: string | null;
+  amount_micro_usdc: number;
+  amount_zat: number | null;
+  usd_per_zec_cents: number | null;
+  status: ReturnStatus;
+  txid: string | null;
+  instalment_no: number | null;
+  created_at: string;
+  sent_at: string | null;
+}
+
+export interface ZecReturns { return_address: string | null; network: "test" | "main" | null; returns: ZecReturn[] }
+
+export const RETURN_LABEL: Record<ReturnStatus, { label: string; tone: Tone }> = {
+  due: { label: "Owed in ZEC", tone: "info" },
+  sending: { label: "Being sent", tone: "info" },
+  sent: { label: "Sent in ZEC", tone: "positive" },
+  failed: { label: "Needs a look", tone: "alert" },
+};
+
+export const zecReturnsKey = (investmentId: string) => ["platform", "zec-returns", investmentId];
+
+export async function fetchZecReturns(investmentId: string): Promise<ZecReturns> {
+  const { data, error } = await platform.rpc("zcash_position_returns", { p_investment_id: investmentId });
+  if (error) throw error;
+  return data as unknown as ZecReturns;
+}
+
+export async function setReturnAddress(target: { investmentId: string } | { requestId: string }, address: string) {
+  const { error } = "investmentId" in target
+    ? await platform.rpc("set_zcash_return_address", { p_investment_id: target.investmentId, p_address: address })
+    : await platform.rpc("set_zcash_request_return_address", { p_request_id: target.requestId, p_address: address });
+  if (error) throw error;
+}

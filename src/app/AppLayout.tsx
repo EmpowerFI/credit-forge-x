@@ -10,6 +10,7 @@ import {
   ScanSearch,
   KeyRound,
   ServerCog,
+  Share2,
   ShieldCheck,
   Gauge,
   Layers,
@@ -21,6 +22,8 @@ import {
   PieChart,
   Briefcase,
   CalendarCheck,
+  CalendarClock,
+  Gavel,
   ClipboardCheck,
   LogOut,
   Menu,
@@ -55,6 +58,7 @@ const AUDIT: NavItem[] = [
   { to: "/app/audit/consents", label: "Consents", icon: ShieldCheck },
   { to: "/app/audit/zcash", label: "Zcash treasury", icon: KeyRound },
   { to: "/app/audit/system", label: "System", icon: ServerCog },
+  { to: "/app/audit/reports", label: "Reports", icon: Share2 },
 ];
 
 const NAV: Record<Role, NavItem[]> = {
@@ -64,7 +68,13 @@ const NAV: Record<Role, NavItem[]> = {
     { to: "/app/consent", label: "Consent", icon: ShieldCheck },
   ],
   community_leader: [COMMUNITIES],
-  partner: [{ ...PIPELINE, label: "Pipeline" }],
+  partner: [
+    { to: "/app/partner", label: "Pipeline", icon: RouteIcon, end: true },
+    { to: "/app/partner/reviews", label: "Reviews", icon: ClipboardCheck },
+    { to: "/app/partner/decisions", label: "Decisions", icon: Gavel },
+    { to: "/app/partner/portfolio", label: "Portfolio", icon: PieChart },
+    { to: "/app/partner/servicing", label: "Servicing", icon: CalendarClock },
+  ],
   capital_provider: [
     { to: "/app/investor", label: "Overview", icon: LayoutDashboard, end: true },
     { to: "/app/investor/opportunities", label: "Opportunities", icon: Coins },

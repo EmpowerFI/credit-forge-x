@@ -12,7 +12,9 @@ import { type FundingStatus, type Grade, positionState, RISK, title } from "../.
 import { platform } from "../../lib/platform";
 import { money, type CreditPurpose } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
-import { POOL_LABEL, usdPerZec, zcashExplorerTx, zec } from "../../lib/zcash";
+import { fetchZecReturns, POOL_LABEL, usdPerZec, zcashExplorerTx, zec, type ZecReturn, zecReturnsKey } from "../../lib/zcash";
+import { useAuth } from "../../auth/useAuth";
+import ZecReturns from "./ZecReturns";
 import { type PayoutStatus, reaisAtRamp, REALITY, type Reality } from "../../lib/settlement";
 
 function RouteStep({ n, title, reality, children }: { n: number; title: string; reality: Reality | null; children: React.ReactNode }) {
@@ -28,11 +30,25 @@ function RouteStep({ n, title, reality, children }: { n: number; title: string; 
   );
 }
 
-function PayoutCell({ payout, simulated }: { payout: PositionData["schedule"][number]["payout"]; simulated: boolean }) {
+function PayoutCell({ payout, simulated, zecReturn }: {
+  payout: PositionData["schedule"][number]["payout"];
+  simulated: boolean;
+  /** For a shielded-ZEC position with no wallet: the share paid in ZEC instead. */
+  zecReturn?: ZecReturn;
+}) {
   if (simulated) return <span className="text-xs text-muted-foreground">simulated</span>;
   if (!payout) return <span className="text-xs text-muted-foreground">—</span>;
+  if (zecReturn?.status === "sent" && zecReturn.txid) {
+    return (
+      <a href={zcashExplorerTx(zecReturn.txid)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
+        ZEC {zecReturn.txid.slice(0, 4)}…{zecReturn.txid.slice(-4)} <ExternalLink size={11} aria-hidden />
+      </a>
+    );
+  }
+  if (zecReturn?.status === "failed") return <span className="text-xs text-alert">ZEC send needs a look</span>;
+  if (zecReturn) return <span className="text-xs text-muted-foreground">owed in ZEC</span>;
   if (payout.status === "done" && payout.signature) return <ExplorerLink tx={payout.signature} />;
-  if (payout.status === "held") return <span className="text-xs text-caution">held: no wallet</span>;
+  if (payout.status === "held") return <span className="text-xs text-caution">held: no return address</span>;
   if (payout.status === "failed") return <span className="text-xs text-alert">failed</span>;
   return <span className="text-xs text-muted-foreground">on its way</span>;
 }
@@ -68,6 +84,7 @@ const date = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en
 
 export default function Position() {
   const { id } = useParams();
+  const { profile } = useAuth();
   const position = useQuery({
     queryKey: ["platform", "investor-position", id],
     queryFn: async () => {
@@ -76,6 +93,9 @@ export default function Position() {
       return data as unknown as PositionData;
     },
   });
+  // Paid in shielded ZEC with no Solana wallet: what comes back goes back as ZEC.
+  const zecOnly = position.data?.investment.mode === "zcash" && !position.data.investment.wallet_address && !position.data.investment.is_simulated;
+  const zecReturns = useQuery({ queryKey: zecReturnsKey(id ?? ""), queryFn: () => fetchZecReturns(id!), enabled: Boolean(id && zecOnly) });
   if (position.isPending) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
   if (position.isError) return <LoadError error={position.error} onRetry={() => position.refetch()} />;
   const { investment: inv, zcash, proof, opportunity: opp, loan, settlement, schedule, servicing, outcome } = position.data;
@@ -190,6 +210,11 @@ export default function Position() {
         </Panel>
       </div>
 
+      {zecOnly && (
+        <ZecReturns investmentId={inv.id} readOnly={profile?.role !== "capital_provider"}
+          owed={inv.status === "refund_due" || schedule.some((s) => s.payout?.status === "held")} />
+      )}
+
       <Panel title="Where the money went" description="Your capital's route to her business and back, leg by leg: which are transactions you can open, and which are simulated.">
         <ol className="space-y-4">
           <RouteStep n={1} title={zcash ? "Paid in shielded ZEC, credited to the vault" : "Into the program's vault"}
@@ -218,7 +243,9 @@ export default function Position() {
           </RouteStep>
           <RouteStep n={5} title="Instalments come back to you" reality={schedule.some((s) => s.payment_id) ? (inv.is_simulated ? "simulated" : "real") : null}>
             {inv.is_simulated ? "Simulated: your share of each instalment is shown, not paid."
-              : !inv.wallet_address ? "She pays each instalment by Pix (a mock). Your share is held: this position has no Solana wallet to pay it to. In production it would go back as ZEC, through the same conversion."
+              : !inv.wallet_address ? (zecReturns.data?.return_address
+                ? "She pays each instalment by Pix (a mock). Your share goes back to you in shielded ZEC, from EmpowerFI's treasury to your return address: real testnet ZEC, at the quote when it is sent."
+                : "She pays each instalment by Pix (a mock). Your share is held until you give a shielded return address, below: it then goes back to you in ZEC.")
               : `She pays each instalment by Pix (a mock); the ramp returns your share to the vault, which pays it to your wallet in the same transaction. ${schedule.filter((s) => s.payout?.status === "done").length} of ${schedule.filter((s) => s.payment_id).length} paid out so far.`}
           </RouteStep>
         </ol>
@@ -251,7 +278,12 @@ export default function Position() {
                           : <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Circle size={10} /> Scheduled</span>}
                       </td>
                       <td className="num py-2.5 pr-4 text-right text-foreground">{usdc(s.share_micro_usdc ?? loan.instalment_share_micro_usdc)}</td>
-                      <td className="py-2.5 pr-4">{s.payment_id ? <PayoutCell payout={s.payout} simulated={inv.is_simulated} /> : null}</td>
+                      <td className="py-2.5 pr-4">
+                        {s.payment_id ? (
+                          <PayoutCell payout={s.payout} simulated={inv.is_simulated}
+                            zecReturn={zecReturns.data?.returns.find((r) => r.kind === "payout" && r.instalment_no === s.instalment_no)} />
+                        ) : null}
+                      </td>
                       <td className="py-2.5 text-right">
                         {s.payment_id && <Link to={`/app/audit/payment/${s.payment_id}`} className="text-xs text-positive hover:underline">Verify</Link>}
                       </td>

@@ -61,6 +61,13 @@ const MESSAGES: Record<string, string> = {
   opportunity_not_open: "This opportunity is no longer raising.",
   not_an_investor: "Investing is for capital providers.",
   not_your_request: "This payment request is not yours.",
+  not_a_partner: "The partner desk is for credit partners, auditors and EmpowerFI.",
+  report_not_found: "This report is not available: the link is wrong, or it was closed.",
+  invalid_checks: "Those checks could not be recorded.",
+  invalid_zcash_address: "That is not a shielded Zcash testnet address. Use a unified (utest1…) or Sapling (ztestsapling1…) address: returns stay shielded.",
+  not_a_zcash_position: "Only a position paid in shielded ZEC is returned in ZEC.",
+  not_your_position: "This position is not yours.",
+  reason_required: "Say why. Investors and the audit trail will see the reason.",
 };
 
 export function describeError(error: unknown): string {

@@ -14,10 +14,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setSessionLoaded(true);
     });
-    const { data } = platform.auth.onAuthStateChange((_event, next) => {
+    const { data } = platform.auth.onAuthStateChange((event, next) => {
       setSession(next);
       // Another person may be signing in on this browser: drop cached data.
-      if (!next) queryClient.clear();
+      // Only on a real sign-out: a visitor with no session also gets events
+      // without one (INITIAL_SESSION), and clearing then would orphan the
+      // queries a page without an account — a shared report — is running.
+      if (event === "SIGNED_OUT") queryClient.clear();
     });
     return () => data.subscription.unsubscribe();
   }, [queryClient]);

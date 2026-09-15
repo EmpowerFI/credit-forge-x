@@ -1,6 +1,6 @@
 import type { AnchorKind } from "./platform";
 
-/** The audit console's six views, as paths under /app/audit. */
+/** The audit console's views, as paths under /app/audit. */
 export const AUDIT_TABS = [
   { to: "", label: "Attestations", end: true },
   { to: "events", label: "Events" },
@@ -8,6 +8,7 @@ export const AUDIT_TABS = [
   { to: "consents", label: "Consents" },
   { to: "zcash", label: "Zcash treasury" },
   { to: "system", label: "System" },
+  { to: "reports", label: "Reports" },
 ] as const;
 
 export const PROOF_KIND_LABEL: Record<AnchorKind, string> = {

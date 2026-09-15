@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { paymentUri, zec } from "./zcash";
+import { isShieldedTestAddress, paymentUri, zec } from "./zcash";
 
 describe("zcash", () => {
   it("builds the same ZIP 321 URI as the zcash-request function", () => {
@@ -14,5 +14,18 @@ describe("zcash", () => {
     expect(zec(100_000_000)).toBe("1 TAZ");
     expect(zec(10_000_000, "main")).toBe("0.1 ZEC");
     expect(zec(null)).toBe("—");
+  });
+});
+
+describe("a return address", () => {
+  it("is a shielded testnet address: unified or Sapling, any case, trimmed", () => {
+    expect(isShieldedTestAddress(`utest1${"q".repeat(80)}`)).toBe(true);
+    expect(isShieldedTestAddress(`  ZTESTSAPLING1${"X".repeat(70)} `)).toBe(true);
+  });
+  it("never transparent, mainnet, or outside bech32's alphabet", () => {
+    expect(isShieldedTestAddress("tmBsTi2xWTjUdEXnuTceL7fecEQKeWaPDJd")).toBe(false);
+    expect(isShieldedTestAddress(`u1${"q".repeat(80)}`)).toBe(false);
+    expect(isShieldedTestAddress(`utest1${"b".repeat(80)}`)).toBe(false);
+    expect(isShieldedTestAddress("utest1short")).toBe(false);
   });
 });

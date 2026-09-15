@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_reports: {
+        Row: {
+          checks: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          revoked_at: string | null
+          snapshot: Json
+          title: string
+          token: string
+        }
+        Insert: {
+          checks?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          revoked_at?: string | null
+          snapshot: Json
+          title: string
+          token?: string
+        }
+        Update: {
+          checks?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          revoked_at?: string | null
+          snapshot?: Json
+          title?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_reports_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       capital_commitments: {
         Row: {
           committed_cents: number
@@ -1611,6 +1652,7 @@ export type Database = {
           quote_source: string
           received_zat: number | null
           ref: string
+          return_address: string | null
           status: Database["public"]["Enums"]["zcash_request_status"]
           txid: string | null
           updated_at: string
@@ -1635,6 +1677,7 @@ export type Database = {
           quote_source: string
           received_zat?: number | null
           ref: string
+          return_address?: string | null
           status?: Database["public"]["Enums"]["zcash_request_status"]
           txid?: string | null
           updated_at?: string
@@ -1659,6 +1702,7 @@ export type Database = {
           quote_source?: string
           received_zat?: number | null
           ref?: string
+          return_address?: string | null
           status?: Database["public"]["Enums"]["zcash_request_status"]
           txid?: string | null
           updated_at?: string
@@ -1725,6 +1769,72 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "zcash_payment_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zcash_returns: {
+        Row: {
+          address: string
+          amount_micro_usdc: number
+          amount_zat: number | null
+          claimed_at: string | null
+          created_at: string
+          error: string | null
+          id: string
+          investment_id: string
+          kind: string
+          leg_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["zcash_return_status"]
+          txid: string | null
+          usd_per_zec_cents: number | null
+        }
+        Insert: {
+          address: string
+          amount_micro_usdc: number
+          amount_zat?: number | null
+          claimed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          investment_id: string
+          kind: string
+          leg_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["zcash_return_status"]
+          txid?: string | null
+          usd_per_zec_cents?: number | null
+        }
+        Update: {
+          address?: string
+          amount_micro_usdc?: number
+          amount_zat?: number | null
+          claimed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          investment_id?: string
+          kind?: string
+          leg_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["zcash_return_status"]
+          txid?: string | null
+          usd_per_zec_cents?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zcash_returns_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zcash_returns_leg_id_fkey"
+            columns: ["leg_id"]
+            isOneToOne: true
+            referencedRelation: "settlement_legs"
             referencedColumns: ["id"]
           },
         ]
@@ -1844,8 +1954,10 @@ export type Database = {
         }
         Returns: Json
       }
+      audit_reports: { Args: never; Returns: Json }
       audit_system: { Args: never; Returns: Json }
       audit_zcash: { Args: never; Returns: Json }
+      audit_zcash_returns: { Args: never; Returns: Json }
       capital_portfolio: { Args: never; Returns: Json }
       claim_anchor_jobs: {
         Args: { p_limit?: number }
@@ -1891,6 +2003,10 @@ export type Database = {
           p_slot: number
         }
         Returns: undefined
+      }
+      create_audit_report: {
+        Args: { p_checks?: Json; p_title: string }
+        Returns: Json
       }
       create_community: {
         Args: {
@@ -2022,6 +2138,7 @@ export type Database = {
         }
         Returns: string
       }
+      partner_desk: { Args: never; Returns: Json }
       partner_pipeline: {
         Args: never
         Returns: {
@@ -2055,6 +2172,10 @@ export type Database = {
         }[]
       }
       readiness_inputs: { Args: { p_entrepreneur_id: string }; Returns: Json }
+      record_audit_report_checks: {
+        Args: { p_checks: Json; p_id: string }
+        Returns: undefined
+      }
       record_consent: {
         Args: {
           p_assessment: boolean
@@ -2160,6 +2281,15 @@ export type Database = {
         Returns: undefined
       }
       reset_demo_data: { Args: { p_confirm: string }; Returns: Json }
+      revoke_audit_report: { Args: { p_id: string }; Returns: undefined }
+      set_zcash_request_return_address: {
+        Args: { p_address: string; p_request_id: string }
+        Returns: Json
+      }
+      set_zcash_return_address: {
+        Args: { p_address: string; p_investment_id: string }
+        Returns: Json
+      }
       settle_claim: {
         Args: { p_per_transfer?: number }
         Returns: {
@@ -2185,6 +2315,7 @@ export type Database = {
         Returns: undefined
       }
       settlement_overview: { Args: never; Returns: Json }
+      shared_audit_report: { Args: { p_token: string }; Returns: Json }
       start_anchor_run: { Args: { p_lease_seconds?: number }; Returns: boolean }
       submit_checkin: {
         Args: {
@@ -2243,7 +2374,39 @@ export type Database = {
         Args: { p_id: string; p_signature: string; p_valid_until: number }
         Returns: undefined
       }
+      zcash_position_returns: {
+        Args: { p_investment_id: string }
+        Returns: Json
+      }
       zcash_request: { Args: { p_id: string }; Returns: Json }
+      zcash_return_failed: {
+        Args: { p_error: string; p_id: string }
+        Returns: undefined
+      }
+      zcash_return_release: {
+        Args: { p_error?: string; p_id: string }
+        Returns: undefined
+      }
+      zcash_return_sent: {
+        Args: {
+          p_amount_zat: number
+          p_id: string
+          p_txid: string
+          p_usd_per_zec_cents: number
+        }
+        Returns: undefined
+      }
+      zcash_returns_claim: {
+        Args: { p_limit?: number }
+        Returns: {
+          address: string
+          amount_micro_usdc: number
+          id: string
+          instalment_no: number
+          kind: string
+          ref: string
+        }[]
+      }
       zcash_watch_record: {
         Args: {
           p_outputs: Json
@@ -2386,6 +2549,7 @@ export type Database = {
         | "underpaid"
         | "expired"
         | "failed"
+      zcash_return_status: "due" | "sending" | "sent" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2658,6 +2822,7 @@ export const Constants = {
         "expired",
         "failed",
       ],
+      zcash_return_status: ["due", "sending", "sent", "failed"],
     },
   },
 } as const

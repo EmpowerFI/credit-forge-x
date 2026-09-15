@@ -8,8 +8,8 @@ import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
 import { usdc } from "../../lib/solana";
-import { POOL_LABEL, STATUS_LABEL, zcashExplorerTx, zec } from "../../lib/zcash";
-import { useZcashAudit } from "./queries";
+import { POOL_LABEL, RETURN_LABEL, STATUS_LABEL, usdPerZec, zcashExplorerTx, zec } from "../../lib/zcash";
+import { useZcashAudit, useZcashReturnsAudit } from "./queries";
 
 const ago = (iso: string | null) => {
   if (!iso) return "never";
@@ -154,6 +154,54 @@ zcash-devtool wallet -w ./audit-view list-tx`;
           </table>
         </div>
       </Panel>
+
+      <ReturnsPaid network={d.network} />
     </div>
+  );
+}
+
+/** What the treasury paid back in ZEC: instalment shares and refunds, by transaction. */
+function ReturnsPaid({ network }: { network: "test" | "main" }) {
+  const returns = useZcashReturnsAudit();
+  if (returns.isError) return <LoadError compact error={returns.error} onRetry={() => returns.refetch()} />;
+  const r = returns.data;
+  return (
+    <Panel title="Paid back in ZEC"
+      description="Instalment shares and refunds owed to investors who paid in ZEC and have no Solana wallet, sent from the treasury by the operator, who alone holds its spending key. Listed by reference and transaction, never by the investor's address.">
+      {!r ? <Skeleton className="h-20 w-full" /> : (
+        <>
+          <div className="flex flex-wrap gap-2 text-xs">
+            {(["due", "sending", "sent", "failed"] as const).map((k) => (
+              <StatusPill key={k} tone={RETURN_LABEL[k].tone}>{RETURN_LABEL[k].label} · {r.counts[k] ?? 0}</StatusPill>
+            ))}
+            <span className="self-center text-muted-foreground">{zec(r.sent_zat, network)} sent in all</span>
+          </div>
+          {r.rows.length === 0 ? <p className="text-sm text-muted-foreground">Nothing owed or paid back yet.</p> : (
+            <ul className="divide-y divide-border">
+              {r.rows.map((x, i) => (
+                <li key={x.txid ?? `${x.ref}-${i}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
+                  <span className="min-w-0">
+                    <span className="text-foreground">{x.kind === "refund" ? "Refund" : "Instalment share"}</span>
+                    <span className="ml-2 font-mono text-xs text-muted-foreground">{x.ref ?? "—"}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {usdc(x.amount_micro_usdc)}{x.amount_zat ? ` → ${zec(x.amount_zat, network)} at ${usdPerZec(x.usd_per_zec_cents!)}` : ""}
+                      {x.error && x.status !== "sent" ? ` · ${x.error}` : ""}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    {x.txid && (
+                      <a href={zcashExplorerTx(x.txid, network)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
+                        {x.txid.slice(0, 4)}…{x.txid.slice(-4)} <ExternalLink size={11} aria-hidden />
+                      </a>
+                    )}
+                    <StatusPill tone={RETURN_LABEL[x.status].tone}>{RETURN_LABEL[x.status].label}</StatusPill>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </Panel>
   );
 }

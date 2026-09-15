@@ -12,7 +12,6 @@ import HomeRedirect from "./pages/HomeRedirect";
 import LoginPage from "./pages/LoginPage";
 import MePage from "./pages/MePage";
 import NewCommunityPage from "./pages/NewCommunityPage";
-import PartnerPage from "./pages/PartnerPage";
 import type { Role } from "./lib/platform";
 import WalletProvider from "./wallet/WalletProvider";
 
@@ -25,6 +24,9 @@ const AuditModels = lazy(() => import("./pages/audit/Models"));
 const AuditConsents = lazy(() => import("./pages/audit/Consents"));
 const AuditSystem = lazy(() => import("./pages/audit/System"));
 const AuditZcash = lazy(() => import("./pages/audit/Zcash"));
+const AuditReports = lazy(() => import("./pages/audit/Reports"));
+// A shared audit report opens without an account.
+const ReportPage = lazy(() => import("./pages/ReportPage"));
 const ConsentPage = lazy(() => import("./pages/ConsentPage"));
 // The investor console: wallet, Solana client and charts, loaded when opened.
 const InvestorOverview = lazy(() => import("./pages/investor/Overview"));
@@ -34,6 +36,15 @@ const InvestorPortfolio = lazy(() => import("./pages/investor/Portfolio"));
 const InvestorPosition = lazy(() => import("./pages/investor/Position"));
 const InvestorAuditTrail = lazy(() => import("./pages/investor/AuditTrail"));
 const InvestorSettlement = lazy(() => import("./pages/investor/Settlement"));
+
+// The partner's desk.
+const PartnerLayout = lazy(() => import("./pages/partner/PartnerLayout"));
+const PartnerPipeline = lazy(() => import("./pages/partner/Pipeline"));
+const PartnerReviews = lazy(() => import("./pages/partner/Reviews"));
+const PartnerDecisions = lazy(() => import("./pages/partner/Decisions"));
+const PartnerPortfolio = lazy(() => import("./pages/partner/Portfolio"));
+const PartnerServicing = lazy(() => import("./pages/partner/Servicing"));
+const PartnerLoan = lazy(() => import("./pages/partner/Loan"));
 
 // Community Intelligence, loaded when a community is opened.
 const CommunityLayout = lazy(() => import("./pages/community/CommunityLayout"));
@@ -80,6 +91,7 @@ export default function PlatformApp() {
       <WalletProvider>
       <Routes>
         <Route path="login" element={<LoginPage />} />
+        <Route path="report/:token" element={<Suspense fallback={null}><ReportPage /></Suspense>} />
         <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
           <Route index element={<HomeRedirect />} />
           <Route path="me" element={<MePage />} />
@@ -104,10 +116,18 @@ export default function PlatformApp() {
             <Route path="consents" element={<Suspense fallback={loading}><AuditConsents /></Suspense>} />
             <Route path="zcash" element={<Suspense fallback={loading}><AuditZcash /></Suspense>} />
             <Route path="system" element={<Suspense fallback={loading}><AuditSystem /></Suspense>} />
+            <Route path="reports" element={<Suspense fallback={loading}><AuditReports /></Suspense>} />
           </Route>
           {/* Anyone signed in may open one; audit_record decides what they may see. */}
           <Route path="audit/:kind/:entityId" element={<Suspense fallback={null}><AuditPage /></Suspense>} />
-          <Route path="partner" element={<RequireAuth roles={["partner", "admin", "auditor"]}><PartnerPage /></RequireAuth>} />
+          <Route path="partner" element={<RequireAuth roles={["partner", "admin", "auditor"]}><Suspense fallback={loading}><PartnerLayout /></Suspense></RequireAuth>}>
+            <Route index element={<Suspense fallback={loading}><PartnerPipeline /></Suspense>} />
+            <Route path="reviews" element={<Suspense fallback={loading}><PartnerReviews /></Suspense>} />
+            <Route path="decisions" element={<Suspense fallback={loading}><PartnerDecisions /></Suspense>} />
+            <Route path="portfolio" element={<Suspense fallback={loading}><PartnerPortfolio /></Suspense>} />
+            <Route path="servicing" element={<Suspense fallback={loading}><PartnerServicing /></Suspense>} />
+            <Route path="loans/:id" element={<Suspense fallback={loading}><PartnerLoan /></Suspense>} />
+          </Route>
           <Route path="investor" element={investor(<InvestorOverview />)} />
           <Route path="investor/opportunities" element={investor(<InvestorOpportunities />)} />
           <Route path="investor/opportunities/:id" element={investor(<OpportunityDetail />)} />

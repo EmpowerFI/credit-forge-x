@@ -211,3 +211,27 @@
     color: hsl(var(--muted-foreground));
   }
 }
+
+/* Printing from the product (an audit report saved as PDF): paper is white,
+   so the dark theme's tokens give way to ink on paper, and controls go. */
+@media print {
+  html.dark {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --secondary: 220 14% 94%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 38%;
+    --border: 220 13% 84%;
+    --positive: 152 70% 28%;
+    --alert: 356 70% 42%;
+    --caution: 32 90% 35%;
+    --info: 213 80% 38%;
+    --accent: 32 90% 35%;
+    color-scheme: light;
+  }
+  html.dark body { background: white; }
+  .no-print { display: none !important; }
+  .panel { break-inside: avoid; }
+}

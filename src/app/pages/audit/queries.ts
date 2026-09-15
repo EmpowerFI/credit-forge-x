@@ -190,3 +190,22 @@ export function useSystemAudit() {
     refetchInterval: 15_000,
   });
 }
+
+export interface ZcashReturnsAudit {
+  counts: Partial<Record<"due" | "sending" | "sent" | "failed", number>>;
+  sent_zat: number;
+  rows: { kind: "payout" | "refund"; ref: string | null; amount_micro_usdc: number; amount_zat: number | null; usd_per_zec_cents: number | null;
+    status: "due" | "sending" | "sent" | "failed"; txid: string | null; error: string | null; created_at: string; sent_at: string | null }[];
+}
+
+export function useZcashReturnsAudit() {
+  return useQuery({
+    queryKey: ["platform", "audit-zcash-returns"],
+    queryFn: async () => {
+      const { data, error } = await platform.rpc("audit_zcash_returns");
+      if (error) throw error;
+      return data as unknown as ZcashReturnsAudit;
+    },
+    refetchInterval: 20_000,
+  });
+}
