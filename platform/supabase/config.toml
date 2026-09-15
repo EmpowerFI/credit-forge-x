@@ -424,6 +424,9 @@ verify_jwt = false
 [functions.vault-refund]
 verify_jwt = false
 
+[functions.vault-settle]
+verify_jwt = false
+
 # Also called by pg_cron; a signed-in user's "check now" is verified in the function.
 # The watcher's WebAssembly is read from disk at start-up.
 [functions.zcash-watch]
