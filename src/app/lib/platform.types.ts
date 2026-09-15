@@ -918,6 +918,61 @@ export type Database = {
           },
         ]
       }
+      outreach_events: {
+        Row: {
+          action: Database["public"]["Enums"]["outreach_action"]
+          community_id: string
+          created_at: string
+          created_by: string | null
+          entrepreneur_id: string
+          id: string
+          is_simulated: boolean
+          note: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["outreach_action"]
+          community_id: string
+          created_at?: string
+          created_by?: string | null
+          entrepreneur_id: string
+          id?: string
+          is_simulated?: boolean
+          note?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["outreach_action"]
+          community_id?: string
+          created_at?: string
+          created_by?: string | null
+          entrepreneur_id?: string
+          id?: string
+          is_simulated?: boolean
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_events_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_events_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partner_decisions: {
         Row: {
           approved_amount_cents: number | null
@@ -1486,6 +1541,16 @@ export type Database = {
           signature: string
         }[]
       }
+      community_cohorts: { Args: { p_community_id: string }; Returns: Json }
+      community_overview: { Args: { p_community_id: string }; Returns: Json }
+      community_participant: {
+        Args: { p_community_id: string; p_entrepreneur_id: string }
+        Returns: Json
+      }
+      community_participants: {
+        Args: { p_community_id: string }
+        Returns: Json
+      }
       complete_anchor_job: {
         Args: {
           p_account_address: string
@@ -1683,6 +1748,15 @@ export type Database = {
         }
         Returns: Json
       }
+      record_outreach: {
+        Args: {
+          p_action: Database["public"]["Enums"]["outreach_action"]
+          p_community_id: string
+          p_entrepreneur_ids: string[]
+          p_note?: string
+        }
+        Returns: number
+      }
       record_payment: {
         Args: {
           p_amount_cents: number
@@ -1816,6 +1890,7 @@ export type Database = {
         | "servicing"
         | "chain_anchoring"
         | "outcome_measurement"
+        | "outreach"
       credit_intent_status: "active" | "withdrawn"
       credit_purpose:
         | "working_capital"
@@ -1854,6 +1929,12 @@ export type Database = {
         | "partner_approved"
         | "partner_declined"
         | "withdrawn"
+      outreach_action:
+        | "checkin_reminder"
+        | "education_followup"
+        | "human_followup"
+        | "capital_need_check"
+        | "servicing_followup"
       partner_kind:
         | "credit_union"
         | "scd"
@@ -2050,6 +2131,7 @@ export const Constants = {
         "servicing",
         "chain_anchoring",
         "outcome_measurement",
+        "outreach",
       ],
       credit_intent_status: ["active", "withdrawn"],
       credit_purpose: [
@@ -2093,6 +2175,13 @@ export const Constants = {
         "partner_approved",
         "partner_declined",
         "withdrawn",
+      ],
+      outreach_action: [
+        "checkin_reminder",
+        "education_followup",
+        "human_followup",
+        "capital_need_check",
+        "servicing_followup",
       ],
       partner_kind: [
         "credit_union",

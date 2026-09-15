@@ -683,7 +683,7 @@ if (intents.length) await must("intents", db.from("credit_intents").insert(inten
 // into opportunities and refers them.
 
 const { data: openIntents, error: intentsError } = await db
-  .from("credit_intents").select("id, entrepreneur_id, requested_amount_cents, purpose").eq("status", "active");
+  .from("credit_intents").select("id, entrepreneur_id, requested_amount_cents, purpose, created_at").eq("status", "active");
 if (intentsError) throw intentsError;
 for (const intent of openIntents.filter((i) => !cycleIds.has(i.entrepreneur_id))) {
   const { data: r, error } = await db.from("readiness_assessments")
@@ -701,7 +701,9 @@ for (const intent of openIntents.filter((i) => !cycleIds.has(i.entrepreneur_id))
   };
   await must(`eligibility ${intent.entrepreneur_id}`, db.rpc("record_eligibility_assessment", {
     p_entrepreneur_id: intent.entrepreneur_id, p_intent_id: intent.id, p_readiness_assessment_id: r.id,
-    p_inputs: input, p_result: assessEligibility(input), p_is_simulated: true, p_created_at: "2026-09-12T18:00:00Z",
+    // An hour after she asked: eligibility never comes before the request.
+    p_inputs: input, p_result: assessEligibility(input), p_is_simulated: true,
+    p_created_at: iso(new Date(new Date(intent.created_at).getTime() + 3_600_000)),
   }));
 }
 
