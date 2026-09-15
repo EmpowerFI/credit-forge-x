@@ -729,6 +729,11 @@ export type Database = {
           is_simulated: boolean
           mode: Database["public"]["Enums"]["investment_mode"]
           opportunity_id: string
+          refund_claimed_at: string | null
+          refund_error: string | null
+          refund_signature: string | null
+          refund_valid_until: number | null
+          refunded_at: string | null
           status: Database["public"]["Enums"]["investment_status"]
           wallet_address: string | null
         }
@@ -742,6 +747,11 @@ export type Database = {
           is_simulated?: boolean
           mode: Database["public"]["Enums"]["investment_mode"]
           opportunity_id: string
+          refund_claimed_at?: string | null
+          refund_error?: string | null
+          refund_signature?: string | null
+          refund_valid_until?: number | null
+          refunded_at?: string | null
           status?: Database["public"]["Enums"]["investment_status"]
           wallet_address?: string | null
         }
@@ -755,6 +765,11 @@ export type Database = {
           is_simulated?: boolean
           mode?: Database["public"]["Enums"]["investment_mode"]
           opportunity_id?: string
+          refund_claimed_at?: string | null
+          refund_error?: string | null
+          refund_signature?: string | null
+          refund_valid_until?: number | null
+          refunded_at?: string | null
           status?: Database["public"]["Enums"]["investment_status"]
           wallet_address?: string | null
         }
@@ -1690,6 +1705,28 @@ export type Database = {
       }
       record_reconciliation: { Args: { p_results: Json }; Returns: number }
       refer_opportunity: { Args: { p_opportunity_id: string }; Returns: string }
+      refund_claim: {
+        Args: { p_limit?: number }
+        Returns: {
+          amount_micro_usdc: number
+          id: string
+          refund_signature: string
+          refund_valid_until: number
+          wallet_address: string
+        }[]
+      }
+      refund_done: {
+        Args: { p_id: string; p_signature: string }
+        Returns: undefined
+      }
+      refund_failed: {
+        Args: { p_error: string; p_id: string }
+        Returns: undefined
+      }
+      refund_sending: {
+        Args: { p_id: string; p_signature: string; p_valid_until: number }
+        Returns: undefined
+      }
       reject_community: {
         Args: { p_community_id: string; p_note: string }
         Returns: undefined

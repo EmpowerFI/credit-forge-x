@@ -52,6 +52,12 @@
 - Existing pages move into the new shell unchanged in behaviour.
 
 ### Phase 1 — Investor console, wallet-first (≈6 days) · P0
+
+> **Status, 15 Sep:** built on `hackathon`, awaiting the founder's review. Everything below is in, with two design changes:
+> - `refund` and `release` became one operator-signed `vault_transfer`. It also serves Phase 4's `pay_out`. The reason is kept in the database, and the instruction takes no borrower account. It's the program's one amount, reviewed in the privacy test.
+> - Refunds are live: `vault-refund`, driven by pg_cron, is signed before sending and never sends twice. Release and pay-out wiring comes in Phase 4.
+>
+> Verified: Sign in with Solana on the hackathon project (a new wallet becomes a capital provider), and every console screen in demo mode at 1440 and 390 px. **Still open:** one real devnet-USDC investment and refund end to end, waiting on faucet USDC.
 - **Wallet:** wallet-standard connection (`@wallet-standard/react`, `@solana/react` on the existing `@solana/kit`); devnet badge; abbreviated address; SOL and USDC balances; "Get test SOL" (Solana faucet) and "Get test USDC" (Circle faucet), with a balance refresh on return.
 - **Auth:** Sign in with Solana (Supabase Web3 auth). A new wallet becomes a `capital_provider` profile. Demo mode signs in as `investor@demo`, read-only.
 - **Program:**

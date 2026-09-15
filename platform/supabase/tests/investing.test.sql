@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(27);
+select plan(32);
 
 -- ------------------------------------------------------------------ fixtures
 -- One partner, one community, Rita and Sara ready and asking. Two wallet
@@ -217,6 +217,24 @@ select results_eq(
   $$ values ('refunded', 'refund_due') $$,
   'a declined opportunity refunds: the allocation is due back'
 );
+
+-- The refund leaves the vault: claimed by the function, sent once, recorded.
+select pg_temp.act_as('00000000-0000-0000-0000-0000000004b2');
+select throws_ok($$ select * from refund_claim() $$, '42501', null, 'an investor cannot claim refunds');
+set local role postgres;
+set local role service_role;
+create temp table claimed as select * from refund_claim();
+select results_eq($$ select wallet_address, amount_micro_usdc, refund_signature from claimed $$,
+  $$ values ('YaRa22222222222222222222222222222222222222', 50000000::bigint, null::text) $$,
+  'the function claims Yara''s refund: her wallet, her amount, nothing sent yet');
+select is((select count(*)::int from refund_claim()), 0, 'and a second run does not claim it again');
+select throws_ok($$ select refund_done((select id from claimed), 'sig-refund') $$, 'P0001', 'refund_not_pending',
+  'it is done only with the signature recorded before sending');
+select refund_sending((select id from claimed), 'sig-refund', 1000);
+select refund_done((select id from claimed), 'sig-refund');
+set local role postgres;
+select results_eq($$ select status::text, refund_signature from investments where id = (select id from claimed) $$,
+  $$ values ('refunded', 'sig-refund') $$, 'then the allocation is refunded, with its transaction');
 
 -- Reais to USDC, pinned: repayments and returns once came out 1,000 times
 -- too small because centavos were scaled to milli-USDC, not micro-USDC.

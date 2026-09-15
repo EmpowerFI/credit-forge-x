@@ -18,7 +18,8 @@ import { usdc } from "../../lib/solana";
 
 interface PositionData {
   investment: { id: string; amount_micro_usdc: number; share_bps: number; mode: string; status: "allocated" | "refund_due" | "refunded";
-    deposit_signature: string | null; wallet_address: string | null; invested_at: string; is_simulated: boolean };
+    deposit_signature: string | null; wallet_address: string | null; invested_at: string; is_simulated: boolean;
+    refund_signature: string | null; refunded_at: string | null };
   proof: { status: string; signature: string | null; account: string | null; commitment: string | null; reconcile: string } | null;
   opportunity: { id: string; code: string; purpose: CreditPurpose; business_sector: string | null; amount_cents: number; term_months: number;
     risk_band: Grade; funding_status: FundingStatus; funding_target_micro_usdc: number; fx_brl_per_usdc_milli: number };
@@ -83,6 +84,16 @@ export default function Position() {
               <dt className="text-muted-foreground">Deposit transaction</dt>
               <dd>{inv.deposit_signature ? <ExplorerLink tx={inv.deposit_signature} /> : <span className="text-caution">simulated, no deposit</span>}</dd>
             </div>
+            {inv.status !== "allocated" && (
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-muted-foreground">Refund from the vault</dt>
+                <dd>
+                  {inv.refund_signature ? <ExplorerLink tx={inv.refund_signature} />
+                    : inv.is_simulated ? <span className="text-caution">simulated, nothing to return</span>
+                    : <span className="text-caution">on its way</span>}
+                </dd>
+              </div>
+            )}
             <div className="flex items-center justify-between gap-3">
               <dt className="flex items-center gap-2 text-muted-foreground"><DataTag kind="proven" /> Allocation commitment</dt>
               <dd className="flex items-center gap-2">
