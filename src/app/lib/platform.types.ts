@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       capital_commitments: {
@@ -300,6 +295,66 @@ export type Database = {
             columns: ["entrepreneur_id"]
             isOneToOne: false
             referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consents: {
+        Row: {
+          assessment: boolean
+          channel: Database["public"]["Enums"]["consent_channel"]
+          consent_no: number
+          created_at: string
+          entrepreneur_id: string
+          id: string
+          impact: boolean
+          investors: boolean
+          is_simulated: boolean
+          partner: boolean
+          recorded_by: string | null
+          text_version: string
+        }
+        Insert: {
+          assessment: boolean
+          channel: Database["public"]["Enums"]["consent_channel"]
+          consent_no: number
+          created_at?: string
+          entrepreneur_id: string
+          id?: string
+          impact: boolean
+          investors: boolean
+          is_simulated?: boolean
+          partner: boolean
+          recorded_by?: string | null
+          text_version: string
+        }
+        Update: {
+          assessment?: boolean
+          channel?: Database["public"]["Enums"]["consent_channel"]
+          consent_no?: number
+          created_at?: string
+          entrepreneur_id?: string
+          id?: string
+          impact?: boolean
+          investors?: boolean
+          is_simulated?: boolean
+          partner?: boolean
+          recorded_by?: string | null
+          text_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consents_entrepreneur_id_fkey"
+            columns: ["entrepreneur_id"]
+            isOneToOne: false
+            referencedRelation: "entrepreneurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consents_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1509,6 +1564,22 @@ export type Database = {
       }
     }
     Functions: {
+      audit_attestations: {
+        Args: {
+          p_kind?: Database["public"]["Enums"]["anchor_kind"]
+          p_limit?: number
+          p_offset?: number
+          p_state?: string
+        }
+        Returns: Json
+      }
+      audit_consents: { Args: never; Returns: Json }
+      audit_events: {
+        Args: { p_kind?: string; p_limit?: number }
+        Returns: Json
+      }
+      audit_model_sample: { Args: { p_limit?: number }; Returns: Json }
+      audit_models: { Args: never; Returns: Json }
       audit_record: {
         Args: {
           p_entity_id: string
@@ -1516,6 +1587,7 @@ export type Database = {
         }
         Returns: Json
       }
+      audit_system: { Args: never; Returns: Json }
       capital_portfolio: { Args: never; Returns: Json }
       claim_anchor_jobs: {
         Args: { p_limit?: number }
@@ -1715,6 +1787,16 @@ export type Database = {
         }[]
       }
       readiness_inputs: { Args: { p_entrepreneur_id: string }; Returns: Json }
+      record_consent: {
+        Args: {
+          p_assessment: boolean
+          p_entrepreneur_id?: string
+          p_impact: boolean
+          p_investors: boolean
+          p_partner: boolean
+        }
+        Returns: Json
+      }
       record_education_progress: {
         Args: {
           p_entrepreneur_id: string
@@ -1853,6 +1935,7 @@ export type Database = {
         | "payment"
         | "outcome"
         | "allocation"
+        | "consent"
       anchor_status: "pending" | "submitted" | "confirmed" | "failed"
       app_role:
         | "entrepreneur"
@@ -1873,6 +1956,7 @@ export type Database = {
         | "collective"
         | "other"
       community_status: "pending_verification" | "verified" | "rejected"
+      consent_channel: "app" | "community"
       cost_bearer: "empowerfi" | "community" | "partner"
       cost_stage:
         | "community_onboarding"
@@ -2090,6 +2174,7 @@ export const Constants = {
         "payment",
         "outcome",
         "allocation",
+        "consent",
       ],
       anchor_status: ["pending", "submitted", "confirmed", "failed"],
       app_role: [
@@ -2114,6 +2199,7 @@ export const Constants = {
         "other",
       ],
       community_status: ["pending_verification", "verified", "rejected"],
+      consent_channel: ["app", "community"],
       cost_bearer: ["empowerfi", "community", "partner"],
       cost_stage: [
         "community_onboarding",
@@ -2203,3 +2289,4 @@ export const Constants = {
     },
   },
 } as const
+

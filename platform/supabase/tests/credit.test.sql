@@ -62,6 +62,11 @@ create temp table fx as select
     "revenue_cv_bps":1000,"revenue_trend_bps":0,"household_share_bps":5926}'::jsonb as features;
 grant select on fx to authenticated, service_role;
 
+-- Consent as each participant's community recorded it (M14): all four scopes.
+insert into consents (entrepreneur_id, consent_no, text_version, assessment, partner, investors, impact, channel)
+select e.id, 1, 'consent-v1', true, true, true, true, 'community' from entrepreneurs e
+where not exists (select 1 from consents k where k.entrepreneur_id = e.id);
+
 set local role service_role;
 select record_readiness_assessment(id, (select features from fx), (select ready from fx))
 from entrepreneurs where display_name like 'pgTAP %';

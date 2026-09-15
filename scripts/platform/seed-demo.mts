@@ -148,8 +148,10 @@ if (!irene) throw new Error("run seed-demo-accounts.mts first: no demo investor"
 const fundRandom = rng(20260915);
 async function fund(opportunityId: string, fill: number, ireneShare: number, at: string) {
   const { data: o, error } = await db.from("qualified_credit_opportunities")
-    .select("funding_target_micro_usdc").eq("id", opportunityId).single();
+    .select("funding_target_micro_usdc, funding_status").eq("id", opportunityId).single();
   if (error) throw error;
+  // Not offered to investors, by her choice: the partner lends its own capital.
+  if (!o.funding_status) return;
   const target = Math.round(o.funding_target_micro_usdc / 1_000_000);
   const goal = fill >= 1 ? target : Math.floor(target * fill);
   const parts: [string, number][] = [];
@@ -531,6 +533,29 @@ await must(
   }))),
 );
 
+// ----------------------------------------------------------------- consent
+// Given on paper when she joined and recorded by her leader, as most
+// participants give it: all four scopes, though some keep their business out
+// of impact figures — one first-cycle borrower among them, so the impact view
+// shows an outcome left out by choice. Its own random stream, so the rest of
+// the demo does not move.
+
+const consentRandom = rng(20260918);
+const noImpact = firstCycle.at(-1)?.membership.entrepreneur_id;
+const consentRows = memberships.map((m) => ({
+  entrepreneur_id: m.entrepreneur_id, consent_no: 1, text_version: "consent-v1",
+  assessment: true, partner: true, investors: true,
+  impact: m.entrepreneur_id !== noImpact && consentRandom() >= 0.08,
+  channel: "community", recorded_by: leaderOf.get(m.community_id), is_simulated: true, created_at: m.joined_at,
+}));
+const consents = await must("consents", db.from("consents").insert(consentRows).select("id, entrepreneur_id"));
+await must(
+  "consent anchors",
+  db.from("chain_anchors").insert(consents.map((c) => ({
+    kind: "consent", entity_id: c.id, depends_on: enrollmentOf.get(c.entrepreneur_id),
+  }))),
+);
+
 // ------------------------------------------------------ first cycle, credit
 // Their July readiness on the months reported by then, a request, the
 // eligibility engine, the partner's decision in the partner's name, the loan,
@@ -677,6 +702,24 @@ const intents = memberships
   }));
 if (intents.length) await must("intents", db.from("credit_intents").insert(intents));
 
+// Two of them, one in Grajaú, let the partner see the request but keep it
+// from investors: a second record, shortly before they asked. The partner
+// lends its own capital there.
+const communityOf = new Map(memberships.map((m) => [m.entrepreneur_id, m.community_id]));
+const private_ = [
+  intents.find((i) => communityOf.get(i.entrepreneur_id) === grajau.id && i.entrepreneur_id !== recent),
+  intents.find((i) => communityOf.get(i.entrepreneur_id) !== grajau.id && i.entrepreneur_id !== recent),
+].filter((i): i is (typeof intents)[number] => Boolean(i));
+for (const i of private_) {
+  const first = consentRows.find((c) => c.entrepreneur_id === i.entrepreneur_id)!;
+  const [second] = await must("consent change", db.from("consents").insert({
+    ...first, consent_no: 2, investors: false, created_at: iso(new Date(new Date(i.created_at).getTime() - 2 * 3_600_000)),
+  }).select("id"));
+  await must("consent change anchor", db.from("chain_anchors").insert({
+    kind: "consent", entity_id: second.id, depends_on: enrollmentOf.get(i.entrepreneur_id),
+  }));
+}
+
 // -------------------------------------------------------------- eligibility
 // Every open request goes through the eligibility engine and the same
 // recording function the live path uses; that function turns eligible ones
@@ -777,6 +820,7 @@ console.log(`capital: ${investor ? "R$ 50,000 committed by the demo investor (si
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
 console.log(`short history, awaiting manual review: ${inserted.find((e) => e.id === recent)?.display_name ?? "none"} (${COMMUNITIES[1].name})`);
 console.log(`first cycle: ${cycleLoans} loans since July, outcomes measured in September`);
+console.log(`consent: ${consentRows.length} recorded at enrollment, ${consentRows.filter((c) => !c.impact).length} outside impact figures, ${private_.length} requests kept from investors`);
 await must("release the anchor worker", db.rpc("finish_anchor_run"));
 const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");
 console.log(`anchors queued: ${queued}`);

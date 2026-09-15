@@ -147,6 +147,11 @@ select throws_ok(
 select is((select count(*)::int from checkins), 0, 'and sees nothing');
 set local role postgres;
 
+-- Consent as each participant's community recorded it (M14): all four scopes.
+insert into consents (entrepreneur_id, consent_no, text_version, assessment, partner, investors, impact, channel)
+select e.id, 1, 'consent-v1', true, true, true, true, 'community' from entrepreneurs e
+where not exists (select 1 from consents k where k.entrepreneur_id = e.id);
+
 -- --------------------------------------------------------------- readiness
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000001a3');

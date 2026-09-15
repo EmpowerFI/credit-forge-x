@@ -52,6 +52,7 @@ import {
   fetchMaybeBorrowerAudit,
   fetchMaybeCheckinCommitment,
   fetchMaybeCommunityAudit,
+  fetchMaybeConsentCommitment,
   fetchMaybeEligibilityAttestation,
   fetchMaybeLoanAccount,
   fetchMaybeOpportunityCommitment,
@@ -63,6 +64,7 @@ import {
   findBorrowerPda,
   findCheckinPda,
   findCommunityPda,
+  findConsentPda,
   findEligibilityPda,
   findLoanPda,
   findOpportunityPda,
@@ -70,6 +72,7 @@ import {
   findPaymentPda,
   getAnchorAllocationInstructionAsync,
   getAnchorCheckinInstructionAsync,
+  getAnchorConsentInstructionAsync,
   getAnchorOpportunityInstructionAsync,
   getAnchorOutcomeInstructionAsync,
   getAnchorPaymentInstructionAsync,
@@ -378,6 +381,18 @@ async function anchor(job: Job): Promise<Proof> {
         return { ...(await recoverSignature(account, "first")), account, commitment, recovered: true };
       }
       const ix = await getAnchorPaymentInstructionAsync({ operator: signer, loan, instalmentNo, commitment });
+      return { ...(await send(ix)), account, commitment, recovered: false };
+    }
+
+    if (job.kind === "consent") {
+      const consentNo = int(p.consent_no, "consent number");
+      const [account] = await findConsentPda({ borrower, consentNo });
+      const existing = await fetchMaybeConsentCommitment(rpc, account);
+      if (existing.exists) {
+        if (!sameCommitment(new Uint8Array(existing.data.commitment), commitment)) throw mismatch("consent commitment", account);
+        return { ...(await recoverSignature(account, "first")), account, commitment, recovered: true };
+      }
+      const ix = await getAnchorConsentInstructionAsync({ operator: signer, borrower, consentNo, commitment });
       return { ...(await send(ix)), account, commitment, recovered: false };
     }
 

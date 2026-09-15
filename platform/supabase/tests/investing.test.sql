@@ -48,6 +48,11 @@ select '00000000-0000-0000-0000-0000000004c1', id from entrepreneurs where displ
 insert into chain_anchors (kind, entity_id)
 select 'enrollment', id from entrepreneurs where display_name like 'pgTAP % Invest';
 
+-- Consent as each participant's community recorded it (M14): all four scopes.
+insert into consents (entrepreneur_id, consent_no, text_version, assessment, partner, investors, impact, channel)
+select e.id, 1, 'consent-v1', true, true, true, true, 'community' from entrepreneurs e
+where not exists (select 1 from consents k where k.entrepreneur_id = e.id);
+
 set local role service_role;
 select record_readiness_assessment(id,
   '{"as_of_period":"2026-09","months_reported":6,"records_kept_bps":10000,"inconsistencies":0}'::jsonb,

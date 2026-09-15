@@ -58,6 +58,11 @@ select e, p, 7777777, 100000, 50000, 60000, true, 22
 from unnest(array['00000000-0000-0000-0000-0000000005e1', '00000000-0000-0000-0000-0000000005e3']::uuid[]) e,
      unnest(array['2026-07', '2026-08']) p;
 
+-- Consent as each participant's community recorded it (M14): all four scopes.
+insert into consents (entrepreneur_id, consent_no, text_version, assessment, partner, investors, impact, channel)
+select e.id, 1, 'consent-v1', true, true, true, true, 'community' from entrepreneurs e
+where not exists (select 1 from consents k where k.entrepreneur_id = e.id);
+
 set local role service_role;
 select record_readiness_assessment('00000000-0000-0000-0000-0000000005e1',
   '{"as_of_period":"2026-08","months_reported":2,"records_kept_bps":10000,"inconsistencies":0}'::jsonb,
