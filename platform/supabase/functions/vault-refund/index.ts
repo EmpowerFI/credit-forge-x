@@ -4,7 +4,9 @@
 // refund_due, with the anchoring secret in x-anchor-secret. For each claimed
 // refund it sends one transaction, signed by the operator: create the
 // investor's USDC account if it is missing, then the program's vault_transfer
-// of the amount deposited, into that account.
+// of the amount deposited, into that account. A shielded-ZEC allocation with
+// no wallet goes back to the ramp — the operator's own account on devnet —
+// and the treasury pays the investor back in ZEC (scripts/platform/zcash-returns.mts).
 //
 // Never sent twice. The signature and the blockhash's last valid block height
 // are recorded before sending. A refund that already has a signature is looked
@@ -38,7 +40,9 @@ const USDC_MINT = address("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
 
 interface Refund {
   id: string;
-  wallet_address: string;
+  // None for a shielded-ZEC allocation: its USDC goes back to the ramp (the
+  // operator, on devnet), and the treasury returns the ZEC.
+  wallet_address: string | null;
   amount_micro_usdc: number;
   refund_signature: string | null;
   refund_valid_until: number | null;
@@ -86,7 +90,7 @@ async function statusOf(signature: string): Promise<{ status: Status; error?: st
 /** Signs, records the signature, then sends. Returns the signature. */
 async function sendRefund(r: Refund): Promise<string> {
   const signer = await getOperator();
-  const owner = address(r.wallet_address);
+  const owner = r.wallet_address ? address(r.wallet_address) : signer.address;
   const [destination] = await findAssociatedTokenPda({ owner, mint: USDC_MINT, tokenProgram: TOKEN_PROGRAM_ADDRESS });
   const instructions = [
     await getCreateAssociatedTokenIdempotentInstructionAsync({ payer: signer, owner, mint: USDC_MINT }),

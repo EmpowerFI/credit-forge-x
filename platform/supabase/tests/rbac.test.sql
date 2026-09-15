@@ -51,7 +51,7 @@ select is(
    where n.nspname in ('public', 'private') and has_function_privilege('anon', p.oid, 'EXECUTE')
      -- Trigger functions cannot be called, only fired (the hosted platform adds one of its own).
      and p.prorettype not in ('trigger'::regtype, 'event_trigger'::regtype)),
-  null, 'anonymous visitors can call no function'
+  '{shared_audit_report}'::text[], 'anonymous visitors can call one function: opening an audit report shared with them by link'
 );
 select ok(not has_schema_privilege('anon', 'private', 'USAGE'), 'nor reach the private schema');
 select ok(

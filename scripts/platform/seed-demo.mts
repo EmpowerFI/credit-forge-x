@@ -60,6 +60,13 @@ const random = rng(20260914);
 const pick = <T,>(items: readonly T[]) => items[Math.floor(random() * items.length)];
 const between = (from: Date, to: Date) => new Date(from.getTime() + random() * (to.getTime() - from.getTime()));
 const iso = (d: Date) => d.toISOString();
+// Pix's end-to-end id format, as private.mock_pix_e2e makes it: 'E', no real
+// institution (99999999), the minute in UTC, 11 random characters.
+const mockPixE2e = (at: Date) => {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const tail = Array.from(crypto.getRandomValues(new Uint8Array(11)), (b) => alphabet[b % 56]).join("");
+  return `E99999999${at.toISOString().slice(0, 16).replace(/[-T:]/g, "")}${tail}`;
+};
 
 const FIRST = [
   "Ana", "Beatriz", "Camila", "Cláudia", "Daniela", "Débora", "Edna", "Elaine", "Fabiana", "Fernanda",
@@ -645,6 +652,10 @@ for (const c of firstCycle) {
   for (const [status, at] of Object.entries({ PARTNER_APPROVED: JULY.decision, DISBURSED: JULY.disbursed, ACTIVE: JULY.active, PAID: PAID_OFF_AT })) {
     await must("date event", db.from("loan_events").update({ created_at: at }).eq("loan_id", loan.id).eq("to_status", status));
   }
+  // Her Pix payout, a mock, carries the minute it was sent in its id.
+  await must("date pix payout", db.from("settlement_legs")
+    .update({ created_at: JULY.disbursed, done_at: JULY.disbursed, pix_e2e: mockPixE2e(new Date(JULY.disbursed)) })
+    .eq("loan_id", loan.id).eq("kind", "pix_payout"));
 
   // September: what changed in the business since.
   const outcomeId = await must("first-cycle outcome", db.rpc("measure_outcome", { p_loan_id: loan.id, p_capital_use: c.use }));
@@ -760,12 +771,19 @@ const { data: referred, error: referredError } = await db.from("qualified_credit
   .select("id, amount_cents, term_months").eq("status", "referred").order("created_at").order("id");
 if (referredError) throw referredError;
 const toDecide = referred.slice(0, Math.max(0, referred.length - 3));
-let approved = 0, declined = 0;
+let approved = 0, declined = 0, waiting = 0, cancelled = 0;
 for (const [i, o] of toDecide.entries()) {
-  const disbursing = i % 5 !== 4 && (approved + 1) % 3 >= 1;
+  const next = (approved + 1) % 3;
+  // Approved and not yet disbursed: the first is funded and ready to
+  // formalise, the rest are still raising. The first loan offered to investors
+  // that would have been disbursed is declined at formalisation instead, and
+  // its investors are refunded.
+  const holding = i % 5 !== 4 && next === 0 ? waiting++ : -1;
+  const { data: listing } = await db.from("qualified_credit_opportunities").select("funding_status").eq("id", o.id).single();
+  const cancelling = i % 5 !== 4 && next === 1 && Boolean(listing?.funding_status) && cancelled === 0;
+  const disbursing = i % 5 !== 4 && next >= 1;
   // Declined: partly funded, then refunded. Disbursed: funded in full first.
-  // Approved and not yet disbursed: still raising.
-  await fund(o.id, i % 5 === 4 ? 0.3 : disbursing ? 1 : 0.6, i % 2 === 0 ? 0.2 : 0, "2026-09-13T12:00:00-03:00");
+  await fund(o.id, i % 5 === 4 ? 0.3 : disbursing || holding === 0 ? 1 : 0.6, i % 2 === 0 ? 0.2 : 0, "2026-09-13T12:00:00-03:00");
   if (i % 5 === 4) {
     await must("decline", asPartner.rpc("partner_decide", {
       p_opportunity_id: o.id, p_verdict: "declined", p_reason: "Outside our current sector focus",
@@ -780,6 +798,13 @@ for (const [i, o] of toDecide.entries()) {
   approved++;
   // Loans at different points of their life: approved, disbursed, repaying.
   const { data: loan } = await asPartner.from("loans").select("id, instalment_cents").eq("opportunity_id", o.id).single();
+  if (cancelling) {
+    await must("decline at formalisation", asPartner.rpc("transition_loan", {
+      p_loan_id: loan!.id, p_to: "CANCELLED", p_note: "Guarantor could not be reached at signing",
+    }));
+    cancelled++;
+    continue;
+  }
   const stage = approved % 3;
   if (stage >= 1) await must("disburse", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "DISBURSED", p_note: "Pix sent" }));
   if (stage === 2) {
@@ -815,7 +840,7 @@ console.log(`education: ${progress.length} progress records`);
 console.log(`check-ins: ${checkins.length}`);
 console.log(`readiness: ${JSON.stringify(tally)}`);
 console.log(`credit intents: ${intents.length}`);
-console.log(`partner: ${approved} approved, ${declined} declined, ${referred.length - toDecide.length} awaiting decision`);
+console.log(`partner: ${approved} approved (${cancelled} declined at formalisation), ${declined} declined, ${referred.length - toDecide.length} awaiting decision`);
 console.log(`capital: ${investor ? "R$ 50,000 committed by the demo investor (simulated)" : "no capital provider account"}`);
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
 console.log(`short history, awaiting manual review: ${inserted.find((e) => e.id === recent)?.display_name ?? "none"} (${COMMUNITIES[1].name})`);
