@@ -9,7 +9,7 @@ select set_config(
   true
 );
 
-select plan(58);
+select plan(59);
 
 -- ------------------------------------------------------------------ fixtures
 -- Maria, Bea and Cris are ready and asked; Ana is ready and did not ask.
@@ -31,11 +31,13 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000002a6', 'c-cris@test'),
   ('00000000-0000-0000-0000-0000000002a7', 'c-paulo@test'),
   ('00000000-0000-0000-0000-0000000002a8', 'c-dora@test'),
-  ('00000000-0000-0000-0000-0000000002a9', 'c-otto@test');
+  ('00000000-0000-0000-0000-0000000002a9', 'c-otto@test'),
+  ('00000000-0000-0000-0000-0000000002b3', 'c-inês@test');
 update profiles set role = 'admin' where id = '00000000-0000-0000-0000-0000000002a1';
 update profiles set role = 'community_leader' where id = '00000000-0000-0000-0000-0000000002a2';
 update profiles set role = 'partner', partner_id = '00000000-0000-0000-0000-0000000002f1' where id = '00000000-0000-0000-0000-0000000002a7';
 update profiles set role = 'partner', partner_id = '00000000-0000-0000-0000-0000000002f2' where id = '00000000-0000-0000-0000-0000000002a8';
+update profiles set role = 'capital_provider' where id = '00000000-0000-0000-0000-0000000002b3';
 
 insert into communities (id, name, kind, city, state, leader_id, status, verified_at, verified_by) values
   ('00000000-0000-0000-0000-0000000002c1', 'pgTAP Credit', 'education_programme', 'Recife', 'PE',
@@ -258,6 +260,13 @@ select throws_ok($$ select transition_loan((select id from loan), 'ACTIVE') $$,
   'P0001', 'invalid_loan_transition', 'a loan cannot skip disbursement');
 select throws_ok($$ select record_payment((select id from loan), 1, 21667) $$,
   'P0001', 'loan_not_repaying', 'nor be repaid before it is disbursed');
+select throws_ok($$ select transition_loan((select id from loan), 'DISBURSED', 'Pix sent') $$,
+  'P0001', 'not_fully_funded', 'nor be disbursed before investors fund it');
+set local role postgres;
+-- Inês funds it in full.
+select record_investment('00000000-0000-0000-0000-0000000002b3', o.id, o.funding_target_micro_usdc, 'simulated', p_is_simulated => true)
+from qualified_credit_opportunities o where o.id = (select opportunity_id from loans where id = (select id from loan));
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002a7');
 select lives_ok($$ select transition_loan((select id from loan), 'DISBURSED', 'Pix sent') $$, 'the partner disburses');
 select lives_ok($$ select transition_loan((select id from loan), 'ACTIVE') $$, 'the loan becomes active');
 select lives_ok($$ select record_payment((select id from loan), 1, 21667) $$, 'the first instalment is recorded');

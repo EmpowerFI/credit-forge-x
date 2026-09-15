@@ -37,6 +37,7 @@ import {
 import {
   EMPOWERFI_AUDIT_PROGRAM_ADDRESS,
   EmpowerfiAuditAccount,
+  getAllocationCommitmentDecoder,
   getBorrowerAuditDecoder,
   getCheckinCommitmentDecoder,
   getCommunityAuditDecoder,
@@ -96,6 +97,7 @@ const HOLDER: Record<AnchorKind, { type: EmpowerfiAuditAccount; read: (data: Uin
   loan_transition: { type: EmpowerfiAuditAccount.LoanAccount, read: (d) => new Uint8Array(getLoanAccountDecoder().decode(d).lastTransitionCommitment) },
   payment: { type: EmpowerfiAuditAccount.PaymentCommitment, read: (d) => new Uint8Array(getPaymentCommitmentDecoder().decode(d).commitment) },
   outcome: { type: EmpowerfiAuditAccount.OutcomeCommitment, read: (d) => new Uint8Array(getOutcomeCommitmentDecoder().decode(d).commitment) },
+  allocation: { type: EmpowerfiAuditAccount.AllocationCommitment, read: (d) => new Uint8Array(getAllocationCommitmentDecoder().decode(d).commitment) },
 };
 
 /** The commitment a transition_loan transaction carried, if it succeeded. */

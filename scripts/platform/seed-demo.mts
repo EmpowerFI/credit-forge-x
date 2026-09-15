@@ -116,6 +116,59 @@ for (const l of SEED_LEADERS) {
   leaderIds.push(user.id);
 }
 
+// Investors who fund alongside the demo investor. Like the leaders above, they
+// exist to hold positions and cannot log in.
+const SEED_INVESTORS = [
+  { email: "fundo.semente@seed.empowerfi.io", name: "Fundo Semente (seed)" },
+  { email: "rede.anjos@seed.empowerfi.io", name: "Rede de Anjos (seed)" },
+  { email: "diaspora.capital@seed.empowerfi.io", name: "Diáspora Capital (seed)" },
+];
+const seedInvestorIds: string[] = [];
+for (const v of SEED_INVESTORS) {
+  let user = authList.users.find((u) => u.email === v.email);
+  if (!user) {
+    const { data, error } = await db.auth.admin.createUser({
+      email: v.email,
+      password: crypto.randomUUID() + crypto.randomUUID(),
+      email_confirm: true,
+      user_metadata: { display_name: v.name },
+    });
+    if (error) throw new Error(`create ${v.email}: ${error.message}`);
+    user = data.user;
+  }
+  await must(`role ${v.email}`, db.from("profiles").update({ role: "capital_provider", display_name: v.name }).eq("id", user.id));
+  seedInvestorIds.push(user.id);
+}
+const irene = profiles.find((p) => p.display_name === "Irene Costa");
+if (!irene) throw new Error("run seed-demo-accounts.mts first: no demo investor");
+
+// Investors fund an opportunity up to `fill` of its USDC target, the demo
+// investor taking `ireneShare` of the whole. Simulated positions: no deposit
+// on chain, and marked so — their allocations are proven all the same.
+const fundRandom = rng(20260915);
+async function fund(opportunityId: string, fill: number, ireneShare: number, at: string) {
+  const { data: o, error } = await db.from("qualified_credit_opportunities")
+    .select("funding_target_micro_usdc").eq("id", opportunityId).single();
+  if (error) throw error;
+  const target = Math.round(o.funding_target_micro_usdc / 1_000_000);
+  const goal = fill >= 1 ? target : Math.floor(target * fill);
+  const parts: [string, number][] = [];
+  const mine = Math.min(goal, Math.floor(target * ireneShare));
+  if (mine > 0) parts.push([irene!.id, mine]);
+  let rest = goal - mine;
+  for (const [k, id] of seedInvestorIds.entries()) {
+    const take = k === seedInvestorIds.length - 1 ? rest : Math.floor(rest * (0.4 + fundRandom() * 0.3));
+    if (take > 0) parts.push([id, take]);
+    rest -= take;
+  }
+  for (const [investorId, usdc] of parts) {
+    await must("fund", db.rpc("record_investment", {
+      p_investor_id: investorId, p_opportunity_id: opportunityId, p_amount_micro_usdc: usdc * 1_000_000,
+      p_mode: "simulated", p_is_simulated: true, p_created_at: at,
+    }));
+  }
+}
+
 // -------------------------------------------------------------- the worker
 // Held for the whole run: the first cycle's facts are dated after the
 // functions record them, and must not reach the chain before that.
@@ -538,6 +591,7 @@ for (const c of firstCycle) {
   const { data: opp } = await db.from("qualified_credit_opportunities")
     .select("id, amount_cents, term_months, status").eq("intent_id", intent.id).maybeSingle();
   if (!opp || opp.status !== "referred") continue;
+  await fund(opp.id, 1, 0.25, "2026-07-08T18:00:00-03:00");
 
   await must("first-cycle approval", asPartner.rpc("partner_decide", {
     p_opportunity_id: opp.id, p_verdict: "approved", p_approved_amount_cents: opp.amount_cents, p_rate_bps: 300,
@@ -663,6 +717,10 @@ if (referredError) throw referredError;
 const toDecide = referred.slice(0, Math.max(0, referred.length - 3));
 let approved = 0, declined = 0;
 for (const [i, o] of toDecide.entries()) {
+  const disbursing = i % 5 !== 4 && (approved + 1) % 3 >= 1;
+  // Declined: partly funded, then refunded. Disbursed: funded in full first.
+  // Approved and not yet disbursed: still raising.
+  await fund(o.id, i % 5 === 4 ? 0.3 : disbursing ? 1 : 0.6, i % 2 === 0 ? 0.2 : 0, "2026-09-13T12:00:00-03:00");
   if (i % 5 === 4) {
     await must("decline", asPartner.rpc("partner_decide", {
       p_opportunity_id: o.id, p_verdict: "declined", p_reason: "Outside our current sector focus",
@@ -685,6 +743,10 @@ for (const [i, o] of toDecide.entries()) {
       await must("pay", asPartner.rpc("record_payment", { p_loan_id: loan!.id, p_instalment_no: n, p_amount_cents: loan!.instalment_cents }));
     }
   }
+}
+// The three awaiting the partner are raising, at different points.
+for (const [k, o] of referred.slice(toDecide.length).entries()) {
+  await fund(o.id, [0.15, 0.45, 0][k] ?? 0, 0, "2026-09-13T15:00:00-03:00");
 }
 await asPartner.auth.signOut();
 

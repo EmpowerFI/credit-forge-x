@@ -40,6 +40,7 @@ import {
   type CanonicalObject,
   commit,
   fromHex,
+  hashAllocationRef,
   hashBorrowerRef,
   sameCommitment,
   toHex,
@@ -47,6 +48,7 @@ import {
 import {
   CommunityStatus,
   EligibilityDecision,
+  fetchMaybeAllocationCommitment,
   fetchMaybeBorrowerAudit,
   fetchMaybeCheckinCommitment,
   fetchMaybeCommunityAudit,
@@ -56,6 +58,7 @@ import {
   fetchMaybeOutcomeCommitment,
   fetchMaybePaymentCommitment,
   fetchMaybeReadinessAttestation,
+  findAllocationPda,
   findAttestationPda,
   findBorrowerPda,
   findCheckinPda,
@@ -65,6 +68,7 @@ import {
   findOpportunityPda,
   findOutcomePda,
   findPaymentPda,
+  getAnchorAllocationInstructionAsync,
   getAnchorCheckinInstructionAsync,
   getAnchorOpportunityInstructionAsync,
   getAnchorOutcomeInstructionAsync,
@@ -270,6 +274,21 @@ async function anchor(job: Job): Promise<Proof> {
 
   const commitment = await commit(ANCHOR_DOMAINS[job.kind], job.payload);
   const signer = await getOperator();
+
+  // An allocation stands alone: keyed by its own random reference.
+  if (job.kind === "allocation") {
+    const ref = job.payload.allocation_ref;
+    if (typeof ref !== "string") throw new PermanentError("allocation payload lacks its reference");
+    const allocationRefHash = await hashAllocationRef(fromHex(ref));
+    const [account] = await findAllocationPda({ allocationRefHash });
+    const existing = await fetchMaybeAllocationCommitment(rpc, account);
+    if (existing.exists) {
+      if (!sameCommitment(new Uint8Array(existing.data.commitment), commitment)) throw mismatch("allocation commitment", account);
+      return { ...(await recoverSignature(account, "first")), account, commitment, recovered: true };
+    }
+    const ix = await getAnchorAllocationInstructionAsync({ operator: signer, allocationRefHash, commitment });
+    return { ...(await send(ix)), account, commitment, recovered: false };
+  }
 
   // Everything after enrollment hangs off her borrower account.
   if (job.kind !== "community" && job.kind !== "community_verification" && job.kind !== "enrollment") {
