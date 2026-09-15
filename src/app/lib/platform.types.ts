@@ -1472,6 +1472,125 @@ export type Database = {
           },
         ]
       }
+      settlement_legs: {
+        Row: {
+          amount_cents: number | null
+          amount_micro_usdc: number | null
+          created_at: string
+          destination: string | null
+          done_at: string | null
+          id: string
+          investment_id: string | null
+          kind: Database["public"]["Enums"]["settlement_leg_kind"]
+          loan_id: string
+          payment_id: string | null
+          pix_e2e: string | null
+          status: Database["public"]["Enums"]["settlement_leg_status"]
+          transfer_id: number | null
+        }
+        Insert: {
+          amount_cents?: number | null
+          amount_micro_usdc?: number | null
+          created_at?: string
+          destination?: string | null
+          done_at?: string | null
+          id?: string
+          investment_id?: string | null
+          kind: Database["public"]["Enums"]["settlement_leg_kind"]
+          loan_id: string
+          payment_id?: string | null
+          pix_e2e?: string | null
+          status: Database["public"]["Enums"]["settlement_leg_status"]
+          transfer_id?: number | null
+        }
+        Update: {
+          amount_cents?: number | null
+          amount_micro_usdc?: number | null
+          created_at?: string
+          destination?: string | null
+          done_at?: string | null
+          id?: string
+          investment_id?: string | null
+          kind?: Database["public"]["Enums"]["settlement_leg_kind"]
+          loan_id?: string
+          payment_id?: string | null
+          pix_e2e?: string | null
+          status?: Database["public"]["Enums"]["settlement_leg_status"]
+          transfer_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlement_legs_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlement_legs_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlement_legs_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlement_legs_transfer_id_fkey"
+            columns: ["transfer_id"]
+            isOneToOne: false
+            referencedRelation: "vault_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vault_transfers: {
+        Row: {
+          claimed_at: string | null
+          confirmed_at: string | null
+          created_at: string
+          error: string | null
+          id: number
+          inflow_micro_usdc: number
+          kind: Database["public"]["Enums"]["vault_transfer_kind"]
+          outflow_micro_usdc: number
+          signature: string | null
+          status: Database["public"]["Enums"]["vault_transfer_status"]
+          valid_until: number | null
+        }
+        Insert: {
+          claimed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: never
+          inflow_micro_usdc?: number
+          kind: Database["public"]["Enums"]["vault_transfer_kind"]
+          outflow_micro_usdc: number
+          signature?: string | null
+          status?: Database["public"]["Enums"]["vault_transfer_status"]
+          valid_until?: number | null
+        }
+        Update: {
+          claimed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          error?: string | null
+          id?: never
+          inflow_micro_usdc?: number
+          kind?: Database["public"]["Enums"]["vault_transfer_kind"]
+          outflow_micro_usdc?: number
+          signature?: string | null
+          status?: Database["public"]["Enums"]["vault_transfer_status"]
+          valid_until?: number | null
+        }
+        Relationships: []
+      }
       zcash_payment_requests: {
         Row: {
           amount_micro_usdc: number
@@ -2041,6 +2160,31 @@ export type Database = {
         Returns: undefined
       }
       reset_demo_data: { Args: { p_confirm: string }; Returns: Json }
+      settle_claim: {
+        Args: { p_per_transfer?: number }
+        Returns: {
+          id: number
+          inflow_micro_usdc: number
+          kind: Database["public"]["Enums"]["vault_transfer_kind"]
+          legs: Json
+          outflow_micro_usdc: number
+          signature: string
+          valid_until: number
+        }[]
+      }
+      settle_done: {
+        Args: { p_id: number; p_signature: string }
+        Returns: undefined
+      }
+      settle_failed: {
+        Args: { p_error: string; p_id: number }
+        Returns: undefined
+      }
+      settle_sending: {
+        Args: { p_id: number; p_signature: string; p_valid_until: number }
+        Returns: undefined
+      }
+      settlement_overview: { Args: never; Returns: Json }
       start_anchor_run: { Args: { p_lease_seconds?: number }; Returns: boolean }
       submit_checkin: {
         Args: {
@@ -2224,6 +2368,16 @@ export type Database = {
         | "NEEDS_PREPARATION"
         | "MANUAL_REVIEW"
       reconcile_status: "unchecked" | "verified" | "missing" | "mismatch"
+      settlement_leg_kind: "release" | "pix_payout" | "pix_in" | "payout"
+      settlement_leg_status:
+        | "due"
+        | "held"
+        | "sending"
+        | "done"
+        | "failed"
+        | "mock"
+      vault_transfer_kind: "release" | "payout"
+      vault_transfer_status: "pending" | "confirmed" | "failed"
       zcash_request_status:
         | "awaiting"
         | "seen"
@@ -2484,6 +2638,17 @@ export const Constants = {
         "MANUAL_REVIEW",
       ],
       reconcile_status: ["unchecked", "verified", "missing", "mismatch"],
+      settlement_leg_kind: ["release", "pix_payout", "pix_in", "payout"],
+      settlement_leg_status: [
+        "due",
+        "held",
+        "sending",
+        "done",
+        "failed",
+        "mock",
+      ],
+      vault_transfer_kind: ["release", "payout"],
+      vault_transfer_status: ["pending", "confirmed", "failed"],
       zcash_request_status: [
         "awaiting",
         "seen",

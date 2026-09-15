@@ -33,6 +33,7 @@ const OpportunityDetail = lazy(() => import("./pages/investor/OpportunityDetail"
 const InvestorPortfolio = lazy(() => import("./pages/investor/Portfolio"));
 const InvestorPosition = lazy(() => import("./pages/investor/Position"));
 const InvestorAuditTrail = lazy(() => import("./pages/investor/AuditTrail"));
+const InvestorSettlement = lazy(() => import("./pages/investor/Settlement"));
 
 // Community Intelligence, loaded when a community is opened.
 const CommunityLayout = lazy(() => import("./pages/community/CommunityLayout"));
@@ -112,6 +113,7 @@ export default function PlatformApp() {
           <Route path="investor/opportunities/:id" element={investor(<OpportunityDetail />)} />
           <Route path="investor/portfolio" element={investor(<InvestorPortfolio />)} />
           <Route path="investor/positions/:id" element={investor(<InvestorPosition />)} />
+          <Route path="investor/settlement" element={investor(<InvestorSettlement />)} />
           <Route path="investor/audit" element={investor(<InvestorAuditTrail />)} />
           <Route path="capital" element={<RequireAuth roles={["capital_provider", "admin", "auditor"]}><CapitalPage /></RequireAuth>} />
           <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />

@@ -164,7 +164,28 @@
 >   - The treasury and test-investor wallets are zcash-devtool wallets in `~/empowerfi-hackathon-keys/zcash/`.
 >   - The operator was given 10 devnet USDC from the test investor, to fund ZEC credits.
 >   - The treasury was set with `scripts/platform/zcash-treasury.mts`.
-> - **Still to do in Phase 4:** the route, the payment simulator, "What is real", and repayments via `pay_out`.
+>
+> **Status (15 Sep): Settlement is built and live on the hackathon environment.**
+>
+> - **Derived from facts.** Settlement legs come by trigger from facts already recorded:
+>   - on disbursement: a release of the loan's real deposits, and a mock Pix of the principal to her business;
+>   - on each instalment: a mock Pix in, and a payout of each real investor's share, to their wallet (or held, for a ZEC position without one).
+> - **Sending.** `vault-settle` (pg_cron, 15 s) sends them, never twice:
+>   - all releases due at the same time go in one `vault_transfer` to the ramp, the operator on devnet;
+>   - each payout transaction brings the shares into the vault and pays them out.
+>   - The vault's expected balance nets out releases.
+> - **Screens.**
+>   - Investor → **Settlement**: the route with live figures; the payment simulator (quote, ramp spread, tax, rail cost by route from `packages/capital-route`, and a mock Pix settlement); "What is real in this demo"; vault transfers; your payouts.
+>   - Position → **Where the money went**, leg by leg, plus a "Paid out" column in the schedule.
+>   - The audit System view shows releases, payouts and the settlement queue.
+> - **Verified live on Q-D07121.** The remainder was funded with a simulated position, then disbursed.
+>   - 10 real USDC were released in one transfer (`3E3wMa…`).
+>   - Instalment 1 paid the test wallet 0.565765 USDC (`ai8Axk…`, operator 15 → 14.434235, vault net 0).
+>   - The two ZEC positions' shares are held.
+>   - The vault reads 0.00 on chain = 0.00 expected.
+> - **Tests.** pgTAP 342 (25 new), Vitest 100.
+> - **Environment.** Historical disbursements and instalments got mock Pix legs by backfill (no real legs). Q-D07121 is now disbursed and active with one instalment: the reseed restores it.
+> - **Phase 4 left:** only the optional MoneyGram sandbox, which waits on credentials.
 
 ### Phase 5 — Partner and auditor depth, polish (≈3 days)
 - Partner: funding states, formalise or decline (with a refund), servicing.

@@ -127,7 +127,9 @@ export interface SystemAudit {
   anchors: { pending: number; submitted: number; failed: number; confirmed: number; oldest_queued_at: string | null; last_confirmed_at: string | null; last_error: string | null };
   reconcile: { verified: number; missing: number; mismatch: number; unchecked: number; last_at: string | null; oldest_at: string | null };
   refunds: { due: number; sending: number; refunded: number; last_at: string | null; last_error: string | null };
-  vault: { expected_micro_usdc: number; deposited_micro_usdc: number; refunded_micro_usdc: number; deposits: number; zcash_micro_usdc: number };
+  vault: { expected_micro_usdc: number; deposited_micro_usdc: number; refunded_micro_usdc: number; deposits: number; zcash_micro_usdc: number;
+    released_micro_usdc: number; repaid_in_micro_usdc: number; paid_out_micro_usdc: number };
+  settlement: { due: number; sending: number; held: number; failed: number; last_error: string | null };
   zcash: { scanned_height: number | null; tip_height: number | null; scanned_at: string | null } | null;
   jobs: { name: string; schedule: string; active: boolean }[] | null;
 }

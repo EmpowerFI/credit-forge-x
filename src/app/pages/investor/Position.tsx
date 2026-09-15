@@ -13,6 +13,29 @@ import { platform } from "../../lib/platform";
 import { money, type CreditPurpose } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
 import { POOL_LABEL, usdPerZec, zcashExplorerTx, zec } from "../../lib/zcash";
+import { type PayoutStatus, reaisAtRamp, REALITY, type Reality } from "../../lib/settlement";
+
+function RouteStep({ n, title, reality, children }: { n: number; title: string; reality: Reality | null; children: React.ReactNode }) {
+  return (
+    <li className="grid grid-cols-[1.5rem_1fr] gap-x-3 gap-y-0.5 text-sm">
+      <span className="num row-span-2 flex h-6 w-6 items-center justify-center rounded-full border border-border text-xs text-muted-foreground">{n}</span>
+      <span className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-foreground">{title}</span>
+        {reality && <StatusPill tone={REALITY[reality].tone}>{REALITY[reality].label}</StatusPill>}
+      </span>
+      <span className="text-xs text-muted-foreground">{children}</span>
+    </li>
+  );
+}
+
+function PayoutCell({ payout, simulated }: { payout: PositionData["schedule"][number]["payout"]; simulated: boolean }) {
+  if (simulated) return <span className="text-xs text-muted-foreground">simulated</span>;
+  if (!payout) return <span className="text-xs text-muted-foreground">—</span>;
+  if (payout.status === "done" && payout.signature) return <ExplorerLink tx={payout.signature} />;
+  if (payout.status === "held") return <span className="text-xs text-caution">held: no wallet</span>;
+  if (payout.status === "failed") return <span className="text-xs text-alert">failed</span>;
+  return <span className="text-xs text-muted-foreground">on its way</span>;
+}
 
 // One position as a financial position you can follow: the deposit, the
 // proof of the allocation, the loan's schedule and servicing, and the outcome.
@@ -28,7 +51,14 @@ interface PositionData {
     risk_band: Grade; funding_status: FundingStatus; funding_target_micro_usdc: number; fx_brl_per_usdc_milli: number };
   loan: { id: string; status: LoanStatus; principal_cents: number; rate_bps: number; term_months: number; instalment_cents: number;
     disbursed_at: string | null; active_since: string | null; instalment_share_micro_usdc: number } | null;
-  schedule: { instalment_no: number; due_at: string | null; paid_at: string | null; payment_id: string | null; share_micro_usdc: number | null }[];
+  settlement: {
+    ramp_bps: number;
+    release: { status: PayoutStatus; amount_micro_usdc: number; signature: string | null; transfer_micro_usdc: number | null;
+      loans_in_transfer: number; at: string | null } | null;
+    pix: { e2e: string; brl_cents: number; at: string | null } | null;
+  } | null;
+  schedule: { instalment_no: number; due_at: string | null; paid_at: string | null; payment_id: string | null; share_micro_usdc: number | null;
+    pix_e2e: string | null; payout: { status: PayoutStatus; amount_micro_usdc: number; signature: string | null } | null }[];
   servicing: { event_id: string; to_status: LoanStatus; note: string | null; at: string }[];
   outcome: { id: string; avg_revenue_before_cents: number; avg_revenue_after_cents: number; evc_cents: number; capital_use: CapitalUse;
     confidence: Grade; measured_at: string } | null;
@@ -48,7 +78,7 @@ export default function Position() {
   });
   if (position.isPending) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
   if (position.isError) return <LoadError error={position.error} onRetry={() => position.refetch()} />;
-  const { investment: inv, zcash, proof, opportunity: opp, loan, schedule, servicing, outcome } = position.data;
+  const { investment: inv, zcash, proof, opportunity: opp, loan, settlement, schedule, servicing, outcome } = position.data;
   const state = positionState({ status: inv.status, loan_status: loan?.status ?? null, funding_status: opp.funding_status });
   const repaid = schedule.reduce((s, i) => s + (i.share_micro_usdc ?? 0), 0);
   const expected = loan ? loan.instalment_share_micro_usdc * loan.term_months : null;
@@ -160,16 +190,51 @@ export default function Position() {
         </Panel>
       </div>
 
+      <Panel title="Where the money went" description="Your capital's route to her business and back, leg by leg: which are transactions you can open, and which are simulated.">
+        <ol className="space-y-4">
+          <RouteStep n={1} title={zcash ? "Paid in shielded ZEC, credited to the vault" : "Into the program's vault"}
+            reality={inv.is_simulated ? "simulated" : "real"}>
+            {inv.deposit_signature ? <>{usdc(inv.amount_micro_usdc)} · <ExplorerLink tx={inv.deposit_signature} /></> : "A simulated position: no USDC moved."}
+          </RouteStep>
+          <RouteStep n={2} title="Released to the ramp partner" reality={!loan?.disbursed_at ? null : inv.is_simulated ? "simulated" : "real"}>
+            {!loan?.disbursed_at ? "When the partner disburses the loan."
+              : inv.is_simulated || !settlement?.release ? "Nothing real to release for this position."
+              : settlement.release.status === "done" && settlement.release.signature ? (
+                <>
+                  With the loan's other real deposits, {usdc(settlement.release.amount_micro_usdc)}
+                  {settlement.release.loans_in_transfer > 1 && <>, in one transfer covering {settlement.release.loans_in_transfer} loans</>} · <ExplorerLink tx={settlement.release.signature} />
+                </>
+              ) : "Leaving the vault now."}
+          </RouteStep>
+          <RouteStep n={3} title="Converted to reais" reality={loan?.disbursed_at ? "simulated" : null}>
+            {loan?.disbursed_at
+              ? <>Your {usdc(inv.amount_micro_usdc)} ≈ {money(reaisAtRamp(inv.amount_micro_usdc, opp.fx_brl_per_usdc_milli, settlement?.ramp_bps ?? 50))} at R$ {(opp.fx_brl_per_usdc_milli / 1000).toFixed(2)} per USDC, less the ramp's {((settlement?.ramp_bps ?? 50) / 100).toFixed(2)}%.</>
+              : "At the ramp, once released."}
+          </RouteStep>
+          <RouteStep n={4} title="Paid to her business by Pix" reality={settlement?.pix ? "mock" : null}>
+            {settlement?.pix
+              ? <>{money(settlement.pix.brl_cents)}, the whole loan · {date(settlement.pix.at)} · <span className="break-all font-mono">{settlement.pix.e2e}</span></>
+              : "The partner pays her when it disburses."}
+          </RouteStep>
+          <RouteStep n={5} title="Instalments come back to you" reality={schedule.some((s) => s.payment_id) ? (inv.is_simulated ? "simulated" : "real") : null}>
+            {inv.is_simulated ? "Simulated: your share of each instalment is shown, not paid."
+              : !inv.wallet_address ? "She pays each instalment by Pix (a mock). Your share is held: this position has no Solana wallet to pay it to. In production it would go back as ZEC, through the same conversion."
+              : `She pays each instalment by Pix (a mock); the ramp returns your share to the vault, which pays it to your wallet in the same transaction. ${schedule.filter((s) => s.payout?.status === "done").length} of ${schedule.filter((s) => s.payment_id).length} paid out so far.`}
+          </RouteStep>
+        </ol>
+      </Panel>
+
       {loan && (
         <Panel title="Scheduled repayments" description="Instalments fall due monthly from the start of repayment; your share is paid out in USDC at the demo quote.">
           <div className="relative overflow-x-auto">
-            <table className="w-full min-w-[560px] text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="text-left text-xs text-muted-foreground">
                 <tr className="border-b border-border">
                   <th className="py-2 pr-4 font-medium">#</th>
                   <th className="py-2 pr-4 font-medium">Due</th>
                   <th className="py-2 pr-4 font-medium">Status</th>
                   <th className="py-2 pr-4 text-right font-medium">Your share</th>
+                  <th className="py-2 pr-4 font-medium">Paid out</th>
                   <th className="py-2 font-medium"><span className="sr-only">Proof</span></th>
                 </tr>
               </thead>
@@ -186,6 +251,7 @@ export default function Position() {
                           : <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Circle size={10} /> Scheduled</span>}
                       </td>
                       <td className="num py-2.5 pr-4 text-right text-foreground">{usdc(s.share_micro_usdc ?? loan.instalment_share_micro_usdc)}</td>
+                      <td className="py-2.5 pr-4">{s.payment_id ? <PayoutCell payout={s.payout} simulated={inv.is_simulated} /> : null}</td>
                       <td className="py-2.5 text-right">
                         {s.payment_id && <Link to={`/app/audit/payment/${s.payment_id}`} className="text-xs text-positive hover:underline">Verify</Link>}
                       </td>

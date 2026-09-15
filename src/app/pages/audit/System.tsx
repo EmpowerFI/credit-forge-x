@@ -21,6 +21,7 @@ const JOB_PURPOSE: Record<string, string> = {
   "reconcile-anchors": "Re-reads confirmed proofs from Solana and compares",
   "vault-refunds": "Returns investors' USDC from the vault when owed",
   "zcash-watch": "Reads the Zcash treasury with its viewing key; credits confirmed payments",
+  "vault-settle": "Releases disbursed loans to the ramp; pays instalments out to investors",
 };
 
 /** What Solana itself says, read here: the vault's USDC and the operator's SOL. */
@@ -70,6 +71,8 @@ export default function System() {
               <Row label="From shielded ZEC">{usdc(d.vault.zcash_micro_usdc)} <span className="text-xs text-muted-foreground">credited by the operator for ZEC payments</span></Row>
             )}
             <Row label="Refunded">{usdc(d.vault.refunded_micro_usdc)}</Row>
+            <Row label="Released">{usdc(d.vault.released_micro_usdc)} <span className="text-xs text-muted-foreground">to the ramp, as partners disbursed</span></Row>
+            <Row label="Paid out">{usdc(d.vault.paid_out_micro_usdc)} <span className="text-xs text-muted-foreground">to investors; {usdc(d.vault.repaid_in_micro_usdc)} came in with it</span></Row>
           </dl>
           <p className={`flex items-center gap-2 text-sm ${vaultMatches === null ? "text-muted-foreground" : vaultMatches ? "text-positive" : "text-caution"}`}>
             {vaultMatches === null ? <CircleDashed size={16} /> : vaultMatches ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
@@ -87,6 +90,10 @@ export default function System() {
             <Row label="Operator balance">{chain.data ? sol(chain.data.operatorLamports) : "…"} <span className="text-xs text-muted-foreground">pays for each proof's account and fee</span></Row>
             <Row label="Last anchoring error">{d.anchors.last_error ? <span className="text-xs text-alert">{d.anchors.last_error}</span> : <span className="text-xs text-muted-foreground">none</span>}</Row>
             <Row label="Last refund error">{d.refunds.last_error ? <span className="text-xs text-alert">{d.refunds.last_error}</span> : <span className="text-xs text-muted-foreground">none</span>}</Row>
+            <Row label="Settlement">
+              {d.settlement.due + d.settlement.sending} to send · {d.settlement.held} held · <span className={d.settlement.failed ? "text-alert" : ""}>{d.settlement.failed} failed</span>
+              {d.settlement.last_error && <span className="block text-xs text-alert">{d.settlement.last_error}</span>}
+            </Row>
           </dl>
         </Panel>
       </div>

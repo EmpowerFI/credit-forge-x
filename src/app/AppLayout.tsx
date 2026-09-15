@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import {
   Activity,
+  ArrowLeftRight,
   ArrowUpRight,
   Cpu,
   FileCheck2,
@@ -68,6 +69,7 @@ const NAV: Record<Role, NavItem[]> = {
     { to: "/app/investor", label: "Overview", icon: LayoutDashboard, end: true },
     { to: "/app/investor/opportunities", label: "Opportunities", icon: Coins },
     { to: "/app/investor/portfolio", label: "Portfolio", icon: PieChart },
+    { to: "/app/investor/settlement", label: "Settlement", icon: ArrowLeftRight },
     { to: "/app/investor/audit", label: "Audit trail", icon: BadgeCheck },
   ],
   auditor: [...AUDIT, COMMUNITIES, PIPELINE, PORTFOLIO],

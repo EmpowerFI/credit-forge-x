@@ -49,6 +49,7 @@ Investors move real devnet USDC, and every token transfer on Solana is public. S
 - **In.** An investor deposits with a plain token transfer to the program's vault, one account for every opportunity. The chain shows that wallet sent that amount to the vault. Which opportunity it funds lives only in the database, proven by an `AllocationCommitment` keyed by a random reference that names neither party.
 - **Out.** `vault_transfer` is the program's one instruction with an amount, reviewed as such in the privacy test. It covers a refund when a partner declines, capital released for disbursement, and a repayment paid out. It takes no borrower, opportunity or allocation account, and the reason is recorded only in the database.
 - **Releases are batched.** Capital goes to the partner in one transfer covering several funded opportunities, never loan by loan, so no transfer's amount is a loan's principal.
+- **The ramp, on devnet.** Releases go to the regulated ramp partner's USDC account; on devnet that account is the operator's. With each instalment it sends the real investors' shares back into the vault, which pays them out in the same transaction. The conversion to reais is simulated at the demo quote, and Pix both ways is a mock (`vault-settle`, `platform/supabase/tests/settlement.test.sql`).
 
 What remains, stated plainly:
 
