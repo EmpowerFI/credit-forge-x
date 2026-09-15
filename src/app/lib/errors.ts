@@ -55,6 +55,12 @@ const MESSAGES: Record<string, string> = {
   not_allowed_to_record_consent: "Only she, or a leader of her community, can record her consent.",
   not_an_auditor: "The audit console is for auditors and EmpowerFI admins.",
   not_fully_funded: "Investors are still funding this opportunity: disburse once it is funded.",
+  zcash_not_configured: "EmpowerFI's Zcash treasury is not set up yet.",
+  amount_too_small: "The smallest allocation is 1 USDC.",
+  exceeds_remaining: "That is more than is still open to fund, counting payments on their way.",
+  opportunity_not_open: "This opportunity is no longer raising.",
+  not_an_investor: "Investing is for capital providers.",
+  not_your_request: "This payment request is not yours.",
 };
 
 export function describeError(error: unknown): string {

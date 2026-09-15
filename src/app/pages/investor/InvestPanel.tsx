@@ -14,7 +14,7 @@ import {
 import { getTransferCheckedInstruction } from "@solana-program/token";
 import { useSelectedWalletAccount, useWalletAccountTransactionSendingSigner } from "@solana/react";
 import type { UiWalletAccount } from "@wallet-standard/react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,8 +24,10 @@ import { describeError } from "../../lib/errors";
 import { type MarketRow, usdcFromReais } from "../../lib/investor";
 import { explorerTx, platform } from "../../lib/platform";
 import { CLUSTER, confirmSignature, FAUCETS, rpc, usdc, USDC_DECIMALS, USDC_MINT, usdcAccountOf, vaultAddress } from "../../lib/solana";
+import { LIVE } from "../../lib/zcash";
 import { useBalances } from "../../wallet/useBalances";
 import ConnectWalletDialog from "../../wallet/ConnectWallet";
+import ZecInvest from "./ZecInvest";
 
 type Step = "sign" | "confirm" | "record" | "done";
 const STEPS: { key: Step; label: string }[] = [
@@ -142,7 +144,22 @@ function InvestAction({ account, row, micro, disabled }: {
   );
 }
 
-/** Invest in one opportunity from the connected wallet, or explain what is needed first. */
+/** The latest request of mine for this opportunity that is still on its way, so a reload picks it up. */
+function useLiveZcashRequest(opportunityId: string, investorId: string | undefined) {
+  return useQuery({
+    queryKey: ["platform", "zcash-live", opportunityId, investorId],
+    enabled: Boolean(investorId),
+    queryFn: async () => {
+      const { data, error } = await platform.from("zcash_payment_requests").select("id")
+        .eq("opportunity_id", opportunityId).eq("investor_id", investorId!).in("status", LIVE)
+        .order("created_at", { ascending: false }).limit(1);
+      if (error) throw error;
+      return data[0]?.id ?? null;
+    },
+  });
+}
+
+/** Invest in one opportunity from the connected wallet or with shielded ZEC, or explain what is needed first. */
 export default function InvestPanel({ row }: { row: MarketRow }) {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
@@ -161,23 +178,44 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
     ? Math.round(usdcFromReais(row.instalment_cents * row.term_months, row.fx_brl_per_usdc_milli) * share)
     : null;
 
+  const live = useLiveZcashRequest(row.opportunity_id, profile?.id);
+  const [zecRequest, setZecRequest] = useState<string | null | undefined>(undefined);
+  const requestId = zecRequest === undefined ? live.data ?? null : zecRequest;
+  const [method, setMethod] = useState<"usdc" | "zec" | null>(null);
+  const via = method ?? (requestId ? "zec" : "usdc");
+
   const problem =
     !open ? "This opportunity is no longer raising."
     : micro <= 0 ? "Enter an amount."
     : micro > remaining ? `Only ${usdc(remaining)} is left to fund.`
-    : connected && balances.data && micro > balance ? `Your wallet holds ${usdc(balance)}.`
-    : connected && balances.data && balances.data.lamports === 0n ? "Your wallet needs a little test SOL for the network fee."
+    : via === "zec" && micro < 10 ** USDC_DECIMALS ? "The smallest allocation is 1 USDC."
+    : via === "usdc" && connected && balances.data && micro > balance ? `Your wallet holds ${usdc(balance)}.`
+    : via === "usdc" && connected && balances.data && balances.data.lamports === 0n ? "Your wallet needs a little test SOL for the network fee."
     : null;
 
   return (
     <Panel title="Invest">
-      {!open ? (
+      {!open && !requestId ? (
         <p className="text-sm text-muted-foreground">
           {row.funding_status === "funded" ? "Fully funded — the partner formalises and disburses next." : "Closed to new investment."}
         </p>
       ) : (
         <div className="space-y-4">
-          {connected && (
+          <div role="radiogroup" aria-label="Pay with" className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
+            {([["usdc", "Devnet USDC", "from a Solana wallet"], ["zec", "Shielded ZEC", "from a Zcash wallet"]] as const).map(([key, label, hint]) => (
+              <button key={key} type="button" role="radio" aria-checked={via === key} onClick={() => setMethod(key)}
+                className={`rounded-lg px-2 py-1.5 text-left transition-colors ${via === key ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                <span className="block text-sm font-semibold">{label}</span>
+                <span className="block text-[11px]">{hint}</span>
+              </button>
+            ))}
+          </div>
+
+          {via === "zec" && requestId ? (
+            <ZecInvest row={row} micro={micro} problem={problem} requestId={requestId} onRequest={setZecRequest} />
+          ) : (
+          <>
+          {via === "usdc" && connected && (
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Wallet balance</span>
               <span className="num font-semibold text-foreground">{balances.data ? usdc(balance) : "…"}</span>
@@ -201,12 +239,16 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
           </div>
           {problem && micro > 0 && <p className="text-xs text-caution">{problem}</p>}
 
-          {!wallet ? (
+          {via === "zec" ? (
+            <ZecInvest row={row} micro={micro} problem={problem} requestId={null} onRequest={setZecRequest} />
+          ) : !wallet ? (
             <div className="space-y-2">
               <Button className="h-11 w-full" onClick={async () => { await signOut(); navigate("/app/login"); }}>
                 <Wallet size={18} /> Sign in with your wallet to invest
               </Button>
-              <p className="text-xs text-muted-foreground">You are exploring as the demo investor, who invests with simulated positions only.</p>
+              <p className="text-xs text-muted-foreground">
+                You are exploring as the demo investor, whose seeded positions are simulated. Sign in with a Solana wallet, or pay with shielded ZEC.
+              </p>
             </div>
           ) : !connected ? (
             <>
@@ -217,7 +259,7 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
             <InvestAction account={account!} row={row} micro={micro} disabled={Boolean(problem)} />
           )}
 
-          {connected && balances.data && (balance === 0 || balances.data.lamports === 0n) && (
+          {via === "usdc" && connected && balances.data && (balance === 0 || balances.data.lamports === 0n) && (
             <div className="flex flex-wrap gap-2 text-xs">
               {balances.data.lamports === 0n && (
                 <a href={FAUCETS.sol} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 hover:bg-secondary">
@@ -232,11 +274,18 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
             </div>
           )}
 
-          <p className="text-xs text-muted-foreground">Simulation only · Devnet tokens have no real value.</p>
+          </>
+          )}
+
+          <p className="text-xs text-muted-foreground">
+            {via === "zec"
+              ? "Real on Zcash testnet and Solana devnet: the payment, the vault's USDC and the proof. Simulated: the ZEC→USDC conversion, which NEAR Intents does in production and has no testnet."
+              : "Simulation only · Devnet tokens have no real value."}
+          </p>
           <div className="space-y-1 border-t border-border pt-3 text-sm">
             <p className="font-medium text-foreground">Expected cash flows</p>
             <p className="text-muted-foreground">
-              {expectedBack !== null && micro > 0
+              {expectedBack !== null && micro > 0 && !(via === "zec" && requestId)
                 ? <>Your share of scheduled repayments: <span className="num text-foreground">≈ {usdc(expectedBack)}</span> over {row.term_months} months, at the reference rate and today's demo quote. Indicative, not a promise.</>
                 : "Principal plus your share of each instalment, as the loan is repaid."}
             </p>

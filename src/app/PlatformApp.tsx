@@ -24,6 +24,7 @@ const AuditEvents = lazy(() => import("./pages/audit/Events"));
 const AuditModels = lazy(() => import("./pages/audit/Models"));
 const AuditConsents = lazy(() => import("./pages/audit/Consents"));
 const AuditSystem = lazy(() => import("./pages/audit/System"));
+const AuditZcash = lazy(() => import("./pages/audit/Zcash"));
 const ConsentPage = lazy(() => import("./pages/ConsentPage"));
 // The investor console: wallet, Solana client and charts, loaded when opened.
 const InvestorOverview = lazy(() => import("./pages/investor/Overview"));
@@ -100,6 +101,7 @@ export default function PlatformApp() {
             <Route path="events" element={<Suspense fallback={loading}><AuditEvents /></Suspense>} />
             <Route path="models" element={<Suspense fallback={loading}><AuditModels /></Suspense>} />
             <Route path="consents" element={<Suspense fallback={loading}><AuditConsents /></Suspense>} />
+            <Route path="zcash" element={<Suspense fallback={loading}><AuditZcash /></Suspense>} />
             <Route path="system" element={<Suspense fallback={loading}><AuditSystem /></Suspense>} />
           </Route>
           {/* Anyone signed in may open one; audit_record decides what they may see. */}

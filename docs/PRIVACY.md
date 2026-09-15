@@ -53,7 +53,24 @@ Investors move real devnet USDC, and every token transfer on Solana is public. S
 What remains, stated plainly:
 
 - **An investor's own flows are public**, as for any wallet: deposits, refunds and payouts, with amounts and times.
-- **Matching is hard but not impossible.** Any signed-in investor sees each opportunity's USDC target. Someone watching the vault could try to match deposits to targets. Deposits are split across many investors and opportunities, which blurs it without ruling it out. The stronger answer is investing with shielded ZEC (PLAN_REDESIGN.md, decision R5): the payment leaves a shielded Zcash address, so no wallet is linked to the vault's inflow.
+- **Matching is hard but not impossible.** Any signed-in investor sees each opportunity's USDC target. Someone watching the vault could try to match deposits to targets. Deposits are split across many investors and opportunities, which blurs it without ruling it out. The stronger answer is investing with shielded ZEC (below): no investor wallet is linked to the vault's inflow.
+
+## Investing with shielded ZEC
+
+An investor can fund an opportunity by paying EmpowerFI's shielded treasury on Zcash testnet instead of sending USDC from a Solana wallet (PLAN_REDESIGN.md, decision R5). No Solana wallet is needed.
+
+- **The request.** `zcash-request` answers with a ZIP 321 payment request: the treasury's unified address, the amount in ZEC at a quote (CoinGecko's, or a labelled demo quote), and a memo carrying a random reference, `EFI-` and ten characters. The reference says nothing about the investor or the opportunity; only the database ties it to them.
+- **On Zcash.** The payment is shielded (Sapling, Orchard or, since NU6.3, Ironwood). Amount, memo, sender and recipient are encrypted. An explorer shows only that a transaction happened.
+- **The watcher.** `zcash-watch` holds the treasury's unified full viewing key, which reads what the treasury receives and can spend nothing. Every minute it trial-decrypts the new compact blocks from a lightwalletd, fetches each transaction that paid the treasury, and records every note it can read in `zcash_receipts`, matched to a request by its memo or not. The decryption is `services/zcash-watcher` (Rust, librustzcash's crates), compiled to WebAssembly for the Edge Function. It keeps no wallet state: the last height scanned is in the database.
+- **Into the vault.** After two confirmations the operator transfers the same value in devnet USDC into the program's vault. That transfer is the allocation's deposit, and the allocation is anchored on Solana like any other. So the vault's inflow is the operator's, not the investor's.
+- **Selective disclosure.** The viewing key is in the database's `private` schema, read only by the watcher and by `audit_zcash()`, which is for auditors. The audit console shows it, with the commands to import it into any Zcash wallet and list the same payments without trusting EmpowerFI. It is not in the repository: `scripts/platform/zcash-treasury.mts` sets it from the treasury wallet, which stays outside the repository. The treasury's spending key never reaches a server.
+
+What remains, stated plainly:
+
+- **The conversion is simulated.** In production NEAR Intents converts ZEC to USDC on Solana. It has no testnet, so the operator credits the vault at the quote and every screen says so.
+- **The operator's credit is public.** Its amount matches the allocation, as a wallet deposit's does. What it no longer shows is who paid.
+- **EmpowerFI reads its own treasury.** It knows which request each payment answers, as it knows every allocation. Other investors, partners and the public don't.
+- **A ZEC position is refunded as USDC,** to the investor's Solana wallet if they have one. Without a wallet the refund stays due. Production would return it as ZEC through the same conversion.
 
 ## Consent
 
@@ -96,7 +113,7 @@ Row-level security enforces all of this, and pgTAP tests check it for every role
 | **Community leader** | Members of the communities she leads: their records, funnel and cost to serve; records their consent from the signed form | Other communities' members; partners' books; reported amounts in Community Intelligence |
 | **Credit partner** | Opportunities referred to it, pseudonymous: `P-XXXXXX`, sector, verified community, indicators rounded to R$100, EmpowerFI's assessment and reasons. Its own loans, payments and outcomes | Names, business names, check-ins, readiness detail, anything not referred to it |
 | **Capital provider** | The portfolio its capital funds, in aggregate. Loans under a code derived from the loan alone (`L-XXXXXX`), which can't be joined to the partner's pseudonyms. Can audit loans, status changes and payments | People, check-ins, readiness, eligibility, opportunities, per-person outcomes |
-| **Auditor** | Everything, read-only; every proof. The audit console names participants by code (`P-XXXXXX`), never by name | Can't write anything |
+| **Auditor** | Everything, read-only; every proof. The audit console names participants by code (`P-XXXXXX`), never by name. Holds the Zcash treasury's viewing key, and sees every note it reads | Can't write anything; the viewing key spends nothing |
 | **Admin (EmpowerFI)** | Everything; verifies communities, refers flagged opportunities | Can't make a lending decision, or verify a community it leads |
 | **Anonymous visitor** | Nothing | No table, view or function |
 
@@ -117,6 +134,7 @@ Engagement data (opens, clicks, time in the app, whether she upgraded) is never 
 
 - The program's **upgrade authority** and the **operator** that signs every proof are separate keys. `set_operator` rotates the operator without a new program ID.
 - The operator key, the anchoring secret and the RPC key live as Supabase function secrets and in Vault. They're never in the repository and never in the browser bundle. The audit screen uses the public devnet RPC.
+- The Zcash treasury's seed stays in its wallet, off every server. Only its viewing key is in the database, in the `private` schema, for the watcher and auditors.
 - Demo accounts share a public password on purpose, because judges need to log in. Every demo record is marked `is_simulated`.
 
 ## Open before production
@@ -125,3 +143,4 @@ Engagement data (opens, clicks, time in the app, whether she upgraded) is never 
 - Consent to share covers "the partner EmpowerFI refers me to". Production needs it per partner, named, before referral.
 - Reference rotation: a participant who wants a fresh pseudonym would need a new `borrower_ref` and a link between her old and new histories that only the database knows.
 - Stablecoin and cross-border capital routes: tax and regulatory treatment are assumptions in the simulator until validated.
+- Shielded ZEC: NEAR Intents for the conversion, returns paid as ZEC, mainnet confirmation depth (ten blocks, not two), reorg handling in the watcher (it records each scanned block's hash but doesn't yet rewind), and a treasury key held in custody, not a developer wallet.

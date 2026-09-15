@@ -20,6 +20,7 @@ const JOB_PURPOSE: Record<string, string> = {
   "dispatch-anchor-jobs": "Sends queued proofs to Solana",
   "reconcile-anchors": "Re-reads confirmed proofs from Solana and compares",
   "vault-refunds": "Returns investors' USDC from the vault when owed",
+  "zcash-watch": "Reads the Zcash treasury with its viewing key; credits confirmed payments",
 };
 
 /** What Solana itself says, read here: the vault's USDC and the operator's SOL. */
@@ -65,6 +66,9 @@ export default function System() {
             </Row>
             <Row label="Should hold">{usdc(d.vault.expected_micro_usdc)} <span className="text-xs text-muted-foreground">allocated, or owed back and not yet sent</span></Row>
             <Row label="Deposited">{usdc(d.vault.deposited_micro_usdc)} in {d.vault.deposits} deposit{d.vault.deposits === 1 ? "" : "s"}</Row>
+            {d.vault.zcash_micro_usdc > 0 && (
+              <Row label="From shielded ZEC">{usdc(d.vault.zcash_micro_usdc)} <span className="text-xs text-muted-foreground">credited by the operator for ZEC payments</span></Row>
+            )}
             <Row label="Refunded">{usdc(d.vault.refunded_micro_usdc)}</Row>
           </dl>
           <p className={`flex items-center gap-2 text-sm ${vaultMatches === null ? "text-muted-foreground" : vaultMatches ? "text-positive" : "text-caution"}`}>

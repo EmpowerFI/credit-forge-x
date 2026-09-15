@@ -1472,6 +1472,144 @@ export type Database = {
           },
         ]
       }
+      zcash_payment_requests: {
+        Row: {
+          amount_micro_usdc: number
+          amount_zat: number
+          confirmed_at: string | null
+          created_at: string
+          credit_claimed_at: string | null
+          credit_signature: string | null
+          credit_valid_until: number | null
+          error: string | null
+          expires_at: string
+          id: string
+          investment_id: string | null
+          investor_id: string
+          mined_height: number | null
+          opportunity_id: string
+          pool: string | null
+          quote_source: string
+          received_zat: number | null
+          ref: string
+          status: Database["public"]["Enums"]["zcash_request_status"]
+          txid: string | null
+          updated_at: string
+          usd_per_zec_cents: number
+        }
+        Insert: {
+          amount_micro_usdc: number
+          amount_zat: number
+          confirmed_at?: string | null
+          created_at?: string
+          credit_claimed_at?: string | null
+          credit_signature?: string | null
+          credit_valid_until?: number | null
+          error?: string | null
+          expires_at: string
+          id?: string
+          investment_id?: string | null
+          investor_id: string
+          mined_height?: number | null
+          opportunity_id: string
+          pool?: string | null
+          quote_source: string
+          received_zat?: number | null
+          ref: string
+          status?: Database["public"]["Enums"]["zcash_request_status"]
+          txid?: string | null
+          updated_at?: string
+          usd_per_zec_cents: number
+        }
+        Update: {
+          amount_micro_usdc?: number
+          amount_zat?: number
+          confirmed_at?: string | null
+          created_at?: string
+          credit_claimed_at?: string | null
+          credit_signature?: string | null
+          credit_valid_until?: number | null
+          error?: string | null
+          expires_at?: string
+          id?: string
+          investment_id?: string | null
+          investor_id?: string
+          mined_height?: number | null
+          opportunity_id?: string
+          pool?: string | null
+          quote_source?: string
+          received_zat?: number | null
+          ref?: string
+          status?: Database["public"]["Enums"]["zcash_request_status"]
+          txid?: string | null
+          updated_at?: string
+          usd_per_zec_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zcash_payment_requests_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zcash_payment_requests_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "zcash_payment_requests_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "qualified_credit_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      zcash_receipts: {
+        Row: {
+          memo: string | null
+          mined_height: number
+          output_index: number
+          pool: string
+          request_id: string | null
+          seen_at: string
+          txid: string
+          value_zat: number
+        }
+        Insert: {
+          memo?: string | null
+          mined_height: number
+          output_index: number
+          pool: string
+          request_id?: string | null
+          seen_at?: string
+          txid: string
+          value_zat: number
+        }
+        Update: {
+          memo?: string | null
+          mined_height?: number
+          output_index?: number
+          pool?: string
+          request_id?: string | null
+          seen_at?: string
+          txid?: string
+          value_zat?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zcash_receipts_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "zcash_payment_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       checkin_cash_flow: {
@@ -1588,6 +1726,7 @@ export type Database = {
         Returns: Json
       }
       audit_system: { Args: never; Returns: Json }
+      audit_zcash: { Args: never; Returns: Json }
       capital_portfolio: { Args: never; Returns: Json }
       claim_anchor_jobs: {
         Args: { p_limit?: number }
@@ -1643,6 +1782,16 @@ export type Database = {
           p_state: string
         }
         Returns: string
+      }
+      create_zcash_request: {
+        Args: {
+          p_amount_micro_usdc: number
+          p_investor_id: string
+          p_opportunity_id: string
+          p_quote_source: string
+          p_usd_per_zec_cents: number
+        }
+        Returns: Json
       }
       cts_summary: { Args: { p_community_id?: string }; Returns: Json }
       declare_credit_intent: {
@@ -1920,6 +2069,47 @@ export type Database = {
         Returns: undefined
       }
       withdraw_credit_intent: { Args: never; Returns: undefined }
+      zcash_configure_treasury: {
+        Args: {
+          p_address: string
+          p_birthday_height: number
+          p_network: string
+          p_ufvk: string
+        }
+        Returns: Json
+      }
+      zcash_credit_claim: {
+        Args: { p_limit?: number }
+        Returns: {
+          amount_micro_usdc: number
+          credit_signature: string
+          credit_valid_until: number
+          id: string
+        }[]
+      }
+      zcash_credit_done: {
+        Args: { p_id: string; p_signature: string }
+        Returns: Json
+      }
+      zcash_credit_failed: {
+        Args: { p_error: string; p_id: string }
+        Returns: undefined
+      }
+      zcash_credit_sending: {
+        Args: { p_id: string; p_signature: string; p_valid_until: number }
+        Returns: undefined
+      }
+      zcash_request: { Args: { p_id: string }; Returns: Json }
+      zcash_watch_record: {
+        Args: {
+          p_outputs: Json
+          p_tip: number
+          p_to: number
+          p_to_hash: string
+        }
+        Returns: Json
+      }
+      zcash_watch_state: { Args: never; Returns: Json }
     }
     Enums: {
       anchor_kind:
@@ -1995,7 +2185,7 @@ export type Database = {
         | "closed"
         | "refunded"
       grade: "LOW" | "MEDIUM" | "HIGH"
-      investment_mode: "wallet" | "cloak" | "simulated"
+      investment_mode: "wallet" | "cloak" | "simulated" | "zcash"
       investment_status: "allocated" | "refund_due" | "refunded"
       loan_status:
         | "DRAFT"
@@ -2034,6 +2224,14 @@ export type Database = {
         | "NEEDS_PREPARATION"
         | "MANUAL_REVIEW"
       reconcile_status: "unchecked" | "verified" | "missing" | "mismatch"
+      zcash_request_status:
+        | "awaiting"
+        | "seen"
+        | "confirmed"
+        | "credited"
+        | "underpaid"
+        | "expired"
+        | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2242,7 +2440,7 @@ export const Constants = {
         "refunded",
       ],
       grade: ["LOW", "MEDIUM", "HIGH"],
-      investment_mode: ["wallet", "cloak", "simulated"],
+      investment_mode: ["wallet", "cloak", "simulated", "zcash"],
       investment_status: ["allocated", "refund_due", "refunded"],
       loan_status: [
         "DRAFT",
@@ -2286,6 +2484,15 @@ export const Constants = {
         "MANUAL_REVIEW",
       ],
       reconcile_status: ["unchecked", "verified", "missing", "mismatch"],
+      zcash_request_status: [
+        "awaiting",
+        "seen",
+        "confirmed",
+        "credited",
+        "underpaid",
+        "expired",
+        "failed",
+      ],
     },
   },
 } as const

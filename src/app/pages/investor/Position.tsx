@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Check, Circle, Loader2 } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Check, Circle, ExternalLink, Loader2 } from "lucide-react";
 import LoadError from "../../components/LoadError";
 import { DataTag } from "../../components/product/DataLegend";
 import ExplorerLink from "../../components/product/ExplorerLink";
@@ -12,6 +12,7 @@ import { type FundingStatus, type Grade, positionState, RISK, title } from "../.
 import { platform } from "../../lib/platform";
 import { money, type CreditPurpose } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
+import { POOL_LABEL, usdPerZec, zcashExplorerTx, zec } from "../../lib/zcash";
 
 // One position as a financial position you can follow: the deposit, the
 // proof of the allocation, the loan's schedule and servicing, and the outcome.
@@ -20,6 +21,8 @@ interface PositionData {
   investment: { id: string; amount_micro_usdc: number; share_bps: number; mode: string; status: "allocated" | "refund_due" | "refunded";
     deposit_signature: string | null; wallet_address: string | null; invested_at: string; is_simulated: boolean;
     refund_signature: string | null; refunded_at: string | null };
+  zcash: { ref: string; txid: string | null; pool: string | null; amount_zat: number; received_zat: number | null; usd_per_zec_cents: number;
+    quote_source: string; mined_height: number | null; confirmed_at: string | null; credit_signature: string | null } | null;
   proof: { status: string; signature: string | null; account: string | null; commitment: string | null; reconcile: string } | null;
   opportunity: { id: string; code: string; purpose: CreditPurpose; business_sector: string | null; amount_cents: number; term_months: number;
     risk_band: Grade; funding_status: FundingStatus; funding_target_micro_usdc: number; fx_brl_per_usdc_milli: number };
@@ -45,7 +48,7 @@ export default function Position() {
   });
   if (position.isPending) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
   if (position.isError) return <LoadError error={position.error} onRetry={() => position.refetch()} />;
-  const { investment: inv, proof, opportunity: opp, loan, schedule, servicing, outcome } = position.data;
+  const { investment: inv, zcash, proof, opportunity: opp, loan, schedule, servicing, outcome } = position.data;
   const state = positionState({ status: inv.status, loan_status: loan?.status ?? null, funding_status: opp.funding_status });
   const repaid = schedule.reduce((s, i) => s + (i.share_micro_usdc ?? 0), 0);
   const expected = loan ? loan.instalment_share_micro_usdc * loan.term_months : null;
@@ -78,10 +81,33 @@ export default function Position() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="Investment" description="Your deposit into the program's vault, and the proof of where it went.">
+        <Panel title="Investment"
+          description={zcash ? "Paid with shielded ZEC, credited to the program's vault in USDC, and the proof of where it went."
+            : "Your deposit into the program's vault, and the proof of where it went."}>
           <dl className="space-y-3 text-sm">
+            {zcash && (
+              <>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="flex items-center gap-2 text-muted-foreground"><DataTag kind="private" /> Shielded payment</dt>
+                  <dd className="text-right">
+                    <span className="num text-foreground">{zec(zcash.received_zat ?? zcash.amount_zat)}</span>
+                    {zcash.pool && <span className="text-xs text-muted-foreground"> · {POOL_LABEL[zcash.pool]}</span>}
+                    {zcash.txid && (
+                      <a href={zcashExplorerTx(zcash.txid)} target="_blank" rel="noopener noreferrer"
+                        className="ml-2 inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
+                        {zcash.txid.slice(0, 4)}…{zcash.txid.slice(-4)} <ExternalLink size={11} aria-hidden />
+                      </a>
+                    )}
+                  </dd>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  On Zcash the amount, the memo ({zcash.ref}) and who paid are encrypted: the explorer shows only that a transaction happened.
+                  Converted at {usdPerZec(zcash.usd_per_zec_cents)} per ZEC{zcash.quote_source === "demo" ? " (demo quote)" : ""}; the conversion itself is simulated on testnet.
+                </p>
+              </>
+            )}
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-muted-foreground">Deposit transaction</dt>
+              <dt className="text-muted-foreground">{zcash ? "Credited to the vault" : "Deposit transaction"}</dt>
               <dd>{inv.deposit_signature ? <ExplorerLink tx={inv.deposit_signature} /> : <span className="text-caution">simulated, no deposit</span>}</dd>
             </div>
             {inv.status !== "allocated" && (

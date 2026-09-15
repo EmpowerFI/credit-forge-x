@@ -149,6 +149,23 @@
   - This is the main technical risk, so a spike comes first.
 - **Optional:** a MoneyGram ramps sandbox, only if credentials are provided.
 
+> **Status (15 Sep): Invest with shielded ZEC is built and live on the hackathon environment.**
+>
+> - **Spike passed.** `services/zcash-watcher` is our own receive-only watcher, in Rust, on librustzcash's crates. It is stateless: it trial-decrypts compact blocks and fully decrypts the transactions that match, for memos. It reads Sapling, Orchard and Ironwood (NU6.3), and the testnet faucet already pays in Ironwood.
+> - **Where it runs.** No Vercel Rust function after all: the root `Cargo.toml` is the Anchor workspace. The watcher is compiled to WebAssembly (622 KB) and runs inside a Supabase Edge Function, `zcash-watch`. Deno speaks HTTP/2 to `testnet.zec.rocks`, and pg_cron calls it every minute.
+> - **The flow.**
+>   - `zcash-request` returns a ZIP 321 request at CoinGecko's quote, with a random `EFI-` reference in the memo.
+>   - After 2 confirmations the operator credits the vault with devnet USDC (the simulated NEAR Intents leg), never twice.
+>   - `record_investment` then records a `zcash`-mode allocation, anchored on Solana.
+> - **Screens.** The invest panel pays with Devnet USDC or Shielded ZEC: QR, wallet link, live steps, and no Solana wallet needed. Positions show the shielded payment. The audit console gains a Zcash treasury view: the viewing key, disclosed with import commands, and every note read.
+> - **Verified live.** Two real testnet payments went from request to allocation proven on Solana in about 3–4 minutes, one of them paid from the UI's own ZIP 321 link. The vault holds 7.00 USDC on chain, matching the database (5 by wallet, 2 by ZEC).
+> - **Tests.** pgTAP 317 (36 new), Vitest 98, Deno 43, watcher 4.
+> - **Environment.**
+>   - The treasury and test-investor wallets are zcash-devtool wallets in `~/empowerfi-hackathon-keys/zcash/`.
+>   - The operator was given 10 devnet USDC from the test investor, to fund ZEC credits.
+>   - The treasury was set with `scripts/platform/zcash-treasury.mts`.
+> - **Still to do in Phase 4:** the route, the payment simulator, "What is real", and repayments via `pay_out`.
+
 ### Phase 5 — Partner and auditor depth, polish (≈3 days)
 - Partner: funding states, formalise or decline (with a refund), servicing.
 - Export: a shareable audit report.

@@ -115,6 +115,7 @@ export default function Portfolio() {
                       </Link>
                       <span className="font-mono text-xs text-muted-foreground">{r.code}</span>
                       {r.is_simulated && <span className="ml-2 text-xs text-caution">simulated</span>}
+                      {r.mode === "zcash" && <span className="ml-2 text-xs text-info">shielded ZEC</span>}
                     </td>
                     <td className="num py-3 pr-4 text-right text-foreground">{usdc(r.amount_micro_usdc)}</td>
                     <td className="num py-3 pr-4 text-right text-muted-foreground">{(r.share_bps / 100).toFixed(1)}%</td>

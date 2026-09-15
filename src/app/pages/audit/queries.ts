@@ -3,6 +3,7 @@ import type { CanonicalObject } from "@empowerfi/audit-commitments";
 import type { AnchorKind } from "../../lib/platform";
 import { platform } from "../../lib/platform";
 import type { Proof } from "../../lib/community";
+import type { ZcashStatus } from "../../lib/zcash";
 
 // The audit console's reads. Every one is for auditors and admins only, and
 // names participants by code, never by name.
@@ -126,8 +127,54 @@ export interface SystemAudit {
   anchors: { pending: number; submitted: number; failed: number; confirmed: number; oldest_queued_at: string | null; last_confirmed_at: string | null; last_error: string | null };
   reconcile: { verified: number; missing: number; mismatch: number; unchecked: number; last_at: string | null; oldest_at: string | null };
   refunds: { due: number; sending: number; refunded: number; last_at: string | null; last_error: string | null };
-  vault: { expected_micro_usdc: number; deposited_micro_usdc: number; refunded_micro_usdc: number; deposits: number };
+  vault: { expected_micro_usdc: number; deposited_micro_usdc: number; refunded_micro_usdc: number; deposits: number; zcash_micro_usdc: number };
+  zcash: { scanned_height: number | null; tip_height: number | null; scanned_at: string | null } | null;
   jobs: { name: string; schedule: string; active: boolean }[] | null;
+}
+
+export interface ZcashReceipt {
+  txid: string;
+  pool: "sapling" | "orchard" | "ironwood";
+  index: number;
+  value_zat: number;
+  memo: string | null;
+  height: number;
+  seen_at: string;
+  ref: string | null;
+  status: ZcashStatus | null;
+  amount_micro_usdc: number | null;
+  opportunity_code: string | null;
+  credit_signature: string | null;
+  allocation_signature: string | null;
+}
+
+export type ZcashAudit =
+  | { configured: false }
+  | {
+      configured: true;
+      network: "test" | "main";
+      address: string;
+      ufvk: string;
+      birthday_height: number;
+      scanned_height: number | null;
+      tip_height: number | null;
+      scanned_at: string | null;
+      confirmations_needed: number;
+      received_zat: number;
+      requests: Partial<Record<ZcashStatus, number>> | null;
+      receipts: ZcashReceipt[];
+    };
+
+export function useZcashAudit() {
+  return useQuery({
+    queryKey: ["platform", "audit-zcash"],
+    queryFn: async () => {
+      const { data, error } = await platform.rpc("audit_zcash");
+      if (error) throw error;
+      return data as unknown as ZcashAudit;
+    },
+    refetchInterval: 20_000,
+  });
 }
 
 export function useSystemAudit() {

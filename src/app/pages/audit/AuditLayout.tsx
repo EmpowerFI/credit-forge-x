@@ -14,7 +14,7 @@ export default function AuditLayout() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Audit" title="Audit console"
-        description="Every fact EmpowerFI records, the proof of it on Solana, the models behind each decision, the consent it rests on, and the machinery that keeps it all moving. Participants appear by code, never by name."
+        description="Every fact EmpowerFI records, the proof of it on Solana, the models behind each decision, the consent it rests on, the Zcash treasury as its viewing key reads it, and the machinery that keeps it all moving. Participants appear by code, never by name."
         meta={<DataLegend />} />
       {/* An auditor has these views in the sidebar; admins, and phones, get them here. */}
       <nav aria-label="Audit views"

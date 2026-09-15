@@ -60,7 +60,7 @@ export default function OpportunityDetail() {
         <ArrowLeft size={15} /> Opportunities
       </Link>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="space-y-6">
           <section className="panel space-y-6 p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">

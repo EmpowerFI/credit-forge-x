@@ -7,6 +7,7 @@ import {
   FileCheck2,
   History,
   ScanSearch,
+  KeyRound,
   ServerCog,
   ShieldCheck,
   Gauge,
@@ -51,6 +52,7 @@ const AUDIT: NavItem[] = [
   { to: "/app/audit/events", label: "Events", icon: History },
   { to: "/app/audit/models", label: "Models", icon: Cpu },
   { to: "/app/audit/consents", label: "Consents", icon: ShieldCheck },
+  { to: "/app/audit/zcash", label: "Zcash treasury", icon: KeyRound },
   { to: "/app/audit/system", label: "System", icon: ServerCog },
 ];
 

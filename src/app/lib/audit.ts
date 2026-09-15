@@ -1,11 +1,12 @@
 import type { AnchorKind } from "./platform";
 
-/** The audit console's five views, as paths under /app/audit. */
+/** The audit console's six views, as paths under /app/audit. */
 export const AUDIT_TABS = [
   { to: "", label: "Attestations", end: true },
   { to: "events", label: "Events" },
   { to: "models", label: "Models" },
   { to: "consents", label: "Consents" },
+  { to: "zcash", label: "Zcash treasury" },
   { to: "system", label: "System" },
 ] as const;
 

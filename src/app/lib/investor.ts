@@ -33,7 +33,7 @@ export interface PortfolioRow {
   risk_band: Grade;
   amount_micro_usdc: number;
   share_bps: number;
-  mode: "wallet" | "cloak" | "simulated";
+  mode: "wallet" | "cloak" | "simulated" | "zcash";
   status: "allocated" | "refund_due" | "refunded";
   deposit_signature: string | null;
   invested_at: string;
