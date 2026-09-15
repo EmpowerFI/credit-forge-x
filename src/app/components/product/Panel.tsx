@@ -9,7 +9,7 @@ export default function Panel({ title, description, actions, children, className
   className?: string;
 }) {
   return (
-    <section className={`panel space-y-4 p-5 sm:p-6 ${className}`}>
+    <section className={`panel min-w-0 space-y-4 p-5 sm:p-6 ${className}`}>
       {(title || actions) && (
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">

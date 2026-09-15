@@ -8,7 +8,6 @@ import AdminReviewPage from "./pages/AdminReviewPage";
 import CapitalPage from "./pages/CapitalPage";
 import CheckinPage from "./pages/CheckinPage";
 import CommunitiesPage from "./pages/CommunitiesPage";
-import CommunityDetailPage from "./pages/CommunityDetailPage";
 import HomeRedirect from "./pages/HomeRedirect";
 import LoginPage from "./pages/LoginPage";
 import MePage from "./pages/MePage";
@@ -26,6 +25,17 @@ const OpportunityDetail = lazy(() => import("./pages/investor/OpportunityDetail"
 const InvestorPortfolio = lazy(() => import("./pages/investor/Portfolio"));
 const InvestorPosition = lazy(() => import("./pages/investor/Position"));
 const InvestorAuditTrail = lazy(() => import("./pages/investor/AuditTrail"));
+
+// Community Intelligence, loaded when a community is opened.
+const CommunityLayout = lazy(() => import("./pages/community/CommunityLayout"));
+const CommunityOverview = lazy(() => import("./pages/community/Overview"));
+const CommunityCohorts = lazy(() => import("./pages/community/Cohorts"));
+const CommunityParticipants = lazy(() => import("./pages/community/Participants"));
+const CommunityParticipant = lazy(() => import("./pages/community/Participant"));
+const CommunityReadiness = lazy(() => import("./pages/community/Readiness"));
+const CommunityPipeline = lazy(() => import("./pages/community/Pipeline"));
+const CommunityImpact = lazy(() => import("./pages/community/Impact"));
+const loading = <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
 
 const INVESTOR_ROLES: Role[] = ["capital_provider", "admin", "auditor"];
 const investor = (page: React.ReactNode) => (
@@ -68,7 +78,15 @@ export default function PlatformApp() {
           <Route path="community" element={<CommunitiesPage />} />
           <Route path="community/new"
             element={<RequireAuth roles={["community_leader", "admin"]}><NewCommunityPage /></RequireAuth>} />
-          <Route path="community/:id" element={<CommunityDetailPage />} />
+          <Route path="community/:id" element={<Suspense fallback={loading}><CommunityLayout /></Suspense>}>
+            <Route index element={<Suspense fallback={loading}><CommunityOverview /></Suspense>} />
+            <Route path="cohorts" element={<Suspense fallback={loading}><CommunityCohorts /></Suspense>} />
+            <Route path="participants" element={<Suspense fallback={loading}><CommunityParticipants /></Suspense>} />
+            <Route path="participants/:entrepreneurId" element={<Suspense fallback={loading}><CommunityParticipant /></Suspense>} />
+            <Route path="readiness" element={<Suspense fallback={loading}><CommunityReadiness /></Suspense>} />
+            <Route path="pipeline" element={<Suspense fallback={loading}><CommunityPipeline /></Suspense>} />
+            <Route path="impact" element={<Suspense fallback={loading}><CommunityImpact /></Suspense>} />
+          </Route>
           {/* Anyone signed in may open one; audit_record decides what they may see. */}
           <Route path="audit/:kind/:entityId" element={<Suspense fallback={null}><AuditPage /></Suspense>} />
           <Route path="partner" element={<RequireAuth roles={["partner", "admin", "auditor"]}><PartnerPage /></RequireAuth>} />

@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import {
+  Activity,
   ArrowUpRight,
+  Gauge,
+  Layers,
+  Route as RouteIcon,
+  Sprout,
   BadgeCheck,
   Coins,
   LayoutDashboard,
@@ -23,6 +28,8 @@ import NetworkBadge from "./components/product/NetworkBadge";
 import WalletChip from "./wallet/WalletChip";
 import { useAuth } from "./auth/useAuth";
 import { ROLE_LABEL, type Role } from "./lib/platform";
+import { COMMUNITY_TABS } from "./lib/community";
+import { useLedCommunity } from "./pages/community/queries";
 
 // One workspace per persona: the same brand as the corporate site, in the
 // product's dark financial theme. Each role sees its own navigation.
@@ -88,10 +95,21 @@ function Sidebar({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => v
   );
 }
 
+const TAB_ICON: Record<string, LucideIcon> = {
+  Overview: LayoutDashboard, Cohorts: Layers, Participants: Users, Readiness: Gauge, "Credit pipeline": RouteIcon, Impact: Sprout,
+};
+
 export default function AppLayout() {
   const { profile, signOut } = useAuth();
   const [open, setOpen] = useState(false);
-  const items = profile ? NAV[profile.role] : [];
+  const led = useLedCommunity();
+  // A leader works inside her community: its six views are her navigation.
+  const items = !profile ? []
+    : profile.role === "community_leader" && led.data
+      ? COMMUNITY_TABS.map((t) => ({
+          to: `/app/community/${led.data!.id}${t.to ? `/${t.to}` : ""}`, label: t.label, icon: TAB_ICON[t.label] ?? Activity, end: "end" in t,
+        }))
+      : NAV[profile.role];
   const initials = profile?.display_name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (

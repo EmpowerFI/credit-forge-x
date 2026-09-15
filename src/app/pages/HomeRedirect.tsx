@@ -1,10 +1,19 @@
 import { Navigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "../auth/useAuth";
+import { useLedCommunity } from "./community/queries";
 
-/** Entrepreneurs start at their business, partners at their desk, capital providers at the portfolio, everyone else at the communities. */
+/**
+ * Entrepreneurs start at their business, partners at their desk, capital
+ * providers at the portfolio, a leader inside her community, everyone else at
+ * the communities.
+ */
 export default function HomeRedirect() {
   const { profile } = useAuth();
+  const led = useLedCommunity();
+  if (profile?.role === "community_leader" && led.isPending) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
   const home =
+    profile?.role === "community_leader" && led.data ? `/app/community/${led.data.id}` :
     profile?.role === "entrepreneur" ? "/app/me"
     : profile?.role === "partner" ? "/app/partner"
     : profile?.role === "capital_provider" ? "/app/investor"

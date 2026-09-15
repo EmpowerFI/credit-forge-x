@@ -82,6 +82,17 @@
 - **Seed:** open opportunities for funding, plus demo positions for the demo investor (recorded, marked simulated).
 
 ### Phase 2 — Community Intelligence, rebuilt (≈4 days) · P0
+
+> **Status, 15 Sep:** built on `hackathon`, awaiting the founder's review.
+> - **Database:** one private function works out each participant's stage and next action. Four readers (overview, participants, one participant's journey, cohorts) and `record_outreach` sit on top of it, and each outreach becomes a cost-to-serve event.
+> - **Screens:** Overview, Cohorts, Participants, Readiness, Credit pipeline and Impact, plus the participant journey. Every step in the journey carries its proof on Solana.
+> - **Privacy:** no reported sales, costs or household amounts reach the leader. A pgTAP test checks this.
+>
+> Verified on the demo data: in Grajaú, 40 joined, 13 are credit ready and 3 are financed. A reminder logged from the queue moved it and added R$ 5,00 of community time to cost to serve.
+>
+> Changes from the brief: outreach is logged, not sent (no messaging channel or phone numbers are stored). Consent status moves to Phase 3 with the `consents` table.
+>
+> The seed now dates each eligibility after its request. The live demo keeps the old order until the next reseed.
 - **Overview:** hero metrics (participants, education complete, credit ready, credit intent, eligible, financed); the funnel Joined → Education → Data sufficient → Credit ready → Credit intent → Eligible → Funded/Referred → Financed; cohort health (check-in completion, data quality, time to readiness, need a human follow-up, alerts).
 - **Action queue:** who is missing a check-in, has unfinished education, needs review, or is ready with a capital need. Each action is recorded as an outreach event and counted in cost to serve.
 - **Participants:** a table and a drill-down journey timeline (onboarding, education, check-ins, readiness evaluations, intent, eligibility), readiness state with missing requirements and reasons, data quality and regularity, next best action, consent status.
