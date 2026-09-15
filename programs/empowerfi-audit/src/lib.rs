@@ -130,6 +130,16 @@ pub mod empowerfi_audit {
         anchor_payment::handler(ctx, instalment_no, commitment)
     }
 
+    /// Commits an investor's allocation to an opportunity, keyed by a reference
+    /// that links it to neither party on chain.
+    pub fn anchor_allocation(
+        ctx: Context<AnchorAllocation>,
+        allocation_ref_hash: [u8; 32],
+        commitment: [u8; 32],
+    ) -> Result<()> {
+        anchor_allocation::handler(ctx, allocation_ref_hash, commitment)
+    }
+
     /// Commits a productive-outcome measurement, on a loan that was disbursed.
     pub fn anchor_outcome(
         ctx: Context<AnchorOutcome>,

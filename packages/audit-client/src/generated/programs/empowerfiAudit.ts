@@ -34,6 +34,7 @@ import {
   type SelfPlanAndSendFunctions,
 } from "@solana/kit/program-client-core";
 import {
+  getAllocationCommitmentCodec,
   getBorrowerAuditCodec,
   getCheckinCommitmentCodec,
   getCommunityAuditCodec,
@@ -44,6 +45,8 @@ import {
   getPaymentCommitmentCodec,
   getPlatformConfigCodec,
   getReadinessAttestationCodec,
+  type AllocationCommitment,
+  type AllocationCommitmentArgs,
   type BorrowerAudit,
   type BorrowerAuditArgs,
   type CheckinCommitment,
@@ -66,6 +69,7 @@ import {
   type ReadinessAttestationArgs,
 } from "../accounts/index.ts";
 import {
+  getAnchorAllocationInstructionAsync,
   getAnchorCheckinInstructionAsync,
   getAnchorOpportunityInstructionAsync,
   getAnchorOutcomeInstructionAsync,
@@ -79,6 +83,7 @@ import {
   getSetOperatorInstructionAsync,
   getTransitionLoanInstructionAsync,
   getVerifyCommunityInstructionAsync,
+  parseAnchorAllocationInstruction,
   parseAnchorCheckinInstruction,
   parseAnchorOpportunityInstruction,
   parseAnchorOutcomeInstruction,
@@ -92,6 +97,7 @@ import {
   parseSetOperatorInstruction,
   parseTransitionLoanInstruction,
   parseVerifyCommunityInstruction,
+  type AnchorAllocationAsyncInput,
   type AnchorCheckinAsyncInput,
   type AnchorOpportunityAsyncInput,
   type AnchorOutcomeAsyncInput,
@@ -100,6 +106,7 @@ import {
   type AttestReadinessAsyncInput,
   type CreateLoanAsyncInput,
   type InitializePlatformAsyncInput,
+  type ParsedAnchorAllocationInstruction,
   type ParsedAnchorCheckinInstruction,
   type ParsedAnchorOpportunityInstruction,
   type ParsedAnchorOutcomeInstruction,
@@ -120,6 +127,7 @@ import {
   type VerifyCommunityAsyncInput,
 } from "../instructions/index.ts";
 import {
+  findAllocationPda,
   findAttestationPda,
   findBorrowerPda,
   findCheckinPda,
@@ -136,26 +144,28 @@ export const EMPOWERFI_AUDIT_PROGRAM_ADDRESS =
   "4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR" as Address<"4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR">;
 
 export const EmpowerfiAuditAccount = {
-  0: "BorrowerAudit",
-  1: "CheckinCommitment",
-  2: "CommunityAudit",
-  3: "EligibilityAttestation",
-  4: "LoanAccount",
-  5: "OpportunityCommitment",
-  6: "OutcomeCommitment",
-  7: "PaymentCommitment",
-  8: "PlatformConfig",
-  9: "ReadinessAttestation",
-  BorrowerAudit: 0,
-  CheckinCommitment: 1,
-  CommunityAudit: 2,
-  EligibilityAttestation: 3,
-  LoanAccount: 4,
-  OpportunityCommitment: 5,
-  OutcomeCommitment: 6,
-  PaymentCommitment: 7,
-  PlatformConfig: 8,
-  ReadinessAttestation: 9,
+  0: "AllocationCommitment",
+  1: "BorrowerAudit",
+  2: "CheckinCommitment",
+  3: "CommunityAudit",
+  4: "EligibilityAttestation",
+  5: "LoanAccount",
+  6: "OpportunityCommitment",
+  7: "OutcomeCommitment",
+  8: "PaymentCommitment",
+  9: "PlatformConfig",
+  10: "ReadinessAttestation",
+  AllocationCommitment: 0,
+  BorrowerAudit: 1,
+  CheckinCommitment: 2,
+  CommunityAudit: 3,
+  EligibilityAttestation: 4,
+  LoanAccount: 5,
+  OpportunityCommitment: 6,
+  OutcomeCommitment: 7,
+  PaymentCommitment: 8,
+  PlatformConfig: 9,
+  ReadinessAttestation: 10,
 } as const;
 
 export type EmpowerfiAuditAccount = (typeof EmpowerfiAuditAccount)[Exclude<
@@ -167,6 +177,17 @@ export function identifyEmpowerfiAuditAccount(
   account: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): EmpowerfiAuditAccount {
   const data = "data" in account ? account.data : account;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([64, 38, 248, 32, 30, 54, 227, 238]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditAccount.AllocationCommitment;
+  }
   if (
     containsBytes(
       data,
@@ -284,32 +305,34 @@ export function identifyEmpowerfiAuditAccount(
 }
 
 export const EmpowerfiAuditInstruction = {
-  0: "AnchorCheckin",
-  1: "AnchorOpportunity",
-  2: "AnchorOutcome",
-  3: "AnchorPayment",
-  4: "AttestEligibility",
-  5: "AttestReadiness",
-  6: "CreateLoan",
-  7: "InitializePlatform",
-  8: "RegisterBorrowerRef",
-  9: "RegisterCommunity",
-  10: "SetOperator",
-  11: "TransitionLoan",
-  12: "VerifyCommunity",
-  AnchorCheckin: 0,
-  AnchorOpportunity: 1,
-  AnchorOutcome: 2,
-  AnchorPayment: 3,
-  AttestEligibility: 4,
-  AttestReadiness: 5,
-  CreateLoan: 6,
-  InitializePlatform: 7,
-  RegisterBorrowerRef: 8,
-  RegisterCommunity: 9,
-  SetOperator: 10,
-  TransitionLoan: 11,
-  VerifyCommunity: 12,
+  0: "AnchorAllocation",
+  1: "AnchorCheckin",
+  2: "AnchorOpportunity",
+  3: "AnchorOutcome",
+  4: "AnchorPayment",
+  5: "AttestEligibility",
+  6: "AttestReadiness",
+  7: "CreateLoan",
+  8: "InitializePlatform",
+  9: "RegisterBorrowerRef",
+  10: "RegisterCommunity",
+  11: "SetOperator",
+  12: "TransitionLoan",
+  13: "VerifyCommunity",
+  AnchorAllocation: 0,
+  AnchorCheckin: 1,
+  AnchorOpportunity: 2,
+  AnchorOutcome: 3,
+  AnchorPayment: 4,
+  AttestEligibility: 5,
+  AttestReadiness: 6,
+  CreateLoan: 7,
+  InitializePlatform: 8,
+  RegisterBorrowerRef: 9,
+  RegisterCommunity: 10,
+  SetOperator: 11,
+  TransitionLoan: 12,
+  VerifyCommunity: 13,
 } as const;
 
 export type EmpowerfiAuditInstruction =
@@ -322,6 +345,17 @@ export function identifyEmpowerfiAuditInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array,
 ): EmpowerfiAuditInstruction {
   const data = "data" in instruction ? instruction.data : instruction;
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([46, 219, 30, 121, 190, 99, 183, 242]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditInstruction.AnchorAllocation;
+  }
   if (
     containsBytes(
       data,
@@ -475,6 +509,9 @@ export type ParsedEmpowerfiAuditInstruction<
   TProgram extends string = "4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR",
 > =
   | ({
+      instructionType: typeof EmpowerfiAuditInstruction.AnchorAllocation;
+    } & ParsedAnchorAllocationInstruction<TProgram>)
+  | ({
       instructionType: typeof EmpowerfiAuditInstruction.AnchorCheckin;
     } & ParsedAnchorCheckinInstruction<TProgram>)
   | ({
@@ -519,6 +556,13 @@ export function parseEmpowerfiAuditInstruction<TProgram extends string>(
 ): ParsedEmpowerfiAuditInstruction<TProgram> {
   const instructionType = identifyEmpowerfiAuditInstruction(instruction);
   switch (instructionType) {
+    case EmpowerfiAuditInstruction.AnchorAllocation: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EmpowerfiAuditInstruction.AnchorAllocation,
+        ...parseAnchorAllocationInstruction(instruction),
+      };
+    }
     case EmpowerfiAuditInstruction.AnchorCheckin: {
       assertIsInstructionWithAccounts(instruction);
       return {
@@ -631,6 +675,8 @@ export type EmpowerfiAuditPlugin = {
 };
 
 export type EmpowerfiAuditPluginAccounts = {
+  allocationCommitment: ReturnType<typeof getAllocationCommitmentCodec> &
+    SelfFetchFunctions<AllocationCommitmentArgs, AllocationCommitment>;
   borrowerAudit: ReturnType<typeof getBorrowerAuditCodec> &
     SelfFetchFunctions<BorrowerAuditArgs, BorrowerAudit>;
   checkinCommitment: ReturnType<typeof getCheckinCommitmentCodec> &
@@ -654,6 +700,10 @@ export type EmpowerfiAuditPluginAccounts = {
 };
 
 export type EmpowerfiAuditPluginInstructions = {
+  anchorAllocation: (
+    input: AnchorAllocationAsyncInput,
+  ) => ReturnType<typeof getAnchorAllocationInstructionAsync> &
+    SelfPlanAndSendFunctions;
   anchorCheckin: (
     input: AnchorCheckinAsyncInput,
   ) => ReturnType<typeof getAnchorCheckinInstructionAsync> &
@@ -710,6 +760,7 @@ export type EmpowerfiAuditPluginInstructions = {
 
 export type EmpowerfiAuditPluginPdas = {
   config: typeof findConfigPda;
+  allocation: typeof findAllocationPda;
   checkin: typeof findCheckinPda;
   opportunity: typeof findOpportunityPda;
   outcome: typeof findOutcomePda;
@@ -734,6 +785,10 @@ export function empowerfiAuditProgram() {
     return extendClient(client, {
       empowerfiAudit: {
         accounts: {
+          allocationCommitment: addSelfFetchFunctions(
+            client,
+            getAllocationCommitmentCodec(),
+          ),
           borrowerAudit: addSelfFetchFunctions(client, getBorrowerAuditCodec()),
           checkinCommitment: addSelfFetchFunctions(
             client,
@@ -770,6 +825,11 @@ export function empowerfiAuditProgram() {
           ),
         },
         instructions: {
+          anchorAllocation: (input) =>
+            addSelfPlanAndSendFunctions(
+              client,
+              getAnchorAllocationInstructionAsync(input),
+            ),
           anchorCheckin: (input) =>
             addSelfPlanAndSendFunctions(
               client,
@@ -838,6 +898,7 @@ export function empowerfiAuditProgram() {
         },
         pdas: {
           config: findConfigPda,
+          allocation: findAllocationPda,
           checkin: findCheckinPda,
           opportunity: findOpportunityPda,
           outcome: findOutcomePda,

@@ -8,6 +8,102 @@
   },
   "instructions": [
     {
+      "name": "anchor_allocation",
+      "docs": [
+        "Commits an investor's allocation to an opportunity, keyed by a reference",
+        "that links it to neither party on chain."
+      ],
+      "discriminator": [
+        46,
+        219,
+        30,
+        121,
+        190,
+        99,
+        183,
+        242
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "allocation",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  108,
+                  108,
+                  111,
+                  99,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "allocation_ref_hash"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "allocation_ref_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "anchor_checkin",
       "docs": [
         "Commits one month of a registered borrower's business. Once per month."
@@ -1354,6 +1450,19 @@
   ],
   "accounts": [
     {
+      "name": "AllocationCommitment",
+      "discriminator": [
+        64,
+        38,
+        248,
+        32,
+        30,
+        54,
+        227,
+        238
+      ]
+    },
+    {
       "name": "BorrowerAudit",
       "discriminator": [
         103,
@@ -1567,6 +1676,49 @@
     }
   ],
   "types": [
+    {
+      "name": "AllocationCommitment",
+      "docs": [
+        "An investor's capital allocated to an opportunity, as a commitment. Keyed",
+        "by the hash of a random reference held only in the database, so the proof",
+        "points neither to the investor's wallet nor to the borrower."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "allocation_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "allocated_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
     {
       "name": "BorrowerAudit",
       "docs": [
@@ -2235,6 +2387,11 @@
   ],
   "constants": [
     {
+      "name": "ALLOCATION_SEED",
+      "type": "bytes",
+      "value": "[97, 108, 108, 111, 99, 97, 116, 105, 111, 110]"
+    },
+    {
       "name": "BORROWER_SEED",
       "type": "bytes",
       "value": "[98, 111, 114, 114, 111, 119, 101, 114]"
@@ -2293,6 +2450,16 @@
       ],
       "type": "u8",
       "value": "1"
+    },
+    {
+      "name": "VAULT_SEED",
+      "docs": [
+        "Owner of the program's USDC vault (its associated token account). Investors",
+        "deposit with a plain token transfer; the chain sees a deposit to the vault,",
+        "never which opportunity it funds."
+      ],
+      "type": "bytes",
+      "value": "[118, 97, 117, 108, 116]"
     }
   ]
 }

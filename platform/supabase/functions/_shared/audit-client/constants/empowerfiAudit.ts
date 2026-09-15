@@ -8,6 +8,10 @@
 
 import type { ReadonlyUint8Array } from "@solana/kit";
 
+export const ALLOCATION_SEED: ReadonlyUint8Array = new Uint8Array([
+  97, 108, 108, 111, 99, 97, 116, 105, 111, 110,
+]);
+
 export const BORROWER_SEED: ReadonlyUint8Array = new Uint8Array([
   98, 111, 114, 114, 111, 119, 101, 114,
 ]);
@@ -49,3 +53,7 @@ export const READINESS_SEED: ReadonlyUint8Array = new Uint8Array([
 ]);
 
 export const SCHEMA_VERSION: number = 1;
+
+export const VAULT_SEED: ReadonlyUint8Array = new Uint8Array([
+  118, 97, 117, 108, 116,
+]);

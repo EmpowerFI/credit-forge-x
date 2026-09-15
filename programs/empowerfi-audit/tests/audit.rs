@@ -7,10 +7,10 @@ use {
         InstructionData, ToAccountMetas,
     },
     empowerfi_audit::{
-        error::AuditError, BorrowerAudit, CheckinCommitment, CommunityAudit, CommunityStatus,
+        error::AuditError, AllocationCommitment, BorrowerAudit, CheckinCommitment, CommunityAudit, CommunityStatus,
         EligibilityAttestation, EligibilityDecision, Grade, LoanAccount, LoanStatus,
         OpportunityCommitment, OutcomeCommitment, PaymentCommitment, PlatformConfig, ReadinessAttestation,
-        ReadinessBand, ReadinessStatus, BORROWER_SEED, CHECKIN_SEED, COMMUNITY_SEED, CONFIG_SEED,
+        ReadinessBand, ReadinessStatus, ALLOCATION_SEED, BORROWER_SEED, CHECKIN_SEED, COMMUNITY_SEED, CONFIG_SEED,
         ELIGIBILITY_SEED, LOAN_SEED, OPPORTUNITY_SEED, OUTCOME_SEED, PAYMENT_SEED, READINESS_SEED,
         SCHEMA_VERSION,
     },
@@ -1209,4 +1209,55 @@ fn an_outcome_is_measured_only_on_a_loan_that_reached_the_business() {
     )
     .unwrap();
     send(&mut env.svm, outcome_ix(&op.pubkey(), &loan, 2), &[&op]).unwrap();
+}
+
+// --------------------------------------------------------------- allocation
+
+fn allocation_pda(ref_hash: &[u8; 32]) -> Pubkey {
+    Pubkey::find_program_address(&[ALLOCATION_SEED, ref_hash], &empowerfi_audit::ID).0
+}
+
+fn allocation_ix(op: &Pubkey, ref_hash: [u8; 32], commitment: [u8; 32]) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::AnchorAllocation {
+            allocation_ref_hash: ref_hash,
+            commitment,
+        }
+        .data(),
+        empowerfi_audit::accounts::AnchorAllocation {
+            operator: *op,
+            config: config_pda(),
+            allocation: allocation_pda(&ref_hash),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+#[test]
+fn an_allocation_is_committed_once_by_the_operator_alone() {
+    let mut env = initialized();
+    let op = env.operator.insecure_clone();
+
+    let intruder = Keypair::new();
+    env.svm.airdrop(&intruder.pubkey(), 1_000_000_000).unwrap();
+    let res = send(&mut env.svm, allocation_ix(&intruder.pubkey(), [91; 32], [92; 32]), &[&intruder]);
+    assert_custom_error(res, AuditError::UnauthorizedOperator);
+
+    let res = send(&mut env.svm, allocation_ix(&op.pubkey(), [0; 32], [92; 32]), &[&op]);
+    assert_custom_error(res, AuditError::ZeroReference);
+    let res = send(&mut env.svm, allocation_ix(&op.pubkey(), [91; 32], [0; 32]), &[&op]);
+    assert_custom_error(res, AuditError::ZeroCommitment);
+
+    send(&mut env.svm, allocation_ix(&op.pubkey(), [91; 32], [92; 32]), &[&op]).unwrap();
+    assert!(
+        send(&mut env.svm, allocation_ix(&op.pubkey(), [91; 32], [93; 32]), &[&op]).is_err(),
+        "an allocation is written once"
+    );
+    let a: AllocationCommitment = fetch(&env.svm, &allocation_pda(&[91; 32]));
+    assert_eq!(a.allocation_ref_hash, [91; 32]);
+    assert_eq!(a.commitment, [92; 32]);
+    assert_eq!(a.allocated_at, NOW);
+    assert_eq!(a.schema_version, SCHEMA_VERSION);
 }

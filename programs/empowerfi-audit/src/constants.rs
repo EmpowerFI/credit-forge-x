@@ -22,6 +22,13 @@ pub const LOAN_SEED: &[u8] = b"loan";
 pub const PAYMENT_SEED: &[u8] = b"payment";
 #[constant]
 pub const OUTCOME_SEED: &[u8] = b"outcome";
+#[constant]
+pub const ALLOCATION_SEED: &[u8] = b"allocation";
+/// Owner of the program's USDC vault (its associated token account). Investors
+/// deposit with a plain token transfer; the chain sees a deposit to the vault,
+/// never which opportunity it funds.
+#[constant]
+pub const VAULT_SEED: &[u8] = b"vault";
 
 /// Version of the commitment schemas these accounts carry. It matches the
 /// `:v1` suffix of the domain tags in packages/audit-commitments; a payload

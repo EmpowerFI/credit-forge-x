@@ -58,10 +58,12 @@ const ACCOUNT_FIELDS: Record<string, string[]> = {
   LoanAccount: ["borrower", "opportunity", "status", "terms_commitment", "last_transition_commitment", "transitions", "created_at", "updated_at", "schema_version", "bump"],
   PaymentCommitment: ["loan", "instalment_no", "commitment", "recorded_at", "schema_version", "bump"],
   OutcomeCommitment: ["loan", "outcome_no", "commitment", "measured_at", "schema_version", "bump"],
+  AllocationCommitment: ["allocation_ref_hash", "commitment", "allocated_at", "schema_version", "bump"],
 };
 
 // Every argument of every instruction, which transaction history keeps.
 const INSTRUCTION_ARGS: Record<string, string[]> = {
+  anchor_allocation: ["allocation_ref_hash", "commitment"],
   anchor_checkin: ["period", "commitment"],
   anchor_opportunity: ["opportunity_no", "commitment"],
   anchor_outcome: ["outcome_no", "commitment"],

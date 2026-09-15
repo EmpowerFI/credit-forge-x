@@ -229,3 +229,16 @@ pub struct OutcomeCommitment {
     pub schema_version: u8,
     pub bump: u8,
 }
+
+/// An investor's capital allocated to an opportunity, as a commitment. Keyed
+/// by the hash of a random reference held only in the database, so the proof
+/// points neither to the investor's wallet nor to the borrower.
+#[account]
+#[derive(InitSpace)]
+pub struct AllocationCommitment {
+    pub allocation_ref_hash: [u8; 32],
+    pub commitment: [u8; 32],
+    pub allocated_at: i64,
+    pub schema_version: u8,
+    pub bump: u8,
+}

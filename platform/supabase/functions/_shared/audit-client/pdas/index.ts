@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from "./allocation.ts";
 export * from "./attestation.ts";
 export * from "./borrower.ts";
 export * from "./checkin.ts";

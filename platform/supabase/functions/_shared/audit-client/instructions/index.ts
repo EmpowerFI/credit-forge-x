@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from "./anchorAllocation.ts";
 export * from "./anchorCheckin.ts";
 export * from "./anchorOpportunity.ts";
 export * from "./anchorOutcome.ts";
