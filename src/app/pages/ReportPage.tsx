@@ -60,8 +60,13 @@ function ChainResult({ c, expected, title }: { c: ChainCheck; expected: number; 
       {c.proofs.checked === 0 ? <Verdict ok={null}>No proof had reached Solana yet when the report was made</Verdict> : (
         <>
           <Verdict ok={c.proofs.landed === c.proofs.checked}>{c.proofs.landed} of {c.proofs.checked} proof transactions landed on Solana</Verdict>
-          <Verdict ok={c.proofs.commitment_found === c.proofs.checked}>
+          <Verdict ok={c.proofs.commitment_found === c.proofs.checked ? true : c.proofs.problems.length === 0 ? null : false}>
             {c.proofs.commitment_found} of {c.proofs.checked} commitments found where the program wrote them
+            {(c.proofs.unreadable ?? 0) > 0 && (
+              <span className="block text-xs text-muted-foreground">
+                {c.proofs.unreadable} could not be read just now: the public Solana RPC limits how fast a browser may ask. Run the check again in a minute.
+              </span>
+            )}
           </Verdict>
         </>
       )}

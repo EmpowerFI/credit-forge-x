@@ -185,21 +185,52 @@
 >   - The vault reads 0.00 on chain = 0.00 expected.
 > - **Tests.** pgTAP 342 (25 new), Vitest 100.
 > - **Environment.** Historical disbursements and instalments got mock Pix legs by backfill (no real legs). Q-D07121 is now disbursed and active with one instalment: the reseed restores it.
-> - **Phase 4 left:** only the optional MoneyGram sandbox, which waits on credentials.
+> - **Phase 4 left:** only the optional MoneyGram sandbox, which waits on credentials. Returns paid to a shielded address came with Phase 5.
 
 ### Phase 5 — Partner and auditor depth, polish (≈3 days)
 - Partner: funding states, formalise or decline (with a refund), servicing.
 - Export: a shareable audit report.
 - Responsive pass at 390 px, loading, error and success states everywhere, and a full demo run on a clean seed.
 
+> **Status (15 Sep): built on `hackathon` and live on the hackathon environment.**
+>
+> - **Partner desk,** in five views, plus a page for each loan:
+>   - **Pipeline:** every request's stage and the partner's next action.
+>   - **Reviews:** the decision, with investors' funding beside EmpowerFI's assessment.
+>   - **Decisions:** the record of every decision.
+>   - **Portfolio:** the book, the risk mix, capital sources and outcomes.
+>   - **Servicing:** formalise once funded, or decline with a refund; record instalments; overdue instalments; a 45-day calendar.
+>   - **Each loan:** its terms, where the money went, the schedule with Pix ids and investors' shares, and every step's proof.
+>   - It reads one function, `partner_desk()`.
+> - **Decline at formalisation.** Cancelling an approved loan now needs a reason, closes the opportunity and refunds its investors. Before this, their capital stayed allocated to a loan that would never exist. Simulated positions are refunded at once.
+> - **Shared audit reports.**
+>   - Audit console → Reports re-runs the latest decisions, reads the vault on chain, freezes a snapshot with no personal data, looks up its proofs and transfers on Solana, and shares a link.
+>   - `/app/report/:token` opens without an account. It re-runs the chain checks in the reader's browser, with retries when the public RPC rate-limits, and exports JSON or a print-ready PDF.
+>   - Revoking a report closes its link.
+> - **Returns in shielded ZEC.**
+>   - A ZEC investor with no Solana wallet gives a shielded return address, with the payment request or later on the position.
+>   - Instalment shares and refunds are then owed in ZEC. A refund's USDC goes back from the vault to the ramp first.
+>   - `scripts/platform/zcash-returns.mts` sends them from the treasury on the operator's machine, where the spending key stays.
+> - **Polish.** Every screen was checked for every persona, at 1440 and 390 px: no horizontal overflow and no console errors. A shared report was stuck loading for visitors without an account; the cause was the auth provider clearing the query cache on every session event, and it now clears only on sign-out.
+> - **Verified live on a clean seed.**
+>   - All 967 proofs, the seed's and the live run's, were anchored and re-read.
+>   - Two real testnet ZEC payments were made with return addresses.
+>   - The partner approved, formalised and disbursed one opportunity. 1 USDC was released to the ramp, and instalment 1's share went back as 18,000 zat of shielded ZEC (`8a4f85b7…`).
+>   - The partner declined the other. The vault returned 1 USDC to the ramp in 31 s, and the treasury refunded 89,000 zat (`26311626…`).
+>   - A report checked 120 of 120 proofs on chain, from the auditor's browser and again from a visitor's. The vault reads 0.00 on chain = 0.00 expected.
+> - **Tests.** pgTAP 395 (partner desk 19, ZEC returns 21, audit reports 13), Vitest 110, Deno 43.
+> - **Found on the way.** Two treasury sends made back to back on one sync were rejected by the node, and nothing left the treasury. The "never twice" rule held the return for a person to check. The script now syncs before each send, and releases a send the node refused.
+
 ## 6 · Definition of done (from the brief)
 
-- [ ] Within 5 seconds a visitor can tell whether they're on the corporate site or in a financial workspace, without thinking they changed company.
-- [ ] An investor connects a wallet, gets test USDC, opens an opportunity, invests, sees the confirmation and finds the position in the portfolio.
-- [ ] A community leader sees where participants are stuck and who is ready for the next action.
-- [ ] Any judge can open an opportunity and understand what is private, what was derived and what was proven on chain.
-- [ ] No important screen looks like a landing page: each has state, data, interaction, loading, error and success states, and a drill-down.
-- [ ] Every demo or simulated figure is labelled as such; no return or approval is presented as production reality.
+Ticked where built and checked by the team; the founder's end-to-end test confirms them.
+
+- [x] Within 5 seconds a visitor can tell whether they're on the corporate site or in a financial workspace, without thinking they changed company.
+- [x] An investor connects a wallet, gets test USDC, opens an opportunity, invests, sees the confirmation and finds the position in the portfolio.
+- [x] A community leader sees where participants are stuck and who is ready for the next action.
+- [x] Any judge can open an opportunity and understand what is private, what was derived and what was proven on chain.
+- [x] No important screen looks like a landing page: each has state, data, interaction, loading, error and success states, and a drill-down.
+- [x] Every demo or simulated figure is labelled as such; no return or approval is presented as production reality.
 
 **Demo narrative:** the community creates readiness → the opportunity becomes investable → a wallet funds it with devnet USDC → the operation is tracked → the privacy-preserving evidence is verified on Solana.
 

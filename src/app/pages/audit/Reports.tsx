@@ -45,7 +45,7 @@ function ChecksLine({ checks }: { checks: ReportChecks }) {
         </StatusPill>
       )}
       {c && (
-        <StatusPill tone={c.proofs.problems.length === 0 ? "positive" : "alert"} dot={false}>
+        <StatusPill tone={c.proofs.problems.length > 0 ? "alert" : c.proofs.commitment_found === c.proofs.checked ? "positive" : "caution"} dot={false}>
           {c.proofs.commitment_found}/{c.proofs.checked} proofs found on chain
         </StatusPill>
       )}

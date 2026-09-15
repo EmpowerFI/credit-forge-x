@@ -252,7 +252,10 @@ export default function Position() {
       </Panel>
 
       {loan && (
-        <Panel title="Scheduled repayments" description="Instalments fall due monthly from the start of repayment; your share is paid out in USDC at the demo quote.">
+        <Panel title="Scheduled repayments"
+          description={zecOnly
+            ? "Instalments fall due monthly from the start of repayment; your share goes back to you in shielded ZEC, at the quote when it is sent."
+            : "Instalments fall due monthly from the start of repayment; your share is paid out in USDC at the demo quote."}>
           <div className="relative overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead className="text-left text-xs text-muted-foreground">

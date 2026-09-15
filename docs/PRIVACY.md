@@ -71,7 +71,7 @@ What remains, stated plainly:
 - **The conversion is simulated.** In production NEAR Intents converts ZEC to USDC on Solana. It has no testnet, so the operator credits the vault at the quote and every screen says so.
 - **The operator's credit is public.** Its amount matches the allocation, as a wallet deposit's does. What it no longer shows is who paid.
 - **EmpowerFI reads its own treasury.** It knows which request each payment answers, as it knows every allocation. Other investors, partners and the public don't.
-- **A ZEC position is refunded as USDC,** to the investor's Solana wallet if they have one. Without a wallet the refund stays due. Production would return it as ZEC through the same conversion.
+- **What comes back goes back as ZEC,** when the investor has no Solana wallet and gives a shielded return address (unified or Sapling; transparent addresses are refused). Each instalment's share, and a refund, is owed in `zcash_returns`. For a refund, the vault first returns the USDC to the ramp, the operator on devnet, in a real devnet transfer. The treasury then pays the ZEC at the quote of the day. Sending takes the treasury's spending key, so it happens on the operator's machine (`scripts/platform/zcash-returns.mts`): each return is marked sending before anything leaves, and is never sent twice. The return address is kept with the request, seen only by the investor and the operator; the audit console and shared reports list returns by transaction, never by address. With a Solana wallet, a ZEC position is refunded and paid out in USDC to that wallet.
 
 ## Consent
 
@@ -104,6 +104,15 @@ What remains, stated plainly:
 - **Changes are visible, not their content.** On chain, anyone can see that a pseudonym has several consent records, and when each was made.
 - **What was shared stays shared.** Withdrawing consent stops future use. It doesn't recall what a partner already received, which remains under the partner's own obligations.
 
+## Shared audit reports
+
+An auditor can freeze what the audit console shows into a report and share it by link (`audit_reports`). Whoever opens the link needs no account.
+
+- **What a report holds** is chosen field by field in `private.audit_snapshot()`, never copied from the console wholesale: counts and states of every proof, the models in use, whether consent was enforced, credit totals, the vault's ledger and the transactions that moved it, the Zcash treasury's received notes and returns by transaction, and the latest proofs by commitment, account and transaction.
+- **What it never holds:** names, business names, participant or community codes, any record behind a commitment, investor identities or wallets, the Zcash viewing key, memos or return addresses, and error text (an RPC error can carry a provider's key). `platform/supabase/tests/audit_reports.test.sql` checks this.
+- **Checks, twice.** The auditor's browser re-runs the latest decisions, reads the vault on chain and looks up every proof and transfer in the report; those results are stored beside it, labelled as the auditor's. The reader's browser can run the chain checks again, straight against Solana.
+- **The link is the credential:** 24 random bytes. Revoking a report closes it. Resetting the demo deletes every report.
+
 ## Who sees what
 
 Row-level security enforces all of this, and pgTAP tests check it for every role.
@@ -112,16 +121,16 @@ Row-level security enforces all of this, and pgTAP tests check it for every role
 |---|---|---|
 | **Entrepreneur** | Her own profile, business, check-ins, assessments, requests, loans, payments, outcome and cost; can audit her own proofs; records and changes her consent | Anyone else's |
 | **Community leader** | Members of the communities she leads: their records, funnel and cost to serve; records their consent from the signed form | Other communities' members; partners' books; reported amounts in Community Intelligence |
-| **Credit partner** | Opportunities referred to it, pseudonymous: `P-XXXXXX`, sector, verified community, indicators rounded to R$100, EmpowerFI's assessment and reasons. Its own loans, payments and outcomes | Names, business names, check-ins, readiness detail, anything not referred to it |
+| **Credit partner** | Opportunities referred to it, pseudonymous: `P-XXXXXX`, sector, verified community, indicators rounded to R$100, EmpowerFI's assessment and reasons. How much investors have funded each, from how many, and how much of it is real devnet USDC. Its own loans, schedules, payments, settlement legs and outcomes | Names, business names, check-ins, readiness detail, who the investors are, anything not referred to it |
 | **Capital provider** | The portfolio its capital funds, in aggregate. Loans under a code derived from the loan alone (`L-XXXXXX`), which can't be joined to the partner's pseudonyms. Can audit loans, status changes and payments | People, check-ins, readiness, eligibility, opportunities, per-person outcomes |
 | **Auditor** | Everything, read-only; every proof. The audit console names participants by code (`P-XXXXXX`), never by name. Holds the Zcash treasury's viewing key, and sees every note it reads | Can't write anything; the viewing key spends nothing |
 | **Admin (EmpowerFI)** | Everything; verifies communities, refers flagged opportunities | Can't make a lending decision, or verify a community it leads |
-| **Anonymous visitor** | Nothing | No table, view or function |
+| **Anonymous visitor** | An audit report shared with them by link, and nothing else | Any table or view; any function but `shared_audit_report` |
 
 These rules hold for every table, view and function, and `platform/supabase/tests/rbac.test.sql` checks them from the database catalog, so anything added later is covered automatically:
 
 - row-level security on every table;
-- no reads or writes for anonymous visitors;
+- no reads or writes for anonymous visitors, and one function they may call: opening a shared audit report by its token;
 - no direct writes for signed-in users;
 - views run as the caller;
 - security-definer functions pin their `search_path`;
@@ -135,7 +144,7 @@ Engagement data (opens, clicks, time in the app, whether she upgraded) is never 
 
 - The program's **upgrade authority** and the **operator** that signs every proof are separate keys. `set_operator` rotates the operator without a new program ID.
 - The operator key, the anchoring secret and the RPC key live as Supabase function secrets and in Vault. They're never in the repository and never in the browser bundle. The audit screen uses the public devnet RPC.
-- The Zcash treasury's seed stays in its wallet, off every server. Only its viewing key is in the database, in the `private` schema, for the watcher and auditors.
+- The Zcash treasury's seed stays in its wallet, off every server. Only its viewing key is in the database, in the `private` schema, for the watcher and auditors. Returns in ZEC are sent from the operator's machine, where the wallet is; the script never reads or prints the seed or its age identity.
 - Demo accounts share a public password on purpose, because judges need to log in. Every demo record is marked `is_simulated`.
 
 ## Open before production
@@ -144,4 +153,4 @@ Engagement data (opens, clicks, time in the app, whether she upgraded) is never 
 - Consent to share covers "the partner EmpowerFI refers me to". Production needs it per partner, named, before referral.
 - Reference rotation: a participant who wants a fresh pseudonym would need a new `borrower_ref` and a link between her old and new histories that only the database knows.
 - Stablecoin and cross-border capital routes: tax and regulatory treatment are assumptions in the simulator until validated.
-- Shielded ZEC: NEAR Intents for the conversion, returns paid as ZEC, mainnet confirmation depth (ten blocks, not two), reorg handling in the watcher (it records each scanned block's hash but doesn't yet rewind), and a treasury key held in custody, not a developer wallet.
+- Shielded ZEC: NEAR Intents for the conversion, returns sent automatically from a custodied key rather than by hand, mainnet confirmation depth (ten blocks, not two), reorg handling in the watcher (it records each scanned block's hash but doesn't yet rewind), and a treasury key held in custody, not a developer wallet.

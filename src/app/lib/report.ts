@@ -65,7 +65,12 @@ export interface ReportSnapshot {
 export interface ChainCheck {
   at: string;
   rpc: "public" | "custom";
-  proofs: { checked: number; landed: number; commitment_found: number; problems: { signature: string; kind: string; issue: string }[] };
+  proofs: {
+    checked: number; landed: number; commitment_found: number;
+    /** Not read at all: the RPC refused or failed, even after retrying. Not a finding either way. */
+    unreadable?: number;
+    problems: { signature: string; kind: string; issue: string }[];
+  };
   transfers: { checked: number; landed: number; problems: string[] };
   vault: { address: string; chain_micro_usdc: number | null };
 }
@@ -109,10 +114,24 @@ export function contains(hay: Uint8Array, needle: Uint8Array): boolean {
 const chunks = <T,>(items: T[], size: number) =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, i) => items.slice(i * size, (i + 1) * size));
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** The public devnet RPC rate-limits (HTTP 429): back off and ask again before giving up. */
+async function retried<T>(call: () => Promise<T>, tries = 5): Promise<T> {
+  for (let i = 0, wait = 800; ; i++, wait *= 2) {
+    try {
+      return await call();
+    } catch (e) {
+      if (i >= tries - 1) throw e;
+      await sleep(wait);
+    }
+  }
+}
+
 async function statuses(signatures: string[]) {
   const out = new Map<string, boolean>();
   for (const batch of chunks(signatures, 200)) {
-    const { value } = await rpc.getSignatureStatuses(batch as Signature[], { searchTransactionHistory: true }).send();
+    const { value } = await retried(() => rpc.getSignatureStatuses(batch as Signature[], { searchTransactionHistory: true }).send());
     batch.forEach((s, i) => out.set(s, Boolean(value[i] && !value[i]!.err)));
   }
   return out;
@@ -137,20 +156,25 @@ export async function checkOnChain(snapshot: ReportSnapshot, onProgress?: (step:
   const found = new Set<string>();
   const withAccount = proofs.filter((p) => p.account);
   for (const batch of chunks(withAccount, 100)) {
-    const { value } = await rpc.getMultipleAccounts(batch.map((p) => address(p.account!)) as Address[], { encoding: "base64" }).send();
+    const { value } = await retried(() => rpc.getMultipleAccounts(batch.map((p) => address(p.account!)) as Address[], { encoding: "base64" }).send());
     batch.forEach((p, i) => {
       const acc = value[i];
       if (acc && acc.owner === PROGRAM_ID && contains(fromBase64(acc.data[0]), fromHex(p.commitment!))) found.add(p.signature);
     });
   }
 
-  // The rest: in the transaction itself, a few at a time to spare the public RPC.
+  // The rest: in the transaction itself, two at a time to spare the public RPC.
   const rest = proofs.filter((p) => !found.has(p.signature) && landed.get(p.signature));
+  const unreadable = new Set<string>();
   onProgress?.(rest.length ? `Reading ${rest.length} transactions for commitments an account has moved past` : "Commitments read");
-  for (const batch of chunks(rest, 4)) {
+  for (const batch of chunks(rest, 2)) {
     await Promise.all(batch.map(async (p) => {
-      const tx = await rpc.getTransaction(p.signature as Signature, { encoding: "base64", maxSupportedTransactionVersion: 0 }).send()
-        .catch(() => null);
+      const tx = await retried(() => rpc.getTransaction(p.signature as Signature, { encoding: "base64", maxSupportedTransactionVersion: 0 }).send())
+        .catch(() => undefined);
+      if (tx === undefined) {
+        unreadable.add(p.signature);
+        return;
+      }
       if (!tx) return;
       const raw = fromBase64(tx.transaction[0]);
       if (contains(raw, program) && contains(raw, fromHex(p.commitment!))) found.add(p.signature);
@@ -158,6 +182,7 @@ export async function checkOnChain(snapshot: ReportSnapshot, onProgress?: (step:
   }
   for (const p of proofs) {
     if (!landed.get(p.signature)) problems.push({ signature: p.signature, kind: p.kind, issue: "transaction not found" });
+    else if (unreadable.has(p.signature)) continue;
     else if (!found.has(p.signature)) problems.push({ signature: p.signature, kind: p.kind, issue: "commitment not found" });
   }
 
@@ -172,13 +197,16 @@ export async function checkOnChain(snapshot: ReportSnapshot, onProgress?: (step:
 
   onProgress?.("Reading the vault's balance");
   const vault = await vaultAddress();
-  const balance = await rpc.getTokenAccountBalance(vault, { commitment: "confirmed" }).send()
+  const balance = await retried(() => rpc.getTokenAccountBalance(vault, { commitment: "confirmed" }).send())
     .then(({ value }) => Number(value.amount)).catch(() => null);
 
   return {
     at: new Date().toISOString(),
     rpc: import.meta.env.VITE_SOLANA_RPC_URL ? "custom" : "public",
-    proofs: { checked: proofs.length, landed: proofs.filter((p) => landed.get(p.signature)).length, commitment_found: found.size, problems },
+    proofs: {
+      checked: proofs.length, landed: proofs.filter((p) => landed.get(p.signature)).length, commitment_found: found.size,
+      unreadable: unreadable.size, problems,
+    },
     transfers: { checked: movements.length, landed: movements.filter((s) => moved.get(s)).length, problems: movements.filter((s) => !moved.get(s)) },
     vault: { address: vault, chain_micro_usdc: balance },
   };

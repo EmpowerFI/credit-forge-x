@@ -12,8 +12,10 @@
 //
 // Never sent twice. Each return is claimed — marked sending — before anything
 // is sent. If there is no quote or not enough ZEC, it is released untouched.
-// If the send fails after the transaction may have left, it is marked failed
-// for a person to check against the treasury's history, never retried.
+// A send the node refused ("Send failed") never left, and is released too. If
+// it fails in a way that leaves doubt — after sending began, with no refusal —
+// it is marked failed for a person to check against the treasury's history,
+// never retried.
 //
 // Priced at CoinGecko's ZEC/USD quote at the moment of sending. There is no
 // fallback quote: real testnet ZEC does not leave at a made-up price.
@@ -83,6 +85,8 @@ if (!claimed?.length) {
 
 const cents = await quoteCents();
 let sent = 0;
+// Rejected sends count too: the next one still syncs first.
+let attempted = 0;
 for (const r of claimed as { id: string; kind: string; amount_micro_usdc: number; address: string; ref: string | null; instalment_no: number | null }[]) {
   if (!cents) {
     await db.rpc("zcash_return_release", { p_id: r.id, p_error: "no ZEC/USD quote" });
@@ -100,12 +104,15 @@ for (const r of claimed as { id: string; kind: string; amount_micro_usdc: number
     : `EmpowerFI return ${r.ref ?? ""} instalment ${r.instalment_no ?? "?"}`.replace(/\s+/g, " ");
   let out = "";
   try {
+    // A send right after another, on the same sync, was rejected by the node
+    // (-25, consensus validation): each send starts from a fresh sync.
+    if (attempted++ > 0) wallet(["sync", "-s", "zecrocks"]);
     out = wallet(["send", "-i", identity, "--address", r.address, "--value", String(zat), "--memo", memo, "-s", "zecrocks"]);
   } catch (e) {
     const stdout = String((e as { stdout?: string }).stdout ?? "");
     const stderr = String((e as { stderr?: string }).stderr ?? "");
-    const detail = (stderr || stdout).split("\n").filter(Boolean).slice(-2).join(" ").slice(0, 300);
-    if (stdout.includes("Sending transaction")) {
+    const detail = (stderr || stdout).replace(/\x1b\[[0-9;]*m/g, "").split("\n").filter(Boolean).slice(-2).join(" ").slice(0, 300);
+    if (stdout.includes("Sending transaction") && !/Send failed/.test(stderr)) {
       // It may have left: a person checks the treasury's history before anything else happens.
       await db.rpc("zcash_return_failed", { p_id: r.id, p_error: `send may have gone out: ${detail}` });
       console.log(`${r.id}: FAILED after sending began — check the treasury with list-tx`);
