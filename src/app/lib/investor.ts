@@ -83,6 +83,9 @@ export const fundedPercent = (funded: number, target: number | null) =>
 export const reaisFromUsdc = (micro: number, fxMilli: number | null) =>
   fxMilli ? Math.round((micro / 1e6) * (fxMilli / 1000) * 100) : null; // centavos
 
+/** Centavos to micro-USDC at a quote in milli-reais per USDC; mirrors private.usdc_micro. */
+export const usdcFromReais = (cents: number, fxMilli: number) => (cents * 1e7) / fxMilli;
+
 export const ACTIVITY_LABEL: Record<string, string> = {
   invested: "Investment allocated",
   disbursed: "Loan disbursed",

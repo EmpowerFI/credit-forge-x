@@ -103,10 +103,16 @@ export default function Portfolio() {
             <tbody className="divide-y divide-border">
               {rows.map((r) => {
                 const state = positionState(r);
+                const to = `/app/investor/positions/${r.investment_id}`;
+                // The whole row answers a click; the title is the real link, for
+                // the keyboard and for screen readers.
                 return (
-                  <tr key={r.investment_id} className="cursor-pointer hover:bg-secondary/40" onClick={() => navigate(`/app/investor/positions/${r.investment_id}`)}>
+                  <tr key={r.investment_id} className="cursor-pointer hover:bg-secondary/40" onClick={() => navigate(to)}>
                     <td className="py-3 pr-4">
-                      <span className="block font-medium text-foreground">{title(r.purpose, r.business_sector)}</span>
+                      <Link to={to} onClick={(e) => e.stopPropagation()}
+                        className="block font-medium text-foreground hover:underline focus-visible:underline focus-visible:outline-none">
+                        {title(r.purpose, r.business_sector)}
+                      </Link>
                       <span className="font-mono text-xs text-muted-foreground">{r.code}</span>
                       {r.is_simulated && <span className="ml-2 text-xs text-caution">simulated</span>}
                     </td>
@@ -120,7 +126,7 @@ export default function Portfolio() {
                     </td>
                     <td className="num py-3 pr-4 text-right text-positive">{r.repaid_micro_usdc ? usdc(r.repaid_micro_usdc) : "—"}</td>
                     <td className="num py-3 pr-4 text-right text-muted-foreground">{r.evc_cents !== null ? money(r.evc_cents) : "—"}</td>
-                    <td className="py-3 text-right text-muted-foreground"><ChevronRight size={16} /></td>
+                    <td className="py-3 text-right text-muted-foreground"><ChevronRight size={16} aria-hidden /></td>
                   </tr>
                 );
               })}

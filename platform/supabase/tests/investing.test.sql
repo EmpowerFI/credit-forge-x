@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(24);
+select plan(27);
 
 -- ------------------------------------------------------------------ fixtures
 -- One partner, one community, Rita and Sara ready and asking. Two wallet
@@ -216,6 +216,19 @@ select results_eq(
      where o.entrepreneur_id = '00000000-0000-0000-0000-0000000004e2' $$,
   $$ values ('refunded', 'refund_due') $$,
   'a declined opportunity refunds: the allocation is due back'
+);
+
+-- Reais to USDC, pinned: repayments and returns once came out 1,000 times
+-- too small because centavos were scaled to milli-USDC, not micro-USDC.
+select is(round(private.usdc_micro(100000, 5500)), 181818182::numeric,
+  'R$ 1,000 at R$ 5.50 per USDC is 181.818182 USDC');
+select is(private.share_usdc(100000, 0.25, 5500), 45454545::bigint,
+  'a quarter share of that instalment is 45.454545 USDC');
+select ok(
+  (select bool_and(funding_target_micro_usdc >= private.usdc_micro(amount_cents, fx_brl_per_usdc_milli)
+                   and funding_target_micro_usdc - private.usdc_micro(amount_cents, fx_brl_per_usdc_milli) < 1000000)
+   from qualified_credit_opportunities where funding_target_micro_usdc is not null),
+  'every funding target is its loan in USDC at the same scale, rounded up to the whole coin'
 );
 
 select * from finish();

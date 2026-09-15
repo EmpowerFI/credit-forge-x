@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import Panel from "../../components/product/Panel";
 import { useAuth } from "../../auth/useAuth";
 import { describeError } from "../../lib/errors";
-import type { MarketRow } from "../../lib/investor";
+import { type MarketRow, usdcFromReais } from "../../lib/investor";
 import { explorerTx, platform } from "../../lib/platform";
 import { CLUSTER, confirmSignature, FAUCETS, rpc, usdc, USDC_DECIMALS, USDC_MINT, usdcAccountOf, vaultAddress } from "../../lib/solana";
 import { useBalances } from "../../wallet/useBalances";
@@ -158,7 +158,7 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
   const open = row.funding_status === "open" || row.funding_status === "partially_funded";
   const share = row.funding_target_micro_usdc ? micro / row.funding_target_micro_usdc : 0;
   const expectedBack = row.instalment_cents && row.fx_brl_per_usdc_milli
-    ? Math.round((row.instalment_cents * row.term_months * share * 10000) / row.fx_brl_per_usdc_milli)
+    ? Math.round(usdcFromReais(row.instalment_cents * row.term_months, row.fx_brl_per_usdc_milli) * share)
     : null;
 
   const problem =
