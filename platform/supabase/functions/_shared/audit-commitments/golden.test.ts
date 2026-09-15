@@ -4,7 +4,7 @@
 //   npx deno test --allow-read platform/supabase/functions/_shared/
 import { assertEquals } from "jsr:@std/assert@1";
 import golden from "../../../../../packages/audit-commitments/vectors/golden.json" with { type: "json" };
-import { type CanonicalObject, canonicalize, commit, type Domain, fromHex, hashBorrowerRef, toHex } from "./index.ts";
+import { type CanonicalObject, canonicalize, commit, type Domain, fromHex, hashAllocationRef, hashBorrowerRef, toHex } from "./index.ts";
 
 for (const v of golden.commitments) {
   Deno.test(`canonical form: ${v.name}`, () => {
@@ -18,5 +18,11 @@ for (const v of golden.commitments) {
 for (const v of golden.borrower_ref_hashes) {
   Deno.test(`borrower ref hash: ${v.name}`, async () => {
     assertEquals(toHex(await hashBorrowerRef(fromHex(v.borrower_ref))), v.hash);
+  });
+}
+
+for (const v of golden.allocation_ref_hashes) {
+  Deno.test(`allocation ref hash: ${v.name}`, async () => {
+    assertEquals(toHex(await hashAllocationRef(fromHex(v.allocation_ref))), v.hash);
   });
 }

@@ -75,6 +75,17 @@ vectors = {
             ("all 0xff", b"\xff" * 32),
         ]
     ],
+    "allocation_ref_hashes": [
+        {
+            "name": name,
+            "allocation_ref": ref.hex(),
+            "hash": hashlib.sha256(b"EMPOWERFI:ALLOCATION_REF:v1" + b"\x00" + ref).hexdigest(),
+        }
+        for name, ref in [
+            ("bytes 0..31", bytes(range(32))),
+            ("all 0xff", b"\xff" * 32),
+        ]
+    ],
 }
 
 print(json.dumps(vectors, indent=2, ensure_ascii=False))

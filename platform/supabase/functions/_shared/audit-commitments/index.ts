@@ -25,6 +25,8 @@ export const DOMAINS = {
   LOAN_TRANSITION: "EMPOWERFI:LOAN_TRANSITION:v1",
   PAYMENT: "EMPOWERFI:PAYMENT:v1",
   OUTCOME: "EMPOWERFI:OUTCOME:v1",
+  ALLOCATION: "EMPOWERFI:ALLOCATION:v1",
+  ALLOCATION_REF: "EMPOWERFI:ALLOCATION_REF:v1",
 } as const;
 
 export type Domain = (typeof DOMAINS)[keyof typeof DOMAINS];
@@ -46,6 +48,7 @@ export const ANCHOR_DOMAINS = {
   loan_transition: DOMAINS.LOAN_TRANSITION,
   payment: DOMAINS.PAYMENT,
   outcome: DOMAINS.OUTCOME,
+  allocation: DOMAINS.ALLOCATION,
 } as const satisfies Record<string, Domain>;
 
 export type AnchorKind = keyof typeof ANCHOR_DOMAINS;
@@ -151,6 +154,18 @@ export async function hashBorrowerRef(borrowerRef: Uint8Array): Promise<Uint8Arr
     throw new Error(`borrower_ref must be 32 bytes, got ${borrowerRef.length}`);
   }
   return sha256(withDomain(DOMAINS.BORROWER_REF, borrowerRef));
+}
+
+/**
+ * What the chain knows an allocation by: like a borrower ref, 32 random bytes
+ * held only in the database, so the account points to neither the investor
+ * nor the borrower.
+ */
+export async function hashAllocationRef(allocationRef: Uint8Array): Promise<Uint8Array> {
+  if (allocationRef.length !== 32) {
+    throw new Error(`allocation_ref must be 32 bytes, got ${allocationRef.length}`);
+  }
+  return sha256(withDomain(DOMAINS.ALLOCATION_REF, allocationRef));
 }
 
 /** 32 random bytes, for `borrower_ref` and `community_ref`. Never derived from anything. */

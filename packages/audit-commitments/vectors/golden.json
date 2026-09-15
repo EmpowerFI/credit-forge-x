@@ -89,5 +89,17 @@
       "borrower_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       "hash": "ba1756048b27c56aeade1f06efff801c3e248cc3e4a051f846941202669e05f6"
     }
+  ],
+  "allocation_ref_hashes": [
+    {
+      "name": "bytes 0..31",
+      "allocation_ref": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      "hash": "cc13a983005aa338e3fd866d3eedc504b3d30003f81263df391188fa0047c2e3"
+    },
+    {
+      "name": "all 0xff",
+      "allocation_ref": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "hash": "a5cd6a60de60748ec8fa98d264c4ea3a3e1886f0b39ae7e74e1f51bed3d8e126"
+    }
   ]
 }

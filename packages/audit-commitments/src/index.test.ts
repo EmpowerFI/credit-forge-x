@@ -7,6 +7,7 @@ import {
   canonicalize,
   commit,
   fromHex,
+  hashAllocationRef,
   hashBorrowerRef,
   randomRef,
   sameCommitment,
@@ -34,6 +35,11 @@ describe("golden vectors", () => {
   for (const v of golden.borrower_ref_hashes) {
     it(`borrower ref hash: ${v.name}`, async () => {
       expect(toHex(await hashBorrowerRef(fromHex(v.borrower_ref)))).toBe(v.hash);
+    });
+  }
+  for (const v of golden.allocation_ref_hashes) {
+    it(`allocation ref hash: ${v.name}`, async () => {
+      expect(toHex(await hashAllocationRef(fromHex(v.allocation_ref)))).toBe(v.hash);
     });
   }
 });
