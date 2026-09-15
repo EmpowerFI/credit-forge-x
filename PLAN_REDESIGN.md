@@ -57,7 +57,11 @@
 > - `refund` and `release` became one operator-signed `vault_transfer`. It also serves Phase 4's `pay_out`. The reason is kept in the database, and the instruction takes no borrower account. It's the program's one amount, reviewed in the privacy test.
 > - Refunds are live: `vault-refund`, driven by pg_cron, is signed before sending and never sends twice. Release and pay-out wiring comes in Phase 4.
 >
-> Verified: Sign in with Solana on the hackathon project (a new wallet becomes a capital provider), and every console screen in demo mode at 1440 and 390 px. **Still open:** one real devnet-USDC investment and refund end to end, waiting on faucet USDC.
+> Verified end to end on devnet, 15 Sep, with a test wallet and faucet USDC:
+> - Sign in with Solana: a new wallet became a capital provider.
+> - Two 5 USDC deposits became allocations. A repeated signature was recorded once, and each allocation proof confirmed on chain.
+> - The partner declined one opportunity. Its 5 USDC came back from the vault by itself in under a minute ([tx](https://explorer.solana.com/tx/5WiVCLj8c2hKgnxC25qgDtMKtDZBgVQ9EBRKxnk5KYd5aPbM1SF1Mb4pSPNbUNnd3vzN3BVgAwc8vFFPUmDr8Bij?cluster=devnet)). The transfer names no borrower or opportunity account.
+> - Every console screen in demo mode, at 1440 and 390 px.
 - **Wallet:** wallet-standard connection (`@wallet-standard/react`, `@solana/react` on the existing `@solana/kit`); devnet badge; abbreviated address; SOL and USDC balances; "Get test SOL" (Solana faucet) and "Get test USDC" (Circle faucet), with a balance refresh on return.
 - **Auth:** Sign in with Solana (Supabase Web3 auth). A new wallet becomes a `capital_provider` profile. Demo mode signs in as `investor@demo`, read-only.
 - **Program:**
