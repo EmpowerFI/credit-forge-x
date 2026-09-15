@@ -19,4 +19,5 @@ export * from "./registerBorrowerRef.ts";
 export * from "./registerCommunity.ts";
 export * from "./setOperator.ts";
 export * from "./transitionLoan.ts";
+export * from "./vaultTransfer.ts";
 export * from "./verifyCommunity.ts";

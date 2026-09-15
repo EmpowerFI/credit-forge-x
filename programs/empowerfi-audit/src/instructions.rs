@@ -17,6 +17,7 @@ pub mod register_borrower_ref;
 pub mod register_community;
 pub mod set_operator;
 pub mod transition_loan;
+pub mod vault_transfer;
 pub mod verify_community;
 
 pub use anchor_allocation::*;
@@ -32,4 +33,5 @@ pub use register_borrower_ref::*;
 pub use register_community::*;
 pub use set_operator::*;
 pub use transition_loan::*;
+pub use vault_transfer::*;
 pub use verify_community::*;

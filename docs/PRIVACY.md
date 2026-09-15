@@ -42,6 +42,19 @@ What remains is honest to state:
 - **Public lifecycle states.** Readiness status and band, eligibility decision and grades, and loan status are public for that pseudonym, so that a lender or auditor can rely on them without asking EmpowerFI. The detail behind each is only committed.
 - **Erasure.** A proof on chain can't be deleted. Deleting her records and her `borrower_ref` from the database leaves only hashes that nobody can link back to her or reverse. This is the design answer to an erasure request under LGPD, and it still needs legal review.
 
+### Investor capital
+
+Investors move real devnet USDC, and every token transfer on Solana is public. So the design keeps the money flows away from the participants:
+
+- **In.** An investor deposits with a plain token transfer to the program's vault, one account for every opportunity. The chain shows that wallet sent that amount to the vault. Which opportunity it funds lives only in the database, proven by an `AllocationCommitment` keyed by a random reference that names neither party.
+- **Out.** `vault_transfer` is the program's one instruction with an amount, reviewed as such in the privacy test. It covers a refund when a partner declines, capital released for disbursement, and a repayment paid out. It takes no borrower, opportunity or allocation account, and the reason is recorded only in the database.
+- **Releases are batched.** Capital goes to the partner in one transfer covering several funded opportunities, never loan by loan, so no transfer's amount is a loan's principal.
+
+What remains, stated plainly:
+
+- **An investor's own flows are public**, as for any wallet: deposits, refunds and payouts, with amounts and times.
+- **Matching is hard but not impossible.** Any signed-in investor sees each opportunity's USDC target. Someone watching the vault could try to match deposits to targets. Deposits are split across many investors and opportunities, which blurs it without ruling it out. The optional Cloak mode (a shielded pool) is the stronger answer.
+
 ## Who sees what
 
 Row-level security enforces all of this, and pgTAP tests check it for every role.

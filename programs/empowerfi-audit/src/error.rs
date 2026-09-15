@@ -34,4 +34,8 @@ pub enum AuditError {
     OutcomeBeforeDisbursement,
     #[msg("Outcome measurements are numbered from 1")]
     InvalidOutcomeNumber,
+    #[msg("A transfer moves a positive amount")]
+    ZeroAmount,
+    #[msg("The mint account is not an SPL mint")]
+    NotAMint,
 }

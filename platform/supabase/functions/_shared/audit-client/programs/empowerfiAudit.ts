@@ -82,6 +82,7 @@ import {
   getRegisterCommunityInstructionAsync,
   getSetOperatorInstructionAsync,
   getTransitionLoanInstructionAsync,
+  getVaultTransferInstructionAsync,
   getVerifyCommunityInstructionAsync,
   parseAnchorAllocationInstruction,
   parseAnchorCheckinInstruction,
@@ -96,6 +97,7 @@ import {
   parseRegisterCommunityInstruction,
   parseSetOperatorInstruction,
   parseTransitionLoanInstruction,
+  parseVaultTransferInstruction,
   parseVerifyCommunityInstruction,
   type AnchorAllocationAsyncInput,
   type AnchorCheckinAsyncInput,
@@ -119,11 +121,13 @@ import {
   type ParsedRegisterCommunityInstruction,
   type ParsedSetOperatorInstruction,
   type ParsedTransitionLoanInstruction,
+  type ParsedVaultTransferInstruction,
   type ParsedVerifyCommunityInstruction,
   type RegisterBorrowerRefAsyncInput,
   type RegisterCommunityAsyncInput,
   type SetOperatorAsyncInput,
   type TransitionLoanAsyncInput,
+  type VaultTransferAsyncInput,
   type VerifyCommunityAsyncInput,
 } from "../instructions/index.ts";
 import {
@@ -138,6 +142,7 @@ import {
   findOpportunityPda,
   findOutcomePda,
   findPaymentPda,
+  findVaultAuthorityPda,
 } from "../pdas/index.ts";
 
 export const EMPOWERFI_AUDIT_PROGRAM_ADDRESS =
@@ -318,7 +323,8 @@ export const EmpowerfiAuditInstruction = {
   10: "RegisterCommunity",
   11: "SetOperator",
   12: "TransitionLoan",
-  13: "VerifyCommunity",
+  13: "VaultTransfer",
+  14: "VerifyCommunity",
   AnchorAllocation: 0,
   AnchorCheckin: 1,
   AnchorOpportunity: 2,
@@ -332,7 +338,8 @@ export const EmpowerfiAuditInstruction = {
   RegisterCommunity: 10,
   SetOperator: 11,
   TransitionLoan: 12,
-  VerifyCommunity: 13,
+  VaultTransfer: 13,
+  VerifyCommunity: 14,
 } as const;
 
 export type EmpowerfiAuditInstruction =
@@ -492,6 +499,17 @@ export function identifyEmpowerfiAuditInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([211, 125, 3, 105, 45, 33, 227, 214]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditInstruction.VaultTransfer;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([20, 199, 137, 11, 205, 181, 244, 188]),
       ),
       0,
@@ -547,6 +565,9 @@ export type ParsedEmpowerfiAuditInstruction<
   | ({
       instructionType: typeof EmpowerfiAuditInstruction.TransitionLoan;
     } & ParsedTransitionLoanInstruction<TProgram>)
+  | ({
+      instructionType: typeof EmpowerfiAuditInstruction.VaultTransfer;
+    } & ParsedVaultTransferInstruction<TProgram>)
   | ({
       instructionType: typeof EmpowerfiAuditInstruction.VerifyCommunity;
     } & ParsedVerifyCommunityInstruction<TProgram>);
@@ -645,6 +666,13 @@ export function parseEmpowerfiAuditInstruction<TProgram extends string>(
       return {
         instructionType: EmpowerfiAuditInstruction.TransitionLoan,
         ...parseTransitionLoanInstruction(instruction),
+      };
+    }
+    case EmpowerfiAuditInstruction.VaultTransfer: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EmpowerfiAuditInstruction.VaultTransfer,
+        ...parseVaultTransferInstruction(instruction),
       };
     }
     case EmpowerfiAuditInstruction.VerifyCommunity: {
@@ -752,6 +780,10 @@ export type EmpowerfiAuditPluginInstructions = {
     input: TransitionLoanAsyncInput,
   ) => ReturnType<typeof getTransitionLoanInstructionAsync> &
     SelfPlanAndSendFunctions;
+  vaultTransfer: (
+    input: VaultTransferAsyncInput,
+  ) => ReturnType<typeof getVaultTransferInstructionAsync> &
+    SelfPlanAndSendFunctions;
   verifyCommunity: (
     input: VerifyCommunityAsyncInput,
   ) => ReturnType<typeof getVerifyCommunityInstructionAsync> &
@@ -770,6 +802,7 @@ export type EmpowerfiAuditPluginPdas = {
   loan: typeof findLoanPda;
   borrower: typeof findBorrowerPda;
   community: typeof findCommunityPda;
+  vaultAuthority: typeof findVaultAuthorityPda;
 };
 
 export type EmpowerfiAuditPluginRequirements = ClientWithRpc<
@@ -890,6 +923,11 @@ export function empowerfiAuditProgram() {
               client,
               getTransitionLoanInstructionAsync(input),
             ),
+          vaultTransfer: (input) =>
+            addSelfPlanAndSendFunctions(
+              client,
+              getVaultTransferInstructionAsync(input),
+            ),
           verifyCommunity: (input) =>
             addSelfPlanAndSendFunctions(
               client,
@@ -908,6 +946,7 @@ export function empowerfiAuditProgram() {
           loan: findLoanPda,
           borrower: findBorrowerPda,
           community: findCommunityPda,
+          vaultAuthority: findVaultAuthorityPda,
         },
         identifyAccount: identifyEmpowerfiAuditAccount,
         identifyInstruction: identifyEmpowerfiAuditInstruction,

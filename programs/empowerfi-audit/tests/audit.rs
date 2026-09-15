@@ -1261,3 +1261,123 @@ fn an_allocation_is_committed_once_by_the_operator_alone() {
     assert_eq!(a.allocated_at, NOW);
     assert_eq!(a.schema_version, SCHEMA_VERSION);
 }
+
+// -------------------------------------------------------------------- vault
+
+use {
+    empowerfi_audit::{TOKEN_PROGRAM_ID, VAULT_SEED},
+    solana_account::Account,
+};
+
+const USDC_DECIMALS: u8 = 6;
+
+fn vault_authority() -> Pubkey {
+    Pubkey::find_program_address(&[VAULT_SEED], &empowerfi_audit::ID).0
+}
+
+/// An initialised SPL mint: no authorities, only what transfer_checked reads.
+fn put_mint(svm: &mut LiteSVM, mint: Pubkey) {
+    let mut data = vec![0u8; 82];
+    data[44] = USDC_DECIMALS;
+    data[45] = 1; // is_initialized
+    let account = Account { lamports: 1_461_600, data, owner: TOKEN_PROGRAM_ID, executable: false, rent_epoch: 0 };
+    svm.set_account(mint, account).unwrap();
+}
+
+/// An initialised SPL token account: mint | owner | amount | … | state.
+fn put_token_account(svm: &mut LiteSVM, address: Pubkey, mint: Pubkey, owner: Pubkey, amount: u64) {
+    let mut data = vec![0u8; 165];
+    data[0..32].copy_from_slice(mint.as_ref());
+    data[32..64].copy_from_slice(owner.as_ref());
+    data[64..72].copy_from_slice(&amount.to_le_bytes());
+    data[108] = 1; // AccountState::Initialized
+    let account = Account { lamports: 2_039_280, data, owner: TOKEN_PROGRAM_ID, executable: false, rent_epoch: 0 };
+    svm.set_account(address, account).unwrap();
+}
+
+fn token_balance(svm: &LiteSVM, address: &Pubkey) -> u64 {
+    let data = svm.get_account(address).unwrap().data;
+    u64::from_le_bytes(data[64..72].try_into().unwrap())
+}
+
+fn vault_transfer_ix(op: &Pubkey, vault: Pubkey, mint: Pubkey, destination: Pubkey, amount: u64) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::VaultTransfer { amount }.data(),
+        empowerfi_audit::accounts::VaultTransfer {
+            operator: *op,
+            config: config_pda(),
+            vault_authority: vault_authority(),
+            vault,
+            mint,
+            destination,
+            token_program: TOKEN_PROGRAM_ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+struct Vault {
+    mint: Pubkey,
+    vault: Pubkey,
+    investor: Pubkey,
+}
+
+/// A vault holding 100 USDC, and an investor's empty USDC account.
+fn funded_vault(env: &mut Env) -> Vault {
+    let (mint, vault, investor) = (Pubkey::new_unique(), Pubkey::new_unique(), Pubkey::new_unique());
+    put_mint(&mut env.svm, mint);
+    put_token_account(&mut env.svm, vault, mint, vault_authority(), 100_000_000);
+    put_token_account(&mut env.svm, investor, mint, Pubkey::new_unique(), 0);
+    Vault { mint, vault, investor }
+}
+
+#[test]
+fn the_operator_moves_usdc_out_of_the_vault() {
+    let mut env = initialized();
+    let op = env.operator.insecure_clone();
+    let v = funded_vault(&mut env);
+
+    send(&mut env.svm, vault_transfer_ix(&op.pubkey(), v.vault, v.mint, v.investor, 25_000_000), &[&op]).unwrap();
+    assert_eq!(token_balance(&env.svm, &v.vault), 75_000_000);
+    assert_eq!(token_balance(&env.svm, &v.investor), 25_000_000);
+}
+
+#[test]
+fn no_one_else_moves_the_vault_and_nothing_moves_for_zero() {
+    let mut env = initialized();
+    let op = env.operator.insecure_clone();
+    let v = funded_vault(&mut env);
+
+    let intruder = Keypair::new();
+    env.svm.airdrop(&intruder.pubkey(), 1_000_000_000).unwrap();
+    let res = send(&mut env.svm, vault_transfer_ix(&intruder.pubkey(), v.vault, v.mint, v.investor, 1), &[&intruder]);
+    assert_custom_error(res, AuditError::UnauthorizedOperator);
+
+    let res = send(&mut env.svm, vault_transfer_ix(&op.pubkey(), v.vault, v.mint, v.investor, 0), &[&op]);
+    assert_custom_error(res, AuditError::ZeroAmount);
+    assert_eq!(token_balance(&env.svm, &v.vault), 100_000_000);
+}
+
+#[test]
+fn the_vault_signs_only_for_its_own_token_account() {
+    let mut env = initialized();
+    let op = env.operator.insecure_clone();
+    let v = funded_vault(&mut env);
+
+    // Someone else's USDC account passed off as the vault: SPL Token refuses,
+    // because the vault PDA is not its owner.
+    let theirs = Pubkey::new_unique();
+    put_token_account(&mut env.svm, theirs, v.mint, Pubkey::new_unique(), 50_000_000);
+    assert!(send(&mut env.svm, vault_transfer_ix(&op.pubkey(), theirs, v.mint, v.investor, 1), &[&op]).is_err());
+    assert_eq!(token_balance(&env.svm, &theirs), 50_000_000);
+
+    // Nor can it pay out more than it holds, or into another mint's account.
+    assert!(send(&mut env.svm, vault_transfer_ix(&op.pubkey(), v.vault, v.mint, v.investor, 100_000_001), &[&op]).is_err());
+    let other_mint = Pubkey::new_unique();
+    put_mint(&mut env.svm, other_mint);
+    let elsewhere = Pubkey::new_unique();
+    put_token_account(&mut env.svm, elsewhere, other_mint, Pubkey::new_unique(), 0);
+    assert!(send(&mut env.svm, vault_transfer_ix(&op.pubkey(), v.vault, v.mint, elsewhere, 1), &[&op]).is_err());
+    assert_eq!(token_balance(&env.svm, &v.vault), 100_000_000);
+}

@@ -140,6 +140,12 @@ pub mod empowerfi_audit {
         anchor_allocation::handler(ctx, allocation_ref_hash, commitment)
     }
 
+    /// Moves USDC out of the program's vault — a refund, a release or a payout.
+    /// Operator only; the reason is recorded off chain.
+    pub fn vault_transfer(ctx: Context<VaultTransfer>, amount: u64) -> Result<()> {
+        vault_transfer::handler(ctx, amount)
+    }
+
     /// Commits a productive-outcome measurement, on a loan that was disbursed.
     pub fn anchor_outcome(
         ctx: Context<AnchorOutcome>,

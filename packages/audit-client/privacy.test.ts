@@ -76,6 +76,13 @@ const INSTRUCTION_ARGS: Record<string, string[]> = {
   register_community: ["community_ref", "commitment"],
   set_operator: ["operator"],
   transition_loan: ["to", "transition_commitment"],
+  // The one amount the program takes, reviewed on 15 Sep 2026: USDC leaving
+  // the vault — a refund, capital released, a repayment paid out. The SPL
+  // transfer it makes publishes that amount anyway, as every token transfer
+  // does. It is investor capital, and the instruction takes no borrower,
+  // opportunity or allocation account, so the chain ties the amount to no
+  // person. Releases to a partner are batched, never loan by loan (PRIVACY.md).
+  vault_transfer: ["amount"],
   verify_community: ["verification_commitment"],
 };
 
