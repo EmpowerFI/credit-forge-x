@@ -718,6 +718,63 @@ export type Database = {
           },
         ]
       }
+      investments: {
+        Row: {
+          allocation_ref: string
+          amount_micro_usdc: number
+          created_at: string
+          deposit_signature: string | null
+          id: string
+          investor_id: string
+          is_simulated: boolean
+          mode: Database["public"]["Enums"]["investment_mode"]
+          opportunity_id: string
+          status: Database["public"]["Enums"]["investment_status"]
+          wallet_address: string | null
+        }
+        Insert: {
+          allocation_ref?: string
+          amount_micro_usdc: number
+          created_at?: string
+          deposit_signature?: string | null
+          id?: string
+          investor_id: string
+          is_simulated?: boolean
+          mode: Database["public"]["Enums"]["investment_mode"]
+          opportunity_id: string
+          status?: Database["public"]["Enums"]["investment_status"]
+          wallet_address?: string | null
+        }
+        Update: {
+          allocation_ref?: string
+          amount_micro_usdc?: number
+          created_at?: string
+          deposit_signature?: string | null
+          id?: string
+          investor_id?: string
+          is_simulated?: boolean
+          mode?: Database["public"]["Enums"]["investment_mode"]
+          opportunity_id?: string
+          status?: Database["public"]["Enums"]["investment_status"]
+          wallet_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investments_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "qualified_credit_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_events: {
         Row: {
           actor: string | null
@@ -1095,6 +1152,7 @@ export type Database = {
           id: string
           partner_id: string | null
           role: Database["public"]["Enums"]["app_role"]
+          wallet_address: string | null
         }
         Insert: {
           created_at?: string
@@ -1102,6 +1160,7 @@ export type Database = {
           id: string
           partner_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          wallet_address?: string | null
         }
         Update: {
           created_at?: string
@@ -1109,6 +1168,7 @@ export type Database = {
           id?: string
           partner_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          wallet_address?: string | null
         }
         Relationships: [
           {
@@ -1127,6 +1187,10 @@ export type Database = {
           created_at: string
           eligibility_id: string
           entrepreneur_id: string
+          funded_micro_usdc: number
+          funding_status: Database["public"]["Enums"]["funding_status"] | null
+          funding_target_micro_usdc: number | null
+          fx_brl_per_usdc_milli: number | null
           id: string
           instalment_cents: number
           intent_id: string
@@ -1145,6 +1209,10 @@ export type Database = {
           created_at?: string
           eligibility_id: string
           entrepreneur_id: string
+          funded_micro_usdc?: number
+          funding_status?: Database["public"]["Enums"]["funding_status"] | null
+          funding_target_micro_usdc?: number | null
+          fx_brl_per_usdc_milli?: number | null
           id?: string
           instalment_cents: number
           intent_id: string
@@ -1163,6 +1231,10 @@ export type Database = {
           created_at?: string
           eligibility_id?: string
           entrepreneur_id?: string
+          funded_micro_usdc?: number
+          funding_status?: Database["public"]["Enums"]["funding_status"] | null
+          funding_target_micro_usdc?: number | null
+          fx_brl_per_usdc_milli?: number | null
           id?: string
           instalment_cents?: number
           intent_id?: string
@@ -1447,6 +1519,71 @@ export type Database = {
         Returns: undefined
       }
       finish_anchor_run: { Args: never; Returns: undefined }
+      investor_activity: {
+        Args: { p_limit?: number }
+        Returns: {
+          at: string
+          code: string
+          entity_id: string
+          entity_kind: Database["public"]["Enums"]["anchor_kind"]
+          investment_id: string
+          kind: string
+          micro_usdc: number
+          purpose: Database["public"]["Enums"]["credit_purpose"]
+          signature: string
+        }[]
+      }
+      investor_opportunities: {
+        Args: never
+        Returns: {
+          affordability_bps: number
+          amount_cents: number
+          business_sector: string
+          code: string
+          community_city: string
+          community_name: string
+          community_state: string
+          confidence: Database["public"]["Enums"]["grade"]
+          created_at: string
+          eligibility_decision: Database["public"]["Enums"]["eligibility_decision"]
+          eligibility_model: string
+          eligibility_reasons: string[]
+          funded_micro_usdc: number
+          funding_status: Database["public"]["Enums"]["funding_status"]
+          funding_target_micro_usdc: number
+          fx_brl_per_usdc_milli: number
+          indicative_yield_bps: number
+          instalment_cents: number
+          investors: number
+          loan_status: Database["public"]["Enums"]["loan_status"]
+          months_reported: number
+          my_micro_usdc: number
+          opportunity_id: string
+          proofs: Json
+          purpose: Database["public"]["Enums"]["credit_purpose"]
+          readiness_band: Database["public"]["Enums"]["readiness_band"]
+          readiness_model: string
+          readiness_score: number
+          records_kept_bps: number
+          risk_band: Database["public"]["Enums"]["grade"]
+          term_months: number
+        }[]
+      }
+      investor_portfolio: { Args: never; Returns: Json }
+      investor_position: { Args: { p_investment_id: string }; Returns: Json }
+      investor_proofs: {
+        Args: never
+        Returns: {
+          account_address: string
+          code: string
+          confirmed_at: string
+          entity_id: string
+          kind: Database["public"]["Enums"]["anchor_kind"]
+          reconcile: Database["public"]["Enums"]["reconcile_status"]
+          signature: string
+          status: Database["public"]["Enums"]["anchor_status"]
+        }[]
+      }
       measure_outcome: {
         Args: {
           p_capital_use?: Database["public"]["Enums"]["capital_use"]
@@ -1515,6 +1652,19 @@ export type Database = {
           p_is_simulated?: boolean
           p_readiness_assessment_id: string
           p_result: Json
+        }
+        Returns: Json
+      }
+      record_investment: {
+        Args: {
+          p_amount_micro_usdc: number
+          p_created_at?: string
+          p_deposit_signature?: string
+          p_investor_id: string
+          p_is_simulated?: boolean
+          p_mode: Database["public"]["Enums"]["investment_mode"]
+          p_opportunity_id: string
+          p_wallet_address?: string
         }
         Returns: Json
       }
@@ -1591,6 +1741,7 @@ export type Database = {
         | "loan_transition"
         | "payment"
         | "outcome"
+        | "allocation"
       anchor_status: "pending" | "submitted" | "confirmed" | "failed"
       app_role:
         | "entrepreneur"
@@ -1641,7 +1792,15 @@ export type Database = {
         | "ELIGIBLE_REDUCED"
         | "MANUAL_REVIEW"
         | "NOT_ELIGIBLE"
+      funding_status:
+        | "open"
+        | "partially_funded"
+        | "funded"
+        | "closed"
+        | "refunded"
       grade: "LOW" | "MEDIUM" | "HIGH"
+      investment_mode: "wallet" | "cloak" | "simulated"
+      investment_status: "allocated" | "refund_due" | "refunded"
       loan_status:
         | "DRAFT"
         | "PARTNER_APPROVED"
@@ -1812,6 +1971,7 @@ export const Constants = {
         "loan_transition",
         "payment",
         "outcome",
+        "allocation",
       ],
       anchor_status: ["pending", "submitted", "confirmed", "failed"],
       app_role: [
@@ -1869,7 +2029,16 @@ export const Constants = {
         "MANUAL_REVIEW",
         "NOT_ELIGIBLE",
       ],
+      funding_status: [
+        "open",
+        "partially_funded",
+        "funded",
+        "closed",
+        "refunded",
+      ],
       grade: ["LOW", "MEDIUM", "HIGH"],
+      investment_mode: ["wallet", "cloak", "simulated"],
+      investment_status: ["allocated", "refund_due", "refunded"],
       loan_status: [
         "DRAFT",
         "PARTNER_APPROVED",

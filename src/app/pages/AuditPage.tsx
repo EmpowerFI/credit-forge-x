@@ -15,6 +15,7 @@ import {
   canonicalize,
   commit,
   fromHex,
+  hashAllocationRef,
   hashBorrowerRef,
   sameCommitment,
   toHex,
@@ -23,6 +24,7 @@ import {
 } from "@empowerfi/audit-commitments";
 import {
   EMPOWERFI_AUDIT_PROGRAM_ADDRESS,
+  fetchMaybeAllocationCommitment,
   fetchMaybeBorrowerAudit,
   fetchMaybeCheckinCommitment,
   fetchMaybeCommunityAudit,
@@ -33,6 +35,7 @@ import {
   fetchMaybePaymentCommitment,
   fetchMaybeReadinessAttestation,
   findAttestationPda,
+  findAllocationPda,
   findBorrowerPda,
   findCheckinPda,
   findCommunityPda,
@@ -52,6 +55,7 @@ import { assessEligibility, type EligibilityInput } from "@empowerfi/eligibility
 import { evaluateReadiness, type ReadinessFeatures } from "@empowerfi/readiness-engine";
 import { describeError } from "../lib/errors";
 import { explorerAddress, explorerTx, platform } from "../lib/platform";
+import { depositToVault, usdc } from "../lib/solana";
 
 // The recompute-a-proof screen (PLAN_HACKATHON.md §G.4). Nothing here trusts
 // the server's verdict: the browser rebuilds the commitment from the record,
@@ -73,6 +77,7 @@ const KIND_TITLE: Record<AnchorKind, string> = {
   loan_transition: "Loan status change",
   payment: "Instalment paid",
   outcome: "Productive outcome",
+  allocation: "Capital allocation",
 };
 
 const ELIGIBILITY_FIELDS = [
@@ -262,6 +267,24 @@ async function audit(kind: AnchorKind, entityId: string) {
           });
         }
       }
+    }
+  } else if (kind === "allocation") {
+    const found = await fetchMaybeAllocationCommitment(rpc, account);
+    if (found.exists) {
+      onChain = new Uint8Array(found.data.commitment);
+      owner = found.programAddress;
+    }
+    // Keyed by the hash of a random reference: the account points to neither party.
+    [expected] = await findAllocationPda({ allocationRefHash: await hashAllocationRef(fromHex(String(p.allocation_ref))) });
+    if (p.deposit_signature && p.investor_wallet) {
+      const moved = await depositToVault(String(p.deposit_signature), String(p.investor_wallet));
+      checks.push({
+        label: "The deposit moved this amount of USDC from the investor's wallet into the program's vault",
+        ok: moved !== null && moved === BigInt(Number(p.amount_micro_usdc)),
+        detail: moved === null ? "deposit transaction not found" : `${usdc(moved)} on chain · ${usdc(Number(p.amount_micro_usdc))} allocated`,
+      });
+    } else {
+      checks.push({ label: "A simulated position: no deposit on chain to check", ok: null });
     }
   } else if (kind === "checkin") {
     const found = await fetchMaybeCheckinCommitment(rpc, account);

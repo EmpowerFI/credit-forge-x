@@ -7,7 +7,7 @@ export default function HomeRedirect() {
   const home =
     profile?.role === "entrepreneur" ? "/app/me"
     : profile?.role === "partner" ? "/app/partner"
-    : profile?.role === "capital_provider" ? "/app/capital"
+    : profile?.role === "capital_provider" ? "/app/investor"
     : "/app/community";
   return <Navigate to={home} replace />;
 }

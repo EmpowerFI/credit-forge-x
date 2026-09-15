@@ -1,13 +1,18 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, Briefcase, ClipboardCheck, Loader2, LogIn, ShieldCheck, Store, Users, Wallet, type LucideIcon } from "lucide-react";
+import { ArrowRight, Briefcase, ClipboardCheck, Loader2, LogIn, PenLine, ShieldCheck, Store, Users, Wallet, type LucideIcon } from "lucide-react";
+import type { UiWalletAccount } from "@wallet-standard/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DataLegend from "../components/product/DataLegend";
 import NetworkBadge from "../components/product/NetworkBadge";
 import { useAuth } from "../auth/useAuth";
+import { describeError } from "../lib/errors";
 import { platformConfigured, type Role } from "../lib/platform";
+import { shortAddress } from "../lib/solana";
+import ConnectWalletDialog from "../wallet/ConnectWallet";
+import { useWalletSignIn } from "../wallet/useWalletSignIn";
 
 // Judges have no inbox for magic links, so the demo runs on fixed-password
 // accounts (PLAN_HACKATHON.md §G.2). The password is public on purpose: this
@@ -30,6 +35,42 @@ const PERSONAS: { email: string; role: Role; workspace: string; description: str
     description: "Community verification and opportunities held for review.", icon: ClipboardCheck },
 ];
 
+/** After a wallet connects: one signature, and the investor is in. */
+function WalletSignIn({ account, onDone, onCancel }: { account: UiWalletAccount; onDone: () => void; onCancel: () => void }) {
+  const signIn = useWalletSignIn(account);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div className="panel space-y-4 p-5" role="dialog" aria-label="Sign in with your wallet">
+      <div className="space-y-1">
+        <h2 className="font-heading text-lg font-bold text-foreground">Sign in with {shortAddress(account.address)}</h2>
+        <p className="text-sm text-muted-foreground">
+          Your wallet will ask you to sign a message proving you hold this address. No transaction, no fee.
+        </p>
+      </div>
+      {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        <Button disabled={busy} className="gap-2"
+          onClick={async () => {
+            setBusy(true);
+            setError(null);
+            try {
+              await signIn();
+              onDone();
+            } catch (err) {
+              setError(describeError(err));
+            } finally {
+              setBusy(false);
+            }
+          }}>
+          {busy ? <Loader2 size={16} className="animate-spin" /> : <PenLine size={16} />} Sign the message
+        </Button>
+        <Button variant="ghost" onClick={onCancel} disabled={busy}>Cancel</Button>
+      </div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const { session, signIn } = useAuth();
   const navigate = useNavigate();
@@ -40,6 +81,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [account, setAccount] = useState<UiWalletAccount | null>(null);
 
   if (session) return <Navigate to={next} replace />;
 
@@ -88,6 +131,11 @@ export default function LoginPage() {
         )}
         {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
 
+        {account && (
+          <WalletSignIn account={account} onCancel={() => setAccount(null)}
+            onDone={() => navigate(next === "/app" ? "/app/investor" : next, { replace: true })} />
+        )}
+
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {PERSONAS.map(({ email: address, role, workspace, description, icon: Icon }) => (
             <li key={address} className="panel flex flex-col justify-between gap-5 p-5">
@@ -100,15 +148,24 @@ export default function LoginPage() {
                   <p className="text-sm text-muted-foreground">{description}</p>
                 </div>
               </div>
-              <Button onClick={() => enter(address, DEMO_PASSWORD)} disabled={busy !== null}
-                variant={role === "capital_provider" ? "default" : "secondary"} className="w-full justify-between"
-                aria-label={`Enter ${workspace}`}>
-                <span>Enter as demo</span>
-                {busy === address ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-              </Button>
+              <div className="space-y-2">
+                {role === "capital_provider" && (
+                  <Button onClick={() => setConnecting(true)} className="w-full justify-between">
+                    <span>Connect wallet</span> <Wallet size={16} />
+                  </Button>
+                )}
+                <Button onClick={() => enter(address, DEMO_PASSWORD)} disabled={busy !== null}
+                  variant="secondary" className="w-full justify-between" aria-label={`Enter ${workspace}`}>
+                  <span>{role === "capital_provider" ? "Explore without a wallet" : "Enter as demo"}</span>
+                  {busy === address ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+                </Button>
+              </div>
             </li>
           ))}
         </ul>
+
+        <ConnectWalletDialog open={connecting} onOpenChange={setConnecting}
+          onConnected={(a) => { setConnecting(false); setAccount(a); }} />
 
         <details className="panel max-w-xl p-5">
           <summary className="cursor-pointer text-sm font-medium text-foreground">Sign in with email</summary>

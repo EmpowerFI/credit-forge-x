@@ -2,6 +2,10 @@ import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import {
   ArrowUpRight,
+  BadgeCheck,
+  Coins,
+  LayoutDashboard,
+  PieChart,
   Briefcase,
   CalendarCheck,
   ClipboardCheck,
@@ -16,17 +20,18 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import DataLegend from "./components/product/DataLegend";
 import NetworkBadge from "./components/product/NetworkBadge";
+import WalletChip from "./wallet/WalletChip";
 import { useAuth } from "./auth/useAuth";
 import { ROLE_LABEL, type Role } from "./lib/platform";
 
 // One workspace per persona: the same brand as the corporate site, in the
 // product's dark financial theme. Each role sees its own navigation.
 
-interface NavItem { to: string; label: string; icon: LucideIcon }
+interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean }
 
 const COMMUNITIES: NavItem = { to: "/app/community", label: "Communities", icon: Users };
 const PIPELINE: NavItem = { to: "/app/partner", label: "Partner pipeline", icon: Briefcase };
-const PORTFOLIO: NavItem = { to: "/app/capital", label: "Portfolio", icon: Wallet };
+const PORTFOLIO: NavItem = { to: "/app/capital", label: "Capital", icon: Wallet };
 
 const NAV: Record<Role, NavItem[]> = {
   entrepreneur: [
@@ -35,7 +40,12 @@ const NAV: Record<Role, NavItem[]> = {
   ],
   community_leader: [COMMUNITIES],
   partner: [{ ...PIPELINE, label: "Pipeline" }],
-  capital_provider: [PORTFOLIO],
+  capital_provider: [
+    { to: "/app/investor", label: "Overview", icon: LayoutDashboard, end: true },
+    { to: "/app/investor/opportunities", label: "Opportunities", icon: Coins },
+    { to: "/app/investor/portfolio", label: "Portfolio", icon: PieChart },
+    { to: "/app/investor/audit", label: "Audit trail", icon: BadgeCheck },
+  ],
   auditor: [COMMUNITIES, PIPELINE, PORTFOLIO],
   admin: [{ to: "/app/admin", label: "Review queue", icon: ClipboardCheck }, COMMUNITIES, PIPELINE, PORTFOLIO],
 };
@@ -53,8 +63,8 @@ function Sidebar({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => v
   return (
     <div className="flex h-full flex-col justify-between gap-8 p-4">
       <nav className="space-y-1" aria-label="Workspace">
-        {items.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} onClick={onNavigate}
+        {items.map(({ to, label, icon: Icon, end }) => (
+          <NavLink key={to} to={to} end={end} onClick={onNavigate}
             className={({ isActive }) =>
               `relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                 isActive
@@ -110,6 +120,7 @@ export default function AppLayout() {
               Simulated data
             </span>
             <NetworkBadge />
+            <WalletChip />
             {profile && (
               <>
                 <div className="hidden items-center gap-2.5 sm:flex">
