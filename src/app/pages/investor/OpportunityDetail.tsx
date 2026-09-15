@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Loader2, MapPin } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Loader2, MapPin, ShieldCheck } from "lucide-react";
 import LoadError from "../../components/LoadError";
 import { DataTag } from "../../components/product/DataLegend";
 import ExplorerLink from "../../components/product/ExplorerLink";
@@ -52,6 +52,7 @@ export default function OpportunityDetail() {
   const decision = DECISION_LABEL[row.eligibility_decision];
   const proofs = (row.proofs as unknown as Proof[]) ?? [];
   const exceptions = row.eligibility_reasons.filter((r) => !["AFFORDABLE"].includes(r));
+  const consent = proofs.find((p) => p.kind === "consent");
 
   return (
     <div className="space-y-6">
@@ -143,6 +144,14 @@ export default function OpportunityDetail() {
                   <li key={t} className="flex items-center gap-2 text-muted-foreground"><DataTag kind="private" /> {t}</li>
                 ))}
               </ul>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-4 text-sm">
+              <ShieldCheck size={16} className="text-positive" aria-hidden />
+              <span className="text-foreground">Shown here because she allowed it.</span>
+              <span className="text-muted-foreground">
+                If she withdraws that, it leaves the market and investors are refunded from the vault, unless the loan has been paid out.
+              </span>
+              {consent?.signature && <ExplorerLink tx={consent.signature} label="Her consent, on Solana" />}
             </div>
           </Panel>
         </div>

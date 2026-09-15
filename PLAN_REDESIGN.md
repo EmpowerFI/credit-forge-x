@@ -11,7 +11,8 @@
 | R1 | When does an investor put capital in? | **Right after eligibility** | Eligibility → opportunity **OPEN** for funding → **FUNDED** → the partner, as lender of record, formalises and disburses. If the partner declines, investors are refunded. EmpowerFI still never takes the final credit decision. |
 | R2 | Names in the investor's view? | **No names** | Cards show purpose, sector, verified community and a code. What the investor sees and what stays private are both shown explicitly. |
 | R3 | Wallet login? | **Real wallet + demo mode** | Phantom, Solflare or Backpack on devnet is the main path. "Explore without a wallet" opens the same console as the demo investor, read-only. |
-| R4 | Privacy of USDC flows | **Common vault + optional Cloak** | Circle devnet USDC goes into one program-owned vault. Allocation to an opportunity lives in the database and is proven by a commitment, so the chain never links an amount to a borrower. "Invest privately (Cloak)" is optional and uses Cloak's shielded pool and Mock USDC, after a half-day spike. If Cloak's devnet relay is down, the demo ships without that mode. |
+| R4 | Privacy of USDC flows | **Common vault + optional Cloak** | Circle devnet USDC goes into one program-owned vault. Allocation to an opportunity lives in the database and is proven by a commitment, so the chain never links an amount to a borrower. "Invest privately (Cloak)" is optional and uses Cloak's shielded pool and Mock USDC, after a half-day spike. If Cloak's devnet relay is down, the demo ships without that mode. **Superseded by R5 (15 Sep): Zcash replaces Cloak.** |
+| R5 | Private investing, and the Zcash track (15 Sep) | **Shielded ZEC replaces Cloak** | EmpowerFI competes in both the Solana and the Zcash tracks of the Crypto World's Fair. The founder's submission form names both. "Invest with shielded ZEC" is a real payment on Zcash testnet: a ZIP 321 request to EmpowerFI's shielded address, with the allocation reference in the encrypted memo. A viewing-key watcher records the allocation, and the allocation is still proven on Solana. The auditor receives the viewing key, so disclosure is selective. NEAR Intents, which converts ZEC to USDC on Solana in production, has no testnet. In the demo, the operator credits the vault with devnet USDC at a labelled quote. Cloak has no prize here, and its devnet mode uses Mock USDC. |
 
 ## 2 · Principles carried over
 
@@ -100,6 +101,36 @@
 - **Tabs:** Overview, Cohorts, Participants, Readiness, Credit pipeline, Impact.
 
 ### Phase 3 — Privacy as product (≈3 days) · P0
+
+> **Status, 15 Sep:** built on `hackathon`, awaiting the founder's review.
+> - **Consent:**
+>   - four uses of her data: assess, share with a partner, show to investors without her name, count in impact;
+>   - she records it in the app, or her leader records it from the signed form;
+>   - each change is a new record, proven on Solana (`anchor_consent`, program upgraded in place).
+> - **Enforced in the database:**
+>   - no assessment, request, referral or investor listing without the use that allows it;
+>   - withdrawing investor consent unlists the opportunity and refunds its investors, unless the loan was disbursed, and the partner lends its own capital;
+>   - impact totals count only consenting outcomes.
+> - **Screens:**
+>   - her Consent page, with what each change does before she saves;
+>   - consent in the leader's participant list, journey and enrollment;
+>   - "shown because she allowed it" on the investor's opportunity, with its proof.
+> - **Audit console:**
+>   - Attestations, Events, Models, Consents and System;
+>   - participants by code;
+>   - the latest decisions re-run in the browser;
+>   - consent checked against what happened;
+>   - the vault's balance on Solana compared with the database;
+>   - the verify page gains consent proofs and each proof's time, schema and model.
+>
+> Verified on the live demo:
+> - 100 backfilled consent records (marked simulated) were anchored and verify on chain.
+> - The four enforcement checks read 0.
+> - 24 of 24 recent decisions reproduce in the browser.
+> - The vault holds 5.00 USDC, as the database accounts for.
+> - Maria saved and reverted a change in the app (records #2 and #3).
+>
+> The seed now records consent at enrollment. Some participants stay out of impact figures, including one first-cycle borrower. Two requests are kept from investors, one of them in Grajaú. The next reseed replaces the backfill.
 - **Consent screen** for the entrepreneur: what may be used for readiness, shared with the partner, shown to investors (as an anonymised opportunity) and aggregated for impact. Stored in `consents` and enforced: no investor listing without consent.
 - **Opportunity:** the "what the investor can see / what stays private" panel, using the data legend.
 - **Audit console:** attestations, events, models (versions and vectors), consents, system (queue, reconciliation). Each proof shows timestamp, model and schema version, commitment, transaction and verification state, with Verify on Solana one click away.
@@ -109,7 +140,13 @@
 - **Payment simulator:** a USDC input, an FX/ramp quote, the estimated BRL output, a route breakdown from `packages/capital-route`, and a "mock settlement" for the Pix leg.
 - **"What is real in this demo":** devnet SOL and USDC, wallet signing and vault transactions are real; the ramp quote is a sandbox if credentials exist; the Pix payout is a mock.
 - **Repayments:** simulated back to investors from the vault (operator-signed `pay_out`), with explorer links.
-- **Cloak private mode:** the spike first, then the feature if the relay works.
+- **Invest with shielded ZEC (R5, in place of Cloak):**
+  - a ZIP 321 payment request (QR and link) to EmpowerFI's shielded Zcash testnet address, with the allocation reference in the memo;
+  - a small Rust watcher (librustzcash or zingolib against a testnet lightwalletd) holds the viewing key, detects the payment and records the allocation, which is proven on Solana as today;
+  - the auditor console shows the treasury's received notes, read with the viewing key;
+  - optionally, returns paid to a shielded address.
+  - The watcher cannot run on Supabase Edge (Deno). A Vercel Rust function is the first choice.
+  - This is the main technical risk, so a spike comes first.
 - **Optional:** a MoneyGram ramps sandbox, only if credentials are provided.
 
 ### Phase 5 — Partner and auditor depth, polish (≈3 days)

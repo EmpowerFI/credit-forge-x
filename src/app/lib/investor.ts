@@ -103,6 +103,7 @@ export const PROOF_LABEL: Record<string, string> = {
   readiness: "Readiness attestation",
   eligibility: "Eligibility commitment",
   opportunity: "Opportunity commitment",
+  consent: "Her consent to be shown",
 };
 
 /** Where a position stands, in one pill: raising, the loan's state, or a refund. */

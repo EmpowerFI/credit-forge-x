@@ -28,6 +28,7 @@ import {
   fetchMaybeBorrowerAudit,
   fetchMaybeCheckinCommitment,
   fetchMaybeCommunityAudit,
+  fetchMaybeConsentCommitment,
   fetchMaybeEligibilityAttestation,
   fetchMaybeLoanAccount,
   fetchMaybeOpportunityCommitment,
@@ -39,6 +40,7 @@ import {
   findBorrowerPda,
   findCheckinPda,
   findCommunityPda,
+  findConsentPda,
   findEligibilityPda,
   findLoanPda,
   findOpportunityPda,
@@ -53,6 +55,7 @@ import {
 } from "@empowerfi/audit-client";
 import { assessEligibility, type EligibilityInput } from "@empowerfi/eligibility-engine";
 import { evaluateReadiness, type ReadinessFeatures } from "@empowerfi/readiness-engine";
+import { ELIGIBILITY_RESULT_FIELDS, READINESS_RESULT_FIELDS } from "../lib/audit";
 import { describeError } from "../lib/errors";
 import { explorerAddress, explorerTx, platform } from "../lib/platform";
 import { depositToVault, usdc } from "../lib/solana";
@@ -78,13 +81,10 @@ const KIND_TITLE: Record<AnchorKind, string> = {
   payment: "Instalment paid",
   outcome: "Productive outcome",
   allocation: "Capital allocation",
+  consent: "Consent record",
 };
 
-const ELIGIBILITY_FIELDS = [
-  "model_version", "decision", "requested_amount_cents", "proposed_amount_cents", "term_months", "instalment_cents",
-  "max_instalment_cents", "affordability_bps", "suggested_min_cents", "suggested_max_cents", "risk_band", "risk_points",
-  "confidence", "reason_codes",
-] as const;
+const ELIGIBILITY_FIELDS = ELIGIBILITY_RESULT_FIELDS;
 const SNAKE_TO_PASCAL = (v: unknown) =>
   String(v).toLowerCase().replace(/(^|_)([a-z])/g, (_, __, c: string) => c.toUpperCase());
 
@@ -108,8 +108,7 @@ async function transitionInTransaction(signature: string) {
 
 const periodNumber = (period: unknown) => Number(String(period).replace("-", ""));
 
-// The fields an assessment row stores from the engine's result.
-const RESULT_FIELDS = ["model_version", "status", "band", "score", "components", "missing_requirements", "reason_codes"] as const;
+const RESULT_FIELDS = READINESS_RESULT_FIELDS;
 const sameJson = (a: unknown, b: unknown) => canonicalize(a as CanonicalObject) === canonicalize(b as CanonicalObject);
 
 interface AuditRecord {
@@ -125,6 +124,7 @@ interface AuditRecord {
     reconcile: "unchecked" | "verified" | "missing" | "mismatch";
     reconciled_at: string | null;
     reconcile_note: string | null;
+    confirmed_at: string | null;
   };
   payload: CanonicalObject | null;
   /** The community's chain ref: what every account address is derived from. */
@@ -286,6 +286,23 @@ async function audit(kind: AnchorKind, entityId: string) {
     } else {
       checks.push({ label: "A simulated position: no deposit on chain to check", ok: null });
     }
+  } else if (kind === "consent") {
+    const found = await fetchMaybeConsentCommitment(rpc, account);
+    if (found.exists) {
+      onChain = new Uint8Array(found.data.commitment);
+      owner = found.programAddress;
+      checks.push({ label: "The record number on chain is the one on record", ok: found.data.consentNo === Number(p.consent_no) });
+      if (borrower) {
+        [expected] = await findConsentPda({ borrower, consentNo: Number(p.consent_no) });
+        checks.push({ label: "Belongs to her borrower account", ok: found.data.borrower === borrower });
+      }
+    }
+    // The rule the database enforces, checked again on what was committed.
+    const scopes = (p.scopes ?? {}) as Record<string, boolean>;
+    checks.push({
+      label: "Each use builds on the one before: nothing shared that was not allowed to be assessed",
+      ok: (scopes.assessment || !scopes.partner) && (scopes.partner || !scopes.investors),
+    });
   } else if (kind === "checkin") {
     const found = await fetchMaybeCheckinCommitment(rpc, account);
     if (found.exists) {
@@ -449,6 +466,30 @@ export default function AuditPage() {
               </ul>
             )}
 
+            <dl className="grid gap-x-6 gap-y-3 rounded-2xl border border-border bg-background/60 p-5 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-xs text-muted-foreground">Anchored</dt>
+                <dd className="text-foreground">{record.anchor.confirmed_at ? new Date(record.anchor.confirmed_at).toLocaleString("en-GB") : "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted-foreground">Commitment schema</dt>
+                <dd className="font-mono text-xs text-foreground">{ANCHOR_DOMAINS[kind as AnchorKind]}</dd>
+              </div>
+              {(record.payload?.model_version || record.payload?.text_version) && (
+                <div>
+                  <dt className="text-xs text-muted-foreground">{record.payload?.text_version ? "Wording" : "Model"}</dt>
+                  <dd className="font-mono text-xs text-foreground">{String(record.payload?.model_version ?? record.payload?.text_version)}</dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-xs text-muted-foreground">Program</dt>
+                <dd><a href={explorerAddress(record.anchor.program_id)} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-mono text-xs text-accent hover:text-foreground">
+                  {record.anchor.program_id.slice(0, 4)}…{record.anchor.program_id.slice(-4)} <ExternalLink size={11} />
+                </a></dd>
+              </div>
+            </dl>
+
             <section className="space-y-4 rounded-2xl p-6 glass glow-border">
               <Hash label="Recomputed here" bytes={recomputed} />
               <Hash label="Recorded in the database" bytes={record.anchor.commitment ? fromHex(record.anchor.commitment) : null} />
@@ -493,7 +534,7 @@ export default function AuditPage() {
         );
       })()}
 
-      <Link to="/app/community" className="text-sm text-accent">Communities</Link>
+      <Link to="/app" className="text-sm text-accent">Home</Link>
     </div>
   );
 }

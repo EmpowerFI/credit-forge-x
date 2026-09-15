@@ -12,15 +12,28 @@ import LoadError from "../../components/LoadError";
 import Panel from "../../components/product/Panel";
 import StatusPill from "../../components/product/StatusPill";
 import { useAuth } from "../../auth/useAuth";
-import { ACTION, type OutreachAction, READINESS_TONE, scorePct, STAGE_LABEL, STAGES } from "../../lib/community";
+import { ACTION, type OutreachAction, type ParticipantRow, READINESS_TONE, scorePct, STAGE_LABEL, STAGES } from "../../lib/community";
+import { SCOPES } from "../../lib/consent";
 import { describeError } from "../../lib/errors";
 import { platform } from "../../lib/platform";
 import { monthLabel, STATUS_LABEL } from "../../lib/readiness";
 import { useCommunity } from "./context";
+import ConsentDialog from "./ConsentDialog";
 import OutreachDialog from "./OutreachDialog";
 import { useParticipants } from "./queries";
 
 const ALL = "all";
+
+const SCOPE_SHORT = { assessment: "assessment", partner: "partner", investors: "investors", impact: "impact" } as const;
+
+/** Her consent in a word: all four uses, none, or which ones she withheld. */
+function ConsentCell({ consent }: { consent: ParticipantRow["consent"] }) {
+  if (!consent) return <StatusPill tone="alert">None</StatusPill>;
+  const withheld = SCOPES.filter((s) => !consent[s]);
+  if (withheld.length === 0) return <StatusPill tone="positive">All four</StatusPill>;
+  if (withheld.length === SCOPES.length) return <StatusPill tone="alert">None given</StatusPill>;
+  return <span className="text-xs text-caution">Not {withheld.map((s) => SCOPE_SHORT[s]).join(", ")}</span>;
+}
 
 export default function Participants() {
   const { community, leads } = useCommunity();
@@ -32,6 +45,7 @@ export default function Participants() {
   const readiness = params.get("readiness") ?? ALL;
   const action = params.get("action") ?? ALL;
   const [logFor, setLogFor] = useState<{ action: OutreachAction; people: { entrepreneur_id: string; display_name: string }[] } | null>(null);
+  const [consentFor, setConsentFor] = useState<{ entrepreneur_id: string; display_name: string } | null>(null);
 
   const setFilter = (key: string, value: string) => {
     const next = new URLSearchParams(params);
@@ -90,7 +104,7 @@ export default function Participants() {
         </div>
 
         <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
-          <table className="w-full min-w-[900px] text-sm">
+          <table className="w-full min-w-[1000px] text-sm">
             <thead className="text-left text-xs text-muted-foreground">
               <tr className="border-b border-border">
                 <th className="py-2 pr-4 font-medium">Participant</th>
@@ -99,12 +113,13 @@ export default function Participants() {
                 <th className="py-2 pr-4 text-right font-medium">Data quality</th>
                 <th className="py-2 pr-4 font-medium">Readiness</th>
                 <th className="py-2 pr-4 font-medium">Stage</th>
+                <th className="py-2 pr-4 font-medium">Consent</th>
                 <th className="py-2 font-medium">Next action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {!participants.data && Array.from({ length: 6 }, (_, i) => (
-                <tr key={i}><td colSpan={7} className="py-2"><Skeleton className="h-9 w-full" /></td></tr>
+                <tr key={i}><td colSpan={8} className="py-2"><Skeleton className="h-9 w-full" /></td></tr>
               ))}
               {rows.map((p) => {
                 const edu = p.core_total ? Math.round((p.core_done / p.core_total) * 100) : 100;
@@ -139,6 +154,7 @@ export default function Participants() {
                         : <span className="text-xs text-muted-foreground">Not assessed</span>}
                     </td>
                     <td className="py-3 pr-4 text-muted-foreground">{STAGE_LABEL[p.stage]}</td>
+                    <td className="py-3 pr-4"><ConsentCell consent={p.consent} /></td>
                     <td className="py-3">
                       {!p.next_action ? <span className="text-xs text-muted-foreground">—</span>
                         : p.contacted_at ? <StatusPill tone="neutral">Contacted</StatusPill>
@@ -153,14 +169,19 @@ export default function Participants() {
                 );
               })}
               {participants.data && rows.length === 0 && (
-                <tr><td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No participant matches these filters.</td></tr>
+                <tr><td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">No participant matches these filters.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </Panel>
 
-      {community.status === "verified" && (leads || profile?.role === "admin") && <EnrollForm />}
+      {community.status === "verified" && (leads || profile?.role === "admin") && <EnrollForm onEnrolled={setConsentFor} />}
+
+      {consentFor && (
+        <ConsentDialog communityId={community.id} entrepreneur={consentFor} current={null}
+          open onOpenChange={(v) => !v && setConsentFor(null)} />
+      )}
 
       {logFor && (
         <OutreachDialog communityId={community.id} action={logFor.action} people={logFor.people}
@@ -170,13 +191,13 @@ export default function Participants() {
   );
 }
 
-function EnrollForm() {
+function EnrollForm({ onEnrolled }: { onEnrolled: (p: { entrepreneur_id: string; display_name: string }) => void }) {
   const { community } = useCommunity();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ name: "", business: "", sector: "" });
   const enroll = useMutation({
     mutationFn: async () => {
-      const { error } = await platform.rpc("enroll_entrepreneur", {
+      const { data, error } = await platform.rpc("enroll_entrepreneur", {
         p_community_id: community.id,
         p_display_name: form.name,
         p_business_name: form.business || undefined,
@@ -185,13 +206,15 @@ function EnrollForm() {
         p_state: community.state,
       });
       if (error) throw error;
+      return { entrepreneur_id: data as string, display_name: form.name };
     },
-    onSuccess: () => {
+    onSuccess: (enrolled) => {
       setForm({ name: "", business: "", sector: "" });
       for (const key of ["ci-participants", "ci-overview", "ci-cohorts"]) {
         queryClient.invalidateQueries({ queryKey: ["platform", key, community.id] });
       }
-      toast.success("Enrolled. Her borrower reference is being registered on devnet.");
+      toast.success("Enrolled. Her borrower reference is being registered on devnet. Now record her consent form.");
+      onEnrolled(enrolled);
     },
     onError: (error) => toast.error(describeError(error)),
   });
@@ -201,7 +224,7 @@ function EnrollForm() {
   };
 
   return (
-    <Panel title="Add a participant" description="She gets a random borrower reference; only its hash goes on chain.">
+    <Panel title="Add a participant" description="She gets a random borrower reference; only its hash goes on chain. Her consent form comes next: nothing of hers is assessed without it.">
       <form onSubmit={submit} className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
         <div className="space-y-2">
           <Label htmlFor="m-name">Name</Label>

@@ -5,8 +5,8 @@ import { useLedCommunity } from "./community/queries";
 
 /**
  * Entrepreneurs start at their business, partners at their desk, capital
- * providers at the portfolio, a leader inside her community, everyone else at
- * the communities.
+ * providers at the portfolio, a leader inside her community, auditors at the
+ * audit console, admins at the communities.
  */
 export default function HomeRedirect() {
   const { profile } = useAuth();
@@ -17,6 +17,7 @@ export default function HomeRedirect() {
     profile?.role === "entrepreneur" ? "/app/me"
     : profile?.role === "partner" ? "/app/partner"
     : profile?.role === "capital_provider" ? "/app/investor"
+    : profile?.role === "auditor" ? "/app/audit"
     : "/app/community";
   return <Navigate to={home} replace />;
 }

@@ -3,11 +3,12 @@ import { Link, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle, ArrowLeft, BadgeCheck, BookOpen, CalendarCheck, Check, CircleDashed, Coins, Flag, Gauge, HandCoins,
-  Loader2, MessageCircle, Sprout, UserPlus, type LucideIcon,
+  Loader2, MessageCircle, ShieldCheck, Sprout, UserPlus, type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConsentSummary } from "../../components/consent/ConsentScopes";
 import LoadError from "../../components/LoadError";
 import { DataTag } from "../../components/product/DataLegend";
 import ExplorerLink from "../../components/product/ExplorerLink";
@@ -18,15 +19,17 @@ import {
   ACTION, type JourneyEvent, READINESS_TONE, requirementForLeader, type Requirement, scorePct, shortDate, STAGE_LABEL,
 } from "../../lib/community";
 import { CAPITAL_USE_LABEL, DECISION_LABEL, ELIGIBILITY_REASON, LOAN_LABEL, OPPORTUNITY_LABEL } from "../../lib/credit";
+import { CHANNEL_LABEL, SCOPE_TEXT, SCOPES } from "../../lib/consent";
 import { describeError } from "../../lib/errors";
 import { platform } from "../../lib/platform";
 import { money, monthLabel, PURPOSE_LABEL, REASON_LABEL, STATUS_LABEL } from "../../lib/readiness";
 import { useCommunity } from "./context";
+import ConsentDialog from "./ConsentDialog";
 import OutreachDialog from "./OutreachDialog";
 import { useJourney } from "./queries";
 
 const KIND_ICON: Record<JourneyEvent["kind"], LucideIcon> = {
-  joined: UserPlus, education: BookOpen, checkin: CalendarCheck, readiness: Gauge, intent: HandCoins,
+  joined: UserPlus, consent: ShieldCheck, education: BookOpen, checkin: CalendarCheck, readiness: Gauge, intent: HandCoins,
   intent_withdrawn: HandCoins, eligibility: Flag, referred: Coins, partner_decision: BadgeCheck, loan: Coins,
   payment: Check, outcome: Sprout, outreach: MessageCircle,
 };
@@ -40,6 +43,10 @@ function describe(e: JourneyEvent): { title: string; sub?: string } {
   const d = (e.detail ?? {}) as Record<string, unknown>;
   switch (e.kind) {
     case "joined": return { title: `Joined ${e.label}` };
+    case "consent": return {
+      title: `Consent record #${e.label}`,
+      sub: `${SCOPES.filter((sc) => d[sc]).map((sc) => SCOPE_TEXT[sc].title.toLowerCase()).join("; ") || "nothing allowed"} · ${CHANNEL_LABEL[d.channel as keyof typeof CHANNEL_LABEL] ?? ""}`,
+    };
     case "education": return { title: `Completed “${e.label}”` };
     case "checkin": return { title: `Reported ${monthLabel(e.label)}`, sub: d.keeps_records ? "records kept" : "no records kept that month" };
     case "readiness": return {
@@ -64,6 +71,7 @@ export default function Participant() {
   const journey = useJourney(community.id, entrepreneurId);
   const queryClient = useQueryClient();
   const [logging, setLogging] = useState(false);
+  const [consenting, setConsenting] = useState(false);
 
   const recordModule = useMutation({
     mutationFn: async (moduleId: string) => {
@@ -88,7 +96,7 @@ export default function Participant() {
   if (journey.isError) return <div className="space-y-4">{back}<LoadError error={journey.error} onRetry={() => journey.refetch()} /></div>;
   if (!journey.data) return <div className="space-y-4">{back}<Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>;
 
-  const { state: s, education, timeline } = journey.data;
+  const { state: s, consent, education, timeline } = journey.data;
   const nextModule = education.find((m) => m.status !== "completed");
   const missing = (s.missing_requirements ?? []) as Requirement[];
   const events = [...timeline].reverse();
@@ -224,6 +232,16 @@ export default function Participant() {
         </Panel>
       </div>
 
+      <Panel title={<span className="flex items-center gap-2"><ShieldCheck size={16} className="text-positive" aria-hidden /> Consent</span>}
+        description="What she allows her data to be used for. The platform enforces it: nothing is assessed, referred or shown to investors without it."
+        actions={leads ? (
+          <Button size="sm" variant="secondary" className="gap-2" onClick={() => setConsenting(true)}>
+            <ShieldCheck size={14} /> {consent ? "Record a new form" : "Record her consent form"}
+          </Button>
+        ) : undefined}>
+        <ConsentSummary record={consent} />
+      </Panel>
+
       <Panel title="Journey" description="Every step, newest first. Steps marked ✓ have a commitment on Solana: the record stays private, the proof is public.">
         <ol className="relative space-y-4 border-l border-border pl-6">
           {events.map((e, i) => {
@@ -256,6 +274,11 @@ export default function Participant() {
           })}
         </ol>
       </Panel>
+
+      {consenting && (
+        <ConsentDialog communityId={community.id} entrepreneur={s} current={consent}
+          open onOpenChange={(v) => !v && setConsenting(false)} />
+      )}
 
       {logging && s.next_action && (
         <OutreachDialog communityId={community.id} action={s.next_action}

@@ -50,9 +50,9 @@ export default function Impact() {
     (a, x) => ({
       measured: a.measured + x.outcomes.measured, revenue_up: a.revenue_up + x.outcomes.revenue_up,
       as_declared: a.as_declared + x.outcomes.as_declared, evc_cents: a.evc_cents + x.outcomes.evc_cents,
-      evc_positive: a.evc_positive + x.outcomes.evc_positive,
+      evc_positive: a.evc_positive + x.outcomes.evc_positive, withheld: a.withheld + (x.outcomes.withheld ?? 0),
     }),
-    { measured: 0, revenue_up: 0, as_declared: 0, evc_cents: 0, evc_positive: 0 },
+    { measured: 0, revenue_up: 0, as_declared: 0, evc_cents: 0, evc_positive: 0, withheld: 0 },
   );
   const phaseTotal = Math.max(1, c.by_phase.preparation + c.by_phase.origination + c.by_phase.servicing);
   const outreach = c.by_stage?.outreach ?? 0;
@@ -71,6 +71,12 @@ export default function Impact() {
           EVC is the incremental profit after the cost of credit. Negative values are shown as they are: good credit is not only
           credit that gets repaid, and not every loan creates value.
         </p>
+        {o.withheld > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {o.withheld} measured outcome{o.withheld === 1 ? " is" : "s are"} left out of these totals: {o.withheld === 1 ? "its owner" : "their owners"} chose
+            not to be counted in impact figures.
+          </p>
+        )}
       </Panel>
 
       <Panel title="Cost to serve" description="Counted stage by stage from the community's first day, and borne by EmpowerFI, the community and the partner.">

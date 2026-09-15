@@ -3,6 +3,12 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import {
   Activity,
   ArrowUpRight,
+  Cpu,
+  FileCheck2,
+  History,
+  ScanSearch,
+  ServerCog,
+  ShieldCheck,
   Gauge,
   Layers,
   Route as RouteIcon,
@@ -40,10 +46,19 @@ const COMMUNITIES: NavItem = { to: "/app/community", label: "Communities", icon:
 const PIPELINE: NavItem = { to: "/app/partner", label: "Partner pipeline", icon: Briefcase };
 const PORTFOLIO: NavItem = { to: "/app/capital", label: "Capital", icon: Wallet };
 
+const AUDIT: NavItem[] = [
+  { to: "/app/audit", label: "Attestations", icon: FileCheck2, end: true },
+  { to: "/app/audit/events", label: "Events", icon: History },
+  { to: "/app/audit/models", label: "Models", icon: Cpu },
+  { to: "/app/audit/consents", label: "Consents", icon: ShieldCheck },
+  { to: "/app/audit/system", label: "System", icon: ServerCog },
+];
+
 const NAV: Record<Role, NavItem[]> = {
   entrepreneur: [
     { to: "/app/me", label: "My business", icon: Store },
     { to: "/app/check-in", label: "Monthly check-in", icon: CalendarCheck },
+    { to: "/app/consent", label: "Consent", icon: ShieldCheck },
   ],
   community_leader: [COMMUNITIES],
   partner: [{ ...PIPELINE, label: "Pipeline" }],
@@ -53,8 +68,12 @@ const NAV: Record<Role, NavItem[]> = {
     { to: "/app/investor/portfolio", label: "Portfolio", icon: PieChart },
     { to: "/app/investor/audit", label: "Audit trail", icon: BadgeCheck },
   ],
-  auditor: [COMMUNITIES, PIPELINE, PORTFOLIO],
-  admin: [{ to: "/app/admin", label: "Review queue", icon: ClipboardCheck }, COMMUNITIES, PIPELINE, PORTFOLIO],
+  auditor: [...AUDIT, COMMUNITIES, PIPELINE, PORTFOLIO],
+  admin: [
+    { to: "/app/admin", label: "Review queue", icon: ClipboardCheck },
+    { to: "/app/audit", label: "Audit console", icon: ScanSearch },
+    COMMUNITIES, PIPELINE, PORTFOLIO,
+  ],
 };
 
 const WORKSPACE: Record<Role, string> = {

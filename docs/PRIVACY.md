@@ -26,7 +26,7 @@ These never go on chain: a name, CPF, phone, e-mail, address, a business name, a
 Two checks enforce this:
 
 - `packages/audit-client/privacy.test.ts` reads the program's IDL. It pins every account field and every instruction argument by name and type, and allows only 32-byte hashes, public keys, small integers and data-less enums. Nothing can hold text. Adding a field fails the test until someone reviews it deliberately.
-- `scripts/platform/scan-chain-pii.mts` reads every account the program owns on devnet. It checks that each is a reviewed type at its fixed size. Then it searches the raw bytes for every name, business name, e-mail, community name and city in the database, and checks every decoded integer field against every reported amount and loan amount. Last run: 3,864 accounts across all ten types, zero findings.
+- `scripts/platform/scan-chain-pii.mts` reads every account the program owns on devnet. It checks that each is a reviewed type at its fixed size. Then it searches the raw bytes for every name, business name, e-mail, community name and city in the database, and checks every decoded integer field against every reported amount and loan amount. Last run, before allocations and consent records existed: 3,864 accounts across the ten types then in use, zero findings. It now also reviews `AllocationCommitment` and `ConsentCommitment`.
 
 ### Why a commitment reveals nothing
 
@@ -53,7 +53,38 @@ Investors move real devnet USDC, and every token transfer on Solana is public. S
 What remains, stated plainly:
 
 - **An investor's own flows are public**, as for any wallet: deposits, refunds and payouts, with amounts and times.
-- **Matching is hard but not impossible.** Any signed-in investor sees each opportunity's USDC target. Someone watching the vault could try to match deposits to targets. Deposits are split across many investors and opportunities, which blurs it without ruling it out. The optional Cloak mode (a shielded pool) is the stronger answer.
+- **Matching is hard but not impossible.** Any signed-in investor sees each opportunity's USDC target. Someone watching the vault could try to match deposits to targets. Deposits are split across many investors and opportunities, which blurs it without ruling it out. The stronger answer is investing with shielded ZEC (PLAN_REDESIGN.md, decision R5): the payment leaves a shielded Zcash address, so no wallet is linked to the vault's inflow.
+
+## Consent
+
+A participant decides what her data is used for, in four uses. Each builds on the one before it, except impact, which stands alone:
+
+| Use | What it reads | Who sees what comes of it |
+|---|---|---|
+| **Assess my business** | Check-ins, education progress, community verification | Her, her leader, auditors |
+| **Share my request with a credit partner** | The request, EmpowerFI's assessment, indicators rounded to R$ 100 | The partner EmpowerFI refers her to, under a code |
+| **Show my request to investors, without my name** | Purpose, sector, amount, term, community, grades | Investors in the console |
+| **Count my business in impact figures** | Whether sales changed after a loan, how the capital was used | Only totals |
+
+The wording is versioned (`consent-v1`, in `src/app/lib/consent.ts`), and each record stores the version she saw.
+
+**How consent is given.** She gives it herself in the app, or her community leader records it from the form she signed. The second is how most participants give it. Either way the record states which, and who recorded it.
+
+**How changes are kept.** Nothing is edited. Each change is a new, numbered record, and each record is proven on Solana by a `ConsentCommitment` under her borrower account. The chain holds the hash of what she chose, never the choices, so what she agreed to and when can't be rewritten afterwards.
+
+**Enforced in the database, not only shown:**
+
+- No readiness or eligibility assessment without consent to assess.
+- Asking for credit, and any referral to a partner, needs consent to share with a partner.
+- An opportunity opens to investors only with consent to be shown. Withdrawing it takes the opportunity off the market at once, unless the loan has already been disbursed. Anyone who had funded it is refunded from the vault, and the partner lends from its own capital.
+- Outcomes count in impact totals only with consent to impact figures. The community's Impact view says how many outcomes were left out, never whose.
+
+The audit console re-checks each assessment, referral and listing against the consent that was in force when it happened. `platform/supabase/tests/consent.test.sql` covers each rule.
+
+What remains, stated plainly:
+
+- **Changes are visible, not their content.** On chain, anyone can see that a pseudonym has several consent records, and when each was made.
+- **What was shared stays shared.** Withdrawing consent stops future use. It doesn't recall what a partner already received, which remains under the partner's own obligations.
 
 ## Who sees what
 
@@ -61,11 +92,11 @@ Row-level security enforces all of this, and pgTAP tests check it for every role
 
 | Role | Sees | Doesn't see |
 |---|---|---|
-| **Entrepreneur** | Her own profile, business, check-ins, assessments, requests, loans, payments, outcome and cost; can audit her own proofs | Anyone else's |
-| **Community leader** | Members of the communities she leads: their records, funnel and cost to serve | Other communities' members; partners' books |
+| **Entrepreneur** | Her own profile, business, check-ins, assessments, requests, loans, payments, outcome and cost; can audit her own proofs; records and changes her consent | Anyone else's |
+| **Community leader** | Members of the communities she leads: their records, funnel and cost to serve; records their consent from the signed form | Other communities' members; partners' books; reported amounts in Community Intelligence |
 | **Credit partner** | Opportunities referred to it, pseudonymous: `P-XXXXXX`, sector, verified community, indicators rounded to R$100, EmpowerFI's assessment and reasons. Its own loans, payments and outcomes | Names, business names, check-ins, readiness detail, anything not referred to it |
 | **Capital provider** | The portfolio its capital funds, in aggregate. Loans under a code derived from the loan alone (`L-XXXXXX`), which can't be joined to the partner's pseudonyms. Can audit loans, status changes and payments | People, check-ins, readiness, eligibility, opportunities, per-person outcomes |
-| **Auditor** | Everything, read-only; every proof | Can't write anything |
+| **Auditor** | Everything, read-only; every proof. The audit console names participants by code (`P-XXXXXX`), never by name | Can't write anything |
 | **Admin (EmpowerFI)** | Everything; verifies communities, refers flagged opportunities | Can't make a lending decision, or verify a community it leads |
 | **Anonymous visitor** | Nothing | No table, view or function |
 
@@ -90,7 +121,7 @@ Engagement data (opens, clicks, time in the app, whether she upgraded) is never 
 
 ## Open before production
 
-- LGPD: the legal basis and consent flow for each processing purpose, a data-protection impact assessment, retention periods, and a data-subject request process (including the erasure approach above), all with counsel.
-- Consent for sharing an opportunity with a partner is implied by her request in the pilot. Production needs an explicit, per-partner consent record.
+- LGPD: counsel's review of the consent wording and the legal basis for each use, a data-protection impact assessment, retention periods, and a data-subject request process (including the erasure approach above).
+- Consent to share covers "the partner EmpowerFI refers me to". Production needs it per partner, named, before referral.
 - Reference rotation: a participant who wants a fresh pseudonym would need a new `borrower_ref` and a link between her old and new histories that only the database knows.
 - Stablecoin and cross-border capital routes: tax and regulatory treatment are assumptions in the simulator until validated.

@@ -48,6 +48,13 @@ const MESSAGES: Record<string, string> = {
   not_allowed_to_measure: "Only EmpowerFI or the loan's partner measures its outcome.",
   loan_not_disbursed: "An outcome is measured once the loan has reached the business.",
   not_enough_history: "An outcome needs two reported months on each side of the loan.",
+  no_consent_to_assess: "She has not allowed her data to be used for an assessment. Her consent comes first.",
+  no_consent_to_share_with_partner: "Asking for credit means a partner sees the request. Allow that in your consent first.",
+  consent_scope_needs_the_one_before: "Each use builds on the one before: nothing is shared that is not assessed.",
+  every_scope_needs_an_answer: "Answer each of the four uses.",
+  not_allowed_to_record_consent: "Only she, or a leader of her community, can record her consent.",
+  not_an_auditor: "The audit console is for auditors and EmpowerFI admins.",
+  not_fully_funded: "Investors are still funding this opportunity: disburse once it is funded.",
 };
 
 export function describeError(error: unknown): string {

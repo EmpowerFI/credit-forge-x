@@ -1,0 +1,143 @@
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import type { CanonicalObject } from "@empowerfi/audit-commitments";
+import type { AnchorKind } from "../../lib/platform";
+import { platform } from "../../lib/platform";
+import type { Proof } from "../../lib/community";
+
+// The audit console's reads. Every one is for auditors and admins only, and
+// names participants by code, never by name.
+
+export type AttestationState = "queued" | "failed" | "verified" | "unchecked" | "flagged";
+
+export interface Attestation {
+  id: number;
+  kind: AnchorKind;
+  entity_id: string;
+  status: "pending" | "submitted" | "confirmed" | "failed";
+  reconcile: "unchecked" | "verified" | "missing" | "mismatch";
+  reconcile_note: string | null;
+  commitment: string | null;
+  account: string | null;
+  signature: string | null;
+  slot: number | null;
+  attempts: number;
+  last_error: string | null;
+  created_at: string;
+  confirmed_at: string | null;
+  reconciled_at: string | null;
+  participant: string | null;
+  model_version: string | null;
+}
+
+export interface Attestations {
+  total: number;
+  rows: Attestation[];
+  by_kind: Partial<Record<AnchorKind, number>>;
+  by_state: Record<AttestationState | "confirmed", number>;
+}
+
+export function useAttestations(kind: AnchorKind | null, state: AttestationState | null, page: number, size = 25) {
+  return useQuery({
+    queryKey: ["platform", "audit-attestations", kind, state, page],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await platform.rpc("audit_attestations", {
+        p_kind: kind ?? undefined, p_state: state ?? undefined, p_limit: size, p_offset: page * size,
+      });
+      if (error) throw error;
+      return data as unknown as Attestations;
+    },
+    refetchInterval: 15_000,
+  });
+}
+
+export interface AuditEvent {
+  at: string;
+  kind: string;
+  actor: string;
+  label: string | null;
+  participant: string | null;
+  community: string | null;
+  proof: Proof | null;
+}
+
+export function useEvents(kind: string | null) {
+  return useQuery({
+    queryKey: ["platform", "audit-events", kind],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await platform.rpc("audit_events", { p_kind: kind ?? undefined, p_limit: 200 });
+      if (error) throw error;
+      return data as unknown as AuditEvent[];
+    },
+  });
+}
+
+export interface ModelVersion { version: string; runs: number; first_at: string; last_at: string; outcomes: Record<string, number>; anchored: number }
+export interface Models { readiness: ModelVersion[]; eligibility: ModelVersion[]; outcome: ModelVersion[] }
+
+export function useModels() {
+  return useQuery({
+    queryKey: ["platform", "audit-models"],
+    queryFn: async () => {
+      const { data, error } = await platform.rpc("audit_models");
+      if (error) throw error;
+      return data as unknown as Models;
+    },
+  });
+}
+
+export interface ModelSample { readiness: { id: string; payload: CanonicalObject }[]; eligibility: { id: string; payload: CanonicalObject }[] }
+
+export async function fetchModelSample(limit = 12) {
+  const { data, error } = await platform.rpc("audit_model_sample", { p_limit: limit });
+  if (error) throw error;
+  return data as unknown as ModelSample;
+}
+
+export interface ConsentAudit {
+  enrolled: number;
+  with_record: number;
+  without_record: number;
+  records: number;
+  changes: number;
+  by_scope: Record<"assessment" | "partner" | "investors" | "impact", number>;
+  by_channel: { app: number; community: number };
+  anchored: number;
+  checks: Record<"assessed_without_consent" | "eligibility_without_consent" | "referred_without_consent" | "listed_without_consent", number>;
+  recent: {
+    id: string; at: string; participant: string; community: string | null; consent_no: number; text_version: string;
+    assessment: boolean; partner: boolean; investors: boolean; impact: boolean; channel: "app" | "community"; proof: Proof | null;
+  }[];
+}
+
+export function useConsentAudit() {
+  return useQuery({
+    queryKey: ["platform", "audit-consents"],
+    queryFn: async () => {
+      const { data, error } = await platform.rpc("audit_consents");
+      if (error) throw error;
+      return data as unknown as ConsentAudit;
+    },
+  });
+}
+
+export interface SystemAudit {
+  anchors: { pending: number; submitted: number; failed: number; confirmed: number; oldest_queued_at: string | null; last_confirmed_at: string | null; last_error: string | null };
+  reconcile: { verified: number; missing: number; mismatch: number; unchecked: number; last_at: string | null; oldest_at: string | null };
+  refunds: { due: number; sending: number; refunded: number; last_at: string | null; last_error: string | null };
+  vault: { expected_micro_usdc: number; deposited_micro_usdc: number; refunded_micro_usdc: number; deposits: number };
+  jobs: { name: string; schedule: string; active: boolean }[] | null;
+}
+
+export function useSystemAudit() {
+  return useQuery({
+    queryKey: ["platform", "audit-system"],
+    queryFn: async () => {
+      const { data, error } = await platform.rpc("audit_system");
+      if (error) throw error;
+      return data as unknown as SystemAudit;
+    },
+    refetchInterval: 15_000,
+  });
+}

@@ -16,8 +16,15 @@ import PartnerPage from "./pages/PartnerPage";
 import type { Role } from "./lib/platform";
 import WalletProvider from "./wallet/WalletProvider";
 
-// The Solana client is heavy and only the audit screen needs it in the browser.
+// The Solana client is heavy and only the audit screens need it in the browser.
 const AuditPage = lazy(() => import("./pages/AuditPage"));
+const AuditLayout = lazy(() => import("./pages/audit/AuditLayout"));
+const AuditAttestations = lazy(() => import("./pages/audit/Attestations"));
+const AuditEvents = lazy(() => import("./pages/audit/Events"));
+const AuditModels = lazy(() => import("./pages/audit/Models"));
+const AuditConsents = lazy(() => import("./pages/audit/Consents"));
+const AuditSystem = lazy(() => import("./pages/audit/System"));
+const ConsentPage = lazy(() => import("./pages/ConsentPage"));
 // The investor console: wallet, Solana client and charts, loaded when opened.
 const InvestorOverview = lazy(() => import("./pages/investor/Overview"));
 const InvestorOpportunities = lazy(() => import("./pages/investor/Opportunities"));
@@ -75,6 +82,7 @@ export default function PlatformApp() {
           <Route index element={<HomeRedirect />} />
           <Route path="me" element={<MePage />} />
           <Route path="check-in" element={<CheckinPage />} />
+          <Route path="consent" element={<Suspense fallback={loading}><ConsentPage /></Suspense>} />
           <Route path="community" element={<CommunitiesPage />} />
           <Route path="community/new"
             element={<RequireAuth roles={["community_leader", "admin"]}><NewCommunityPage /></RequireAuth>} />
@@ -86,6 +94,13 @@ export default function PlatformApp() {
             <Route path="readiness" element={<Suspense fallback={loading}><CommunityReadiness /></Suspense>} />
             <Route path="pipeline" element={<Suspense fallback={loading}><CommunityPipeline /></Suspense>} />
             <Route path="impact" element={<Suspense fallback={loading}><CommunityImpact /></Suspense>} />
+          </Route>
+          <Route path="audit" element={<RequireAuth roles={["auditor", "admin"]}><Suspense fallback={loading}><AuditLayout /></Suspense></RequireAuth>}>
+            <Route index element={<Suspense fallback={loading}><AuditAttestations /></Suspense>} />
+            <Route path="events" element={<Suspense fallback={loading}><AuditEvents /></Suspense>} />
+            <Route path="models" element={<Suspense fallback={loading}><AuditModels /></Suspense>} />
+            <Route path="consents" element={<Suspense fallback={loading}><AuditConsents /></Suspense>} />
+            <Route path="system" element={<Suspense fallback={loading}><AuditSystem /></Suspense>} />
           </Route>
           {/* Anyone signed in may open one; audit_record decides what they may see. */}
           <Route path="audit/:kind/:entityId" element={<Suspense fallback={null}><AuditPage /></Suspense>} />

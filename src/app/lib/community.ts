@@ -2,6 +2,7 @@ import type { Tone } from "../components/product/StatusPill";
 import type { Database } from "./platform.types";
 import type { CreditPurpose, ReadinessStatus } from "./readiness";
 import type { EligibilityDecision, LoanStatus, OpportunityStatus } from "./credit";
+import type { ConsentRecord } from "./consent";
 
 // Community Intelligence, as the database computes it (community_overview,
 // community_participants, community_cohorts, community_participant). No
@@ -141,6 +142,8 @@ export interface ParticipantRow {
   stage_no: number;
   next_action: OutreachAction | null;
   contacted_at: string | null;
+  /** Her latest consent record, with its proof. */
+  consent: ConsentRecord | null;
 }
 
 export interface Cohort {
@@ -152,14 +155,15 @@ export interface Cohort {
   manual_review: number;
   need_by_purpose: Partial<Record<CreditPurpose, { n: number; cents: number }>>;
   operations: { referred: number; approved: number; disbursed: number };
-  outcomes: { measured: number; revenue_up: number; as_declared: number; evc_cents: number; evc_positive: number };
+  /** Counted only with her consent to impact figures; `withheld` says how many were left out, never who. */
+  outcomes: { measured: number; revenue_up: number; as_declared: number; evc_cents: number; evc_positive: number; withheld: number };
 }
 
 export interface Proof { kind: string; entity_id: string; status: string; signature: string | null; reconcile: string | null }
 
 export interface JourneyEvent {
   at: string;
-  kind: "joined" | "education" | "checkin" | "readiness" | "intent" | "intent_withdrawn" | "eligibility" | "referred"
+  kind: "joined" | "consent" | "education" | "checkin" | "readiness" | "intent" | "intent_withdrawn" | "eligibility" | "referred"
     | "partner_decision" | "loan" | "payment" | "outcome" | "outreach";
   label: string;
   detail?: Record<string, unknown>;
@@ -168,6 +172,7 @@ export interface JourneyEvent {
 
 export interface Journey {
   state: ParticipantRow & { assessed_at: string | null; model_version: string | null; first_ready_at: string | null; records_kept_bps: number | null; education_complete: boolean };
+  consent: ConsentRecord | null;
   education: { module_id: string; title: string; position: number; program: string; core: boolean; status: string | null; completed_at: string | null }[];
   timeline: JourneyEvent[];
 }

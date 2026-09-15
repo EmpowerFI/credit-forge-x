@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleCheck, CircleDashed, ClipboardPlus, Lightbulb, Loader2, RefreshCw } from "lucide-react";
+import { CircleCheck, CircleDashed, ClipboardPlus, Lightbulb, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import type { ReadinessFeatures } from "@empowerfi/readiness-engine";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -112,12 +112,13 @@ export default function MePage() {
     queryKey: ["platform", "my-business", id],
     enabled: Boolean(id),
     queryFn: async () => {
-      const [readiness, intent, months] = await Promise.all([
+      const [readiness, intent, months, consent] = await Promise.all([
         platform.from("latest_readiness").select("*").eq("entrepreneur_id", id!).maybeSingle(),
         platform.from("credit_intents").select("*").eq("entrepreneur_id", id!).eq("status", "active").maybeSingle(),
         platform.from("checkin_cash_flow").select("*").eq("entrepreneur_id", id!).order("period", { ascending: false }).limit(6),
+        platform.from("consents").select("*").eq("entrepreneur_id", id!).order("consent_no", { ascending: false }).limit(1).maybeSingle(),
       ]);
-      for (const r of [readiness, intent, months]) if (r.error) throw r.error;
+      for (const r of [readiness, intent, months, consent]) if (r.error) throw r.error;
       // What became of her request: EmpowerFI's eligibility, the opportunity,
       // the partner's decision, the loan.
       let credit = null;
@@ -132,7 +133,7 @@ export default function MePage() {
         if (opportunity.error) throw opportunity.error;
         credit = { eligibility: eligibility.data, opportunity: opportunity.data };
       }
-      return { readiness: readiness.data, intent: intent.data, months: months.data ?? [], credit };
+      return { readiness: readiness.data, intent: intent.data, months: months.data ?? [], credit, consent: consent.data };
     },
   });
 
@@ -238,6 +239,27 @@ export default function MePage() {
           <Link to="/app/check-in"><ClipboardPlus size={16} /> Monthly check-in</Link>
         </Button>
       </div>
+
+      {/* -------------------------------------------------------- consent */}
+      {(() => {
+        const c = business.data?.consent;
+        const message = !c ? "You have not recorded your consent yet: nothing of yours is assessed or shared until you do."
+          : !c.assessment ? "You have not allowed your business to be assessed."
+          : !c.partner ? "You have not allowed a credit partner to see a request, so you cannot ask for credit here."
+          : null;
+        return (
+          <Link to="/app/consent"
+            className={`flex items-start justify-between gap-3 rounded-2xl border p-4 text-sm transition-colors hover:bg-secondary/40 ${message ? "tone-caution" : "border-border"}`}>
+            <span className="flex items-start gap-2">
+              <ShieldCheck size={16} className={`mt-0.5 shrink-0 ${message ? "" : "text-positive"}`} />
+              <span className={message ? "" : "text-muted-foreground"}>
+                {message ?? `Your consent is in force (record #${c!.consent_no}). You decide what your data is used for.`}
+              </span>
+            </span>
+            <span className="shrink-0 font-medium">Review</span>
+          </Link>
+        );
+      })()}
 
       {/* ------------------------------------------------------ readiness */}
       <section className="space-y-4">
