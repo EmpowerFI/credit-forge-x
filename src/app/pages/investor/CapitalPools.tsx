@@ -14,7 +14,7 @@ import { useCapitalOverview } from "./queries";
  * Qualified demand against the two pools of P2P capital: what domestic capital
  * alone would cover, and what domestic and global capital cover together.
  */
-export default function CapitalPools({ engineLink = true }: { engineLink?: boolean }) {
+export default function CapitalPools({ engineLink = true, tilesOnly = false }: { engineLink?: boolean; tilesOnly?: boolean }) {
   const q = useCapitalOverview();
   if (q.isError) return <LoadError compact error={q.error} onRetry={() => q.refetch()} />;
   const d = q.data;
@@ -47,7 +47,7 @@ export default function CapitalPools({ engineLink = true }: { engineLink?: boole
         ) : [0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-2xl bg-card" />)}
       </div>
 
-      <Panel title={tr({ en: "Capital availability", pt: "Capital disponível" })}
+      {!tilesOnly && <Panel title={tr({ en: "Capital availability", pt: "Capital disponível" })}
         description={tr({
           en: "How much qualified demand each pool can fund: the allocation engine replayed over every opportunity not yet lent, in the order they came.",
           pt: "Quanto da demanda qualificada cada pool consegue captar: o motor de alocação refeito sobre cada oportunidade ainda não emprestada, na ordem em que chegaram.",
@@ -83,7 +83,7 @@ export default function CapitalPools({ engineLink = true }: { engineLink?: boole
             </div>
           </div>
         )}
-      </Panel>
+      </Panel>}
     </div>
   );
 }

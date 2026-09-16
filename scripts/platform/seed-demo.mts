@@ -675,6 +675,8 @@ for (const c of firstCycle) {
 // function queues each attestation behind her registration on chain.
 
 const statusOf = new Map<string, string>();
+// What an instalment could take of each business, as eligibility sizes it.
+const capacityOf = new Map<string, number>();
 for (const m of memberships) {
   const { features, result } = assessReadiness({
     as_of_period: "2026-09",
@@ -691,6 +693,8 @@ for (const m of memberships) {
     p_created_at: "2026-09-12T15:00:00Z",
   }));
   statusOf.set(m.entrepreneur_id, result.status);
+  const net = features.avg_net_business_cents ?? 0;
+  capacityOf.set(m.entrepreneur_id, Math.min(net * 0.3, (net - (features.avg_household_cents ?? 0)) * 0.5));
 }
 
 // ------------------------------------------------------------------ intents
@@ -718,6 +722,13 @@ const intents = memberships
     is_simulated: true,
     created_at: iso(new Date(Date.UTC(2026, 8, 12, 16) + Math.floor(random() * 36) * 3_600_000)),
   }));
+// The engine page's third case: a qualified request no pool can fund. The
+// business most able to carry it wants R$ 4,800 to improve her workspace:
+// above the domestic pool's ticket, outside the global pool's productive-purpose
+// mandate. Set after the draws, so nothing else in the scenario changes.
+const renovation = [...intents].filter((i) => i.entrepreneur_id !== recent)
+  .sort((a, b) => (capacityOf.get(b.entrepreneur_id) ?? 0) - (capacityOf.get(a.entrepreneur_id) ?? 0))[0];
+if (renovation) Object.assign(renovation, { purpose: "renovation", requested_amount_cents: 480_000 });
 if (intents.length) await must("intents", db.from("credit_intents").insert(intents));
 
 // Two of them, one in Grajaú, let the partner see the request but keep it

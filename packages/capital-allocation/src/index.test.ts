@@ -102,3 +102,17 @@ it("converts USDC to reais at the quote, down to the centavo", () => {
   expect(usdcToCents(18_240_000_000, 5400)).toBe(9_849_600);
   expect(usdcToCents(1, 5400)).toBe(0);
 });
+
+describe("explanation", () => {
+  it("explains every check it puts to a pool, and blocks on exactly the failed ones", () => {
+    const o = { amount_cents: 670_000, term_months: 12, risk_band: "LOW" as const, purpose: "inventory", impact_eligible: true };
+    const r = allocate(o, DOMESTIC, GLOBAL);
+    for (const a of [r.domestic, r.global]) {
+      expect(a.checks.map((c) => c.check)).toEqual(["risk_appetite", "ticket", "mandate", "liquidity"]);
+      expect(a.blocks).toEqual(a.checks.filter((c) => !c.passed).map((c) => c.reason));
+    }
+    const ticket = r.domestic.checks.find((c) => c.check === "ticket")!;
+    expect(ticket.passed).toBe(DOMESTIC.max_ticket_cents >= 670_000);
+    expect(ticket.limit).toEqual([DOMESTIC.min_ticket_cents, DOMESTIC.max_ticket_cents]);
+  });
+});

@@ -11,7 +11,7 @@ select set_config(
   true
 );
 
-select plan(33);
+select plan(38);
 
 -- ------------------------------------------------------------ the vectors
 -- Generated from packages/capital-allocation/vectors/scenarios.json: the
@@ -311,3 +311,32 @@ set local role postgres;
 select is((select v -> 'coverage' from ov),
   '{"demand_cents":400000,"domestic_only_cents":0,"combined_cents":200000,"domestic_coverage_bps":0,"combined_coverage_bps":5000}'::jsonb,
   'demand is Bia''s and Dora''s: R$ 1,000 at home covers neither, global capital covers Bia''s');
+
+-- ------------------------------------------------------------ the engine page
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000008a2');
+select throws_ok($$ select engine_opportunities() $$, '42501', 'not_allowed_to_see_capital', 'a community leader cannot open the engine page');
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000008a8');
+create temp table eng_investor as select engine_opportunities() as v;
+set local role postgres;
+select is(
+  (select jsonb_agg(jsonb_build_object('pool', x -> 'funding_pool', 'status', x -> 'funding_status', 'code', left(x ->> 'code', 2)) order by x ->> 'funding_status')
+   from eng_investor, jsonb_array_elements(v) x),
+  '[{"pool": "global", "status": "open", "code": "Q-"}, {"pool": null, "status": "waiting", "code": "Q-"}]'::jsonb,
+  'an investor selects from the queue: Bia''s global request and Dora''s waiting one, by Q- code; Ana''s is lent, Cida''s never shown'
+);
+select is(
+  (select array_agg(distinct k order by k) from eng_investor, jsonb_array_elements(v) x, jsonb_object_keys(x) k
+   where k in ('display_name', 'business_name', 'entrepreneur_id', 'avg_revenue_cents', 'features', 'inputs')),
+  null, 'with no name, no business name, no person id and no raw figures'
+);
+select ok(
+  (select bool_and((x -> 'readiness' ->> 'score') is not null and (x -> 'eligibility' ->> 'decision') is not null and jsonb_typeof(x -> 'proofs') = 'array')
+   from eng_investor, jsonb_array_elements(v) x),
+  'each with its readiness, its eligibility and the proofs behind them'
+);
+select pg_temp.act_as('00000000-0000-0000-0000-0000000008a7');
+select is((select array_agg(left(x ->> 'code', 2)) from jsonb_array_elements(engine_opportunities()) x), array['P-', 'P-'],
+  'the desk sees the same two, by its own P- codes');
+set local role postgres;

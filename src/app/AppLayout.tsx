@@ -54,7 +54,7 @@ interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean }
 // localized would copy its texts in the language of the moment.
 const COMMUNITIES: NavItem = localized({ to: "/app/community", label: { en: "Communities", pt: "Comunidades" }, icon: Users });
 const PIPELINE: NavItem = localized({ to: "/app/partner", label: { en: "P2P desk", pt: "Mesa P2P" }, icon: Briefcase });
-const ENGINE: NavItem = localized({ to: "/app/capital", label: { en: "Allocation engine", pt: "Motor de alocação" }, icon: Split });
+const ENGINE: NavItem = localized({ to: "/app/capital", label: { en: "Credit engine", pt: "Motor de crédito" }, icon: Split });
 
 const AUDIT: NavItem[] = localized([
   { to: "/app/audit", label: { en: "Attestations", pt: "Atestados" }, icon: FileCheck2, end: true },

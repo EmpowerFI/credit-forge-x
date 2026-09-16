@@ -69,9 +69,23 @@ export interface AllocationOpportunity {
   impact_eligible: boolean;
 }
 
+/** One feasibility check, with what was compared: the trace a person can read. */
+export interface PoolCheck {
+  check: "risk_appetite" | "ticket" | "mandate" | "liquidity";
+  passed: boolean;
+  /** The reason code it raises when it fails. */
+  reason: AllocationReason;
+  /** The opportunity's side: band, amount in cents, or purpose. */
+  value: string | number;
+  /** The pool's side: eligible bands, [min, max] cents, purposes (empty = any), available cents. */
+  limit: string[] | [number, number] | number;
+}
+
 export interface PoolAssessment {
   pool: PoolId;
   feasible: boolean;
+  /** Every feasibility check in the order the engine asks it; blocks are the failed ones. */
+  checks: PoolCheck[];
   /** Why it cannot take this opportunity, empty when it can. */
   blocks: AllocationReason[];
   /** Her all-in cost a year through this pool: required return, expected loss, cost to serve, FX hedge and ramp. */
@@ -123,17 +137,29 @@ export function usdcToCents(microUsdc: number, fxMilli: number): number {
   return Math.floor((microUsdc * fxMilli) / 10_000_000);
 }
 
+/** The feasibility checks one pool puts to one opportunity, passed or not. */
+export function poolChecks(pool: PoolPolicy, o: AllocationOpportunity): PoolCheck[] {
+  return [
+    { check: "risk_appetite", passed: pool.eligible_risk_bands.includes(o.risk_band), reason: "RISK_BAND_NOT_ELIGIBLE",
+      value: o.risk_band, limit: [...pool.eligible_risk_bands] },
+    { check: "ticket", passed: o.amount_cents >= pool.min_ticket_cents && o.amount_cents <= pool.max_ticket_cents, reason: "TICKET_OUTSIDE_POOL_POLICY",
+      value: o.amount_cents, limit: [pool.min_ticket_cents, pool.max_ticket_cents] },
+    { check: "mandate", passed: pool.purposes.length === 0 || pool.purposes.includes(o.purpose), reason: "PURPOSE_OUTSIDE_POOL_MANDATE",
+      value: o.purpose, limit: [...pool.purposes] },
+    { check: "liquidity", passed: pool.available_cents >= o.amount_cents, reason: pool.id === "domestic" ? "DOMESTIC_POOL_EXHAUSTED" : "GLOBAL_POOL_EXHAUSTED",
+      value: o.amount_cents, limit: pool.available_cents },
+  ];
+}
+
 function assess(pool: PoolPolicy, o: AllocationOpportunity): PoolAssessment {
-  const blocks: AllocationReason[] = [];
-  if (!pool.eligible_risk_bands.includes(o.risk_band)) blocks.push("RISK_BAND_NOT_ELIGIBLE");
-  if (o.amount_cents < pool.min_ticket_cents || o.amount_cents > pool.max_ticket_cents) blocks.push("TICKET_OUTSIDE_POOL_POLICY");
-  if (pool.purposes.length > 0 && !pool.purposes.includes(o.purpose)) blocks.push("PURPOSE_OUTSIDE_POOL_MANDATE");
-  if (pool.available_cents < o.amount_cents) blocks.push(pool.id === "domestic" ? "DOMESTIC_POOL_EXHAUSTED" : "GLOBAL_POOL_EXHAUSTED");
+  const checks = poolChecks(pool, o);
+  const blocks = checks.filter((c) => !c.passed).map((c) => c.reason);
   // Into reais and back out, spread over the loan's years.
   const rampYear = Math.ceil((2 * pool.ramp_bps * 12) / o.term_months);
   return {
     pool: pool.id,
     feasible: blocks.length === 0,
+    checks,
     blocks,
     all_in_bps: pool.required_return_bps + RULES.EXPECTED_LOSS_BPS[o.risk_band] + RULES.COST_TO_SERVE_BPS + pool.fx_hedge_bps + rampYear,
     fx_hedge_bps: pool.fx_hedge_bps,

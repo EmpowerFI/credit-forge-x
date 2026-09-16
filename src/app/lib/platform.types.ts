@@ -2112,6 +2112,7 @@ export type Database = {
         Returns: string
       }
       eligibility_inputs: { Args: { p_entrepreneur_id: string }; Returns: Json }
+      engine_opportunities: { Args: never; Returns: Json }
       enroll_entrepreneur: {
         Args: {
           p_business_name?: string
