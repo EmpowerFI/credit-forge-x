@@ -50,6 +50,7 @@ Investors move real devnet USDC, and every token transfer on Solana is public. S
 - **Out.** `vault_transfer` is the program's one instruction with an amount, reviewed as such in the privacy test. It covers a refund when a partner declines, capital released for disbursement, and a repayment paid out. It takes no borrower, opportunity or allocation account, and the reason is recorded only in the database.
 - **Releases are batched.** Capital goes to the partner in one transfer covering several funded opportunities, never loan by loan, so no transfer's amount is a loan's principal.
 - **The ramp, on devnet.** Releases go to the regulated ramp partner's USDC account; on devnet that account is the operator's. With each instalment it sends the real investors' shares back into the vault, which pays them out in the same transaction. The conversion to reais is simulated at the demo quote, and Pix both ways is a mock (`vault-settle`, `platform/supabase/tests/settlement.test.sql`).
+- **The ramp's quote.** The payment simulator asks MoneyGram Ramps' sandbox what a USDC cash-out in Brazil would cost (`ramp-quote`). Only the amount, the country and the currencies go to MoneyGram: no name, wallet, customer id or loan. Nothing is sent and nothing is recorded.
 
 What remains, stated plainly:
 
@@ -143,7 +144,7 @@ Engagement data (opens, clicks, time in the app, whether she upgraded) is never 
 ## Keys and secrets
 
 - The program's **upgrade authority** and the **operator** that signs every proof are separate keys. `set_operator` rotates the operator without a new program ID.
-- The operator key, the anchoring secret and the RPC key live as Supabase function secrets and in Vault. They're never in the repository and never in the browser bundle. The audit screen uses the public devnet RPC.
+- The operator key, the anchoring secret, the RPC key and MoneyGram's sandbox keys live as Supabase function secrets and in Vault. They're never in the repository and never in the browser bundle. The audit screen uses the public devnet RPC.
 - The Zcash treasury's seed stays in its wallet, off every server. Only its viewing key is in the database, in the `private` schema, for the watcher and auditors. Returns in ZEC are sent from the operator's machine, where the wallet is; the script never reads or prints the seed or its age identity.
 - Demo accounts share a public password on purpose, because judges need to log in. Every demo record is marked `is_simulated`.
 

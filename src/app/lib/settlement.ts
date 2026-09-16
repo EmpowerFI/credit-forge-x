@@ -3,11 +3,12 @@ import type { Tone } from "../components/product/StatusPill";
 // Settlement: how capital reaches her business and comes back, and which of
 // its legs are real on devnet, simulated at a quote, or mocks.
 
-export type Reality = "real" | "zcash" | "simulated" | "mock" | "indicative";
+export type Reality = "real" | "zcash" | "sandbox" | "simulated" | "mock" | "indicative";
 
 export const REALITY: Record<Reality, { label: string; tone: Tone }> = {
   real: { label: "Real · Solana devnet", tone: "positive" },
   zcash: { label: "Real · Zcash testnet", tone: "positive" },
+  sandbox: { label: "Sandbox · MoneyGram", tone: "info" },
   simulated: { label: "Simulated", tone: "caution" },
   mock: { label: "Mock", tone: "neutral" },
   indicative: { label: "Indicative", tone: "info" },
@@ -20,7 +21,8 @@ export const WHAT_IS_REAL: { what: string; reality: Reality; note: string }[] = 
   { what: "Paying with shielded ZEC", reality: "zcash", note: "A real payment, read with the treasury's viewing key." },
   { what: "ZEC → USDC", reality: "simulated", note: "NEAR Intents in production, which has no testnet. The operator credits the vault at the quote." },
   { what: "Releases to the ramp, payouts to investors", reality: "real", note: "The program's vault_transfer, signed by the operator. On devnet the operator plays the ramp partner." },
-  { what: "USDC → reais at the ramp", reality: "simulated", note: "At the demo quote less the ramp's spread. A sandbox quote once ramp credentials are provided." },
+  { what: "USDC → reais at the ramp", reality: "simulated", note: "Releases convert at the demo quote less the ramp's spread: a loan is larger than a MoneyGram sandbox transfer." },
+  { what: "The ramp's quote in the simulator", reality: "sandbox", note: "MoneyGram Ramps' sandbox prices a USDC cash-out in Brazil, $2 to $200: its fee, its rate, what she would receive. Only the amount goes to MoneyGram." },
   { what: "Pix to her business, and her instalments", reality: "mock", note: "End-to-end ids in Pix's format. No Pix is sent." },
   { what: "Proofs of every record", reality: "real", note: "Commitments on Solana devnet, recomputed in your browser by Verify." },
   { what: "Participants, loans and most positions", reality: "simulated", note: "Seeded demo data, marked as such." },

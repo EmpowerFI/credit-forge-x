@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowRight, Landmark, Loader2, Receipt, Store, Vault, Wallet } from "lucide-react";
@@ -14,6 +14,7 @@ import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
 import { platform } from "../../lib/platform";
+import { fetchRampQuote, inRampRange, RAMP_MIN_MICRO_USDC, rampFeeBps, rampQuoteKey, receivedAfterTax } from "../../lib/ramp";
 import { money } from "../../lib/readiness";
 import { mockPixE2e, reaisAtRamp, REALITY, type Reality, type SettlementOverview, WHAT_IS_REAL } from "../../lib/settlement";
 import { rpc, usdc, vaultAddress } from "../../lib/solana";
@@ -64,7 +65,20 @@ function Arrow({ label }: { label: string }) {
   );
 }
 
+type QuoteSource = "demo" | "moneygram";
+
+/** The amount the simulator asks MoneyGram about, once typing has settled. */
+function useSettled<T>(value: T, ms = 500): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return settled;
+}
+
 function Simulator({ fxMilli, rampBps }: { fxMilli: number; rampBps: number }) {
+  const [source, setSource] = useState<QuoteSource>("moneygram");
   const [amount, setAmount] = useState(100);
   const [fx, setFx] = useState(fxMilli / 1000);
   const [spread, setSpread] = useState(rampBps / 100);
@@ -72,51 +86,113 @@ function Simulator({ fxMilli, rampBps }: { fxMilli: number; rampBps: number }) {
   const [receipt, setReceipt] = useState<{ e2e: string; at: Date; cents: number } | null>(null);
 
   const micro = Math.max(0, Math.round(amount * 1e6));
+  const settledMicro = useSettled(micro);
+  const quote = useQuery({
+    queryKey: rampQuoteKey(settledMicro),
+    queryFn: () => fetchRampQuote(settledMicro),
+    enabled: source === "moneygram" && inRampRange(settledMicro),
+    staleTime: 60_000,
+    // MoneyGram's quotes last half an hour; a fresh one before this one lapses.
+    refetchInterval: 10 * 60_000,
+    retry: false,
+  });
+
+  // At the demo's own assumptions.
   const gross = reaisAtRamp(micro, Math.round(fx * 1000), 0);
   const spreadCents = Math.round((gross * spread) / 100);
-  const taxCents = Math.round((gross * tax) / 100);
-  const net = Math.max(0, gross - spreadCents - taxCents);
-  // Moving this amount in, and back out as it is repaid, by each route: rail and compliance only.
-  const rails = useMemo(() => net > 0
-    ? compareRoutes({ principal_cents: net, term_months: 12, required_return_bps: 0, expected_loss_bps: 0, operating_cost_cents: 0 })
-        .sort((a, b) => a.rail_cents - b.rail_cents)
-    : [], [net]);
+  const demoTax = Math.round((gross * tax) / 100);
+  const demoNet = Math.max(0, gross - spreadCents - demoTax);
 
+  // At MoneyGram's sandbox quote, once it is for the amount shown.
+  const q = source === "moneygram" && quote.data && quote.data.send_micro_usdc === Math.floor(micro / 10_000) * 10_000 ? quote.data : null;
+  const mg = q ? receivedAfterTax(q.receive_cents, tax) : null;
+  const waiting = source === "moneygram" && inRampRange(micro) && !q && !quote.isError;
+  const net = source === "demo" ? demoNet : mg?.net_cents ?? 0;
+
+  const change = <T,>(set: (v: T) => void) => (v: T) => { set(v); setReceipt(null); };
   const row = (label: string, value: string, strong = false) => (
     <div className="flex items-center justify-between gap-3 py-1.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className={`num ${strong ? "font-semibold text-foreground" : "text-foreground"}`}>{value}</span>
     </div>
   );
+  // Moving this amount in, and back out as it is repaid, by each route: rail and compliance only.
+  const rails = useMemo(() => net > 0
+    ? compareRoutes({ principal_cents: net, term_months: 12, required_return_bps: 0, expected_loss_bps: 0, operating_cost_cents: 0 })
+        .sort((a, b) => a.rail_cents - b.rail_cents)
+    : [], [net]);
 
   return (
-    <Panel title="Payment simulator" description="What a USDC release becomes in reais on her side of the route. Every figure is an assumption you can change.">
+    <Panel title="Payment simulator" description="What a USDC release becomes in reais on her side of the route, at MoneyGram's sandbox quote or at assumptions you set.">
+      <div role="radiogroup" aria-label="Quote from" className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
+        {([["moneygram", "MoneyGram sandbox", "a live quote, $2–$200"], ["demo", "Demo assumptions", "a quote and spread you set"]] as const).map(([key, label, hint]) => (
+          <button key={key} type="button" role="radio" aria-checked={source === key} onClick={() => change(setSource)(key)}
+            className={`rounded-lg px-2 py-1.5 text-left transition-colors ${source === key ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+            <span className="block text-sm font-semibold">{label}</span>
+            <span className="block text-[11px]">{hint}</span>
+          </button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2 space-y-1.5">
           <Label htmlFor="sim-usdc">USDC released</Label>
-          <Input id="sim-usdc" type="number" min={0} step="1" value={amount} onChange={(e) => { setAmount(Math.max(0, Number(e.target.value) || 0)); setReceipt(null); }} />
+          <Input id="sim-usdc" type="number" min={0} step="1" value={amount} onChange={(e) => change(setAmount)(Math.max(0, Number(e.target.value) || 0))} />
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="sim-fx" className="text-xs">Quote, R$ per USDC</Label>
-          <Input id="sim-fx" type="number" min={0} step="0.01" value={fx} onChange={(e) => { setFx(Math.max(0, Number(e.target.value) || 0)); setReceipt(null); }} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="sim-spread" className="text-xs">Ramp spread, %</Label>
-          <Input id="sim-spread" type="number" min={0} step="0.05" value={spread} onChange={(e) => { setSpread(Math.max(0, Number(e.target.value) || 0)); setReceipt(null); }} />
-        </div>
+        {source === "demo" && (
+          <>
+            <div className="space-y-1.5">
+              <Label htmlFor="sim-fx" className="text-xs">Quote, R$ per USDC</Label>
+              <Input id="sim-fx" type="number" min={0} step="0.01" value={fx} onChange={(e) => change(setFx)(Math.max(0, Number(e.target.value) || 0))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sim-spread" className="text-xs">Ramp spread, %</Label>
+              <Input id="sim-spread" type="number" min={0} step="0.05" value={spread} onChange={(e) => change(setSpread)(Math.max(0, Number(e.target.value) || 0))} />
+            </div>
+          </>
+        )}
         <div className="col-span-2 space-y-1.5">
           <Label htmlFor="sim-tax" className="text-xs">Tax on the inbound conversion, % (an assumption to be validated)</Label>
-          <Input id="sim-tax" type="number" min={0} step="0.01" value={tax} onChange={(e) => { setTax(Math.max(0, Number(e.target.value) || 0)); setReceipt(null); }} />
+          <Input id="sim-tax" type="number" min={0} step="0.01" value={tax} onChange={(e) => change(setTax)(Math.max(0, Number(e.target.value) || 0))} />
         </div>
       </div>
 
-      <div className="divide-y divide-border rounded-xl border border-border px-3">
-        {row("At the quote", money(gross))}
-        {row(`Ramp spread (${spread.toFixed(2)}%)`, `− ${money(spreadCents)}`)}
-        {row(`Tax (${tax.toFixed(2)}%)`, `− ${money(taxCents)}`)}
-        {row("Pix fee", money(0))}
-        {row("She receives by Pix", money(net), true)}
-      </div>
+      {source === "demo" ? (
+        <div className="divide-y divide-border rounded-xl border border-border px-3">
+          {row("At the quote", money(gross))}
+          {row(`Ramp spread (${spread.toFixed(2)}%)`, `− ${money(spreadCents)}`)}
+          {row(`Tax (${tax.toFixed(2)}%)`, `− ${money(demoTax)}`)}
+          {row("Pix fee", money(0))}
+          {row("She receives by Pix", money(demoNet), true)}
+        </div>
+      ) : !inRampRange(micro) ? (
+        <div className="space-y-2 rounded-xl border border-dashed border-border p-3 text-sm">
+          <p className="text-foreground">MoneyGram's sandbox quotes a transfer from 2 to 200 USDC.</p>
+          <p className="text-xs text-muted-foreground">A loan is released in larger amounts: switch to the demo assumptions for those, or quote a transfer MoneyGram would carry.</p>
+          <Button size="sm" variant="outline" onClick={() => change(setAmount)(micro < RAMP_MIN_MICRO_USDC ? 2 : 200)}>
+            Quote {micro < RAMP_MIN_MICRO_USDC ? "2" : "200"} USDC
+          </Button>
+        </div>
+      ) : quote.isError && !waiting ? (
+        <LoadError compact error={quote.error} onRetry={() => quote.refetch()} />
+      ) : (
+        <div className="space-y-2" aria-live="polite" aria-busy={waiting}>
+          <div className="divide-y divide-border rounded-xl border border-border px-3">
+            {row("Sent to MoneyGram", q ? usdc(q.send_micro_usdc) : "…")}
+            {row(q ? `MoneyGram's fee (${(rampFeeBps(q) / 100).toFixed(2)}%)` : "MoneyGram's fee", q ? `− ${usdc(q.fee_micro_usdc)}` : "…")}
+            {row(q ? `At MoneyGram's rate, R$ ${q.brl_per_usdc.toFixed(4)}${q.rate_estimated ? " (estimated)" : ""}` : "At MoneyGram's rate", q ? money(q.receive_cents) : "…")}
+            {row(`Tax (${tax.toFixed(2)}%)`, mg ? `− ${money(mg.tax_cents)}` : "…")}
+            {row("She receives", mg ? money(mg.net_cents) : "…", true)}
+          </div>
+          <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+            {waiting ? <Loader2 size={12} className="mt-0.5 shrink-0 animate-spin" /> : <StatusPill tone={REALITY.sandbox.tone} dot={false}>{REALITY.sandbox.label}</StatusPill>}
+            <span>
+              {q ? <>Quoted at {new Date(q.quoted_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} as <span title={q.service}>a cash pickup in Brazil</span>, the only delivery the sandbox prices there; the Pix to her account stays a mock. </> : "Asking MoneyGram's sandbox… "}
+              At the demo assumptions she would receive {money(demoNet)}.
+            </span>
+          </p>
+        </div>
+      )}
 
       <Button variant="secondary" className="w-full" disabled={net <= 0} onClick={() => setReceipt({ e2e: mockPixE2e(), at: new Date(), cents: net })}>
         <Receipt size={15} /> Run a mock Pix settlement
@@ -172,7 +248,7 @@ export default function Settlement() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Investor console" title="Settlement"
-        description="How capital reaches her business and comes back. Deposits, releases and payouts are real transactions on Solana devnet; the conversion to reais and Pix are simulated, and every screen says which is which." />
+        description="How capital reaches her business and comes back. Deposits, releases and payouts are real transactions on Solana devnet; the conversion to reais is simulated, with a live quote from MoneyGram's sandbox in the simulator, and Pix is a mock. Every screen says which is which." />
 
       {!d ? <Skeleton className="h-64 w-full" /> : (
         <>
@@ -196,7 +272,7 @@ export default function Settlement() {
               </Node>
               <Arrow label="release, batched" />
               <Node icon={Landmark} title="Ramp partner" reality="simulated">
-                {usdc(d.vault.released_micro_usdc)} released, turned into reais at R$ {(d.fx_brl_per_usdc_milli / 1000).toFixed(2)} less {(d.ramp_bps / 100).toFixed(2)}%.
+                {usdc(d.vault.released_micro_usdc)} released, turned into reais at R$ {(d.fx_brl_per_usdc_milli / 1000).toFixed(2)} less {(d.ramp_bps / 100).toFixed(2)}%. The simulator prices it with MoneyGram's sandbox.
               </Node>
               <Arrow label="Pix" />
               <Node icon={Store} title="Her business" reality="mock">

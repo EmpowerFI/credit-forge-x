@@ -67,6 +67,10 @@ const MESSAGES: Record<string, string> = {
   invalid_zcash_address: "That is not a shielded Zcash testnet address. Use a unified (utest1…) or Sapling (ztestsapling1…) address: returns stay shielded.",
   not_a_zcash_position: "Only a position paid in shielded ZEC is returned in ZEC.",
   not_your_position: "This position is not yours.",
+  ramp_not_configured: "The MoneyGram sandbox is not set up on this environment.",
+  ramp_amount_out_of_range: "MoneyGram's sandbox quotes from 2 to 200 USDC.",
+  ramp_declined: "MoneyGram's sandbox would not quote this amount.",
+  ramp_unavailable: "MoneyGram's sandbox did not answer. Try again in a moment.",
   reason_required: "Say why. Investors and the audit trail will see the reason.",
 };
 

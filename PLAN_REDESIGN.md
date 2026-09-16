@@ -185,7 +185,13 @@
 >   - The vault reads 0.00 on chain = 0.00 expected.
 > - **Tests.** pgTAP 342 (25 new), Vitest 100.
 > - **Environment.** Historical disbursements and instalments got mock Pix legs by backfill (no real legs). Q-D07121 is now disbursed and active with one instalment: the reseed restores it.
-> - **Phase 4 left:** only the optional MoneyGram sandbox, which waits on credentials. Returns paid to a shielded address came with Phase 5.
+> - **Phase 4 left:** nothing. Returns paid to a shielded address came with Phase 5.
+>
+> **MoneyGram sandbox (16 Sep): live on the hackathon environment.**
+> - **What it is.** MoneyGram Ramps' sandbox (`playground.xramps.moneygram.com`), authenticated with its secret key as a Supabase function secret. `ramp-quote` prices a USDC cash-out on Solana to reais in Brazil for a signed-in user: fee, rate, what is received.
+> - **Where it shows.** The payment simulator quotes with MoneyGram's sandbox by default, next to what the demo assumptions would give, and keeps the demo assumptions one click away. "What is real" labels it Sandbox · MoneyGram.
+> - **Its limits, found on the sandbox.** Brazil is priced from $2 to $200 a transfer, as cash pickup only: no bank or Pix delivery, no cash-in. A loan's release is larger than that, so releases still convert at the demo quote and Pix stays a mock.
+> - **Tests.** Deno 47 (4 new), Vitest 113 (3 new).
 
 ### Phase 5 — Partner and auditor depth, polish (≈3 days)
 - Partner: funding states, formalise or decline (with a refund), servicing.
@@ -240,5 +246,5 @@ Real Pix, real borrower payouts, production P2P, mainnet funds, real investor re
 
 ## 8 · Needed from the founder
 
-- MoneyGram (or other ramp) sandbox credentials, if the ramp sandbox is wanted (Phase 4, optional).
+- ~~MoneyGram sandbox credentials~~ — received 16 Sep; the quote is live.
 - Review at the end of each phase. `main` is updated only after a phase is approved.
