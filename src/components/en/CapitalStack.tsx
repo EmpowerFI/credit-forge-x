@@ -2,8 +2,8 @@ import { ArrowDown, Banknote, Globe, Store } from "lucide-react";
 import logoMark from "@/assets/logo-mark.png";
 
 /** Official Solana mark — three slanted bars, teal to purple. */
-const SolanaMark = () => (
-  <svg viewBox="0 0 398 312" className="h-7 w-7" aria-hidden focusable="false">
+const SolanaMark = ({ className = "h-7 w-7" }: { className?: string }) => (
+  <svg viewBox="0 0 398 312" className={className} aria-hidden focusable="false">
     <defs>
       <linearGradient id="cs-solana" x1="360" y1="-37" x2="141" y2="383"
         gradientUnits="userSpaceOnUse">
@@ -69,8 +69,9 @@ const pools = [
 /**
  * The model as a stack: two pools of P2P capital, the engine and desk that turn
  * them into a loan, and the business that receives and repays it by Pix. Solana
- * sits apart, under the chain, because it is the proof of every step — not a
- * rail every loan travels (only the global pool moves on it).
+ * sits inside EmpowerFI's card, by the founder's choice: it is part of the
+ * infrastructure, with two roles — the payment rail for global capital, and
+ * privacy (every step proven without personal data on chain).
  *
  * Built in markup rather than shipped as an image so it stays readable on a
  * phone, selectable, and legible to a screen reader — a diagram with baked-in
@@ -121,6 +122,10 @@ const CapitalStack = () => (
         <span className="block text-sm font-medium text-accent">
           Capital Allocation Engine · P2P desk
         </span>
+        <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary-foreground/10 px-2.5 py-1 text-xs font-medium text-primary-foreground ring-1 ring-primary-foreground/15">
+          <SolanaMark className="h-3.5 w-3.5" />
+          Solana · payment rail &amp; privacy
+        </span>
       </span>
     </li>
 
@@ -141,25 +146,6 @@ const CapitalStack = () => (
         </span>
         <span className="block text-sm text-muted-foreground">
           Receives and repays in reais, by Pix
-        </span>
-      </span>
-    </li>
-
-    {/* 4 — Solana, under the whole chain rather than in it. */}
-    <li className="relative !mt-4 flex items-center gap-4 overflow-hidden rounded-2xl border border-dashed border-accent/50 bg-card/60 px-5 py-4 sm:gap-5 sm:px-6">
-      <DotField
-        id="cs-solana-bg"
-        className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 text-foreground/[0.07] sm:block"
-      />
-      <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background shadow-sm ring-1 ring-border sm:h-14 sm:w-14">
-        <SolanaMark />
-      </span>
-      <span className="relative">
-        <span className="block font-heading text-lg font-bold leading-tight text-foreground">
-          Solana
-        </span>
-        <span className="block text-sm text-muted-foreground">
-          Proof of every step · no personal data on chain
         </span>
       </span>
     </li>
