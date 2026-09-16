@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Briefcase, ClipboardCheck, Loader2, LogIn, PenLine, ShieldCheck, Store, Users, Wallet, type LucideIcon } from "lucide-react";
 import type { UiWalletAccount } from "@wallet-standard/react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DataLegend from "../components/product/DataLegend";
@@ -62,44 +63,67 @@ const PERSONAS: { email: string; role: Role; workspace: string; description: str
     }, icon: ClipboardCheck },
 ]);
 
-/** After a wallet connects: one signature, and the investor is in. */
+/**
+ * After a wallet connects: one signature, and the investor is in. It opens as a
+ * dialog in the middle of the screen and asks the wallet to sign straight away,
+ * so the step can't be missed below the fold; if the wallet refuses or fails,
+ * the reason and a retry stay in the same place.
+ */
 function WalletSignIn({ account, onDone, onCancel }: { account: UiWalletAccount; onDone: () => void; onCancel: () => void }) {
   const signIn = useWalletSignIn(account);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const started = useRef(false);
+
+  const sign = useCallback(async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await signIn();
+      onDone();
+    } catch (err) {
+      setError(describeError(err));
+    } finally {
+      setBusy(false);
+    }
+  }, [signIn, onDone]);
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    void sign();
+  }, [sign]);
+
   return (
-    <div className="panel space-y-4 p-5" role="dialog" aria-label={tr({ en: "Sign in with your wallet", pt: "Entrar com sua carteira" })}>
-      <div className="space-y-1">
-        <h2 className="font-heading text-lg font-bold text-foreground">
-          {tr({ en: `Sign in with ${shortAddress(account.address)}`, pt: `Entrar com ${shortAddress(account.address)}` })}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {tr({
-            en: "Your wallet will ask you to sign a message proving you hold this address. No transaction, no fee.",
-            pt: "Sua carteira vai pedir que você assine uma mensagem provando que controla este endereço. Sem transação, sem taxa.",
-          })}
-        </p>
-      </div>
-      {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
-      <div className="flex flex-wrap gap-2">
-        <Button disabled={busy} className="gap-2"
-          onClick={async () => {
-            setBusy(true);
-            setError(null);
-            try {
-              await signIn();
-              onDone();
-            } catch (err) {
-              setError(describeError(err));
-            } finally {
-              setBusy(false);
-            }
-          }}>
-          {busy ? <Loader2 size={16} className="animate-spin" /> : <PenLine size={16} />} {tr({ en: "Sign the message", pt: "Assinar a mensagem" })}
-        </Button>
-        <Button variant="ghost" onClick={onCancel} disabled={busy}>{tr({ en: "Cancel", pt: "Cancelar" })}</Button>
-      </div>
-    </div>
+    <Dialog open onOpenChange={(open) => { if (!open && !busy) onCancel(); }}>
+      <DialogContent className="max-w-md border-border bg-card">
+        <DialogHeader>
+          <DialogTitle className="font-heading">
+            {tr({ en: `Sign in with ${shortAddress(account.address)}`, pt: `Entrar com ${shortAddress(account.address)}` })}
+          </DialogTitle>
+          <DialogDescription>
+            {tr({
+              en: "Your wallet asks you to sign a message proving you hold this address. No transaction, no fee.",
+              pt: "Sua carteira pede que você assine uma mensagem provando que controla este endereço. Sem transação, sem taxa.",
+            })}
+          </DialogDescription>
+        </DialogHeader>
+        {busy && (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+            <Loader2 size={16} className="animate-spin" />
+            {tr({ en: "Waiting for your wallet… check its window to approve.", pt: "Aguardando sua carteira… confira a janela dela para aprovar." })}
+          </p>
+        )}
+        {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
+        <div className="flex flex-wrap gap-2">
+          <Button disabled={busy} className="gap-2" onClick={() => void sign()}>
+            {busy ? <Loader2 size={16} className="animate-spin" /> : <PenLine size={16} />}
+            {error ? tr({ en: "Try again", pt: "Tentar de novo" }) : tr({ en: "Sign the message", pt: "Assinar a mensagem" })}
+          </Button>
+          <Button variant="ghost" onClick={onCancel} disabled={busy}>{tr({ en: "Cancel", pt: "Cancelar" })}</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
