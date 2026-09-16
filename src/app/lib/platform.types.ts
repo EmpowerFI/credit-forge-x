@@ -2084,7 +2084,10 @@ export type Database = {
           eligibility_decision: Database["public"]["Enums"]["eligibility_decision"]
           eligibility_model: string
           eligibility_reasons: string[]
+          allocation: Json
+          allocation_reason_codes: string[]
           funded_micro_usdc: number
+          funding_pool: Database["public"]["Enums"]["funding_pool"]
           funding_status: Database["public"]["Enums"]["funding_status"]
           funding_target_micro_usdc: number
           fx_brl_per_usdc_milli: number
@@ -2139,6 +2142,15 @@ export type Database = {
         Returns: string
       }
       partner_desk: { Args: never; Returns: Json }
+      capital_overview: { Args: never; Returns: Json }
+      allocate_domestic: {
+        Args: { p_amount_cents: number; p_opportunity_id: string }
+        Returns: Json
+      }
+      formalise_loan: {
+        Args: { p_note?: string; p_opportunity_id: string }
+        Returns: string
+      }
       partner_pipeline: {
         Args: never
         Returns: {
@@ -2485,6 +2497,7 @@ export type Database = {
         | "ELIGIBLE_REDUCED"
         | "MANUAL_REVIEW"
         | "NOT_ELIGIBLE"
+      funding_pool: "domestic" | "global"
       funding_status:
         | "open"
         | "partially_funded"
@@ -2514,7 +2527,10 @@ export type Database = {
         | "checkin_reminder"
         | "education_followup"
         | "human_followup"
+        | "readiness_followup"
+        | "credit_intent_check"
         | "capital_need_check"
+        | "funding_followup"
         | "servicing_followup"
       partner_kind:
         | "credit_union"
@@ -2750,6 +2766,7 @@ export const Constants = {
         "MANUAL_REVIEW",
         "NOT_ELIGIBLE",
       ],
+      funding_pool: ["domestic", "global"],
       funding_status: [
         "open",
         "partially_funded",
@@ -2782,7 +2799,10 @@ export const Constants = {
         "checkin_reminder",
         "education_followup",
         "human_followup",
+        "readiness_followup",
+        "credit_intent_check",
         "capital_need_check",
+        "funding_followup",
         "servicing_followup",
       ],
       partner_kind: [

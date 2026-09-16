@@ -4,12 +4,18 @@ import LoadError from "../../components/LoadError";
 import { DataTag } from "../../components/product/DataLegend";
 import ExplorerLink from "../../components/product/ExplorerLink";
 import Panel from "../../components/product/Panel";
+import PoolPill from "../../components/product/PoolPill";
+import PrivacyBoundaries from "../../components/product/PrivacyBoundaries";
 import StatusPill from "../../components/product/StatusPill";
+import VerifyOnSolana from "../../components/product/VerifyOnSolana";
+import { poolOf, PROTOTYPE_NOTICE } from "../../lib/capital";
 import { DECISION_LABEL, ELIGIBILITY_REASON, percent } from "../../lib/credit";
 import { FUNDING_LABEL, PROOF_LABEL, type Proof, reaisFromUsdc, RISK, title } from "../../lib/investor";
 import { money } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
 import FundingBar from "./FundingBar";
+import DomesticInvest from "./DomesticInvest";
+import FundingRoute from "./FundingRoute";
 import InvestPanel from "./InvestPanel";
 import { useMarket } from "./queries";
 
@@ -53,6 +59,7 @@ export default function OpportunityDetail() {
   const proofs = (row.proofs as unknown as Proof[]) ?? [];
   const exceptions = row.eligibility_reasons.filter((r) => !["AFFORDABLE"].includes(r));
   const consent = proofs.find((p) => p.kind === "consent");
+  const pool = poolOf(row.funding_pool);
 
   return (
     <div className="space-y-6">
@@ -72,14 +79,19 @@ export default function OpportunityDetail() {
                   <BadgeCheck size={14} className="text-positive" aria-label="verified community" />
                 </p>
               </div>
-              <StatusPill tone={FUNDING_LABEL[row.funding_status].tone}>{FUNDING_LABEL[row.funding_status].label}</StatusPill>
+              <span className="flex flex-wrap items-center gap-2">
+                <PoolPill pool={pool} />
+                <StatusPill tone={FUNDING_LABEL[row.funding_status].tone}>{FUNDING_LABEL[row.funding_status].label}</StatusPill>
+              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div>
                 <p className="text-xs text-muted-foreground">Requested</p>
-                <p className="num font-heading text-xl font-bold text-primary">{usdc(row.funding_target_micro_usdc, 0)}</p>
-                <p className="num text-xs text-muted-foreground">{money(row.amount_cents)} at R$ {(row.fx_brl_per_usdc_milli ?? 0) / 1000}/USDC demo</p>
+                <p className="num font-heading text-xl font-bold text-primary">{money(row.amount_cents)}</p>
+                <p className="num text-xs text-muted-foreground">
+                  {pool === "global" ? `${usdc(row.funding_target_micro_usdc, 0)} at R$ ${(row.fx_brl_per_usdc_milli ?? 0) / 1000}/USDC, simulated quote` : "in reais, from the domestic pool"}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Term</p>
@@ -97,13 +109,14 @@ export default function OpportunityDetail() {
               </div>
             </div>
 
-            <FundingBar funded={row.funded_micro_usdc} target={row.funding_target_micro_usdc} investors={row.investors} />
+            <FundingBar funded={row.funded_micro_usdc} target={row.funding_target_micro_usdc} investors={row.investors}
+              pool={pool} fxMilli={row.fx_brl_per_usdc_milli} amountCents={row.amount_cents} />
 
             <div className="space-y-2 border-t border-border pt-5">
-              <h2 className="font-heading text-base font-bold text-foreground">Why this capital?</h2>
+              <h2 className="font-heading text-base font-bold text-foreground">Productive purpose</h2>
               <p className="text-sm text-muted-foreground">{WHY[row.purpose]}</p>
               <p className="text-xs text-muted-foreground">
-                <DataTag kind="private" /> Her own description of the need stays with her community and the partner.
+                <DataTag kind="private" /> Her own description of the need stays with her and her community.
               </p>
             </div>
 
@@ -117,7 +130,7 @@ export default function OpportunityDetail() {
                   <span className={`rounded-full border px-2 py-0.5 text-xs ${decision.tone}`}>{decision.title}</span>
                 </Field>
                 <Field label="Manual exceptions" kind="derived">{exceptions.length === 0 ? "None" : exceptions.length}</Field>
-                <Field label="Instalment, sized by the engine" kind="derived">{row.term_months} × {money(row.instalment_cents)}</Field>
+                <Field label="Instalment, sized at eligibility" kind="derived">{row.term_months} × {money(row.instalment_cents)}</Field>
               </div>
               {exceptions.length > 0 && (
                 <ul className="flex flex-wrap gap-2 pt-1">
@@ -129,22 +142,9 @@ export default function OpportunityDetail() {
             </div>
           </section>
 
-          <Panel title="What you can see, and what stays private"
-            description="Investors get the decision-relevant snapshot and cryptographic evidence — never identity, bank data or the financial history behind it.">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ul className="space-y-2 text-sm">
-                <li className="font-medium text-foreground">You see</li>
-                {["Purpose, sector and size", "The verified community", "Readiness score and band", "Risk band, confidence, affordability", "Proofs of each assessment on Solana"].map((t) => (
-                  <li key={t} className="flex items-center gap-2 text-muted-foreground"><DataTag kind="derived" /> {t}</li>
-                ))}
-              </ul>
-              <ul className="space-y-2 text-sm">
-                <li className="font-medium text-foreground">Stays private</li>
-                {["Her name, CPF and contacts", "Her business name and address", "Reported sales, costs and household spending", "Bank and Pix details", "Her own words about the need"].map((t) => (
-                  <li key={t} className="flex items-center gap-2 text-muted-foreground"><DataTag kind="private" /> {t}</li>
-                ))}
-              </ul>
-            </div>
+          <FundingRoute row={row} />
+
+          <PrivacyBoundaries>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-4 text-sm">
               <ShieldCheck size={16} className="text-positive" aria-hidden />
               <span className="text-foreground">Shown here because she allowed it.</span>
@@ -153,19 +153,21 @@ export default function OpportunityDetail() {
               </span>
               {consent?.signature && <ExplorerLink tx={consent.signature} label="Her consent, on Solana" />}
             </div>
-          </Panel>
+          </PrivacyBoundaries>
         </div>
 
         <div className="space-y-6">
-          <InvestPanel row={row} />
-          <Panel title="Indicative yield · simulated">
+          {pool === "domestic" ? <DomesticInvest row={row} /> : <InvestPanel row={row} />}
+          <Panel title="Expected return · simulated">
             <p className="num font-heading text-3xl font-bold text-foreground">{percent(row.indicative_yield_bps)} <span className="text-sm font-normal text-muted-foreground">a year</span></p>
             <p className="text-xs text-muted-foreground">
-              In reais, before currency effects: the reference rate less expected loss for band {risk.grade} and servicing.
+              What {pool === "global" ? "global" : "domestic"} investors ask for this pool, less expected loss for band {risk.grade}.
+              {pool === "global" && " Global investors also carry the currency effect the hedge assumes away."}
               {row.my_micro_usdc > 0 && <> You hold {usdc(row.my_micro_usdc)} ({money(reaisFromUsdc(row.my_micro_usdc, row.fx_brl_per_usdc_milli))}).</>}
             </p>
           </Panel>
-          <Panel title="Verifiable evidence" description="Each assessment's commitment is on Solana; the record behind it stays private.">
+          <Panel title="Verifiable evidence" description="Each assessment's commitment is on Solana; the record behind it stays private."
+            actions={<VerifyOnSolana proofs={proofs.map((p) => ({ kind: p.kind, signature: p.signature ?? "", account: p.account, commitment: p.commitment }))} />}>
             <ul className="space-y-3">
               {proofs.map((p) => (
                 <li key={p.kind} className="flex items-start justify-between gap-3 text-sm">
@@ -178,12 +180,13 @@ export default function OpportunityDetail() {
                   </StatusPill>
                 </li>
               ))}
-              <li className="flex items-center justify-between text-sm">
+              <li className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-muted-foreground">Model versions</span>
-                <span className="font-mono text-xs text-foreground">{row.readiness_model} · {row.eligibility_model}</span>
+                <span className="text-right font-mono text-xs text-foreground">{row.readiness_model} · {row.eligibility_model}</span>
               </li>
             </ul>
           </Panel>
+          <p className="px-1 text-xs text-muted-foreground">{PROTOTYPE_NOTICE}</p>
         </div>
       </div>
     </div>

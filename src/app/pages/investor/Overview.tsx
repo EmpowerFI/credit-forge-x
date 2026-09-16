@@ -10,13 +10,16 @@ import ExplorerLink from "../../components/product/ExplorerLink";
 import PageHeader from "../../components/product/PageHeader";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
+import PoolPill from "../../components/product/PoolPill";
 import StatusPill from "../../components/product/StatusPill";
 import { useAuth } from "../../auth/useAuth";
 import { percent } from "../../lib/credit";
+import { poolOf } from "../../lib/capital";
 import { ACTIVITY_LABEL, type Grade, RISK, title } from "../../lib/investor";
 import { PURPOSE_LABEL } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
 import { useBalances } from "../../wallet/useBalances";
+import CapitalPools from "./CapitalPools";
 import FundingBar from "./FundingBar";
 import { useActivity, useMarket, usePortfolio } from "./queries";
 
@@ -56,9 +59,17 @@ export default function Overview() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Investor console" title="Overview"
-        description={wallet ? "Your positions in productive credit, funded from your wallet on Solana devnet." : "Exploring as the demo investor: simulated positions, no wallet. Sign in with your own wallet to invest."} />
+      <PageHeader eyebrow="P2P capital console" title="Overview"
+        description="Qualified productive-credit demand, and the two pools of P2P capital that fund it: domestic investors in reais, and global investors in USDC on Solana. She receives and repays in reais, by Pix, either way." />
 
+      <CapitalPools />
+
+      <div className="flex flex-wrap items-baseline justify-between gap-2 pt-2">
+        <h2 className="font-heading text-lg font-semibold text-foreground">Your capital</h2>
+        <p className="text-xs text-muted-foreground">
+          {wallet ? "Global positions from your wallet on Solana devnet; domestic positions in reais, simulated." : "Exploring as the demo investor: simulated positions, no wallet. Sign in with your own wallet to invest in USDC."}
+        </p>
+      </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {p ? (
           <>
@@ -115,7 +126,7 @@ export default function Overview() {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-muted-foreground">EmpowerFI's band at eligibility. The lending decision is the partner's.</p>
+          <p className="text-xs text-muted-foreground">EmpowerFI's band at eligibility, which each pool's risk appetite is checked against.</p>
         </Panel>
       </div>
 
@@ -152,11 +163,13 @@ export default function Overview() {
         <ul className="grid gap-4 md:grid-cols-3">
           {raising.map((o) => (
             <li key={o.opportunity_id} className="space-y-3 rounded-xl border border-border bg-secondary/30 p-4">
-              <div className="space-y-0.5">
+              <div className="space-y-1">
+                <PoolPill pool={poolOf(o.funding_pool)} />
                 <p className="font-medium text-foreground">{title(o.purpose, o.business_sector)}</p>
-                <p className="text-xs text-muted-foreground">Risk {RISK[o.risk_band].grade} · {o.term_months} mo · {percent(o.indicative_yield_bps)} demo</p>
+                <p className="text-xs text-muted-foreground">Risk {RISK[o.risk_band].grade} · {o.term_months} mo · {percent(o.indicative_yield_bps)} simulated</p>
               </div>
-              <FundingBar funded={o.funded_micro_usdc} target={o.funding_target_micro_usdc} compact />
+              <FundingBar funded={o.funded_micro_usdc} target={o.funding_target_micro_usdc} compact pool={poolOf(o.funding_pool)}
+                fxMilli={o.fx_brl_per_usdc_milli} amountCents={o.amount_cents} />
               <Button asChild size="sm" variant="secondary" className="w-full gap-2">
                 <Link to={`/app/investor/opportunities/${o.opportunity_id}`}>View <ArrowRight size={14} /></Link>
               </Button>

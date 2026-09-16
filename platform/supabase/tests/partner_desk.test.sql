@@ -17,6 +17,9 @@ select plan(19);
 -- of Ana's from her wallet and the rest is simulated; Bia's is still raising.
 
 update partners set active = false where name not like 'pgTAP %';
+-- Every request here is funded in USDC: the global pool takes any of them.
+update funding_pools set capital_cents = 0 where pool = 'domestic';
+update funding_pools set purposes = '{}', max_ticket_cents = 5000000, eligible_risk_bands = '{LOW,MEDIUM,HIGH}' where pool = 'global';
 insert into partners (id, name, kind, min_ticket_cents, max_ticket_cents, accepted_purposes) values
   ('00000000-0000-0000-0000-0000000007f1', 'pgTAP Desk partner', 'credit_union', 10000, 1000000, '{inventory,working_capital,equipment}'),
   ('00000000-0000-0000-0000-0000000007f2', 'pgTAP Other partner', 'fintech', 10000, 1000000, '{inventory}');

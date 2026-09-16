@@ -4,7 +4,7 @@ import { useAuth } from "../auth/useAuth";
 import { useLedCommunity } from "./community/queries";
 
 /**
- * Entrepreneurs start at their business, partners at their desk, capital
+ * Entrepreneurs start at their business, the P2P desk at its desk, capital
  * providers at the portfolio, a leader inside her community, auditors at the
  * audit console, admins at the communities.
  */

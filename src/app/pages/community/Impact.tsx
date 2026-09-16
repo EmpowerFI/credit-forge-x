@@ -6,7 +6,7 @@ import StatTile from "../../components/product/StatTile";
 import { platform } from "../../lib/platform";
 import { money } from "../../lib/readiness";
 import { useCommunity } from "./context";
-import { useCohorts } from "./queries";
+import { useCohorts, useOverview } from "./queries";
 
 interface CostToServe {
   participants: number;
@@ -29,9 +29,12 @@ interface CostToServe {
  * counted from the first day, preparation included: the part a conventional
  * lender never sees. Outcomes are measured after disbursement, never promised.
  */
+const bpsPctOf = (part: number, whole: number) => (whole > 0 ? `${Math.round((part / whole) * 100)}%` : "—");
+
 export default function Impact() {
   const { community } = useCommunity();
   const cohorts = useCohorts(community.id);
+  const overview = useOverview(community.id);
   const cts = useQuery({
     queryKey: ["platform", "ci-cts", community.id],
     queryFn: async () => {
@@ -43,7 +46,8 @@ export default function Impact() {
 
   if (cts.isError) return <LoadError error={cts.error} onRetry={() => cts.refetch()} />;
   if (cohorts.isError) return <LoadError error={cohorts.error} onRetry={() => cohorts.refetch()} />;
-  if (!cts.data || !cohorts.data) return <div className="space-y-6"><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>;
+  if (overview.isError) return <LoadError error={overview.error} onRetry={() => overview.refetch()} />;
+  if (!cts.data || !cohorts.data || !overview.data) return <div className="space-y-6"><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>;
 
   const c = cts.data;
   const o = cohorts.data.reduce(
@@ -56,9 +60,23 @@ export default function Impact() {
   );
   const phaseTotal = Math.max(1, c.by_phase.preparation + c.by_phase.origination + c.by_phase.servicing);
   const outreach = c.by_stage?.outreach ?? 0;
+  const k = overview.data.capital;
 
   return (
     <div className="space-y-6">
+      <Panel title="From financed capital to repayment" description="What investors' P2P capital funded in this community, what has come back, and how the loans are doing. Totals only; simulated in this demo.">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatTile label="Financed" value={money(k.financed_cents)} hint={`${bpsPctOf(k.domestic_cents, k.funded_cents)} domestic · ${bpsPctOf(k.global_cents, k.funded_cents)} global`} />
+          <StatTile label="Repaid" value={money(k.repaid_cents)} hint={k.financed_cents ? `${Math.round((k.repaid_cents / k.financed_cents) * 100)}% of financed` : undefined} hintTone="positive" />
+          <StatTile label="Instalments on time" value={k.instalments_due ? `${Math.min(k.instalments_paid, k.instalments_due)}/${k.instalments_due}` : "—"} hint="paid of those due" />
+          <StatTile label="Loans" value={k.loans_repaying + k.loans_late + k.loans_paid + k.loans_defaulted}
+            hint={`${k.loans_paid} paid off · ${k.loans_late} late · ${k.loans_defaulted} defaulted`} hintTone={k.loans_late + k.loans_defaulted ? "caution" : "positive"} />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Financed capital leads to repayment, and repayment to the outcomes below: what changed in the businesses after the loan.
+        </p>
+      </Panel>
+
       <Panel title="Productive outcomes" description="Measured after disbursement: did sales change, was the capital used as declared, what value did it create? Simulated in this demo.">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <StatTile label="Loans measured" value={o.measured} />
@@ -79,7 +97,7 @@ export default function Impact() {
         )}
       </Panel>
 
-      <Panel title="Cost to serve" description="Counted stage by stage from the community's first day, and borne by EmpowerFI, the community and the partner.">
+      <Panel title="Cost to serve" description="Counted stage by stage from the community's first day, and borne by EmpowerFI and the community.">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
           <StatTile label="Total" value={money(c.total_cents)} hint={`${Math.round(c.staff_minutes / 60)} staff hours`} />
           <StatTile label="Per participant" value={money(c.per_participant_cents)} />

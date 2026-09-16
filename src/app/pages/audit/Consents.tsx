@@ -11,7 +11,7 @@ import { useConsentAudit } from "./queries";
 const CHECKS = [
   { key: "assessed_without_consent", label: "Readiness assessments made without consent to assess" },
   { key: "eligibility_without_consent", label: "Eligibility assessments made without consent to assess" },
-  { key: "referred_without_consent", label: "Requests referred to a partner without consent to share" },
+  { key: "referred_without_consent", label: "Requests sent to the P2P desk without consent to share" },
   { key: "listed_without_consent", label: "Opportunities open to investors without consent to be shown" },
 ] as const;
 

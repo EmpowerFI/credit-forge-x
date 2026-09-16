@@ -9,28 +9,28 @@ import type { DeskContext } from "./context";
 import { usePartnerDesk } from "./queries";
 
 /**
- * The partner's desk. EmpowerFI prepares and qualifies; the lending decision,
- * the price, the contract and the servicing are the partner's. Participants
- * appear under a code: indicators to decide on, never personal data.
+ * EmpowerFI's P2P desk (founder decision D1): it formalises what investors
+ * fund, at the allocation engine's rate, and services the loans. Participants
+ * appear under a code: indicators, never personal data.
  */
 export default function PartnerLayout() {
   const { profile } = useAuth();
   const desk = usePartnerDesk();
-  // Auditors and admins follow the desk; only the partner acts on it.
+  // Auditors and admins follow the desk; only the desk's own users act on it.
   const decides = profile?.role === "partner";
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Partner desk" title={desk.data?.partner?.name ?? "Credit partner"}
-        description="EmpowerFI prepares and qualifies each request. Whether to lend, at what price, and when to disburse are your decisions. Investors fund an opportunity from the moment it is eligible; you formalise once it is funded, and if you decline, they are refunded."
+      <PageHeader eyebrow="P2P desk" title={desk.data?.partner?.name ?? "EmpowerFI P2P desk"}
+        description="Each qualified opportunity is given a pool by the Capital Allocation Engine and funded by investors, domestic or global. Once funded, the desk formalises it at the engine's rate, disburses by Pix and services it; if the desk declines, investors are refunded. A prototype of a future regulated P2P architecture."
         meta={<DataLegend />} />
       {!decides && (
         <p className="rounded-xl border tone-info px-4 py-3 text-sm">
-          You are following this desk as {profile?.role === "auditor" ? "an auditor" : "EmpowerFI"}. Only the partner's own users decide, disburse and record payments.
+          You are following this desk as {profile?.role === "auditor" ? "an auditor" : "an admin"}. Only the desk's own users formalise, disburse and record payments.
         </p>
       )}
-      {/* A partner has these views in the sidebar; everyone else, and phones, get them here. */}
-      <nav aria-label="Partner views"
+      {/* The desk has these views in the sidebar; everyone else, and phones, get them here. */}
+      <nav aria-label="Desk views"
         className={`-mx-1 flex gap-1 overflow-x-auto border-b border-border px-1 ${decides ? "lg:hidden" : ""}`}>
         {PARTNER_TABS.map((t) => (
           <NavLink key={t.label} to={t.to} end={"end" in t}

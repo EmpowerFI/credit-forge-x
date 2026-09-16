@@ -11,7 +11,7 @@ import { StagePill } from "./parts";
 
 const BANDS: Grade[] = ["LOW", "MEDIUM", "HIGH"];
 
-/** The partner's book: what is lent, what came back, where the capital came from, and what it did for the business. */
+/** The desk's book: what is lent, what came back, which pool the capital came from, and what it did for the business. */
 export default function Portfolio() {
   const { desk } = useDesk();
   const oppOf = new Map(desk.opportunities.map((o) => [o.opportunity_id, o]));
@@ -20,8 +20,8 @@ export default function Portfolio() {
   const outstanding = book.reduce((n, l) => n + outstandingCents(l), 0);
   const received = book.reduce((n, l) => n + l.received_cents, 0);
   const defaulted = book.filter((l) => l.status === "DEFAULTED");
-  // Funded by investors: the whole principal when the opportunity was funded; her choice not to list it means the partner's own.
-  const byInvestors = book.filter((l) => l.funding.status === "funded").reduce((n, l) => n + l.principal_cents, 0);
+  // Funded by investors: the whole principal, from the pool the allocation engine chose.
+  const byPool = (pool: "domestic" | "global") => book.filter((l) => l.funding.pool === pool).reduce((n, l) => n + l.principal_cents, 0);
   const outcomes = book.filter((l) => l.outcome);
 
   return (
@@ -30,8 +30,8 @@ export default function Portfolio() {
         <StatTile label="Lent" value={money(lent)} hint={`${book.length} loans`} />
         <StatTile label="Outstanding" value={money(outstanding)} hint="principal" hintTone="info" />
         <StatTile label="Received" value={money(received)} hint="instalments" hintTone="positive" />
-        <StatTile label="Funded by investors" value={lent ? `${Math.round((byInvestors / lent) * 100)}%` : "—"} hint={money(byInvestors)} />
-        <StatTile label="Your own capital" value={money(lent - byInvestors)} hint="not offered to investors" />
+        <StatTile label="Domestic P2P" value={money(byPool("domestic"))} hint={lent ? `${Math.round((byPool("domestic") / lent) * 100)}% of lent` : undefined} />
+        <StatTile label="Global P2P" value={money(byPool("global"))} hint={lent ? `${Math.round((byPool("global") / lent) * 100)}% of lent` : undefined} />
         <StatTile label="Defaulted" value={defaulted.length} hint={money(defaulted.reduce((n, l) => n + outstandingCents({ ...l, status: "ACTIVE" }), 0))}
           hintTone={defaulted.length ? "alert" : "neutral"} />
       </div>

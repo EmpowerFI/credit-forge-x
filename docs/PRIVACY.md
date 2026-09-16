@@ -9,7 +9,7 @@ This document states what is protected, how, and what isn't solved yet. [ARCHITE
 | Layer | Contents | Who reaches it |
 |---|---|---|
 | **Private data vault** (Postgres) | Names, business names, cities, reported sales, costs and household spending, requests, loans, payments | Row-level security per role; writes go only through checked functions |
-| **Derived intelligence** (Postgres) | Readiness and eligibility results, affordability, risk and confidence grades, outcomes, cost to serve | As above; partners and capital providers get reduced views of it |
+| **Derived intelligence** (Postgres) | Readiness and eligibility results, affordability, risk and confidence grades, outcomes, cost to serve | As above; the P2P desk and investors get reduced views of it |
 | **Solana** | Commitments (32-byte hashes), lifecycle states, sequence numbers, times | Public |
 
 ## What goes on chain, and what never does
@@ -47,9 +47,9 @@ What remains is honest to state:
 Investors move real devnet USDC, and every token transfer on Solana is public. So the design keeps the money flows away from the participants:
 
 - **In.** An investor deposits with a plain token transfer to the program's vault, one account for every opportunity. The chain shows that wallet sent that amount to the vault. Which opportunity it funds lives only in the database, proven by an `AllocationCommitment` keyed by a random reference that names neither party.
-- **Out.** `vault_transfer` is the program's one instruction with an amount, reviewed as such in the privacy test. It covers a refund when a partner declines, capital released for disbursement, and a repayment paid out. It takes no borrower, opportunity or allocation account, and the reason is recorded only in the database.
-- **Releases are batched.** Capital goes to the partner in one transfer covering several funded opportunities, never loan by loan, so no transfer's amount is a loan's principal.
-- **The ramp, on devnet.** Releases go to the regulated ramp partner's USDC account; on devnet that account is the operator's. With each instalment it sends the real investors' shares back into the vault, which pays them out in the same transaction. The conversion to reais is simulated at the demo quote, and Pix both ways is a mock (`vault-settle`, `platform/supabase/tests/settlement.test.sql`).
+- **Out.** `vault_transfer` is the program's one instruction with an amount, reviewed as such in the privacy test. It covers a refund when the P2P desk declines, capital released for disbursement, and a repayment paid out. It takes no borrower, opportunity or allocation account, and the reason is recorded only in the database.
+- **Releases are batched.** Global capital goes to the off-ramp in one transfer covering several funded opportunities, never loan by loan, so no transfer's amount is a loan's principal.
+- **The ramp, on devnet.** Releases of global capital go to the regulated off-ramp's USDC account; on devnet that account is the operator's. With each instalment it sends the real investors' shares back into the vault, which pays them out in the same transaction. The conversion to reais is simulated at the demo quote, and Pix both ways is a mock (`vault-settle`, `platform/supabase/tests/settlement.test.sql`).
 - **The ramp's quote.** The payment simulator asks MoneyGram Ramps' sandbox what a USDC cash-out in Brazil would cost (`ramp-quote`). Only the amount, the country and the currencies go to MoneyGram: no name, wallet, customer id or loan. Nothing is sent and nothing is recorded.
 
 What remains, stated plainly:
@@ -71,7 +71,7 @@ What remains, stated plainly:
 
 - **The conversion is simulated.** In production NEAR Intents converts ZEC to USDC on Solana. It has no testnet, so the operator credits the vault at the quote and every screen says so.
 - **The operator's credit is public.** Its amount matches the allocation, as a wallet deposit's does. What it no longer shows is who paid.
-- **EmpowerFI reads its own treasury.** It knows which request each payment answers, as it knows every allocation. Other investors, partners and the public don't.
+- **EmpowerFI reads its own treasury.** It knows which request each payment answers, as it knows every allocation. Other investors, the P2P desk and the public don't.
 - **What comes back goes back as ZEC,** when the investor has no Solana wallet and gives a shielded return address (unified or Sapling; transparent addresses are refused). Each instalment's share, and a refund, is owed in `zcash_returns`. For a refund, the vault first returns the USDC to the ramp, the operator on devnet, in a real devnet transfer. The treasury then pays the ZEC at the quote of the day. Sending takes the treasury's spending key, so it happens on the operator's machine (`scripts/platform/zcash-returns.mts`): each return is marked sending before anything leaves, and is never sent twice. The return address is kept with the request, seen only by the investor and the operator; the audit console and shared reports list returns by transaction, never by address. With a Solana wallet, a ZEC position is refunded and paid out in USDC to that wallet.
 
 ## Consent
@@ -81,11 +81,11 @@ A participant decides what her data is used for, in four uses. Each builds on th
 | Use | What it reads | Who sees what comes of it |
 |---|---|---|
 | **Assess my business** | Check-ins, education progress, community verification | Her, her leader, auditors |
-| **Share my request with a credit partner** | The request, EmpowerFI's assessment, indicators rounded to R$ 100 | The partner EmpowerFI refers her to, under a code |
+| **Share my request with EmpowerFI's P2P desk** | The request, EmpowerFI's assessment, indicators rounded to R$ 100 | EmpowerFI's P2P desk, under a code |
 | **Show my request to investors, without my name** | Purpose, sector, amount, term, community, grades | Investors in the console |
 | **Count my business in impact figures** | Whether sales changed after a loan, how the capital was used | Only totals |
 
-The wording is versioned (`consent-v1`, in `src/app/lib/consent.ts`), and each record stores the version she saw.
+The wording is versioned (`consent-v2` since the P2P desk, in `src/app/lib/consent.ts`), and each record stores the version she saw.
 
 **How consent is given.** She gives it herself in the app, or her community leader records it from the form she signed. The second is how most participants give it. Either way the record states which, and who recorded it.
 
@@ -94,8 +94,8 @@ The wording is versioned (`consent-v1`, in `src/app/lib/consent.ts`), and each r
 **Enforced in the database, not only shown:**
 
 - No readiness or eligibility assessment without consent to assess.
-- Asking for credit, and any referral to a partner, needs consent to share with a partner.
-- An opportunity opens to investors only with consent to be shown. Withdrawing it takes the opportunity off the market at once, unless the loan has already been disbursed. Anyone who had funded it is refunded from the vault, and the partner lends from its own capital.
+- Asking for credit needs consent to share the request with EmpowerFI's P2P desk.
+- An opportunity opens to investors — and is given a pool — only with consent to be shown. Withdrawing it takes the opportunity off the market at once, unless the loan has already been disbursed, and anyone who had funded it is refunded. Without it, a request cannot be funded: investors fund every loan.
 - Outcomes count in impact totals only with consent to impact figures. The community's Impact view says how many outcomes were left out, never whose.
 
 The audit console re-checks each assessment, referral and listing against the consent that was in force when it happened. `platform/supabase/tests/consent.test.sql` covers each rule.
@@ -103,7 +103,7 @@ The audit console re-checks each assessment, referral and listing against the co
 What remains, stated plainly:
 
 - **Changes are visible, not their content.** On chain, anyone can see that a pseudonym has several consent records, and when each was made.
-- **What was shared stays shared.** Withdrawing consent stops future use. It doesn't recall what a partner already received, which remains under the partner's own obligations.
+- **What was shared stays shared.** Withdrawing consent stops future use. It doesn't recall what a formalised loan already required.
 
 ## Shared audit reports
 
@@ -121,11 +121,11 @@ Row-level security enforces all of this, and pgTAP tests check it for every role
 | Role | Sees | Doesn't see |
 |---|---|---|
 | **Entrepreneur** | Her own profile, business, check-ins, assessments, requests, loans, payments, outcome and cost; can audit her own proofs; records and changes her consent | Anyone else's |
-| **Community leader** | Members of the communities she leads: their records, funnel and cost to serve; records their consent from the signed form | Other communities' members; partners' books; reported amounts in Community Intelligence |
-| **Credit partner** | Opportunities referred to it, pseudonymous: `P-XXXXXX`, sector, verified community, indicators rounded to R$100, EmpowerFI's assessment and reasons. How much investors have funded each, from how many, and how much of it is real devnet USDC. Its own loans, schedules, payments, settlement legs and outcomes | Names, business names, check-ins, readiness detail, who the investors are, anything not referred to it |
-| **Capital provider** | The portfolio its capital funds, in aggregate. Loans under a code derived from the loan alone (`L-XXXXXX`), which can't be joined to the partner's pseudonyms. Can audit loans, status changes and payments | People, check-ins, readiness, eligibility, opportunities, per-person outcomes |
+| **Community leader** | Members of the communities she leads: their records, funnel, cost to serve, and capital totals — qualified demand, funded, funding gap, domestic and global coverage; records their consent from the signed form | Other communities' members; any investor, wallet or position; opportunities, decisions and loans read directly from their tables; reported amounts in Community Intelligence |
+| **EmpowerFI P2P desk** (the `partner` role) | Qualified opportunities on its desk, pseudonymous: `P-XXXXXX`, sector, verified community, indicators rounded to R$100, EmpowerFI's assessment and reasons. How much investors have funded each, from how many, and how much of it is real devnet USDC. Its own loans, schedules, payments, settlement legs and outcomes | Names, business names, check-ins, readiness detail, who the investors are, anything not referred to it |
+| **Capital provider** | Opportunities she allowed to be shown, as a decision snapshot: purpose, amount, community, readiness and risk bands, affordability, eligibility and allocation reason codes, the pool — under "What you can see / What stays private" on screen. Its own positions. Can verify every commitment on Solana from the browser, without the record behind it | Names, business names, revenue and expenses, Pix and bank data, raw check-ins, consent records |
 | **Auditor** | Everything, read-only; every proof. The audit console names participants by code (`P-XXXXXX`), never by name. Holds the Zcash treasury's viewing key, and sees every note it reads | Can't write anything; the viewing key spends nothing |
-| **Admin (EmpowerFI)** | Everything; verifies communities, refers flagged opportunities | Can't make a lending decision, or verify a community it leads |
+| **Admin (EmpowerFI)** | Everything; verifies communities, opens flagged opportunities to investors | Can't verify a community it leads |
 | **Anonymous visitor** | An audit report shared with them by link, and nothing else | Any table or view; any function but `shared_audit_report` |
 
 These rules hold for every table, view and function, and `platform/supabase/tests/rbac.test.sql` checks them from the database catalog, so anything added later is covered automatically:
@@ -151,7 +151,7 @@ Engagement data (opens, clicks, time in the app, whether she upgraded) is never 
 ## Open before production
 
 - LGPD: counsel's review of the consent wording and the legal basis for each use, a data-protection impact assessment, retention periods, and a data-subject request process (including the erasure approach above).
-- Consent to share covers "the partner EmpowerFI refers me to". Production needs it per partner, named, before referral.
+- A real P2P operation needs the regulatory structure first (SEP authorisation or a regulated partner as a bridge for a pilot); the desk in this prototype is not a licensed lender.
 - Reference rotation: a participant who wants a fresh pseudonym would need a new `borrower_ref` and a link between her old and new histories that only the database knows.
-- Stablecoin and cross-border capital routes: tax and regulatory treatment are assumptions in the simulator until validated.
+- The global route: FX hedge, off-ramp and tax treatment of cross-border capital are assumptions in the allocation engine until validated.
 - Shielded ZEC: NEAR Intents for the conversion, returns sent automatically from a custodied key rather than by hand, mainnet confirmation depth (ten blocks, not two), reorg handling in the watcher (it records each scanned block's hash but doesn't yet rewind), and a treasury key held in custody, not a developer wallet.

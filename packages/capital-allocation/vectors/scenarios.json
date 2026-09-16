@@ -1,0 +1,312 @@
+{
+  "model_version": "capital-allocation-v1.0.0",
+  "pools": {
+    "domestic": {
+      "id": "domestic",
+      "available_cents": 4850000,
+      "required_return_bps": 1600,
+      "eligible_risk_bands": [
+        "LOW",
+        "MEDIUM"
+      ],
+      "min_ticket_cents": 50000,
+      "max_ticket_cents": 400000,
+      "purposes": [],
+      "impact_mandate": false,
+      "fx_hedge_bps": 0,
+      "ramp_bps": 0
+    },
+    "global": {
+      "id": "global",
+      "available_cents": 9849600,
+      "required_return_bps": 800,
+      "eligible_risk_bands": [
+        "LOW",
+        "MEDIUM"
+      ],
+      "min_ticket_cents": 100000,
+      "max_ticket_cents": 1000000,
+      "purposes": [
+        "working_capital",
+        "inventory",
+        "equipment"
+      ],
+      "impact_mandate": true,
+      "fx_hedge_bps": 500,
+      "ramp_bps": 100
+    }
+  },
+  "scenarios": [
+    {
+      "name": "domestic is cheaper over six months: the FX hedge takes global's lower return away",
+      "input": {
+        "opportunity": {
+          "amount_cents": 300000,
+          "term_months": 6,
+          "risk_band": "LOW",
+          "purpose": "inventory",
+          "impact_eligible": true
+        }
+      },
+      "expect": {
+        "pool": "domestic",
+        "reason_codes": [
+          "DOMESTIC_LOWEST_COST",
+          "DOMESTIC_LIQUIDITY_AVAILABLE",
+          "GLOBAL_FX_COST_DOMINATES"
+        ],
+        "domestic_all_in_bps": 2500,
+        "global_all_in_bps": 2600,
+        "borrower_rate_bps_month": 209,
+        "instalment_cents": 56270,
+        "investor_return_bps": 1600,
+        "investor_net_return_bps": 1300
+      }
+    },
+    {
+      "name": "global is cheaper over twelve months, for a mandate it holds",
+      "input": {
+        "opportunity": {
+          "amount_cents": 300000,
+          "term_months": 12,
+          "risk_band": "MEDIUM",
+          "purpose": "equipment",
+          "impact_eligible": true
+        }
+      },
+      "expect": {
+        "pool": "global",
+        "reason_codes": [
+          "GLOBAL_LOWER_REQUIRED_RETURN",
+          "GLOBAL_IMPACT_MANDATE_MATCH"
+        ],
+        "domestic_all_in_bps": 2900,
+        "global_all_in_bps": 2800,
+        "borrower_rate_bps_month": 234,
+        "instalment_cents": 32020,
+        "investor_return_bps": 800,
+        "investor_net_return_bps": 100
+      }
+    },
+    {
+      "name": "on a three-month loan the ramp's round trip is what keeps it domestic",
+      "input": {
+        "opportunity": {
+          "amount_cents": 200000,
+          "term_months": 3,
+          "risk_band": "LOW",
+          "purpose": "working_capital",
+          "impact_eligible": true
+        }
+      },
+      "expect": {
+        "pool": "domestic",
+        "reason_codes": [
+          "DOMESTIC_LOWEST_COST",
+          "DOMESTIC_LIQUIDITY_AVAILABLE",
+          "GLOBAL_RAMP_COST_DOMINATES"
+        ],
+        "domestic_all_in_bps": 2500,
+        "global_all_in_bps": 3000,
+        "borrower_rate_bps_month": 209,
+        "instalment_cents": 70847,
+        "investor_return_bps": 1600,
+        "investor_net_return_bps": 1300
+      }
+    },
+    {
+      "name": "the domestic pool is exhausted: global capital expands capacity",
+      "input": {
+        "opportunity": {
+          "amount_cents": 300000,
+          "term_months": 6,
+          "risk_band": "LOW",
+          "purpose": "inventory",
+          "impact_eligible": true
+        },
+        "domestic": {
+          "available_cents": 100000
+        }
+      },
+      "expect": {
+        "pool": "global",
+        "reason_codes": [
+          "GLOBAL_EXPANDS_CAPACITY",
+          "GLOBAL_IMPACT_MANDATE_MATCH",
+          "DOMESTIC_POOL_EXHAUSTED"
+        ],
+        "domestic_all_in_bps": 2500,
+        "global_all_in_bps": 2600,
+        "borrower_rate_bps_month": 217,
+        "instalment_cents": 56510,
+        "investor_return_bps": 800,
+        "investor_net_return_bps": 500
+      }
+    },
+    {
+      "name": "a ticket above the domestic pool's policy goes global",
+      "input": {
+        "opportunity": {
+          "amount_cents": 600000,
+          "term_months": 12,
+          "risk_band": "LOW",
+          "purpose": "equipment",
+          "impact_eligible": true
+        }
+      },
+      "expect": {
+        "pool": "global",
+        "reason_codes": [
+          "GLOBAL_EXPANDS_CAPACITY",
+          "GLOBAL_IMPACT_MANDATE_MATCH",
+          "TICKET_OUTSIDE_POOL_POLICY"
+        ],
+        "domestic_all_in_bps": 2500,
+        "global_all_in_bps": 2400,
+        "borrower_rate_bps_month": 200,
+        "instalment_cents": 62000,
+        "investor_return_bps": 800,
+        "investor_net_return_bps": 500
+      }
+    },
+    {
+      "name": "a purpose outside the global mandate stays domestic",
+      "input": {
+        "opportunity": {
+          "amount_cents": 300000,
+          "term_months": 12,
+          "risk_band": "LOW",
+          "purpose": "renovation",
+          "impact_eligible": true
+        }
+      },
+      "expect": {
+        "pool": "domestic",
+        "reason_codes": [
+          "DOMESTIC_LIQUIDITY_AVAILABLE",
+          "PURPOSE_OUTSIDE_POOL_MANDATE"
+        ],
+        "domestic_all_in_bps": 2500,
+        "global_all_in_bps": 2400,
+        "borrower_rate_bps_month": 209,
+        "instalment_cents": 31270,
+        "investor_return_bps": 1600,
+        "investor_net_return_bps": 1300
+      }
+    },
+    {
+      "name": "a tie goes domestic",
+      "input": {
+        "opportunity": {
+          "amount_cents": 300000,
+          "term_months": 12,
+          "risk_band": "LOW",
+          "purpose": "inventory",
+          "impact_eligible": true
+        },
+        "domestic": {
+          "required_return_bps": 1500
+        }
+      },
+      "expect": {
+        "pool": "domestic",
+        "reason_codes": [
+          "DOMESTIC_LOWEST_COST",
+          "DOMESTIC_LIQUIDITY_AVAILABLE",
+          "GLOBAL_FX_COST_DOMINATES"
+        ],
+        "domestic_all_in_bps": 2400,
+        "global_all_in_bps": 2400,
+        "borrower_rate_bps_month": 200,
+        "instalment_cents": 31000,
+        "investor_return_bps": 1500,
+        "investor_net_return_bps": 1200
+      }
+    },
+    {
+      "name": "a risk band outside both pools' appetite fits no pool",
+      "input": {
+        "opportunity": {
+          "amount_cents": 200000,
+          "term_months": 6,
+          "risk_band": "HIGH",
+          "purpose": "inventory",
+          "impact_eligible": true
+        }
+      },
+      "expect": {
+        "pool": null,
+        "reason_codes": [
+          "RISK_BAND_NOT_ELIGIBLE",
+          "NO_POOL_AVAILABLE"
+        ],
+        "domestic_all_in_bps": 3700,
+        "global_all_in_bps": 3800,
+        "borrower_rate_bps_month": null,
+        "instalment_cents": null,
+        "investor_return_bps": null,
+        "investor_net_return_bps": null
+      }
+    },
+    {
+      "name": "with both pools exhausted nothing is allocated",
+      "input": {
+        "opportunity": {
+          "amount_cents": 300000,
+          "term_months": 6,
+          "risk_band": "LOW",
+          "purpose": "inventory",
+          "impact_eligible": true
+        },
+        "domestic": {
+          "available_cents": 0
+        },
+        "global": {
+          "available_cents": 0
+        }
+      },
+      "expect": {
+        "pool": null,
+        "reason_codes": [
+          "DOMESTIC_POOL_EXHAUSTED",
+          "GLOBAL_POOL_EXHAUSTED",
+          "NO_POOL_AVAILABLE"
+        ],
+        "domestic_all_in_bps": 2500,
+        "global_all_in_bps": 2600,
+        "borrower_rate_bps_month": null,
+        "instalment_cents": null,
+        "investor_return_bps": null,
+        "investor_net_return_bps": null
+      }
+    },
+    {
+      "name": "global capital without the impact flag earns no mandate code",
+      "input": {
+        "opportunity": {
+          "amount_cents": 300000,
+          "term_months": 6,
+          "risk_band": "LOW",
+          "purpose": "inventory",
+          "impact_eligible": false
+        },
+        "domestic": {
+          "available_cents": 100000
+        }
+      },
+      "expect": {
+        "pool": "global",
+        "reason_codes": [
+          "GLOBAL_EXPANDS_CAPACITY",
+          "DOMESTIC_POOL_EXHAUSTED"
+        ],
+        "domestic_all_in_bps": 2500,
+        "global_all_in_bps": 2600,
+        "borrower_rate_bps_month": 217,
+        "instalment_cents": 56510,
+        "investor_return_bps": 800,
+        "investor_net_return_bps": 500
+      }
+    }
+  ]
+}

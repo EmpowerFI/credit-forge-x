@@ -197,7 +197,7 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
     <Panel title="Invest">
       {!open && !requestId ? (
         <p className="text-sm text-muted-foreground">
-          {row.funding_status === "funded" ? "Fully funded — the partner formalises and disburses next." : "Closed to new investment."}
+          {row.funding_status === "funded" ? "Fully funded — EmpowerFI's P2P desk formalises and disburses next." : "Closed to new investment."}
         </p>
       ) : (
         <div className="space-y-4">

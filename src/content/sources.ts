@@ -97,7 +97,7 @@ export const sourceGroups: SourceGroup[] = [
         supports:
           "Governs direct credit companies (SCD) and peer-to-peer lending companies (SEP) operating through an electronic platform.",
         caveat:
-          "Cited as the roadmap for a future capital layer. EmpowerFI holds no such licence today and is not a peer-to-peer lender.",
+          "Cited as the future regulated architecture for EmpowerFI's P2P productive credit. EmpowerFI holds no such licence today: the platform demo is a prototype, not an authorised P2P lender.",
         url: "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?numero=5050&tipo=Resolu%C3%A7%C3%A3o+CMN",
       },
       {

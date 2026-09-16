@@ -6,7 +6,11 @@ import { DataTag } from "../../components/product/DataLegend";
 import ExplorerLink from "../../components/product/ExplorerLink";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
+import PoolPill from "../../components/product/PoolPill";
+import PrivacyBoundaries from "../../components/product/PrivacyBoundaries";
 import StatusPill from "../../components/product/StatusPill";
+import VerifyOnSolana from "../../components/product/VerifyOnSolana";
+import { poolOf, positionReais } from "../../lib/capital";
 import { CAPITAL_USE_LABEL, LOAN_LABEL, type CapitalUse, type LoanStatus } from "../../lib/credit";
 import { type FundingStatus, type Grade, positionState, RISK, title } from "../../lib/investor";
 import { platform } from "../../lib/platform";
@@ -57,14 +61,15 @@ function PayoutCell({ payout, simulated, zecReturn }: {
 // proof of the allocation, the loan's schedule and servicing, and the outcome.
 
 interface PositionData {
-  investment: { id: string; amount_micro_usdc: number; share_bps: number; mode: string; status: "allocated" | "refund_due" | "refunded";
+  investment: { id: string; amount_micro_usdc: number; amount_cents: number | null; share_bps: number; mode: string; status: "allocated" | "refund_due" | "refunded";
     deposit_signature: string | null; wallet_address: string | null; invested_at: string; is_simulated: boolean;
     refund_signature: string | null; refunded_at: string | null };
   zcash: { ref: string; txid: string | null; pool: string | null; amount_zat: number; received_zat: number | null; usd_per_zec_cents: number;
     quote_source: string; mined_height: number | null; confirmed_at: string | null; credit_signature: string | null } | null;
   proof: { status: string; signature: string | null; account: string | null; commitment: string | null; reconcile: string } | null;
   opportunity: { id: string; code: string; purpose: CreditPurpose; business_sector: string | null; amount_cents: number; term_months: number;
-    risk_band: Grade; funding_status: FundingStatus; funding_target_micro_usdc: number; fx_brl_per_usdc_milli: number };
+    risk_band: Grade; funding_status: FundingStatus; funding_target_micro_usdc: number; fx_brl_per_usdc_milli: number;
+    funding_pool: "domestic" | "global" | null; allocation_reason_codes: string[] | null };
   loan: { id: string; status: LoanStatus; principal_cents: number; rate_bps: number; term_months: number; instalment_cents: number;
     disbursed_at: string | null; active_since: string | null; instalment_share_micro_usdc: number } | null;
   settlement: {
@@ -103,6 +108,10 @@ export default function Position() {
   const repaid = schedule.reduce((s, i) => s + (i.share_micro_usdc ?? 0), 0);
   const expected = loan ? loan.instalment_share_micro_usdc * loan.term_months : null;
   const now = Date.now();
+  const domestic = poolOf(opp.funding_pool) === "domestic";
+  // A domestic position reads in reais; its book is kept in USDC at the opportunity's quote.
+  const amount = (micro: number | null | undefined, cents?: number | null) =>
+    domestic ? money(positionReais(cents ?? null, micro ?? 0, opp.fx_brl_per_usdc_milli)) : usdc(micro);
 
   return (
     <div className="space-y-6">
@@ -118,21 +127,23 @@ export default function Position() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <PoolPill pool={poolOf(opp.funding_pool)} />
           {inv.is_simulated && <StatusPill tone="caution">Simulated position</StatusPill>}
           <StatusPill tone={state.tone}>{state.label}</StatusPill>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="Invested" value={usdc(inv.amount_micro_usdc)} hint={date(inv.invested_at)} />
+        <StatTile label="Invested" value={amount(inv.amount_micro_usdc, inv.amount_cents)} hint={date(inv.invested_at)} />
         <StatTile label="Your share of the loan" value={`${(inv.share_bps / 100).toFixed(1)}%`} hint={money(opp.amount_cents)} />
-        <StatTile label="Repaid to you" value={usdc(repaid)} hintTone="positive" hint={loan ? `${schedule.filter((s) => s.paid_at).length} of ${loan.term_months} instalments` : "not disbursed"} />
-        <StatTile label="Scheduled back" value={expected !== null ? usdc(expected) : "—"} hint={loan ? `at ${(loan.rate_bps / 100).toFixed(1)}%/month · demo quote` : undefined} />
+        <StatTile label="Repaid to you" value={amount(repaid)} hintTone="positive" hint={loan ? `${schedule.filter((s) => s.paid_at).length} of ${loan.term_months} instalments` : "not disbursed"} />
+        <StatTile label="Scheduled back" value={expected !== null ? amount(expected) : "—"} hint={loan ? `at ${(loan.rate_bps / 100).toFixed(2)}%/month · simulated` : undefined} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title="Investment"
-          description={zcash ? "Paid with shielded ZEC, credited to the program's vault in USDC, and the proof of where it went."
+          description={domestic ? "Your allocation from the domestic P2P pool, in reais — simulated — and the proof of where it went."
+            : zcash ? "Paid with shielded ZEC, credited to the program's vault in USDC, and the proof of where it went."
             : "Your deposit into the program's vault, and the proof of where it went."}>
           <dl className="space-y-3 text-sm">
             {zcash && (
@@ -157,8 +168,9 @@ export default function Position() {
               </>
             )}
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-muted-foreground">{zcash ? "Credited to the vault" : "Deposit transaction"}</dt>
-              <dd>{inv.deposit_signature ? <ExplorerLink tx={inv.deposit_signature} /> : <span className="text-caution">simulated, no deposit</span>}</dd>
+              <dt className="text-muted-foreground">{domestic ? "Reais allocated" : zcash ? "Credited to the vault" : "Deposit transaction"}</dt>
+              <dd>{inv.deposit_signature ? <ExplorerLink tx={inv.deposit_signature} />
+                : <span className="text-caution">{domestic ? "simulated, no bank transfer" : "simulated, no deposit"}</span>}</dd>
             </div>
             {inv.status !== "allocated" && (
               <div className="flex items-center justify-between gap-3">
@@ -180,18 +192,23 @@ export default function Position() {
               </dd>
             </div>
             <p className="text-xs text-muted-foreground">
-              The chain sees your deposit into the vault and a commitment keyed by a random reference — not which loan it funds,
+              {domestic ? "The chain sees" : "The chain sees your deposit into the vault and"} a commitment keyed by a random reference — not which loan it funds,
               and nothing about the entrepreneur.
             </p>
-            <Link to={`/app/audit/allocation/${inv.id}`} className="inline-flex items-center gap-1 text-sm text-positive hover:underline">
-              <BadgeCheck size={15} /> Verify on Solana
-            </Link>
+            <div className="flex flex-wrap items-start gap-3">
+              <Link to={`/app/audit/allocation/${inv.id}`} className="inline-flex items-center gap-1 pt-1.5 text-sm text-positive hover:underline">
+                <BadgeCheck size={15} /> Open the record
+              </Link>
+              {proof?.signature && (
+                <VerifyOnSolana proofs={[{ kind: "allocation", signature: proof.signature, account: proof.account, commitment: proof.commitment }]} />
+              )}
+            </div>
           </dl>
         </Panel>
 
-        <Panel title="Servicing" description="What the partner recorded, as you may read it.">
+        <Panel title="Servicing" description="What EmpowerFI's P2P desk recorded, as you may read it.">
           {servicing.length === 0 ? (
-            <p className="text-sm text-muted-foreground">The partner formalises the loan once the opportunity is fully funded.</p>
+            <p className="text-sm text-muted-foreground">EmpowerFI's P2P desk formalises the loan once the opportunity is fully funded, at the allocation engine's rate.</p>
           ) : (
             <ol className="space-y-3">
               {servicing.map((e) => (
@@ -216,46 +233,67 @@ export default function Position() {
       )}
 
       <Panel title="Where the money went" description="Your capital's route to her business and back, leg by leg: which are transactions you can open, and which are simulated.">
-        <ol className="space-y-4">
-          <RouteStep n={1} title={zcash ? "Paid in shielded ZEC, credited to the vault" : "Into the program's vault"}
-            reality={inv.is_simulated ? "simulated" : "real"}>
-            {inv.deposit_signature ? <>{usdc(inv.amount_micro_usdc)} · <ExplorerLink tx={inv.deposit_signature} /></> : "A simulated position: no USDC moved."}
-          </RouteStep>
-          <RouteStep n={2} title="Released to the ramp partner" reality={!loan?.disbursed_at ? null : inv.is_simulated ? "simulated" : "real"}>
-            {!loan?.disbursed_at ? "When the partner disburses the loan."
-              : inv.is_simulated || !settlement?.release ? "Nothing real to release for this position."
-              : settlement.release.status === "done" && settlement.release.signature ? (
-                <>
-                  With the loan's other real deposits, {usdc(settlement.release.amount_micro_usdc)}
-                  {settlement.release.loans_in_transfer > 1 && <>, in one transfer covering {settlement.release.loans_in_transfer} loans</>} · <ExplorerLink tx={settlement.release.signature} />
-                </>
-              ) : "Leaving the vault now."}
-          </RouteStep>
-          <RouteStep n={3} title="Converted to reais" reality={loan?.disbursed_at ? "simulated" : null}>
-            {loan?.disbursed_at
-              ? <>Your {usdc(inv.amount_micro_usdc)} ≈ {money(reaisAtRamp(inv.amount_micro_usdc, opp.fx_brl_per_usdc_milli, settlement?.ramp_bps ?? 50))} at R$ {(opp.fx_brl_per_usdc_milli / 1000).toFixed(2)} per USDC, less the ramp's {((settlement?.ramp_bps ?? 50) / 100).toFixed(2)}%.</>
-              : "At the ramp, once released."}
-          </RouteStep>
-          <RouteStep n={4} title="Paid to her business by Pix" reality={settlement?.pix ? "mock" : null}>
-            {settlement?.pix
-              ? <>{money(settlement.pix.brl_cents)}, the whole loan · {date(settlement.pix.at)} · <span className="break-all font-mono">{settlement.pix.e2e}</span></>
-              : "The partner pays her when it disburses."}
-          </RouteStep>
-          <RouteStep n={5} title="Instalments come back to you" reality={schedule.some((s) => s.payment_id) ? (inv.is_simulated ? "simulated" : "real") : null}>
-            {inv.is_simulated ? "Simulated: your share of each instalment is shown, not paid."
-              : !inv.wallet_address ? (zecReturns.data?.return_address
-                ? "She pays each instalment by Pix (a mock). Your share goes back to you in shielded ZEC, from EmpowerFI's treasury to your return address: real testnet ZEC, at the quote when it is sent."
-                : "She pays each instalment by Pix (a mock). Your share is held until you give a shielded return address, below: it then goes back to you in ZEC.")
-              : `She pays each instalment by Pix (a mock); the ramp returns your share to the vault, which pays it to your wallet in the same transaction. ${schedule.filter((s) => s.payout?.status === "done").length} of ${schedule.filter((s) => s.payment_id).length} paid out so far.`}
-          </RouteStep>
-        </ol>
+        {domestic ? (
+          <ol className="space-y-4">
+            <RouteStep n={1} title="Allocated from the domestic BRL pool" reality="simulated">
+              {money(positionReais(inv.amount_cents, inv.amount_micro_usdc, opp.fx_brl_per_usdc_milli))} from Brazilian investors' pool. No bank transfer or wallet in this prototype.
+            </RouteStep>
+            <RouteStep n={2} title="Held in the P2P structure" reality={loan?.disbursed_at ? "simulated" : null}>
+              {loan?.disbursed_at ? "Formalised by EmpowerFI's P2P desk at the allocation engine's rate." : "Until EmpowerFI's P2P desk formalises and disburses the loan."}
+            </RouteStep>
+            <RouteStep n={3} title="Paid to her business by Pix" reality={settlement?.pix ? "mock" : null}>
+              {settlement?.pix
+                ? <>{money(settlement.pix.brl_cents)}, the whole loan · {date(settlement.pix.at)} · <span className="break-all font-mono">{settlement.pix.e2e}</span></>
+                : "Paid when EmpowerFI's P2P desk disburses."}
+            </RouteStep>
+            <RouteStep n={4} title="Instalments come back to you, in reais" reality={schedule.some((s) => s.payment_id) ? "simulated" : null}>
+              She pays each instalment by Pix (a mock); your share is shown in reais, and is not paid in this prototype. No currency conversion on this route.
+            </RouteStep>
+          </ol>
+        ) : (
+          <ol className="space-y-4">
+            <RouteStep n={1} title={zcash ? "Paid in shielded ZEC, credited to the vault" : "Into the program's vault"}
+              reality={inv.is_simulated ? "simulated" : "real"}>
+              {inv.deposit_signature ? <>{usdc(inv.amount_micro_usdc)} · <ExplorerLink tx={inv.deposit_signature} /></> : "A simulated position: no USDC moved."}
+            </RouteStep>
+            <RouteStep n={2} title="Released to the regulated off-ramp" reality={!loan?.disbursed_at ? null : inv.is_simulated ? "simulated" : "real"}>
+              {!loan?.disbursed_at ? "When EmpowerFI's P2P desk disburses the loan."
+                : inv.is_simulated || !settlement?.release ? "Nothing real to release for this position."
+                : settlement.release.status === "done" && settlement.release.signature ? (
+                  <>
+                    With the loan's other real deposits, {usdc(settlement.release.amount_micro_usdc)}
+                    {settlement.release.loans_in_transfer > 1 && <>, in one transfer covering {settlement.release.loans_in_transfer} loans</>} · <ExplorerLink tx={settlement.release.signature} />
+                  </>
+                ) : "Leaving the vault now."}
+            </RouteStep>
+            <RouteStep n={3} title="Converted to reais" reality={loan?.disbursed_at ? "simulated" : null}>
+              {loan?.disbursed_at
+                ? <>Your {usdc(inv.amount_micro_usdc)} ≈ {money(reaisAtRamp(inv.amount_micro_usdc, opp.fx_brl_per_usdc_milli, settlement?.ramp_bps ?? 50))} at R$ {(opp.fx_brl_per_usdc_milli / 1000).toFixed(2)} per USDC, less the ramp's {((settlement?.ramp_bps ?? 50) / 100).toFixed(2)}%.</>
+                : "At the ramp, once released."}
+            </RouteStep>
+            <RouteStep n={4} title="Paid to her business by Pix" reality={settlement?.pix ? "mock" : null}>
+              {settlement?.pix
+                ? <>{money(settlement.pix.brl_cents)}, the whole loan · {date(settlement.pix.at)} · <span className="break-all font-mono">{settlement.pix.e2e}</span></>
+                : "Paid when EmpowerFI's P2P desk disburses."}
+            </RouteStep>
+            <RouteStep n={5} title="Instalments come back to you" reality={schedule.some((s) => s.payment_id) ? (inv.is_simulated ? "simulated" : "real") : null}>
+              {inv.is_simulated ? "Simulated: your share of each instalment is shown, not paid."
+                : !inv.wallet_address ? (zecReturns.data?.return_address
+                  ? "She pays each instalment by Pix (a mock). Your share goes back to you in shielded ZEC, from EmpowerFI's treasury to your return address: real testnet ZEC, at the quote when it is sent."
+                  : "She pays each instalment by Pix (a mock). Your share is held until you give a shielded return address, below: it then goes back to you in ZEC.")
+                : `She pays each instalment by Pix (a mock); the ramp returns your share to the vault, which pays it to your wallet in the same transaction. ${schedule.filter((s) => s.payout?.status === "done").length} of ${schedule.filter((s) => s.payment_id).length} paid out so far.`}
+            </RouteStep>
+          </ol>
+        )}
       </Panel>
 
       {loan && (
         <Panel title="Scheduled repayments"
-          description={zecOnly
+          description={domestic
+            ? "Instalments fall due monthly from the start of repayment; your share is shown in reais, simulated."
+            : zecOnly
             ? "Instalments fall due monthly from the start of repayment; your share goes back to you in shielded ZEC, at the quote when it is sent."
-            : "Instalments fall due monthly from the start of repayment; your share is paid out in USDC at the demo quote."}>
+            : "Instalments fall due monthly from the start of repayment; your share is paid out in USDC at the simulated quote."}>
           <div className="relative overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead className="text-left text-xs text-muted-foreground">
@@ -280,7 +318,7 @@ export default function Position() {
                           : late ? <StatusPill tone="alert">Late</StatusPill>
                           : <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Circle size={10} /> Scheduled</span>}
                       </td>
-                      <td className="num py-2.5 pr-4 text-right text-foreground">{usdc(s.share_micro_usdc ?? loan.instalment_share_micro_usdc)}</td>
+                      <td className="num py-2.5 pr-4 text-right text-foreground">{amount(s.share_micro_usdc ?? loan.instalment_share_micro_usdc)}</td>
                       <td className="py-2.5 pr-4">
                         {s.payment_id ? (
                           <PayoutCell payout={s.payout} simulated={inv.is_simulated}
@@ -298,6 +336,8 @@ export default function Position() {
           </div>
         </Panel>
       )}
+
+      <PrivacyBoundaries />
 
       {outcome && (
         <Panel title="Productive outcome · simulated"

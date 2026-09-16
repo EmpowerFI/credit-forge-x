@@ -31,7 +31,7 @@ export type AnchorKind = Enums["anchor_kind"];
 export const ROLE_LABEL: Record<Role, string> = {
   entrepreneur: "Entrepreneur",
   community_leader: "Community leader",
-  partner: "Credit partner",
+  partner: "EmpowerFI P2P desk",
   capital_provider: "Capital provider",
   auditor: "Auditor",
   admin: "EmpowerFI admin",

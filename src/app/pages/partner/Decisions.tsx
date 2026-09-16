@@ -10,9 +10,9 @@ import { useDesk } from "./context";
 import { StagePill } from "./parts";
 
 /**
- * The partner's decisions, as a record: each approval with its price and
- * term, each decline with its reason, and what followed. An approval's terms
- * are proven on Solana with the loan; a decline returns investors' capital.
+ * The desk's decisions, as a record: each formalisation at the allocation
+ * engine's rate, each decline with its reason, and what followed. A loan's
+ * terms are proven on Solana; a decline returns investors' capital.
  */
 export default function Decisions() {
   const { desk } = useDesk();
@@ -27,13 +27,13 @@ export default function Decisions() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatTile label="Approved" value={approved.length} hint={money(approved.reduce((n, o) => n + (o.decision!.approved_amount_cents ?? 0), 0))} hintTone="positive" />
-        <StatTile label="Declined" value={declined.length} hint="before approval" />
+        <StatTile label="Formalised" value={approved.length} hint={money(approved.reduce((n, o) => n + (o.decision!.approved_amount_cents ?? 0), 0))} hintTone="positive" />
+        <StatTile label="Declined" value={declined.length} hint="before a loan" />
         <StatTile label="Declined at formalisation" value={cancelled.length} hint="investors refunded" />
-        <StatTile label="Average rate" value={avgRate === null ? "—" : `${(avgRate / 100).toFixed(1)}%`} hint="a month, approved" />
+        <StatTile label="Average rate" value={avgRate === null ? "—" : `${(avgRate / 100).toFixed(2)}%`} hint="a month, set by the engine" />
       </div>
 
-      <Panel title="Decision record" description="Every decision you took, newest first. The approval and its terms are proven on Solana with the loan; the rate and term are yours to set.">
+      <Panel title="Decision record" description="Every formalisation and decline, newest first. A loan's terms are proven on Solana; its rate is the Capital Allocation Engine's, set when the opportunity was given its pool.">
         {decided.length === 0 ? <p className="text-sm text-muted-foreground">No decisions yet.</p> : (
           <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
             <table className="w-full min-w-[860px] text-sm">
@@ -64,7 +64,7 @@ export default function Decisions() {
                         <span className="block text-xs text-muted-foreground">{PURPOSE_LABEL[o.purpose]} · {money(o.amount_cents)} qualified</span>
                       </td>
                       <td className="py-3 pr-4">
-                        <StatusPill tone={d.verdict === "approved" ? "positive" : "neutral"}>{d.verdict === "approved" ? "Approved" : "Declined"}</StatusPill>
+                        <StatusPill tone={d.verdict === "approved" ? "positive" : "neutral"}>{d.verdict === "approved" ? "Formalised" : "Declined"}</StatusPill>
                       </td>
                       <td className="num py-3 pr-4 text-right text-foreground">
                         {d.verdict === "approved" ? (

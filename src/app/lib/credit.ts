@@ -33,8 +33,8 @@ export const ELIGIBILITY_REASON: Record<string, string> = {
 
 export const OPPORTUNITY_LABEL: Record<OpportunityStatus, string> = {
   in_review: "Waiting for EmpowerFI's review",
-  open: "Waiting for a partner",
-  referred: "With the financial partner",
+  open: "Waiting for capital",
+  referred: "Open to P2P investors",
   partner_approved: "Approved by the partner",
   partner_declined: "Declined by the partner",
   withdrawn: "Withdrawn",
@@ -57,7 +57,7 @@ export const CAPITAL_USE_LABEL: Record<CapitalUse, string> = {
   not_reported: "use not reported",
 };
 
-/** The next steps the partner may take — the same state machine as the program. */
+/** The next steps EmpowerFI's P2P desk may take — the same state machine as the program. */
 export const NEXT_STATUSES: Record<LoanStatus, LoanStatus[]> = {
   DRAFT: ["CANCELLED"],
   PARTNER_APPROVED: ["DISBURSED", "CANCELLED"],
@@ -68,7 +68,7 @@ export const NEXT_STATUSES: Record<LoanStatus, LoanStatus[]> = {
   CANCELLED: [],
 };
 
-/** How a partner sees a participant: a pseudonym, never a name. */
+/** How the P2P desk sees a participant: a pseudonym, never a name. */
 export const pseudonym = (entrepreneurId: string) => `P-${entrepreneurId.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 
 export const percent = (bps: number | null | undefined) => (bps === null || bps === undefined ? "—" : `${(bps / 100).toFixed(1)}%`);

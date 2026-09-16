@@ -23,7 +23,7 @@ import { zcashExplorerTx, zec } from "../lib/zcash";
 const CONSENT_CHECK: Record<string, string> = {
   assessed_without_consent: "Readiness assessed without consent",
   eligibility_without_consent: "Eligibility assessed without consent",
-  referred_without_consent: "Referred to a partner without consent",
+  referred_without_consent: "Sent to the P2P desk without consent",
   listed_without_consent: "Shown to investors without consent",
 };
 const LEG_LABEL: Record<string, string> = {
@@ -169,7 +169,7 @@ export default function ReportPage() {
             hintTone={checks.models && checks.models.reproduced === checks.models.checked ? "positive" : "neutral"} />
           <StatTile label="Consent breaches" value={Object.values(s.consent.checks).reduce((a, b) => a + b, 0)} hint="enforcement checks" hintTone={consentClean ? "positive" : "alert"} />
           <StatTile label="Vault, expected" value={usdc(s.vault.expected_micro_usdc)} hint="devnet USDC" />
-          <StatTile label="Lent by partners" value={money(s.credit.lent_cents)} hint="simulated" />
+          <StatTile label="Lent, P2P" value={money(s.credit.lent_cents)} hint="simulated" />
         </div>
 
         <Panel title="Check it yourself" actions={(
@@ -239,8 +239,8 @@ export default function ReportPage() {
             <Row label="Participants">{s.credit.participants}</Row>
             <Row label="Credit ready now">{s.credit.credit_ready}</Row>
             <Row label="Eligibility assessments">{Object.entries(s.credit.eligibility).map(([k, n]) => `${k.toLowerCase().replace(/_/g, " ")} ${n}`).join(" · ") || "—"}</Row>
-            <Row label="Referred to a partner">{s.credit.referred}</Row>
-            <Row label="Partner decisions">{Object.entries(s.credit.decisions).map(([k, n]) => `${k} ${n}`).join(" · ") || "—"}</Row>
+            <Row label="Opened to P2P investors">{s.credit.referred}</Row>
+            <Row label="Desk decisions">{Object.entries(s.credit.decisions).map(([k, n]) => `${k} ${n}`).join(" · ") || "—"}</Row>
             <Row label="Loans">{Object.entries(s.credit.loans).map(([k, n]) => `${LOAN_LABEL[k as LoanStatus]?.toLowerCase() ?? k} ${n}`).join(" · ") || "—"}</Row>
             <Row label="Instalments received">{s.credit.instalments} · {money(s.credit.repaid_cents)}</Row>
             <Row label="Outcomes measured">{s.credit.outcomes}</Row>

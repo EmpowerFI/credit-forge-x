@@ -1,6 +1,6 @@
 # Architecture
 
-EmpowerFI prepares women micro-entrepreneurs for credit before anyone asks for it, qualifies the ones who do ask, and hands a partner a documented opportunity. The lending decision stays with the partner. Every step is recorded in a database and proven on Solana. This document shows how the pieces fit together. [PRIVACY.md](PRIVACY.md) covers what each role can see and what the chain can never see.
+EmpowerFI prepares women micro-entrepreneurs for credit before anyone asks for it, qualifies the ones who do ask, and funds them through P2P capital: a Capital Allocation Engine chooses between a domestic pool in reais and a global pool in USDC on Solana, and EmpowerFI's P2P desk formalises and services the loan. It is a prototype of a future regulated P2P architecture, not a licensed lender. Every step is recorded in a database and proven on Solana. This document shows how the pieces fit together. [PRIVACY.md](PRIVACY.md) covers what each role can see and what the chain can never see.
 
 ## The boundary
 
@@ -10,7 +10,7 @@ EmpowerFI prepares women micro-entrepreneurs for credit before anyone asks for i
 | **Solana** (program `empowerfi_audit`) | One 32-byte commitment per fact, plus lifecycle state: statuses, sequence numbers, times | A public, append-only proof that a record existed in this form, at this time, in this order. No personal or financial value ever goes on chain. |
 | **Engines** (TypeScript, pure) | Readiness and eligibility rules, versioned | The same code runs on the server that decides and in the browser that audits. |
 
-Solana is the audit layer and the future rail for capital. It isn't the database, and the product doesn't rely on blockchain being cheaper (see [Capital routes](#capital-routes)).
+Solana is the verifiability layer and the global capital rail; Pix is the local last mile. It isn't the database, and the product doesn't rely on blockchain being cheaper (see [Capital pools](#capital-pools-and-the-allocation-engine)).
 
 ```mermaid
 flowchart LR
@@ -57,16 +57,17 @@ The product is one chain of facts. Each fact is written by a database function t
 | Readiness is assessed | `readiness_assessments` | `readiness-evaluate` → engine → `record_readiness_assessment` | `ReadinessAttestation` (status and band public; detail committed) |
 | She asks for capital, if she wants to | `credit_intents` | `declare_credit_intent` (only herself) | — |
 | Eligibility for that request | `eligibility_assessments` | `eligibility-evaluate` → engine → `record_eligibility_assessment` | `EligibilityAttestation`, which on chain requires her own CreditReady attestation |
-| A qualified opportunity, referred to a matching partner | `qualified_credit_opportunities` | the same function; flagged ones wait for `refer_opportunity` (admin) | `OpportunityCommitment`, which requires an eligibility that isn't NotEligible |
-| The partner decides | `partner_decisions`, `loans` | `partner_decide`, which only the partner's own users can call | `LoanAccount` (terms) |
-| The loan moves | `loan_events` | `transition_loan` (the partner) | `LoanAccount` status, following the same state machine on chain |
-| Instalments are paid | `payments` | `record_payment` (the partner) | `PaymentCommitment` per instalment |
-| What changed in the business | `productive_outcomes` | `measure_outcome` (EmpowerFI or the partner) | `OutcomeCommitment` |
+| A qualified opportunity, given a pool by the Capital Allocation Engine | `qualified_credit_opportunities` (`funding_pool`, `allocation_reason_codes`) | the same function; the pool is chosen as it opens to investors (`private.open_for_funding`); flagged ones wait for `refer_opportunity` (admin) | `OpportunityCommitment`, which requires an eligibility that isn't NotEligible |
+| Investors fund it | `investments` | `investment-confirm` (global, a wallet deposit), `allocate_domestic` (domestic, simulated reais) | `AllocationCommitment` |
+| Funded, it is formalised | `partner_decisions`, `loans` | `formalise_loan` (EmpowerFI's P2P desk), at the engine's rate; the desk may decline instead, and investors are refunded | `LoanAccount` (terms) |
+| The loan moves | `loan_events` | `transition_loan` (the desk) | `LoanAccount` status, following the same state machine on chain |
+| Instalments are paid | `payments` | `record_payment` (the desk) | `PaymentCommitment` per instalment |
+| What changed in the business | `productive_outcomes` | `measure_outcome` (EmpowerFI) | `OutcomeCommitment` |
 
 Three invariants are the thesis. Each is enforced in code and pinned by a test:
 
 1. **Being ready and not asking is a complete outcome.** Eligibility runs only for participants who are ready *and* asked (`private.credit_pipeline()`), and `eligibility_inputs` refuses anyone else. Jaqueline in the demo is ready and is never pushed.
-2. **Readiness ≠ eligibility ≠ approval.** These are three records written by three functions. EmpowerFI never makes the lending decision; not even an admin can call `partner_decide`.
+2. **Readiness ≠ eligibility ≠ funding.** These are separate records written by separate functions. Eligibility sizes what the business can carry; the allocation engine only chooses where the capital comes from; a loan exists only once investors have funded it.
 3. **The chain is only proof.** Each proof is a domain-separated SHA-256 of the record, and the record stays in the database.
 
 ## Engines
@@ -149,36 +150,32 @@ Editing the record in the database turns the verdict to MISMATCH. The page also 
 
 Small tickets fail on operating cost, so cost is counted from a community's first day rather than from disbursement. Triggers write one `cost_events` row per fact at a pilot rate card (`cost_rates`: staff minutes at R$30/h plus fixed costs, and who bears them). Because triggers write the rows, no code path can forget to count. `cts_summary()` gives cost per participant, per ready participant, per opportunity, per loan and per R$100 lent. The capital view reports per loan and per R$1,000.
 
-## Capital
+## Capital pools and the allocation engine
 
-A capital provider commits (simulated) capital to a lending partner. `capital_portfolio()` returns the book that capital funds:
+There are two routes, and only two (founder specification, 16 Sep):
 
-- committed, deployed, available, received and outstanding amounts;
-- repayment and PAR 30;
-- risk mix;
-- expected return net of expected loss, at pilot assumptions;
-- cost to serve;
-- outcomes in aggregate;
-- audit coverage.
+| | Domestic P2P | Global P2P |
+|---|---|---|
+| Capital | Brazilian investors, a simulated BRL pool | International and impact investors, test USDC on Solana devnet |
+| To her business | Pix, in reais | Program vault → regulated off-ramp (simulated; MoneyGram sandbox quote) → Pix |
+| FX / hedge | none | an explicit assumption |
 
-Loans appear under a code derived from the loan alone.
+`funding_pools` holds each pool's policy: capital, required return, risk appetite, ticket range, mandate, and for global the FX hedge and ramp cost. `packages/capital-allocation` is the engine, mirrored in SQL as `private.allocate_funding` and held to the same hand-reasoned vectors by Vitest and pgTAP:
 
-### Capital routes
+1. Is domestic capital available and eligible for this opportunity?
+2. Is global capital?
+3. Among the pools that can take it, which costs her less a year — required return, expected loss, cost to serve, hedge and ramp? A tie goes domestic.
 
-`packages/capital-route` prices the same loan by route: a domestic partner and Pix, a BRL stablecoin, foreign capital by bank wire, and foreign capital by USD stablecoin. The price is the sum of the capital's required return, currency hedge, expected loss, cost to serve, rail spreads and fees, and compliance. The tests pin three conclusions:
+It answers with the pool, her rate and instalment, the investors' expected return, and reason codes (`DOMESTIC_LOWEST_COST`, `DOMESTIC_POOL_EXHAUSTED`, `GLOBAL_EXPANDS_CAPACITY`, `GLOBAL_IMPACT_MANDATE_MATCH`, `GLOBAL_FX_COST_DOMINATES`, `RISK_BAND_NOT_ELIGIBLE`, `TICKET_OUTSIDE_POOL_POLICY`, …). The pool is kept on the opportunity and never changes while investors hold positions in it. `capital_overview()` replays the engine over every opportunity not yet lent, to show qualified demand and how much of it domestic capital alone, and both pools together, can cover. The page `/app/capital` runs the same engine with every input editable, and checks its replay against the database's.
 
-- For capital already in reais, the domestic route wins.
-- A stablecoin beats the bank wire it replaces only where capital crosses a border.
-- The on-chain fee is negligible next to the hedge.
-
-Every assumption is editable on the portfolio page, and no money moves.
+The opportunity's commitment on chain covers the request, not the pool: the allocation is recorded with its model version and re-runs in the browser. The engine chooses capital; it is not a credit decision.
 
 ## Demo data
 
 `scripts/platform/seed-demo.mts` rebuilds the scenario deterministically in about 30 seconds:
 
 - 4 verified communities and 100 participants, with education and 6–7 months of check-ins shaped by business profiles;
-- readiness for everyone, requests from some of those who are ready, eligibility, and partner decisions taken through the partner's own session;
+- readiness for everyone, requests from some of those who are ready, eligibility, allocation to a pool, P2P funding, and formalisations and declines taken through the desk's own session;
 - a July cycle of six loans with repayment and outcomes.
 
 The first-cycle facts are recorded through the live functions and then dated to when they happened. The seed holds the anchor worker's lease meanwhile, so their proofs carry those dates. Everything is marked `is_simulated`.

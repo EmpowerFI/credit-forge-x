@@ -119,6 +119,36 @@ export default function Cohorts() {
         </Panel>
       </div>
 
+      <Panel title="Qualified P2P demand by cohort"
+        description="What each cohort's P2P opportunities ask, how much investors have funded, the gap, and how much came from each pool. Totals only: no investor, wallet or position.">
+        <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead className="text-left text-xs text-muted-foreground">
+              <tr className="border-b border-border">
+                <th className="py-2 pr-3 font-medium">Intake</th>
+                <th className="py-2 pr-3 text-right font-medium">Eligible amount</th>
+                <th className="py-2 pr-3 text-right font-medium">Funded</th>
+                <th className="py-2 pr-3 text-right font-medium">Funding gap</th>
+                <th className="py-2 pr-3 text-right font-medium">Domestic coverage</th>
+                <th className="py-2 text-right font-medium">Global coverage</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {list.map((c) => (
+                <tr key={c.intake}>
+                  <td className="py-2 pr-3 text-foreground">{monthLabel(c.intake)}</td>
+                  <td className="num py-2 pr-3 text-right text-foreground">{money(c.capital.eligible_cents)}</td>
+                  <td className="num py-2 pr-3 text-right text-positive">{money(c.capital.funded_cents)}</td>
+                  <td className={`num py-2 pr-3 text-right ${c.capital.gap_cents ? "text-caution" : "text-muted-foreground"}`}>{money(c.capital.gap_cents)}</td>
+                  <td className="num py-2 pr-3 text-right">{c.capital.eligible_cents ? `${Math.round(c.capital.domestic_coverage_bps / 100)}%` : "—"}</td>
+                  <td className="num py-2 text-right">{c.capital.eligible_cents ? `${Math.round(c.capital.global_coverage_bps / 100)}%` : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title="Credit need by productive purpose" description="Active requests from participants who asked, by what the capital is for.">
           {purposeList.length === 0 ? <p className="text-sm text-muted-foreground">No credit requests yet.</p> : (
@@ -138,14 +168,14 @@ export default function Cohorts() {
           )}
         </Panel>
 
-        <Panel title="Operations and outcomes" description="What partners did with the cohort's opportunities, and what the capital did after.">
+        <Panel title="Operations and outcomes" description="How far the cohort's P2P opportunities got, and what the capital did after.">
           <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
             <table className="w-full min-w-[480px] text-sm">
               <thead className="text-left text-xs text-muted-foreground">
                 <tr className="border-b border-border">
                   <th className="py-2 pr-3 font-medium">Intake</th>
-                  <th className="py-2 pr-3 text-right font-medium">Referred</th>
-                  <th className="py-2 pr-3 text-right font-medium">Approved</th>
+                  <th className="py-2 pr-3 text-right font-medium">P2P opportunities</th>
+                  <th className="py-2 pr-3 text-right font-medium">Funded</th>
                   <th className="py-2 pr-3 text-right font-medium">Disbursed</th>
                   <th className="py-2 pr-3 text-right font-medium">Sales up</th>
                   <th className="py-2 text-right font-medium">EVC</th>
@@ -155,8 +185,8 @@ export default function Cohorts() {
                 {list.map((c) => (
                   <tr key={c.intake}>
                     <td className="py-2 pr-3 text-foreground">{monthLabel(c.intake)}</td>
-                    <td className="num py-2 pr-3 text-right">{c.operations.referred}</td>
-                    <td className="num py-2 pr-3 text-right">{c.operations.approved}</td>
+                    <td className="num py-2 pr-3 text-right">{c.operations.p2p_opportunities}</td>
+                    <td className="num py-2 pr-3 text-right">{c.operations.funded}</td>
                     <td className="num py-2 pr-3 text-right">{c.operations.disbursed}</td>
                     <td className="num py-2 pr-3 text-right">{c.outcomes.measured ? `${c.outcomes.revenue_up}/${c.outcomes.measured}` : "—"}</td>
                     <td className={`num py-2 text-right ${c.outcomes.evc_cents < 0 ? "text-alert" : "text-foreground"}`}>

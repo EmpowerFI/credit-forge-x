@@ -16,12 +16,14 @@ export const REALITY: Record<Reality, { label: string; tone: Tone }> = {
 
 /** What is real in this demo, leg by leg. */
 export const WHAT_IS_REAL: { what: string; reality: Reality; note: string }[] = [
+  { what: "The two P2P pools and their liquidity", reality: "simulated", note: "Domestic P2P in reais and Global P2P in USDC: capital, returns and policies are assumptions of this prototype." },
+  { what: "Domestic allocations in reais", reality: "simulated", note: "No bank transfer or Pix: an allocation recorded and proven on Solana, marked simulated." },
   { what: "Devnet SOL and USDC", reality: "real", note: "Circle's devnet USDC. Test tokens with no value." },
   { what: "Wallet signing and deposits into the vault", reality: "real", note: "A token transfer to the program's vault, read back from chain before it is allocated." },
   { what: "Paying with shielded ZEC", reality: "zcash", note: "A real payment, read with the treasury's viewing key." },
   { what: "ZEC → USDC", reality: "simulated", note: "NEAR Intents in production, which has no testnet. The operator credits the vault at the quote." },
-  { what: "Releases to the ramp, payouts to investors", reality: "real", note: "The program's vault_transfer, signed by the operator. On devnet the operator plays the ramp partner." },
-  { what: "USDC → reais at the ramp", reality: "simulated", note: "Releases convert at the demo quote less the ramp's spread: a loan is larger than a MoneyGram sandbox transfer." },
+  { what: "Releases to the off-ramp, payouts to investors", reality: "real", note: "The program's vault_transfer, signed by the operator. On devnet the operator plays the regulated off-ramp." },
+  { what: "USDC → reais at the off-ramp", reality: "simulated", note: "Releases convert at the demo quote less the ramp's spread: a loan is larger than a MoneyGram sandbox transfer." },
   { what: "The ramp's quote in the simulator", reality: "sandbox", note: "MoneyGram Ramps' sandbox prices a USDC cash-out in Brazil, $2 to $200: its fee, its rate, what she would receive. Only the amount goes to MoneyGram." },
   { what: "Pix to her business, and her instalments", reality: "mock", note: "End-to-end ids in Pix's format. No Pix is sent." },
   { what: "Proofs of every record", reality: "real", note: "Commitments on Solana devnet, recomputed in your browser by Verify." },

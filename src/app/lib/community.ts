@@ -17,12 +17,12 @@ export const COMMUNITY_TABS = [
   { to: "cohorts", label: "Cohorts" },
   { to: "participants", label: "Participants" },
   { to: "readiness", label: "Readiness" },
-  { to: "pipeline", label: "Credit pipeline" },
+  { to: "pipeline", label: "P2P pipeline" },
   { to: "impact", label: "Impact" },
 ] as const;
 
 export const STAGES = [
-  "joined", "education", "data_sufficient", "credit_ready", "credit_intent", "eligible", "referred", "financed",
+  "joined", "education", "data_sufficient", "credit_ready", "credit_intent", "eligible", "p2p_opportunity", "funded",
 ] as const;
 export type Stage = (typeof STAGES)[number];
 
@@ -33,8 +33,8 @@ export const STAGE_LABEL: Record<Stage, string> = {
   credit_ready: "Credit ready",
   credit_intent: "Credit intent",
   eligible: "Eligible",
-  referred: "Referred",
-  financed: "Financed",
+  p2p_opportunity: "P2P opportunity",
+  funded: "Funded",
 };
 
 /** What each stage means, for tooltips and legends. */
@@ -45,15 +45,18 @@ export const STAGE_HINT: Record<Stage, string> = {
   credit_ready: "The readiness engine says CREDIT_READY.",
   credit_intent: "Ready, and asking for capital. Ready without asking is a complete outcome.",
   eligible: "The eligibility engine found an amount the business can carry.",
-  referred: "The opportunity went to a credit partner.",
-  financed: "The partner disbursed the loan.",
+  p2p_opportunity: "A qualified P2P opportunity, given a pool of capital by the allocation engine.",
+  funded: "Investors funded it, or the loan was disbursed.",
 };
 
 export const ACTION: Record<OutreachAction, { label: string; queue: string; button: string; minutes: number; tone: Tone }> = {
   checkin_reminder: { label: "Check-in reminder", queue: "Missing the latest check-in", button: "Log reminder", minutes: 5, tone: "info" },
   education_followup: { label: "Education follow-up", queue: "Core education unfinished", button: "Log follow-up", minutes: 15, tone: "info" },
   human_followup: { label: "Human follow-up", queue: "Manual review: needs a conversation", button: "Log conversation", minutes: 30, tone: "caution" },
-  capital_need_check: { label: "Capital need check", queue: "Ready and asking: confirm the need", button: "Log check", minutes: 15, tone: "positive" },
+  readiness_followup: { label: "Readiness follow-up", queue: "One requirement from credit ready", button: "Log follow-up", minutes: 15, tone: "info" },
+  credit_intent_check: { label: "Credit intent check", queue: "Credit ready, not asking: is there a need?", button: "Log check", minutes: 15, tone: "positive" },
+  capital_need_check: { label: "Eligibility check", queue: "Asking: eligibility not assessed yet", button: "Log check", minutes: 15, tone: "positive" },
+  funding_followup: { label: "Funding update", queue: "Her P2P opportunity is not funded yet", button: "Log update", minutes: 10, tone: "info" },
   servicing_followup: { label: "Servicing follow-up", queue: "A loan instalment is late", button: "Log follow-up", minutes: 20, tone: "alert" },
 };
 
@@ -93,7 +96,15 @@ export interface Requirement { code: string; current: number | null; required: n
 export interface CommunityOverview {
   community: { id: string; name: string; kind: string; city: string; state: string; status: string; verified_at: string | null; is_simulated: boolean };
   as_of_period: string | null;
-  hero: { participants: number; joined_this_month: number; education_complete: number; credit_ready: number; credit_intent: number; eligible: number; financed: number };
+  hero: {
+    participants: number; joined_this_month: number; education_complete: number; credit_ready: number; credit_intent: number;
+    eligible: number; p2p_opportunity: number; funded: number; qualified_demand_cents: number; funded_cents: number;
+  };
+  /** Totals only: never an investor, a wallet or a position. */
+  capital: CapitalTotals & {
+    financed_cents: number; repaid_cents: number; instalments_paid: number; instalments_due: number;
+    loans_repaying: number; loans_late: number; loans_paid: number; loans_defaulted: number; waiting_for_capital: number;
+  };
   funnel: { stage: Stage; n: number }[];
   health: {
     checkin_completion_bps: number | null;
@@ -105,6 +116,16 @@ export interface CommunityOverview {
   };
   queue: { action: OutreachAction; pending: number; contacted: number; participants: { entrepreneur_id: string; display_name: string }[] }[];
   recent_outreach: { action: OutreachAction; n: number; at: string }[];
+}
+
+export interface CapitalTotals {
+  eligible_cents: number;
+  funded_cents: number;
+  gap_cents: number;
+  domestic_cents: number;
+  global_cents: number;
+  domestic_coverage_bps: number;
+  global_coverage_bps: number;
 }
 
 export interface ParticipantRow {
@@ -138,6 +159,10 @@ export interface ParticipantRow {
   instalments_paid: number;
   loan_term: number | null;
   late: boolean;
+  opportunity_cents: number | null;
+  funding_pool: "domestic" | "global" | null;
+  funding_status: string | null;
+  funded_cents: number | null;
   stage: Stage;
   stage_no: number;
   next_action: OutreachAction | null;
@@ -154,7 +179,8 @@ export interface Cohort {
   not_ready_reasons: Record<string, number>;
   manual_review: number;
   need_by_purpose: Partial<Record<CreditPurpose, { n: number; cents: number }>>;
-  operations: { referred: number; approved: number; disbursed: number };
+  capital: CapitalTotals;
+  operations: { p2p_opportunities: number; funded: number; disbursed: number };
   /** Counted only with her consent to impact figures; `withheld` says how many were left out, never who. */
   outcomes: { measured: number; revenue_up: number; as_declared: number; evc_cents: number; evc_positive: number; withheld: number };
 }

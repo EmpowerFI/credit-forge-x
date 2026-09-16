@@ -1,8 +1,10 @@
 # EmpowerFI
 
-**Credit-readiness infrastructure for women micro-entrepreneurs in Brazil, with every step proven on Solana.**
+**P2P productive credit for women micro-entrepreneurs in Brazil, from readiness to capital, with every step proven on Solana.**
 
-Small loans fail on unit economics: preparing, originating and serving a R$3,000 loan costs nearly as much as a large one, so lenders don't make them. EmpowerFI takes on the part lenders can't afford. Communities prepare their members, members report their months, and a readiness engine tells each of them what is missing, in words she can act on. When a participant who is ready *chooses* to ask for capital, EmpowerFI qualifies the request and refers it to a financial partner. The partner decides and lends. Every fact along the way is recorded in a database and committed to Solana: auditable by anyone, with no personal data on chain.
+> Prototype of a future regulated P2P productive-credit architecture. Hackathon investments, returns, FX and Pix settlement are simulated; blockchain transactions use test assets on Devnet.
+
+Small loans fail on unit economics: preparing, originating and serving a R$3,000 loan costs nearly as much as a large one, so lenders don't make them. EmpowerFI takes on the part lenders can't afford. Communities prepare their members, members report their months, and a readiness engine tells each of them what is missing, in words she can act on. When a participant who is ready *chooses* to ask for capital, EmpowerFI qualifies the request and a Capital Allocation Engine chooses which pool of P2P capital funds it: Brazilian investors in reais, or international investors in USDC on Solana. She receives and repays in reais, by Pix, either way. EmpowerFI's P2P desk formalises and services the loan. Every fact along the way is recorded in a database and committed to Solana: auditable by anyone, with no personal data on chain.
 
 Being ready and not asking is a complete outcome. Nothing in the product pushes anyone into debt.
 
@@ -15,9 +17,9 @@ The platform is live at **[www.empowerfi.io/app](https://www.empowerfi.io/app)**
 | Account | Role | What to look at |
 |---|---|---|
 | `maria@demo.empowerfi.io` | Entrepreneur | *My business*: readiness, what is missing, the monthly check-in. Her September check-in makes her ready; then she may ask, or not. |
-| `leader@demo.empowerfi.io` | Community leader | Grajaú: members, the funnel from members to loans, cost to serve. Jaqueline Pereira is ready and hasn't asked, and nothing moves her. |
-| `partner@demo.empowerfi.io` | Credit partner | *Partner desk*: pseudonymous opportunities with EmpowerFI's assessment. Approve one, disburse, record an instalment. |
-| `investor@demo.empowerfi.io` | Capital provider | *Portfolio*: deployed, repaid, PAR 30, risk mix, outcomes (EVC/EVM), cost to serve, and the capital-route simulator. |
+| `leader@demo.empowerfi.io` | Community leader | Grajaú: the funnel from members to funded P2P opportunities, qualified capital demand, funding gap, cost to serve. Jaqueline Pereira is ready and hasn't asked, and nothing moves her. |
+| `partner@demo.empowerfi.io` | EmpowerFI P2P desk | Funded opportunities to formalise at the allocation engine's rate, loans to disburse and service. |
+| `investor@demo.empowerfi.io` | Capital provider | *P2P capital console*: qualified demand, domestic and global liquidity, funding coverage, opportunities by route, a wallet investment in test USDC or a simulated BRL allocation, and the Capital Allocation Engine. |
 | `auditor@demo.empowerfi.io` | Auditor | Any record → *Verify*: the browser recomputes the proof and reads it from devnet. |
 | `admin@demo.empowerfi.io` | EmpowerFI admin | Review queue: verify communities, clear opportunities held for manual review. |
 
@@ -29,14 +31,14 @@ Program: [`4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR`](https://explorer.solan
 
 ## What is built
 
-- **The funnel, end to end:** community → verification → enrollment → education → monthly check-ins → readiness → request → eligibility → qualified opportunity → partner decision → loan → disbursement → instalments → productive outcome. Each step is a checked database function, and each fact is anchored on Solana in order.
+- **The funnel, end to end:** community → verification → enrollment → education → monthly check-ins → readiness → request → eligibility → qualified opportunity → P2P funding → formalisation → disbursement → instalments → productive outcome. Each step is a checked database function, and each fact is anchored on Solana in order.
 - **Two engines**, readiness and eligibility. They are pure, versioned and integer-only, pinned by hand-reasoned scenario vectors, and run the same way on the server and in the auditor's browser.
 - **The Anchor program** `empowerfi_audit`: 10 account types and 13 instructions. The rules live on chain too: eligibility needs the same borrower's CreditReady attestation, loans follow a state machine, and payments and outcomes are only possible after disbursement.
 - **An anchoring pipeline** that uses the database as its queue, plus a reconciliation job that re-checks every proof against the chain and against the record as it stands.
-- **Dashboards by role** with row-level security. Partners see pseudonyms and rounded indicators; capital providers see loans under unlinkable codes and outcomes only in aggregate.
+- **Dashboards by role** with row-level security. The P2P desk sees pseudonyms and rounded indicators; investors see a decision snapshot, never identity; community leaders see capital totals, never investors.
 - **Cost to serve**, counted from a community's first day at a pilot rate card, per participant, per ready participant, per opportunity, per loan and per R$ lent.
 - **Productive outcomes:** what changed in a business after its loan, from the months it reported. EVC = extra profit − interest paid; EVM = EVC ÷ capital. These are observed, not caused, and labelled that way.
-- **A capital-route simulator** that prices the same loan by domestic Pix, BRL stablecoin, and foreign capital by wire or USD stablecoin, with honest defaults. Blockchain isn't assumed cheaper.
+- **A Capital Allocation Engine** with two routes only: Domestic P2P (a simulated BRL pool, Pix) and Global P2P (test USDC on Solana, a simulated regulated off-ramp, Pix). Feasibility first — liquidity, risk appetite, ticket, mandate — then her all-in cost; deterministic reason codes, the pool persisted on each opportunity, and the same engine re-run in the browser. Global capital earns its place by the availability, mandate or economics it adds, not by being on a blockchain.
 
 Read more: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [platform/README.md](platform/README.md) (operations).
 

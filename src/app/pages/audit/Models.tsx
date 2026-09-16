@@ -115,7 +115,7 @@ export default function Models() {
         <Parameters rules={READINESS_RULES} />
       </Panel>
 
-      <Panel title="Eligibility engine" description="Only for those ready and asking: an amount and a term the business can carry. The partner decides.">
+      <Panel title="Eligibility engine" description="Only for those ready and asking: an amount and a term the business can carry. The allocation engine then chooses the pool of capital.">
         <Versions rows={m.eligibility} current={ELIGIBILITY_MODEL_VERSION} />
         <Parameters rules={ELIGIBILITY_RULES} />
       </Panel>

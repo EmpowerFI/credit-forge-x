@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Portfolio } from "../../lib/investor";
+import { capitalOverviewKey, fetchCapitalOverview } from "../../lib/capital";
 import { platform } from "../../lib/platform";
 
 // The investor console's reads. Every one is scoped by the database to the
@@ -48,4 +49,8 @@ export function useProofs() {
       return data;
     },
   });
+}
+
+export function useCapitalOverview() {
+  return useQuery({ queryKey: capitalOverviewKey, queryFn: fetchCapitalOverview, refetchInterval: 30_000 });
 }

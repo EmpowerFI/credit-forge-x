@@ -28,7 +28,7 @@ function Step({ n, title, reality, children }: { n: number; title: string; reali
   );
 }
 
-/** One loan on the partner's desk: its terms, where the money went, the schedule, and each step's proof. */
+/** One loan on EmpowerFI's P2P desk: its terms, where the money went, the schedule, and each step's proof. */
 export default function Loan() {
   const { id } = useParams();
   const { desk, decides } = useDesk();
@@ -90,10 +90,11 @@ export default function Loan() {
       <Panel title="Where the money went" description="From investors to her business and back, leg by leg. Real devnet transactions open on Solana Explorer; Pix is a mock in this demo.">
         <ol className="space-y-4">
           <Step n={1} title="Investors fund the opportunity" reality={f.real_micro_usdc > 0 ? "real" : "simulated"}>
-            {f.status === null ? "Not offered to investors, by her choice: you lend your own capital."
+            {f.status === null ? "Not funded by investors."
+              : f.pool === "domestic" ? `Funded in reais by ${f.investors} domestic investor${f.investors === 1 ? "" : "s"}: a simulated BRL pool, no vault or conversion.`
               : `${usdc(f.funded_micro_usdc)} from ${f.investors} investor${f.investors === 1 ? "" : "s"} into the program's vault; ${usdc(f.real_micro_usdc)} of it real devnet USDC.`}
           </Step>
-          <Step n={2} title="The vault releases it to the ramp partner" reality={loan.release ? "real" : "simulated"}>
+          <Step n={2} title={f.pool === "domestic" ? "No conversion: reais in, reais out" : "The vault releases it to the regulated off-ramp"} reality={loan.release ? "real" : "simulated"}>
             {loan.release ? (
               <span className="inline-flex flex-wrap items-center gap-2">
                 {usdc(loan.release.amount_micro_usdc)} released, in a transfer batched with other loans · {loan.release.status}
@@ -101,7 +102,7 @@ export default function Loan() {
               </span>
             ) : loan.disbursed_at ? "No real USDC behind it: nothing leaves the vault." : "When you disburse."}
           </Step>
-          <Step n={3} title="The ramp pays her business by Pix" reality="mock">
+          <Step n={3} title="Her business is paid by Pix" reality="mock">
             {loan.pix_payout ? (
               <>
                 {money(loan.pix_payout.amount_cents)} on {shortDate(loan.pix_payout.at)} · <span className="font-mono">{loan.pix_payout.e2e}</span>

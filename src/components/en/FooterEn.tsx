@@ -106,6 +106,10 @@ const FooterEn = () => (
           buy any financial instrument, and no return is promised or implied.
         </p>
         <p className="text-xs text-muted-foreground">
+          The platform demo is a prototype of a future regulated P2P productive-credit architecture. Hackathon investments,
+          returns, FX and Pix settlement are simulated; blockchain transactions use test assets on Devnet.
+        </p>
+        <p className="text-xs text-muted-foreground">
           © {new Date().getFullYear()} EmpowerFI. All rights reserved.
         </p>
       </div>

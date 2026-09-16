@@ -49,7 +49,7 @@ export default function AdminReviewPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platform"] });
-      toast.success("Referred to the matching partner.");
+      toast.success("Opened to P2P investors: the allocation engine chose its pool.");
     },
     onError: (error) => toast.error(describeError(error)),
   });
@@ -130,7 +130,7 @@ export default function AdminReviewPage() {
       <div className="space-y-1 pt-4">
         <h2 className="font-heading text-2xl font-bold text-foreground">Opportunities for review</h2>
         <p className="text-muted-foreground">
-          Requests the eligibility rules were not confident about, or that no partner covered yet. Review, then refer.
+          Requests the eligibility rules were not confident about. Review, then open them to P2P investors: the allocation engine chooses the pool.
         </p>
       </div>
       {flagged.isError && <LoadError compact error={flagged.error} onRetry={() => flagged.refetch()} />}
@@ -149,7 +149,7 @@ export default function AdminReviewPage() {
               </p>
             </div>
             <Button disabled={refer.isPending} onClick={() => refer.mutate(o.id)} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-              {refer.isPending && refer.variables === o.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Refer to partner
+              {refer.isPending && refer.variables === o.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Open to P2P investors
             </Button>
           </li>
         ))}

@@ -40,13 +40,22 @@ type Credit = {
   } | null;
   opportunity: {
     status: keyof typeof OPPORTUNITY_LABEL;
+    amount_cents: number;
+    funding_pool: "domestic" | "global" | null;
+    funding_status: string | null;
+    funded_micro_usdc: number;
+    funding_target_micro_usdc: number | null;
     partner: { name: string } | null;
     partner_decisions: { verdict: string; approved_amount_cents: number | null; rate_bps: number | null; term_months: number | null; reason: string | null }[];
     loans: { status: keyof typeof LOAN_LABEL; principal_cents: number; term_months: number; instalment_cents: number; payments: { instalment_no: number }[] }[];
   } | null;
 } | null;
 
-/** Her request's path, one line per party: EmpowerFI, the partner, the loan. */
+/** Her request's path: EmpowerFI's eligibility, P2P funding in reais, the loan. */
+/** What investors have funded of her request, in reais. */
+const fundedReais = (o: NonNullable<NonNullable<Credit>["opportunity"]>) =>
+  o.funding_target_micro_usdc ? Math.min(o.amount_cents, Math.round((o.funded_micro_usdc / o.funding_target_micro_usdc) * o.amount_cents)) : 0;
+
 function CreditProgress({ credit }: { credit: Credit }) {
   if (!credit?.eligibility) return null;
   const e = credit.eligibility;
@@ -68,10 +77,19 @@ function CreditProgress({ credit }: { credit: Credit }) {
       </li>
       {o && (
         <li className="text-foreground">
-          {OPPORTUNITY_LABEL[o.status]}{o.partner ? `: ${o.partner.name}` : ""}.
+          {o.status === "referred" && o.funding_status ? (
+            <>
+              Your request is open to investors — {money(fundedReais(o))} of {money(o.amount_cents)} funded.
+              <span className="block text-xs text-muted-foreground">
+                {o.funding_pool === "global" ? "Funded by global investors in USDC, converted" : "Funded by Brazilian investors"}: you receive it in reais, by Pix.
+              </span>
+            </>
+          ) : o.status === "referred" ? (
+            <>Your request waits for capital: no pool of investors can take it yet.</>
+          ) : <>{OPPORTUNITY_LABEL[o.status]}.</>}
           {decision?.verdict === "approved" && (
             <span className="block text-xs text-muted-foreground">
-              Offered {money(decision.approved_amount_cents)} at {((decision.rate_bps ?? 0) / 100).toFixed(1)}% a month over {decision.term_months} months.
+              Formalised: {money(decision.approved_amount_cents)} at {((decision.rate_bps ?? 0) / 100).toFixed(2)}% a month over {decision.term_months} months.
             </span>
           )}
           {decision?.verdict === "declined" && decision.reason && (
@@ -119,8 +137,8 @@ export default function MePage() {
         platform.from("consents").select("*").eq("entrepreneur_id", id!).order("consent_no", { ascending: false }).limit(1).maybeSingle(),
       ]);
       for (const r of [readiness, intent, months, consent]) if (r.error) throw r.error;
-      // What became of her request: EmpowerFI's eligibility, the opportunity,
-      // the partner's decision, the loan.
+      // What became of her request: EmpowerFI's eligibility, the opportunity
+      // and its funding, the desk's formalisation, the loan.
       let credit = null;
       if (intent.data) {
         const [eligibility, opportunity] = await Promise.all([
@@ -184,7 +202,7 @@ export default function MePage() {
       setAsking(false);
       try {
         const e = await requestEligibility(id!);
-        toast.success(`Request recorded. EmpowerFI's assessment: ${DECISION_LABEL[e.result.decision as keyof typeof DECISION_LABEL].title}. Nothing is approved until the partner decides.`);
+        toast.success(`Request recorded. EmpowerFI's assessment: ${DECISION_LABEL[e.result.decision as keyof typeof DECISION_LABEL].title}. If eligible, it opens to P2P investors.`);
       } catch (err) {
         toast.error(describeError(err));
       }
@@ -245,7 +263,7 @@ export default function MePage() {
         const c = business.data?.consent;
         const message = !c ? "You have not recorded your consent yet: nothing of yours is assessed or shared until you do."
           : !c.assessment ? "You have not allowed your business to be assessed."
-          : !c.partner ? "You have not allowed a credit partner to see a request, so you cannot ask for credit here."
+          : !c.partner ? "You have not allowed EmpowerFI's P2P desk to see a request, so you cannot ask for credit here."
           : null;
         return (
           <Link to="/app/consent"
@@ -340,8 +358,8 @@ export default function MePage() {
             <div className="space-y-4">
               <p className="text-sm text-foreground">
                 You asked for <strong>{money(intent.requested_amount_cents)}</strong> for{" "}
-                {PURPOSE_LABEL[intent.purpose].toLowerCase()}. EmpowerFI assesses whether it fits the business; a
-                financial partner makes any lending decision.
+                {PURPOSE_LABEL[intent.purpose].toLowerCase()}. EmpowerFI assesses whether it fits the business; if it does,
+                P2P investors fund it and you receive and repay in reais, by Pix.
               </p>
               <CreditProgress credit={business.data?.credit ?? null} />
               {!business.data?.credit?.eligibility && (

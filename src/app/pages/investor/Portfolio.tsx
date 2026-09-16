@@ -5,7 +5,9 @@ import LoadError from "../../components/LoadError";
 import PageHeader from "../../components/product/PageHeader";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
+import PoolPill from "../../components/product/PoolPill";
 import StatusPill from "../../components/product/StatusPill";
+import { POOL, poolOf, positionReais } from "../../lib/capital";
 import { type PortfolioRow, positionState, RISK, title } from "../../lib/investor";
 import { money, PURPOSE_LABEL, type CreditPurpose } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
@@ -23,11 +25,14 @@ export default function Portfolio() {
     rows.reduce<Record<string, number>>((acc, r) => ({ ...acc, [r.purpose]: (acc[r.purpose] ?? 0) + r.amount_micro_usdc }), {}),
   ).sort((a, b) => b[1] - a[1]);
   const total = Math.max(1, rows.reduce((s, r) => s + r.amount_micro_usdc, 0));
+  const reaisOf = (r: PortfolioRow) => positionReais(r.amount_cents, r.amount_micro_usdc, r.fx_brl_per_usdc_milli) ?? 0;
+  const domesticRows = rows.filter((r) => r.funding_pool === "domestic");
+  const globalRows = rows.filter((r) => r.funding_pool !== "domestic");
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Investor console" title="Portfolio"
-        description="Every position you hold: what it funds, where the loan stands, what has come back to you, and the proof of each step." />
+      <PageHeader eyebrow="P2P capital console" title="Portfolio"
+        description="Every position you hold, by funding route: what it funds, where the loan stands, what has come back to you, and the proof of each step. Returns are simulated." />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {p ? (
@@ -36,7 +41,7 @@ export default function Portfolio() {
             <StatTile label="Raising" value={count((r) => r.status === "allocated" && (!r.loan_status || r.loan_status === "PARTNER_APPROVED"))} hint="before disbursement" />
             <StatTile label="Paid off" value={count((r) => r.loan_status === "PAID")} hintTone="positive" hint="fully repaid" />
             <StatTile label="Delinquent / defaulted" value={count((r) => r.loan_status === "DEFAULTED")} hintTone="alert" />
-            <StatTile label="Refund due" value={count((r) => r.status !== "allocated")} hintTone="caution" hint="partner declined" />
+            <StatTile label="Refunded" value={count((r) => r.status !== "allocated")} hintTone="caution" hint="declined or withdrawn" />
           </>
         ) : [0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 rounded-2xl bg-card" />)}
       </div>
@@ -45,10 +50,14 @@ export default function Portfolio() {
         <div className="grid gap-6 lg:grid-cols-3">
           <Panel title="Principal">
             <dl className="num grid grid-cols-2 gap-3 text-sm">
-              <dt className="text-muted-foreground">Invested</dt><dd className="text-right text-foreground">{usdc(p.invested_micro_usdc)}</dd>
+              <dt className="text-muted-foreground">{POOL.global.route}</dt>
+              <dd className="text-right text-foreground">{usdc(globalRows.reduce((n, r) => n + r.amount_micro_usdc, 0))}</dd>
+              <dt className="text-muted-foreground">{POOL.domestic.route} · simulated</dt>
+              <dd className="text-right text-foreground">{money(domesticRows.reduce((n, r) => n + reaisOf(r), 0))}</dd>
+              <dt className="text-muted-foreground">Invested, in USDC terms</dt><dd className="text-right text-foreground">{usdc(p.invested_micro_usdc)}</dd>
               <dt className="text-muted-foreground">Deployed</dt><dd className="text-right text-foreground">{usdc(p.deployed_micro_usdc)}</dd>
               <dt className="text-muted-foreground">Repaid to you</dt><dd className="text-right text-positive">{usdc(p.repaid_micro_usdc)}</dd>
-              <dt className="text-muted-foreground">Expected · demo</dt><dd className="text-right text-foreground">{usdc(p.expected_micro_usdc)}</dd>
+              <dt className="text-muted-foreground">Expected · simulated</dt><dd className="text-right text-foreground">{usdc(p.expected_micro_usdc)}</dd>
             </dl>
           </Panel>
           <Panel title="By purpose">
@@ -88,10 +97,11 @@ export default function Portfolio() {
           <p className="text-sm text-muted-foreground">No positions yet. <Link to="/app/investor/opportunities" className="text-info hover:underline">Browse opportunities →</Link></p>
         )}
         <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[860px] text-sm">
             <thead className="text-left text-xs text-muted-foreground">
               <tr className="border-b border-border">
                 <th className="py-2 pr-4 font-medium">Opportunity</th>
+                <th className="py-2 pr-4 font-medium">Route</th>
                 <th className="py-2 pr-4 text-right font-medium">Invested</th>
                 <th className="py-2 pr-4 text-right font-medium">Share</th>
                 <th className="py-2 pr-4 font-medium">State</th>
@@ -117,7 +127,8 @@ export default function Portfolio() {
                       {r.is_simulated && <span className="ml-2 text-xs text-caution">simulated</span>}
                       {r.mode === "zcash" && <span className="ml-2 text-xs text-info">shielded ZEC</span>}
                     </td>
-                    <td className="num py-3 pr-4 text-right text-foreground">{usdc(r.amount_micro_usdc)}</td>
+                    <td className="py-3 pr-4"><PoolPill pool={poolOf(r.funding_pool)} /></td>
+                    <td className="num py-3 pr-4 text-right text-foreground">{r.funding_pool === "domestic" ? money(reaisOf(r)) : usdc(r.amount_micro_usdc)}</td>
                     <td className="num py-3 pr-4 text-right text-muted-foreground">{(r.share_bps / 100).toFixed(1)}%</td>
                     <td className="py-3 pr-4">
                       <StatusPill tone={state.tone}>{state.label}</StatusPill>

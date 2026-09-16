@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
+import PoolPill from "../../components/product/PoolPill";
 import StatusPill from "../../components/product/StatusPill";
 import type { Tone } from "../../components/product/StatusPill";
 import { DECISION_LABEL, LOAN_LABEL, OPPORTUNITY_LABEL, type LoanStatus } from "../../lib/credit";
@@ -16,7 +17,7 @@ const LOAN_TONE: Record<LoanStatus, Tone> = {
 };
 const FINANCED: LoanStatus[] = ["DISBURSED", "ACTIVE", "PAID", "DEFAULTED"];
 
-/** Everyone who asked for capital, and where the request stands. The partner decides; the community sees status, not terms. */
+/** Everyone who asked for capital, and where the request stands: eligible, a P2P opportunity, funded. The community sees status and totals, never investors. */
 export default function Pipeline() {
   const { community } = useCommunity();
   const participants = useParticipants(community.id);
@@ -28,8 +29,8 @@ export default function Pipeline() {
     .sort((a, b) => b.stage_no - a.stage_no || a.display_name.localeCompare(b.display_name));
   const asking = participants.data.filter((p) => p.intent_purpose);
   const eligible = asking.filter((p) => p.eligibility_decision === "ELIGIBLE" || p.eligibility_decision === "ELIGIBLE_REDUCED");
-  const referred = participants.data.filter((p) => p.referred_at);
-  const approved = participants.data.filter((p) => p.opportunity_status === "partner_approved");
+  const listed = participants.data.filter((p) => p.stage_no >= 6);
+  const funded = participants.data.filter((p) => p.stage_no >= 7);
   const financed = participants.data.filter((p) => p.loan_status && FINANCED.includes(p.loan_status));
   const late = participants.data.filter((p) => p.late);
 
@@ -38,13 +39,13 @@ export default function Pipeline() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <StatTile label="Asking for credit" value={asking.length} hint={money(asking.reduce((n, p) => n + (p.intent_cents ?? 0), 0))} />
         <StatTile label="Eligible" value={eligible.length} hint="by EmpowerFI's rules" />
-        <StatTile label="Referred" value={referred.length} hint="to a partner" />
-        <StatTile label="Approved" value={approved.length} hint="by the partner" hintTone="positive" />
-        <StatTile label="Financed" value={financed.length} hint="disbursed" hintTone="positive" />
+        <StatTile label="P2P opportunities" value={listed.length} hint={money(listed.reduce((n, p) => n + (p.opportunity_cents ?? 0), 0))} />
+        <StatTile label="Funded" value={funded.length} hint={money(funded.reduce((n, p) => n + (p.funded_cents ?? 0), 0))} hintTone="positive" />
+        <StatTile label="Disbursed" value={financed.length} hint="by Pix" hintTone="positive" />
         <StatTile label="Late" value={late.length} hint="instalments overdue" hintTone={late.length ? "alert" : "neutral"} />
       </div>
 
-      <Panel title="Credit pipeline" description="Requests move from the community to EmpowerFI's eligibility rules to a regulated partner, who decides and lends.">
+      <Panel title="P2P pipeline" description="Requests move from the community to EmpowerFI's eligibility rules, become P2P opportunities with a pool of capital, and are funded by investors — domestic or global. She receives and repays in reais, by Pix.">
         {rows.length === 0 ? <p className="text-sm text-muted-foreground">Nobody has asked for credit yet.</p> : (
           <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
             <table className="w-full min-w-[820px] text-sm">
@@ -54,7 +55,7 @@ export default function Pipeline() {
                   <th className="py-2 pr-4 font-medium">Purpose</th>
                   <th className="py-2 pr-4 text-right font-medium">Requested</th>
                   <th className="py-2 pr-4 font-medium">Eligibility</th>
-                  <th className="py-2 pr-4 font-medium">Opportunity</th>
+                  <th className="py-2 pr-4 font-medium">P2P funding</th>
                   <th className="py-2 font-medium">Loan</th>
                 </tr>
               </thead>
@@ -72,7 +73,14 @@ export default function Pipeline() {
                         ? <span className={`rounded-full border px-2 py-0.5 text-xs ${DECISION_LABEL[p.eligibility_decision].tone}`}>{DECISION_LABEL[p.eligibility_decision].title}</span>
                         : <span className="text-xs text-muted-foreground">Not evaluated</span>}
                     </td>
-                    <td className="py-3 pr-4 text-xs text-muted-foreground">{p.opportunity_status ? OPPORTUNITY_LABEL[p.opportunity_status] : "—"}</td>
+                    <td className="py-3 pr-4 text-xs text-muted-foreground">
+                      {p.stage_no >= 6 ? (
+                        <span className="flex flex-wrap items-center gap-2">
+                          <PoolPill pool={p.funding_pool} />
+                          <span className="num">{money(p.funded_cents ?? 0)} of {money(p.opportunity_cents)}</span>
+                        </span>
+                      ) : p.opportunity_status ? OPPORTUNITY_LABEL[p.opportunity_status] : "—"}
+                    </td>
                     <td className="py-3">
                       {p.loan_status ? (
                         <span className="flex flex-wrap items-center gap-2">

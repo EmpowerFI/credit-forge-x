@@ -13,7 +13,7 @@ import { FundingSummary, LoanActions, StagePill } from "./parts";
 const DAY = 86_400_000;
 
 /**
- * The partner's servicing: loans to formalise once funded, repayments to
+ * The desk's servicing: loans to disburse once formalised, repayments to
  * record, what is overdue, and each instalment's way back to investors.
  */
 export default function Servicing() {

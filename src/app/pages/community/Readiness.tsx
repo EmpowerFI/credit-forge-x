@@ -50,7 +50,7 @@ export default function Readiness() {
     <div className="space-y-6">
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <DataTag kind="derived" /> Derived by the readiness engine from education, reporting and data quality. Readiness is not a
-        credit decision: eligibility and the partner come later.
+        credit decision: eligibility and P2P funding come later.
       </p>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">

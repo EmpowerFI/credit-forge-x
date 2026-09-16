@@ -71,7 +71,7 @@ export default function System() {
               <Row label="From shielded ZEC">{usdc(d.vault.zcash_micro_usdc)} <span className="text-xs text-muted-foreground">credited by the operator for ZEC payments</span></Row>
             )}
             <Row label="Refunded">{usdc(d.vault.refunded_micro_usdc)}</Row>
-            <Row label="Released">{usdc(d.vault.released_micro_usdc)} <span className="text-xs text-muted-foreground">to the ramp, as partners disbursed</span></Row>
+            <Row label="Released">{usdc(d.vault.released_micro_usdc)} <span className="text-xs text-muted-foreground">to the off-ramp, as the P2P desk disbursed global loans</span></Row>
             <Row label="Paid out">{usdc(d.vault.paid_out_micro_usdc)} <span className="text-xs text-muted-foreground">to investors; {usdc(d.vault.repaid_in_micro_usdc)} came in with it</span></Row>
           </dl>
           <p className={`flex items-center gap-2 text-sm ${vaultMatches === null ? "text-muted-foreground" : vaultMatches ? "text-positive" : "text-caution"}`}>

@@ -19,6 +19,9 @@ select plan(38);
 -- elsewhere. Wanda and Yara invest; Ivo audits.
 
 update partners set active = false where name not like 'pgTAP %';
+-- Every request here is funded in USDC: the global pool takes any of them.
+update funding_pools set capital_cents = 0 where pool = 'domestic';
+update funding_pools set purposes = '{}', max_ticket_cents = 5000000, eligible_risk_bands = '{LOW,MEDIUM,HIGH}' where pool = 'global';
 insert into partners (id, name, kind, min_ticket_cents, max_ticket_cents, accepted_purposes) values
   ('00000000-0000-0000-0000-0000000007f1', 'pgTAP Consent partner', 'credit_union', 10000, 1000000, '{inventory,equipment}');
 
@@ -91,7 +94,7 @@ select is((record_consent(true, false, false, true) ->> 'consent_no')::int, 1, '
 select is((record_consent(true, false, false, true) ->> 'reused')::boolean, true, 'the same choices again record nothing new');
 select results_eq(
   $$ select channel::text, text_version, recorded_by from consents where entrepreneur_id = '00000000-0000-0000-0000-0000000007e1' $$,
-  $$ values ('app', 'consent-v1', '00000000-0000-0000-0000-0000000007a3'::uuid) $$,
+  $$ values ('app', 'consent-v2', '00000000-0000-0000-0000-0000000007a3'::uuid) $$,
   'recorded as hers, from the app, against the wording she saw'
 );
 select ok(readiness_inputs('00000000-0000-0000-0000-0000000007e1') ? 'checkins', 'with consent, the engine may read her months');

@@ -9,7 +9,8 @@ import { DECISION_LABEL, ELIGIBILITY_REASON, percent } from "../../lib/credit";
 import { RISK } from "../../lib/investor";
 import { money, PURPOSE_LABEL } from "../../lib/readiness";
 import { useDesk } from "./context";
-import { DecisionForm, FundingSummary } from "./parts";
+import { FundingSummary, OpportunityActions, StagePill } from "./parts";
+import { stageOf } from "../../lib/partner";
 
 const TONE_OF: Record<string, "positive" | "info" | "neutral" | "caution"> = {
   "tone-positive": "positive", "tone-info": "info", "tone-neutral": "neutral", "tone-caution": "caution",
@@ -25,8 +26,9 @@ function Fact({ label, children, kind = "derived" }: { label: string; children: 
 }
 
 /**
- * Each request waiting on the partner, with what EmpowerFI's rules found and
- * how far investors have funded it. The decision is the partner's alone.
+ * Each qualified opportunity before a loan exists: what EmpowerFI's rules
+ * found, the pool the allocation engine chose, and how far investors have
+ * funded it. Funded, the desk formalises it at the engine's rate.
  */
 export default function Reviews() {
   const { desk, decides } = useDesk();
@@ -39,8 +41,8 @@ export default function Reviews() {
 
   if (waiting.length === 0) {
     return (
-      <Panel title="Nothing waiting">
-        <p className="text-sm text-muted-foreground">Every request referred to you has a decision. New ones arrive here as EmpowerFI's rules qualify them.</p>
+      <Panel title="Nothing before formalisation">
+        <p className="text-sm text-muted-foreground">Every qualified opportunity has been formalised or declined. New ones arrive here as EmpowerFI's rules qualify them.</p>
       </Panel>
     );
   }
@@ -49,8 +51,8 @@ export default function Reviews() {
     <div className="space-y-4">
       <p className="max-w-3xl text-sm text-muted-foreground">
         What you see is derived by EmpowerFI's engines from what she reported, rounded where it would otherwise be her books. Her name, her
-        business's name and her monthly figures stay private. Investors may already be funding a request: approving it does not disburse, and
-        you formalise once it is funded.
+        business's name and her monthly figures stay private. There is no separate approval: once investors have funded an opportunity, the
+        desk formalises it at the rate the Capital Allocation Engine set, and disburses. The desk can decline, and investors are refunded.
       </p>
       <ul className="space-y-4">
         {waiting.map((o) => {
@@ -59,8 +61,8 @@ export default function Reviews() {
             <li key={o.opportunity_id} id={o.opportunity_id} className="scroll-mt-24">
               <Panel
                 title={<span className="font-mono">{o.participant}</span>}
-                description={`${PURPOSE_LABEL[o.purpose]} · ${o.business_sector ?? "—"} · ${o.community_name ?? "—"} (${o.community_city}, ${o.community_state}) · referred ${shortDate(o.referred_at)}`}
-                actions={<StatusPill tone={TONE_OF[d.tone] ?? "neutral"}>EmpowerFI: {d.title}</StatusPill>}>
+                description={`${PURPOSE_LABEL[o.purpose]} · ${o.business_sector ?? "—"} · ${o.community_name ?? "—"} (${o.community_city}, ${o.community_state}) · qualified ${shortDate(o.referred_at)}`}
+                actions={<span className="flex flex-wrap gap-2"><StagePill stage={stageOf(o)} /><StatusPill tone={TONE_OF[d.tone] ?? "neutral"}>Eligibility: {d.title}</StatusPill></span>}>
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
                   <Fact label={o.requested_amount_cents !== o.amount_cents ? "Proposed (asked)" : "Request"}>
                     {money(o.amount_cents)}
@@ -81,8 +83,8 @@ export default function Reviews() {
                 </ul>
                 <div className="grid gap-4 border-t border-border pt-4 md:grid-cols-2">
                   <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">Investor funding</p>
-                    <FundingSummary funding={o.funding} />
+                    <p className="text-xs font-medium text-muted-foreground">Funding route and investors</p>
+                    <FundingSummary funding={o.funding} amountCents={o.amount_cents} />
                   </div>
                   <div className="space-y-1.5 text-xs">
                     <p className="font-medium text-muted-foreground">Evidence</p>
@@ -90,7 +92,7 @@ export default function Reviews() {
                     <ProofLine proof={o.proof} />
                   </div>
                 </div>
-                {decides && <DecisionForm o={o} />}
+                {decides && <div className="border-t border-border pt-4"><OpportunityActions o={o} decides={decides} /></div>}
               </Panel>
             </li>
           );

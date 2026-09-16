@@ -69,7 +69,7 @@ export default function Participants() {
     <div className="space-y-6">
       <Panel
         title={participants.data ? `${rows.length} of ${participants.data.length} participants` : "Participants"}
-        description="Readiness, reporting and data quality, without anyone's accounts: amounts stay with the participant and the partner.">
+        description="Readiness, reporting and data quality, without anyone's accounts: amounts stay with the participant and EmpowerFI's P2P desk.">
         <div className="flex flex-wrap gap-2">
           <div className="relative min-w-[12rem] flex-1">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden />

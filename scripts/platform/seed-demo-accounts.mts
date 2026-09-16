@@ -21,15 +21,19 @@ const db = createClient(URL, readFileSync(keyFile, "utf8").trim(), {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+// EmpowerFI's own P2P desk (founder decision D1, 16 Sep): it formalises what
+// investors fund, at the allocation engine's rate, and services the loans.
+// The database calls it a partner; it was the demo's credit union before.
 const PARTNER = {
-  name: "Cooperativa Horizonte (demo)",
-  kind: "credit_union" as const,
-  min_ticket_cents: 50_000,
-  max_ticket_cents: 1_000_000,
-  accepted_purposes: ["working_capital", "equipment", "inventory"],
-  decision_method: "manual" as const,
+  name: "EmpowerFI P2P desk",
+  kind: "other" as const,
+  min_ticket_cents: 10_000,
+  max_ticket_cents: 5_000_000,
+  accepted_purposes: [] as string[],
+  decision_method: "rules" as const,
   is_simulated: true,
 };
+const FORMER_PARTNER_NAME = "Cooperativa Horizonte (demo)";
 
 type Role = "entrepreneur" | "community_leader" | "partner" | "capital_provider" | "auditor" | "admin";
 
@@ -48,14 +52,16 @@ async function must<T>(label: string, p: PromiseLike<{ data: T; error: { message
   return data;
 }
 
-// The partner every partner-user acts for.
+// The desk every partner-user acts for, renamed in place if it was the credit union.
 const existingPartner = await must(
   "find partner",
-  db.from("partners").select("id").eq("name", PARTNER.name).maybeSingle(),
+  db.from("partners").select("id").in("name", [PARTNER.name, FORMER_PARTNER_NAME]).order("created_at").limit(1).maybeSingle(),
 );
-const partnerId =
-  (existingPartner as { id: string } | null)?.id ??
-  (await must("create partner", db.from("partners").insert(PARTNER).select("id").single())).id;
+const partnerId = (existingPartner as { id: string } | null)?.id
+  ? (await must("update partner", db.from("partners").update(PARTNER).eq("id", (existingPartner as { id: string }).id).select("id").single())).id
+  : (await must("create partner", db.from("partners").insert(PARTNER).select("id").single())).id;
+// Opportunities are matched to the first active partner: only the desk is.
+await must("one desk", db.from("partners").update({ active: false }).neq("id", partnerId));
 
 const { data: list, error: listError } = await db.auth.admin.listUsers({ perPage: 1000 });
 if (listError) throw listError;

@@ -28,8 +28,8 @@ import {
   LogOut,
   Menu,
   Store,
+  Split,
   Users,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ import NetworkBadge from "./components/product/NetworkBadge";
 import WalletChip from "./wallet/WalletChip";
 import { useAuth } from "./auth/useAuth";
 import { ROLE_LABEL, type Role } from "./lib/platform";
+import { PROTOTYPE_NOTICE } from "./lib/capital";
 import { COMMUNITY_TABS } from "./lib/community";
 import { useLedCommunity } from "./pages/community/queries";
 
@@ -48,8 +49,8 @@ import { useLedCommunity } from "./pages/community/queries";
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean }
 
 const COMMUNITIES: NavItem = { to: "/app/community", label: "Communities", icon: Users };
-const PIPELINE: NavItem = { to: "/app/partner", label: "Partner pipeline", icon: Briefcase };
-const PORTFOLIO: NavItem = { to: "/app/capital", label: "Capital", icon: Wallet };
+const PIPELINE: NavItem = { to: "/app/partner", label: "P2P desk", icon: Briefcase };
+const ENGINE: NavItem = { to: "/app/capital", label: "Allocation engine", icon: Split };
 
 const AUDIT: NavItem[] = [
   { to: "/app/audit", label: "Attestations", icon: FileCheck2, end: true },
@@ -70,31 +71,33 @@ const NAV: Record<Role, NavItem[]> = {
   community_leader: [COMMUNITIES],
   partner: [
     { to: "/app/partner", label: "Pipeline", icon: RouteIcon, end: true },
-    { to: "/app/partner/reviews", label: "Reviews", icon: ClipboardCheck },
+    { to: "/app/partner/reviews", label: "Opportunities", icon: ClipboardCheck },
     { to: "/app/partner/decisions", label: "Decisions", icon: Gavel },
     { to: "/app/partner/portfolio", label: "Portfolio", icon: PieChart },
     { to: "/app/partner/servicing", label: "Servicing", icon: CalendarClock },
+    ENGINE,
   ],
   capital_provider: [
     { to: "/app/investor", label: "Overview", icon: LayoutDashboard, end: true },
     { to: "/app/investor/opportunities", label: "Opportunities", icon: Coins },
+    ENGINE,
     { to: "/app/investor/portfolio", label: "Portfolio", icon: PieChart },
     { to: "/app/investor/settlement", label: "Settlement", icon: ArrowLeftRight },
     { to: "/app/investor/audit", label: "Audit trail", icon: BadgeCheck },
   ],
-  auditor: [...AUDIT, COMMUNITIES, PIPELINE, PORTFOLIO],
+  auditor: [...AUDIT, COMMUNITIES, PIPELINE, ENGINE],
   admin: [
     { to: "/app/admin", label: "Review queue", icon: ClipboardCheck },
     { to: "/app/audit", label: "Audit console", icon: ScanSearch },
-    COMMUNITIES, PIPELINE, PORTFOLIO,
+    COMMUNITIES, PIPELINE, ENGINE,
   ],
 };
 
 const WORKSPACE: Record<Role, string> = {
   entrepreneur: "My business",
   community_leader: "Community Intelligence",
-  partner: "Partner Desk",
-  capital_provider: "Investor Console",
+  partner: "EmpowerFI P2P desk",
+  capital_provider: "P2P Capital Console",
   auditor: "Audit",
   admin: "EmpowerFI Admin",
 };
@@ -117,9 +120,7 @@ function Sidebar({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => v
       </nav>
       <div className="space-y-4 border-t border-border pt-4">
         <DataLegend compact />
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          Demo data on Solana Devnet. Every figure here is simulated; no real money moves.
-        </p>
+        <p className="text-xs leading-relaxed text-muted-foreground">{PROTOTYPE_NOTICE}</p>
         <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           empowerfi.io <ArrowUpRight size={12} aria-hidden />
         </Link>

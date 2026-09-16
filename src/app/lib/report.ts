@@ -137,17 +137,26 @@ async function statuses(signatures: string[]) {
   return out;
 }
 
+export interface ProofToVerify { kind: string; signature: string; account: string | null; commitment: string | null }
+
+export interface ProofVerification {
+  checked: number;
+  landed: number;
+  commitment_found: number;
+  unreadable: number;
+  problems: { signature: string; kind: string; issue: string }[];
+}
+
 /**
- * Looks a report's proofs and transfers up on Solana. For each proof: did its
- * transaction land, and is its commitment there — in the account the program
- * owns, or, for a record an account has since moved past (a loan's earlier
- * status), in the transaction that wrote it. Reads the vault's balance too.
- * Nothing here trusts EmpowerFI's servers: every answer comes from the RPC.
+ * Looks proofs up on Solana: did each transaction land, and is its commitment
+ * there — in the account the program owns, or, for a record an account has
+ * since moved past (a loan's earlier status), in the transaction that wrote
+ * it. Nothing here trusts EmpowerFI's servers: every answer comes from the RPC.
  */
-export async function checkOnChain(snapshot: ReportSnapshot, onProgress?: (step: string) => void): Promise<ChainCheck> {
+export async function verifyProofs(all: ProofToVerify[], onProgress?: (step: string) => void): Promise<ProofVerification> {
   const program = new Uint8Array(getAddressEncoder().encode(PROGRAM_ID));
-  const proofs = snapshot.proofs.filter((p) => p.commitment);
-  const problems: ChainCheck["proofs"]["problems"] = [];
+  const proofs = all.filter((p) => p.commitment && p.signature);
+  const problems: ProofVerification["problems"] = [];
 
   onProgress?.(`Looking up ${proofs.length} proof transactions`);
   const landed = await statuses(proofs.map((p) => p.signature));
@@ -185,6 +194,15 @@ export async function checkOnChain(snapshot: ReportSnapshot, onProgress?: (step:
     else if (unreadable.has(p.signature)) continue;
     else if (!found.has(p.signature)) problems.push({ signature: p.signature, kind: p.kind, issue: "commitment not found" });
   }
+  return {
+    checked: proofs.length, landed: proofs.filter((p) => landed.get(p.signature)).length, commitment_found: found.size,
+    unreadable: unreadable.size, problems,
+  };
+}
+
+/** Looks a report's proofs and transfers up on Solana, and reads the vault's balance. */
+export async function checkOnChain(snapshot: ReportSnapshot, onProgress?: (step: string) => void): Promise<ChainCheck> {
+  const proofs = await verifyProofs(snapshot.proofs, onProgress);
 
   const movements = [
     ...snapshot.settlement.transfers.map((t) => t.signature),
@@ -203,10 +221,7 @@ export async function checkOnChain(snapshot: ReportSnapshot, onProgress?: (step:
   return {
     at: new Date().toISOString(),
     rpc: import.meta.env.VITE_SOLANA_RPC_URL ? "custom" : "public",
-    proofs: {
-      checked: proofs.length, landed: proofs.filter((p) => landed.get(p.signature)).length, commitment_found: found.size,
-      unreadable: unreadable.size, problems,
-    },
+    proofs,
     transfers: { checked: movements.length, landed: movements.filter((s) => moved.get(s)).length, problems: movements.filter((s) => !moved.get(s)) },
     vault: { address: vault, chain_micro_usdc: balance },
   };

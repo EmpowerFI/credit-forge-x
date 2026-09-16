@@ -13,6 +13,7 @@ import { platformConfigured, type Role } from "../lib/platform";
 import { shortAddress } from "../lib/solana";
 import ConnectWalletDialog from "../wallet/ConnectWallet";
 import { useWalletSignIn } from "../wallet/useWalletSignIn";
+import { PROTOTYPE_NOTICE } from "../lib/capital";
 
 // Judges have no inbox for magic links, so the demo runs on fixed-password
 // accounts (PLAN_HACKATHON.md §G.2). The password is public on purpose: this
@@ -21,12 +22,12 @@ const DEMO_PASSWORD = "EmpowerFI-demo-2026";
 
 // One entry per persona: the workspace it opens and what it is for.
 const PERSONAS: { email: string; role: Role; workspace: string; description: string; icon: LucideIcon }[] = [
-  { email: "investor@demo.empowerfi.io", role: "capital_provider", workspace: "Investor Console",
-    description: "Qualified opportunities, positions, repayments and the proofs behind them.", icon: Wallet },
+  { email: "investor@demo.empowerfi.io", role: "capital_provider", workspace: "P2P Capital Console",
+    description: "Qualified demand, the domestic and global pools, positions, repayments and the proofs behind them.", icon: Wallet },
   { email: "leader@demo.empowerfi.io", role: "community_leader", workspace: "Community Intelligence",
     description: "Where members stand on the way to readiness, and who needs what next.", icon: Users },
-  { email: "partner@demo.empowerfi.io", role: "partner", workspace: "Partner Desk",
-    description: "Pseudonymous opportunities to formalise, loans to disburse and service.", icon: Briefcase },
+  { email: "partner@demo.empowerfi.io", role: "partner", workspace: "EmpowerFI P2P desk",
+    description: "Funded opportunities to formalise at the engine's rate, loans to disburse and service.", icon: Briefcase },
   { email: "auditor@demo.empowerfi.io", role: "auditor", workspace: "Audit",
     description: "Every record, recomputed in your browser and checked against Solana.", icon: ShieldCheck },
   { email: "maria@demo.empowerfi.io", role: "entrepreneur", workspace: "My business",
@@ -118,9 +119,9 @@ export default function LoginPage() {
           <p className="text-xs font-medium uppercase tracking-widest text-accent">EmpowerFI platform</p>
           <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">Choose a workspace</h1>
           <p className="text-muted-foreground">
-            Productive credit from readiness to capital, with every step proven on Solana. This environment runs on
-            devnet with simulated data: enter any workspace as its demo account.
+            P2P productive credit from readiness to capital, with every step proven on Solana: enter any workspace as its demo account.
           </p>
+          <p className="rounded-xl border tone-caution px-4 py-3 text-sm">{PROTOTYPE_NOTICE}</p>
           <DataLegend />
         </div>
 

@@ -1,9 +1,9 @@
 // The consent an entrepreneur gives, in the words she sees (version
-// consent-v1). The database stores which uses she allowed and this version;
+// consent-v2). The database stores which uses she allowed and this version;
 // the chain stores a hash of the record. Changing the wording means a new
 // version here and in docs/PRIVACY.md, and the database's consent_text_version().
 
-export const CONSENT_TEXT_VERSION = "consent-v1";
+export const CONSENT_TEXT_VERSION = "consent-v2";
 
 export const SCOPES = ["assessment", "partner", "investors", "impact"] as const;
 export type Scope = (typeof SCOPES)[number];
@@ -32,11 +32,11 @@ export const SCOPE_TEXT: Record<Scope, ScopeText> = {
     without: "I can keep reporting and learning, but nothing is assessed and I cannot ask for credit.",
   },
   partner: {
-    title: "Share my request with a credit partner",
+    title: "Share my request with EmpowerFI's P2P desk",
     uses: "My request, EmpowerFI's assessment of it, and my indicators, with sales and result rounded to R$ 100.",
-    who: "The regulated partner EmpowerFI refers me to. The partner decides and lends; EmpowerFI never does.",
-    never: "The partner sees a code, not my name, my business's name or my monthly figures.",
-    without: "I cannot ask for credit here, because a partner has to see the request to lend.",
+    who: "EmpowerFI's P2P desk, which formalises and services loans funded by P2P investors.",
+    never: "The desk sees a code, not my name, my business's name or my monthly figures.",
+    without: "I cannot ask for credit here, because the desk has to see the request to formalise a loan.",
     needs: "assessment",
   },
   investors: {
@@ -44,7 +44,7 @@ export const SCOPE_TEXT: Record<Scope, ScopeText> = {
     uses: "Purpose, sector, amount, term, my community, and the grades of the assessment.",
     who: "Investors in EmpowerFI's console.",
     never: "My name, my words, my figures and my bank details. On chain, no investment points to me.",
-    without: "The partner lends from its own capital. If I withdraw this later, investors are refunded, unless the loan has already been paid out.",
+    without: "My request cannot be funded: in this P2P model, investors fund every loan. If I withdraw this later, investors are refunded, unless the loan has already been paid out.",
     needs: "partner",
   },
   impact: {
@@ -94,7 +94,7 @@ export function consequences(from: Choices | null, to: Choices): string[] {
   const out: string[] = [];
   const was = from ?? NONE;
   if (was.assessment && !to.assessment) out.push("New assessments stop. The ones already made stay on record, with their proofs.");
-  if (was.partner && !to.partner) out.push("New requests are not sent to a partner. What a partner already has stays under its own obligations.");
+  if (was.partner && !to.partner) out.push("New requests are not sent to EmpowerFI's P2P desk. Loans already formalised keep their obligations.");
   if (was.investors && !to.investors) out.push("An open request leaves the investor market, and anyone who funded it is refunded, unless the loan has already been paid out.");
   if (!was.investors && to.investors) out.push("An open request, never funded, is shown to investors without your name.");
   if (was.impact !== to.impact) out.push(to.impact ? "Your outcome will count in impact totals." : "Your outcome leaves the impact totals.");

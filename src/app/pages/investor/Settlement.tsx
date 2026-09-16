@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowRight, Landmark, Loader2, Receipt, Store, Vault, Wallet } from "lucide-react";
-import { compareRoutes, type Route } from "@empowerfi/capital-route";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,13 +20,6 @@ import { rpc, usdc, vaultAddress } from "../../lib/solana";
 // Where capital goes after it is allocated, and how it comes back: the legs
 // that are real transactions on devnet, and the ones that are simulated or
 // mocks, each labelled as such.
-
-const ROUTE_TITLE: Record<Route["id"], string> = {
-  domestic_pix: "Reais already in Brazil · Pix",
-  brl_stablecoin: "BRL stablecoin · off-ramp",
-  usd_wire: "US dollars · bank wire",
-  usd_stablecoin: "USDC · regulated off-ramp",
-};
 
 function useSettlement() {
   return useQuery({
@@ -116,14 +107,8 @@ function Simulator({ fxMilli, rampBps }: { fxMilli: number; rampBps: number }) {
       <span className={`num ${strong ? "font-semibold text-foreground" : "text-foreground"}`}>{value}</span>
     </div>
   );
-  // Moving this amount in, and back out as it is repaid, by each route: rail and compliance only.
-  const rails = useMemo(() => net > 0
-    ? compareRoutes({ principal_cents: net, term_months: 12, required_return_bps: 0, expected_loss_bps: 0, operating_cost_cents: 0 })
-        .sort((a, b) => a.rail_cents - b.rail_cents)
-    : [], [net]);
-
   return (
-    <Panel title="Payment simulator" description="What a USDC release becomes in reais on her side of the route, at MoneyGram's sandbox quote or at assumptions you set.">
+    <Panel title="Global route · off-ramp simulator" description="What a USDC release becomes in reais on her side of the global route, at MoneyGram's sandbox quote or at assumptions you set. The domestic route has no conversion: reais in, reais out.">
       <div role="radiogroup" aria-label="Quote from" className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
         {([["moneygram", "MoneyGram sandbox", "a live quote, $2–$200"], ["demo", "Demo assumptions", "a quote and spread you set"]] as const).map(([key, label, hint]) => (
           <button key={key} type="button" role="radio" aria-checked={source === key} onClick={() => change(setSource)(key)}
@@ -203,29 +188,12 @@ function Simulator({ fxMilli, rampBps }: { fxMilli: number; rampBps: number }) {
             <span className="font-medium text-foreground">Pix settled</span>
             <StatusPill tone={REALITY.mock.tone}>Mock · no Pix was sent</StatusPill>
           </div>
-          <p className="num text-foreground">{money(receipt.cents)} → her business account, held by the partner</p>
+          <p className="num text-foreground">{money(receipt.cents)} → her business account, by Pix</p>
           <p className="break-all font-mono text-xs text-muted-foreground">{receipt.e2e}</p>
           <p className="text-xs text-muted-foreground">{receipt.at.toLocaleString("en-GB")} · end-to-end id in Pix's format, invented</p>
         </div>
       )}
 
-      {rails.length > 0 && (
-        <div className="space-y-2 border-t border-border pt-3">
-          <p className="text-sm font-medium text-foreground">Moving {money(net)} in and back out, by route</p>
-          <ul className="space-y-1 text-sm">
-            {rails.map((r) => (
-              <li key={r.route.id} className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">{ROUTE_TITLE[r.route.id]}</span>
-                <span className="num text-foreground">{money(r.rail_cents)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="text-xs text-muted-foreground">
-            Spreads, fees and compliance from packages/capital-route, over a 12-month loan. A stablecoin rail is not cheaper by default: it earns its
-            place against the bank wire it replaces. <Link to="/app/capital" className="text-info hover:underline">Compare what each route costs her →</Link>
-          </p>
-        </div>
-      )}
     </Panel>
   );
 }
@@ -248,7 +216,7 @@ export default function Settlement() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Investor console" title="Settlement"
-        description="How capital reaches her business and comes back. Deposits, releases and payouts are real transactions on Solana devnet; the conversion to reais is simulated, with a live quote from MoneyGram's sandbox in the simulator, and Pix is a mock. Every screen says which is which." />
+        description="How capital reaches her business and comes back, by either route. Global P2P: deposits, releases and payouts are real transactions on Solana devnet, the conversion to reais is simulated (with a live MoneyGram sandbox quote in the simulator), and Pix is a mock. Domestic P2P: a simulated BRL pool and a mock Pix. Every screen says which is which." />
 
       {!d ? <Skeleton className="h-64 w-full" /> : (
         <>
@@ -261,7 +229,17 @@ export default function Settlement() {
               hintTone={chain.data && chain.data.micro === d.vault.in_vault_micro_usdc ? "positive" : "caution"} />
           </div>
 
-          <Panel title="The route" description="Out to her business when the partner disburses, and back to investors with each instalment.">
+          <Panel title="Domestic P2P · the route" description="Brazilian investors' capital, in reais: no wallet, no conversion.">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
+              <Node icon={Landmark} title="Brazilian investors" reality="simulated">A BRL pool, allocated in reais. No bank transfer in this prototype.</Node>
+              <Arrow label="allocation" />
+              <Node icon={Vault} title="P2P structure" reality="simulated">Formalised and serviced by EmpowerFI's P2P desk, at the allocation engine's rate.</Node>
+              <Arrow label="Pix" />
+              <Node icon={Store} title="Her business" reality="mock">Receives and repays in reais, by Pix.</Node>
+            </div>
+          </Panel>
+
+          <Panel title="Global P2P · the route" description="Out to her business when EmpowerFI's P2P desk disburses, and back to investors with each instalment.">
             <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
               <Node icon={Wallet} title="Investors" reality="real">
                 {usdc(d.vault.deposits_micro_usdc)} deposited by wallet or shielded ZEC, and not refunded.
@@ -271,7 +249,7 @@ export default function Settlement() {
                 Holds {chain.data ? usdc(chain.data.micro) : "…"}. {chain.data && <ExplorerLink address={chain.data.vault} />}
               </Node>
               <Arrow label="release, batched" />
-              <Node icon={Landmark} title="Ramp partner" reality="simulated">
+              <Node icon={Landmark} title="Regulated off-ramp" reality="simulated">
                 {usdc(d.vault.released_micro_usdc)} released, turned into reais at R$ {(d.fx_brl_per_usdc_milli / 1000).toFixed(2)} less {(d.ramp_bps / 100).toFixed(2)}%. The simulator prices it with MoneyGram's sandbox.
               </Node>
               <Arrow label="Pix" />
@@ -313,7 +291,7 @@ export default function Settlement() {
 
           <Panel title="Vault transfers" description="The operator-signed transactions that moved USDC out of the vault, newest first.">
             {d.transfers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No release or payout yet: they start when a partner disburses a loan with real deposits.</p>
+              <p className="text-sm text-muted-foreground">No release or payout yet: they start when EmpowerFI's P2P desk disburses a global loan with real deposits.</p>
             ) : (
               <div className="relative -mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
                 <table className="w-full min-w-[640px] text-sm">

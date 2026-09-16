@@ -5,7 +5,6 @@ import { Loader2 } from "lucide-react";
 import { AuthProvider } from "./auth/AuthProvider";
 import RequireAuth from "./auth/RequireAuth";
 import AdminReviewPage from "./pages/AdminReviewPage";
-import CapitalPage from "./pages/CapitalPage";
 import CheckinPage from "./pages/CheckinPage";
 import CommunitiesPage from "./pages/CommunitiesPage";
 import HomeRedirect from "./pages/HomeRedirect";
@@ -17,6 +16,7 @@ import WalletProvider from "./wallet/WalletProvider";
 
 // The Solana client is heavy and only the audit screens need it in the browser.
 const AuditPage = lazy(() => import("./pages/AuditPage"));
+const AllocationEngine = lazy(() => import("./pages/capital/AllocationEngine"));
 const AuditLayout = lazy(() => import("./pages/audit/AuditLayout"));
 const AuditAttestations = lazy(() => import("./pages/audit/Attestations"));
 const AuditEvents = lazy(() => import("./pages/audit/Events"));
@@ -37,7 +37,7 @@ const InvestorPosition = lazy(() => import("./pages/investor/Position"));
 const InvestorAuditTrail = lazy(() => import("./pages/investor/AuditTrail"));
 const InvestorSettlement = lazy(() => import("./pages/investor/Settlement"));
 
-// The partner's desk.
+// EmpowerFI's P2P desk (the partner role in the database).
 const PartnerLayout = lazy(() => import("./pages/partner/PartnerLayout"));
 const PartnerPipeline = lazy(() => import("./pages/partner/Pipeline"));
 const PartnerReviews = lazy(() => import("./pages/partner/Reviews"));
@@ -135,7 +135,7 @@ export default function PlatformApp() {
           <Route path="investor/positions/:id" element={investor(<InvestorPosition />)} />
           <Route path="investor/settlement" element={investor(<InvestorSettlement />)} />
           <Route path="investor/audit" element={investor(<InvestorAuditTrail />)} />
-          <Route path="capital" element={<RequireAuth roles={["capital_provider", "admin", "auditor"]}><CapitalPage /></RequireAuth>} />
+          <Route path="capital" element={<RequireAuth roles={["capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
           <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/app" replace />} />
         </Route>

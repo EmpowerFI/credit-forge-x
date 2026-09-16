@@ -149,30 +149,33 @@ for (const v of SEED_INVESTORS) {
 const irene = profiles.find((p) => p.display_name === "Irene Costa");
 if (!irene) throw new Error("run seed-demo-accounts.mts first: no demo investor");
 
-// Investors fund an opportunity up to `fill` of its USDC target, the demo
-// investor taking `ireneShare` of the whole. Simulated positions: no deposit
-// on chain, and marked so — their allocations are proven all the same.
+// Investors fund an opportunity up to `fill` of its target, the demo investor
+// taking `ireneShare` of the whole. Simulated positions: no deposit on chain,
+// and marked so — their allocations are proven all the same. A global pool's
+// target is whole USDC; a domestic pool's is her reais at the quote, so the
+// last investor takes exactly what remains.
 const fundRandom = rng(20260915);
 async function fund(opportunityId: string, fill: number, ireneShare: number, at: string) {
   const { data: o, error } = await db.from("qualified_credit_opportunities")
     .select("funding_target_micro_usdc, funding_status").eq("id", opportunityId).single();
   if (error) throw error;
-  // Not offered to investors, by her choice: the partner lends its own capital.
+  // Not offered to investors, by her choice, or no pool could take it: it waits.
   if (!o.funding_status) return;
-  const target = Math.round(o.funding_target_micro_usdc / 1_000_000);
-  const goal = fill >= 1 ? target : Math.floor(target * fill);
+  const target = o.funding_target_micro_usdc as number;
+  const whole = (micro: number) => Math.floor(micro / 1_000_000) * 1_000_000;
+  const goal = fill >= 1 ? target : whole(target * fill);
   const parts: [string, number][] = [];
-  const mine = Math.min(goal, Math.floor(target * ireneShare));
+  const mine = Math.min(goal, whole(target * ireneShare));
   if (mine > 0) parts.push([irene!.id, mine]);
   let rest = goal - mine;
   for (const [k, id] of seedInvestorIds.entries()) {
-    const take = k === seedInvestorIds.length - 1 ? rest : Math.floor(rest * (0.4 + fundRandom() * 0.3));
+    const take = k === seedInvestorIds.length - 1 ? rest : whole(rest * (0.4 + fundRandom() * 0.3));
     if (take > 0) parts.push([id, take]);
     rest -= take;
   }
-  for (const [investorId, usdc] of parts) {
+  for (const [investorId, micro] of parts) {
     await must("fund", db.rpc("record_investment", {
-      p_investor_id: investorId, p_opportunity_id: opportunityId, p_amount_micro_usdc: usdc * 1_000_000,
+      p_investor_id: investorId, p_opportunity_id: opportunityId, p_amount_micro_usdc: micro,
       p_mode: "simulated", p_is_simulated: true, p_created_at: at,
     }));
   }
@@ -625,10 +628,8 @@ for (const c of firstCycle) {
   if (!opp || opp.status !== "referred") continue;
   await fund(opp.id, 1, 0.25, "2026-07-08T18:00:00-03:00");
 
-  await must("first-cycle approval", asPartner.rpc("partner_decide", {
-    p_opportunity_id: opp.id, p_verdict: "approved", p_approved_amount_cents: opp.amount_cents, p_rate_bps: 300,
-    p_term_months: c.plan === "early_payoff" ? 3 : opp.term_months, p_reason: "First cycle",
-  }));
+  // Funded: the desk formalises it at the allocation engine's rate.
+  await must("first-cycle formalisation", asPartner.rpc("formalise_loan", { p_opportunity_id: opp.id, p_note: "First cycle" }));
   const { data: loan, error: loanError } = await asPartner.from("loans")
     .select("id, instalment_cents, term_months").eq("opportunity_id", opp.id).single();
   if (loanError) throw loanError;
@@ -761,63 +762,72 @@ for (const intent of openIntents.filter((i) => !cycleIds.has(i.entrepreneur_id))
   }));
 }
 
-// ------------------------------------------------------------- the partner
-// Signed in as the demo partner, through the same RPCs its users call: the
-// lending decision is theirs, so the seed takes it in their name. Three
-// referrals are left waiting, so the desk is never empty on camera.
-
+// ---------------------------------------------------------------- the desk
+// Signed in as EmpowerFI's P2P desk, through the same RPCs its users call.
+// Nothing is approved separately: what investors fund is formalised at the
+// allocation engine's rate. Three opportunities are left raising, and one
+// fully funded waits to be formalised on camera.
 
 const { data: referred, error: referredError } = await db.from("qualified_credit_opportunities")
   .select("id, amount_cents, term_months").eq("status", "referred").order("created_at").order("id");
 if (referredError) throw referredError;
-const toDecide = referred.slice(0, Math.max(0, referred.length - 3));
-let approved = 0, declined = 0, waiting = 0, cancelled = 0;
-for (const [i, o] of toDecide.entries()) {
-  const next = (approved + 1) % 3;
-  // Approved and not yet disbursed: the first is funded and ready to
-  // formalise, the rest are still raising. The first loan offered to investors
-  // that would have been disbursed is declined at formalisation instead, and
-  // its investors are refunded.
-  const holding = i % 5 !== 4 && next === 0 ? waiting++ : -1;
-  const { data: listing } = await db.from("qualified_credit_opportunities").select("funding_status").eq("id", o.id).single();
-  const cancelling = i % 5 !== 4 && next === 1 && Boolean(listing?.funding_status) && cancelled === 0;
-  const disbursing = i % 5 !== 4 && next >= 1;
-  // Declined: partly funded, then refunded. Disbursed: funded in full first.
-  await fund(o.id, i % 5 === 4 ? 0.3 : disbursing || holding === 0 ? 1 : 0.6, i % 2 === 0 ? 0.2 : 0, "2026-09-13T12:00:00-03:00");
+const toWorkOn = referred.slice(0, Math.max(0, referred.length - 3));
+let formalised = 0, declined = 0, ready = 0, raising = 0, cancelled = 0, unlisted = 0;
+for (const [i, o] of toWorkOn.entries()) {
+  const funding = async () =>
+    (await db.from("qualified_credit_opportunities").select("funding_status").eq("id", o.id).single()).data?.funding_status as string | null;
+  if (!(await funding())) {
+    unlisted++;
+    continue;
+  }
+  const ireneShare = i % 2 === 0 ? 0.2 : 0;
+  // Declined before it filled: partly funded, then refunded.
   if (i % 5 === 4) {
+    await fund(o.id, 0.3, ireneShare, "2026-09-13T12:00:00-03:00");
     await must("decline", asPartner.rpc("partner_decide", {
-      p_opportunity_id: o.id, p_verdict: "declined", p_reason: "Outside our current sector focus",
+      p_opportunity_id: o.id, p_verdict: "declined", p_reason: "Outside the programme's current sector focus",
     }));
     declined++;
     continue;
   }
-  await must("approve", asPartner.rpc("partner_decide", {
-    p_opportunity_id: o.id, p_verdict: "approved", p_approved_amount_cents: o.amount_cents,
-    p_rate_bps: 300, p_term_months: o.term_months, p_reason: "Pilot cohort",
-  }));
-  approved++;
-  // Loans at different points of their life: approved, disbursed, repaying.
-  const { data: loan } = await asPartner.from("loans").select("id, instalment_cents").eq("opportunity_id", o.id).single();
-  if (cancelling) {
-    await must("decline at formalisation", asPartner.rpc("transition_loan", {
-      p_loan_id: loan!.id, p_to: "CANCELLED", p_note: "Guarantor could not be reached at signing",
+  const slot = (formalised + ready + raising + cancelled) % 3;
+  if (slot === 0) {
+    // The first is funded and waits for the desk; the rest are still raising.
+    await fund(o.id, ready === 0 ? 1 : 0.6, ireneShare, "2026-09-13T12:00:00-03:00");
+    if (ready === 0) ready++;
+    else raising++;
+    continue;
+  }
+  await fund(o.id, 1, ireneShare, "2026-09-13T12:00:00-03:00");
+  if (slot === 1 && cancelled === 0) {
+    // Funded, then declined at formalisation: its investors are refunded.
+    await must("decline at formalisation", asPartner.rpc("partner_decide", {
+      p_opportunity_id: o.id, p_verdict: "declined", p_reason: "Guarantor could not be reached at signing",
     }));
     cancelled++;
     continue;
   }
-  const stage = approved % 3;
-  if (stage >= 1) await must("disburse", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "DISBURSED", p_note: "Pix sent" }));
-  if (stage === 2) {
+  if ((await funding()) !== "funded") {
+    raising++;
+    continue;
+  }
+  const loanId = await must("formalise", asPartner.rpc("formalise_loan", { p_opportunity_id: o.id })) as string;
+  formalised++;
+  const { data: loan } = await asPartner.from("loans").select("id, instalment_cents").eq("id", loanId).single();
+  // Loans at different points of their life: disbursed, or repaying.
+  await must("disburse", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "DISBURSED", p_note: "Pix sent" }));
+  if (formalised % 2 === 0) {
     await must("activate", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "ACTIVE" }));
-    for (let n = 1; n <= 1 + (approved % 2); n++) {
+    for (let n = 1; n <= 1 + (formalised % 4 === 0 ? 1 : 0); n++) {
       await must("pay", asPartner.rpc("record_payment", { p_loan_id: loan!.id, p_instalment_no: n, p_amount_cents: loan!.instalment_cents }));
     }
   }
 }
-// The three awaiting the partner are raising, at different points.
-for (const [k, o] of referred.slice(toDecide.length).entries()) {
+// The last three are raising, at different points.
+for (const [k, o] of referred.slice(toWorkOn.length).entries()) {
   await fund(o.id, [0.15, 0.45, 0][k] ?? 0, 0, "2026-09-13T15:00:00-03:00");
 }
+const { data: overview } = await asPartner.rpc("capital_overview");
 await asPartner.auth.signOut();
 
 // ----------------------------------------------------------------- capital
@@ -840,7 +850,16 @@ console.log(`education: ${progress.length} progress records`);
 console.log(`check-ins: ${checkins.length}`);
 console.log(`readiness: ${JSON.stringify(tally)}`);
 console.log(`credit intents: ${intents.length}`);
-console.log(`partner: ${approved} approved (${cancelled} declined at formalisation), ${declined} declined, ${referred.length - toDecide.length} awaiting decision`);
+console.log(`desk: ${formalised} formalised, ${ready} funded and ready to formalise, ${raising + referred.length - toWorkOn.length} raising, ${declined} declined, ${cancelled} declined at formalisation, ${unlisted} not listed`);
+{
+  const ov = overview as { coverage: Record<string, number>; pools: { pool: string; liquidity_cents: number }[]; demand: { funding_pool: string | null }[] } | null;
+  if (ov) {
+    const byPool = ov.demand.reduce<Record<string, number>>((acc, d) => ({ ...acc, [d.funding_pool ?? "waiting"]: (acc[d.funding_pool ?? "waiting"] ?? 0) + 1 }), {});
+    console.log(`capital: demand R$ ${(ov.coverage.demand_cents / 100).toLocaleString("en-US")}, ` +
+      ov.pools.map((p) => `${p.pool} liquidity R$ ${(p.liquidity_cents / 100).toLocaleString("en-US")}`).join(", ") +
+      `, coverage ${ov.coverage.domestic_coverage_bps / 100}% domestic alone, ${ov.coverage.combined_coverage_bps / 100}% combined; opportunities ${JSON.stringify(byPool)}`);
+  }
+}
 console.log(`capital: ${investor ? "R$ 50,000 committed by the demo investor (simulated)" : "no capital provider account"}`);
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
 console.log(`short history, awaiting manual review: ${inserted.find((e) => e.id === recent)?.display_name ?? "none"} (${COMMUNITIES[1].name})`);

@@ -9,7 +9,7 @@ import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
 import { ACTION, bpsPct, type OutreachAction, STAGE_HINT, STAGE_LABEL } from "../../lib/community";
-import { monthLabel } from "../../lib/readiness";
+import { money, monthLabel } from "../../lib/readiness";
 import { useCommunity } from "./context";
 import OutreachDialog from "./OutreachDialog";
 import { useOverview } from "./queries";
@@ -17,7 +17,7 @@ import { useOverview } from "./queries";
 const pct = (n: number, of: number) => (of > 0 ? Math.round((n / of) * 100) : 0);
 
 // The stages a community produces are gold; the ones others decide are slate.
-const OWN_STAGE = new Set(["credit_ready", "eligible", "financed"]);
+const OWN_STAGE = new Set(["credit_ready", "eligible", "p2p_opportunity"]);
 
 export default function CommunityOverview() {
   const { community, leads } = useCommunity();
@@ -35,8 +35,19 @@ export default function CommunityOverview() {
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
         Where the community stands{o?.as_of_period ? <> as of <span className="text-foreground">{monthLabel(o.as_of_period)}</span>, the latest month reported</> : null}.
-        {" "}The community produces preparation and data; the partner decides credit.
+        {" "}The community produces preparation, data and qualified P2P demand; investors fund it, domestic or global.
       </p>
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {!o ? Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-[92px] rounded-xl" />) : (
+          <>
+            <StatTile label="Qualified capital demand" value={money(o.hero.qualified_demand_cents)} hint={`${o.hero.p2p_opportunity} P2P opportunities`} hintTone="info" />
+            <StatTile label="Funded" value={money(o.capital.funded_cents)} hint={`${bpsPct(o.capital.domestic_coverage_bps + o.capital.global_coverage_bps)} of demand`} hintTone="positive" />
+            <StatTile label="Funding gap" value={money(o.capital.gap_cents)} hint={o.capital.waiting_for_capital ? `${o.capital.waiting_for_capital} waiting for a pool` : "still raising"} hintTone={o.capital.gap_cents ? "caution" : "positive"} />
+            <StatTile label="Coverage" value={`${bpsPct(o.capital.domestic_coverage_bps)} · ${bpsPct(o.capital.global_coverage_bps)}`} hint="domestic · global" />
+          </>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {!h ? Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-[92px] rounded-xl" />) : (
@@ -47,7 +58,7 @@ export default function CommunityOverview() {
             <StatTile label="Credit ready" value={h.credit_ready} hint={`${pct(h.credit_ready, h.participants)}%`} />
             <StatTile label="Credit intent" value={h.credit_intent} hint={`${pct(h.credit_intent, h.participants)}%`} />
             <StatTile label="Eligible" value={h.eligible} hint={`${pct(h.eligible, h.participants)}%`} />
-            <StatTile label="Financed" value={h.financed} hint="by partners" />
+            <StatTile label="Funded" value={h.funded} hint={`of ${h.p2p_opportunity} P2P opportunities`} />
           </>
         )}
       </div>

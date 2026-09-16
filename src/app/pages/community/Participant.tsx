@@ -56,8 +56,8 @@ function describe(e: JourneyEvent): { title: string; sub?: string } {
     case "intent": return { title: `Asked for credit: ${PURPOSE_LABEL[e.label as keyof typeof PURPOSE_LABEL] ?? e.label}`, sub: money(d.amount_cents as number) };
     case "intent_withdrawn": return { title: "Withdrew the credit request" };
     case "eligibility": return { title: DECISION_LABEL[e.label as keyof typeof DECISION_LABEL]?.title ?? e.label, sub: String(d.model_version ?? "") };
-    case "referred": return { title: "Referred to a credit partner" };
-    case "partner_decision": return { title: `The partner ${VERDICT[e.label] ?? e.label}` };
+    case "referred": return { title: "Opened to P2P investors" };
+    case "partner_decision": return { title: e.label === "approved" ? "Formalised by EmpowerFI's P2P desk" : `EmpowerFI's P2P desk ${VERDICT[e.label] ?? e.label}` };
     case "loan": return { title: `Loan ${LOAN_LABEL[e.label as keyof typeof LOAN_LABEL]?.toLowerCase() ?? e.label}` };
     case "payment": return { title: `Instalment ${e.label} paid` };
     case "outcome": return { title: "Productive outcome measured", sub: CAPITAL_USE_LABEL[e.label as keyof typeof CAPITAL_USE_LABEL] };
@@ -185,7 +185,7 @@ export default function Participant() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="Credit" description="The community prepares; EmpowerFI's rules check eligibility; the partner decides.">
+        <Panel title="Credit" description="The community prepares; EmpowerFI's rules check eligibility; P2P investors fund it, and EmpowerFI's desk formalises and services the loan.">
           {!s.intent_purpose && !s.loan_status ? (
             <p className="text-sm text-muted-foreground">No credit request. Being ready does not mean borrowing.</p>
           ) : (

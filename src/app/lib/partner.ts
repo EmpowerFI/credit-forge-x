@@ -6,13 +6,14 @@ import type { CreditPurpose } from "./readiness";
 
 type ReadinessBand = Database["public"]["Enums"]["readiness_band"];
 
-// The partner's desk, as partner_desk() returns it: opportunities referred to
-// the partner with their funding, the partner's decisions, and each loan with
-// its schedule and settlement. Participants appear under a P- code.
+// EmpowerFI's P2P desk, as partner_desk() returns it: qualified opportunities
+// with their pool and funding, what the desk formalised or declined, and each
+// loan with its schedule and settlement. Participants appear under a P- code.
+// (The database still calls the desk a partner.)
 
 export const PARTNER_TABS = [
   { to: "", label: "Pipeline", end: true },
-  { to: "reviews", label: "Reviews" },
+  { to: "reviews", label: "Opportunities" },
   { to: "decisions", label: "Decisions" },
   { to: "portfolio", label: "Portfolio" },
   { to: "servicing", label: "Servicing" },
@@ -37,6 +38,11 @@ export interface DeskFunding {
   real_micro_usdc: number;
   refund_due: number;
   refunded: number;
+  pool: "domestic" | "global" | null;
+  reason_codes: string[] | null;
+  /** What a formalised loan will carry: the allocation engine's rate and instalment. */
+  rate_bps_month: number | null;
+  instalment_cents: number | null;
 }
 
 export interface DeskDecision {
@@ -138,15 +144,16 @@ export interface PartnerDesk {
   loans: DeskLoan[];
 }
 
-/** Where a request stands on the partner's desk, from its first look to its last instalment. */
+/** Where a request stands on the desk, from listing to its last instalment. */
 export type DeskStage =
-  | "deciding" | "raising" | "to_formalise" | "disbursed" | "repaying" | "overdue"
+  | "waiting" | "raising" | "to_formalise" | "formalised" | "disbursed" | "repaying" | "overdue"
   | "paid" | "defaulted" | "cancelled" | "declined" | "withdrawn";
 
 export const STAGE: Record<DeskStage, { label: string; tone: Tone; next: string }> = {
-  deciding: { label: "Awaiting your decision", tone: "info", next: "Review and decide" },
-  raising: { label: "Approved · investors funding", tone: "caution", next: "Wait for funding, or decline" },
-  to_formalise: { label: "Ready to formalise", tone: "positive", next: "Sign and disburse" },
+  waiting: { label: "Waiting for capital", tone: "neutral", next: "No pool can take it yet" },
+  raising: { label: "Investors funding", tone: "caution", next: "Wait for funding, or decline" },
+  to_formalise: { label: "Ready to formalise", tone: "positive", next: "Formalise and disburse" },
+  formalised: { label: "Formalised", tone: "info", next: "Disburse" },
   disbursed: { label: "Disbursed", tone: "info", next: "Start the repayment schedule" },
   repaying: { label: "Repaying", tone: "positive", next: "Record instalments" },
   overdue: { label: "Overdue", tone: "alert", next: "Follow up" },
@@ -157,27 +164,30 @@ export const STAGE: Record<DeskStage, { label: string; tone: Tone; next: string 
   withdrawn: { label: "Withdrawn", tone: "neutral", next: "—" },
 };
 
-/** Funding still under way: the partner waits before it can disburse. */
+/** Funding still under way: the desk waits before it can formalise. */
 export const isRaising = (f: DeskFunding) => f.status === "open" || f.status === "partially_funded";
 
 export function stageOf(o: DeskOpportunity, loan?: DeskLoan): DeskStage {
-  if (o.status === "referred") return "deciding";
   if (o.status === "withdrawn") return "withdrawn";
   const status = loan?.status ?? o.loan?.status;
   if (status === "CANCELLED") return "cancelled";
   if (o.status === "partner_declined") return "declined";
-  if (status === "PARTNER_APPROVED" || status === "DRAFT") return isRaising(o.funding) ? "raising" : "to_formalise";
+  if (!status) {
+    if (o.funding.status === "funded") return "to_formalise";
+    return isRaising(o.funding) ? "raising" : "waiting";
+  }
+  if (status === "PARTNER_APPROVED" || status === "DRAFT") return "formalised";
   if (status === "DISBURSED") return "disbursed";
   if (status === "ACTIVE") return (loan?.overdue ?? 0) > 0 ? "overdue" : "repaying";
   if (status === "PAID") return "paid";
   if (status === "DEFAULTED") return "defaulted";
-  return "deciding";
+  return "waiting";
 }
 
 /** Where the capital comes from, in one line. */
 export function fundingLine(f: DeskFunding): { label: string; tone: Tone } {
   switch (f.status) {
-    case null: return { label: "Your own capital · not shown to investors", tone: "neutral" };
+    case null: return { label: f.pool ? "Not shown to investors" : "Waiting for capital · no pool yet", tone: "neutral" };
     case "open": return { label: "Open to investors · nothing raised yet", tone: "info" };
     case "partially_funded": return { label: `Investors funding · ${pct(f)}% raised`, tone: "caution" };
     case "funded": return { label: `Funded by ${f.investors} investor${f.investors === 1 ? "" : "s"}`, tone: "positive" };
@@ -193,6 +203,6 @@ export const pct = (f: DeskFunding) =>
 export const outstandingCents = (l: DeskLoan) =>
   ["ACTIVE", "DISBURSED"].includes(l.status) ? Math.max(0, l.principal_cents - Math.round((l.principal_cents * l.paid) / l.term_months)) : 0;
 
-export const rate = (bps: number | null | undefined) => (bps === null || bps === undefined ? "—" : `${(bps / 100).toFixed(1)}% a month`);
+export const rate = (bps: number | null | undefined) => (bps === null || bps === undefined ? "—" : `${(bps / 100).toFixed(2)}% a month`);
 
 export const LIVE_LOAN: LoanStatus[] = ["DISBURSED", "ACTIVE", "PAID", "DEFAULTED"];

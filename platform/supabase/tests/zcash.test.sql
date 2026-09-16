@@ -17,6 +17,9 @@ select plan(36);
 -- wallet; Yara too; an auditor; the partner.
 
 update partners set active = false where name not like 'pgTAP %';
+-- Every request here is funded in USDC: the global pool takes any of them.
+update funding_pools set capital_cents = 0 where pool = 'domestic';
+update funding_pools set purposes = '{}', max_ticket_cents = 5000000, eligible_risk_bands = '{LOW,MEDIUM,HIGH}' where pool = 'global';
 insert into partners (id, name, kind, min_ticket_cents, max_ticket_cents, accepted_purposes) values
   ('00000000-0000-0000-0000-0000000005f1', 'pgTAP Zcash partner', 'credit_union', 10000, 1000000, '{inventory,working_capital,equipment}');
 

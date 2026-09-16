@@ -6,14 +6,14 @@ import { shortDate } from "../../lib/community";
 import { STAGE, outstandingCents, stageOf, type DeskStage } from "../../lib/partner";
 import { money, PURPOSE_LABEL } from "../../lib/readiness";
 import { useDesk } from "./context";
-import { FundingSummary, LoanActions, StagePill } from "./parts";
+import { FundingSummary, LoanActions, OpportunityActions, StagePill } from "./parts";
 
-const ORDER: DeskStage[] = ["deciding", "to_formalise", "overdue", "disbursed", "raising", "repaying", "defaulted", "paid", "cancelled", "declined", "withdrawn"];
+const ORDER: DeskStage[] = ["to_formalise", "formalised", "overdue", "disbursed", "raising", "waiting", "repaying", "defaulted", "paid", "cancelled", "declined", "withdrawn"];
 
 /**
- * Every request referred to the partner, where it stands, and what the
- * partner has to do next: decide, formalise once funded, start repayment,
- * follow up an overdue instalment.
+ * Every qualified opportunity on EmpowerFI's P2P desk, where it stands, and
+ * what the desk does next: formalise once investors have funded it, start
+ * repayment, follow up an overdue instalment.
  */
 export default function Pipeline() {
   const { desk, decides } = useDesk();
@@ -22,15 +22,15 @@ export default function Pipeline() {
     .map((o) => ({ o, loan: loanOf.get(o.opportunity_id), stage: stageOf(o, loanOf.get(o.opportunity_id)) }))
     .sort((a, b) => ORDER.indexOf(a.stage) - ORDER.indexOf(b.stage) || b.o.referred_at.localeCompare(a.o.referred_at));
   const count = (s: DeskStage) => rows.filter((r) => r.stage === s).length;
-  const deciding = rows.filter((r) => r.stage === "deciding");
+  const raising = rows.filter((r) => r.stage === "raising");
   const live = desk.loans.filter((l) => l.status === "ACTIVE" || l.status === "DISBURSED");
-  const actions = rows.filter((r) => ["deciding", "to_formalise", "disbursed", "overdue"].includes(r.stage));
+  const actions = rows.filter((r) => ["to_formalise", "formalised", "disbursed", "overdue"].includes(r.stage));
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <StatTile label="Awaiting your decision" value={deciding.length} hint={money(deciding.reduce((n, r) => n + r.o.amount_cents, 0))} hintTone="info" />
-        <StatTile label="Investors funding" value={count("raising")} hint="approved, raising" />
+        <StatTile label="Investors funding" value={raising.length} hint={money(raising.reduce((n, r) => n + r.o.amount_cents, 0))} hintTone="info" />
+        <StatTile label="Waiting for capital" value={count("waiting")} hint="no pool can take it yet" />
         <StatTile label="Ready to formalise" value={count("to_formalise")} hint="funded" hintTone={count("to_formalise") ? "positive" : "neutral"} />
         <StatTile label="Repaying" value={count("repaying") + count("overdue") + count("disbursed")}
           hint={`${money(live.reduce((n, l) => n + outstandingCents(l), 0))} outstanding`} />
@@ -39,7 +39,7 @@ export default function Pipeline() {
         <StatTile label="Received" value={money(desk.loans.reduce((n, l) => n + l.received_cents, 0))} hint="instalments" hintTone="positive" />
       </div>
 
-      <Panel title="Your next actions" description={decides ? "What waits on you, most urgent first." : "What waits on the partner, most urgent first."}>
+      <Panel title="Your next actions" description={decides ? "What waits on you, most urgent first." : "What waits on the desk, most urgent first."}>
         {actions.length === 0 ? <p className="text-sm text-muted-foreground">Nothing waits on you right now.</p> : (
           <ul className="divide-y divide-border">
             {actions.map(({ o, loan, stage }) => (
@@ -54,10 +54,8 @@ export default function Pipeline() {
                     {stage === "overdue" && loan && ` · ${loan.overdue} overdue since ${shortDate(loan.next_due_at)}`}
                   </p>
                 </div>
-                {stage === "deciding" ? (
-                  <Link to={`reviews#${o.opportunity_id}`} className="inline-flex items-center gap-1 text-sm text-info hover:underline">
-                    {STAGE[stage].next} <ArrowRight size={14} />
-                  </Link>
+                {stage === "to_formalise" ? (
+                  decides ? <OpportunityActions o={o} decides={decides} /> : <span className="text-xs text-muted-foreground">{STAGE[stage].next}</span>
                 ) : stage === "overdue" && loan ? (
                   <Link to={`loans/${loan.id}`} className="inline-flex items-center gap-1 text-sm text-info hover:underline">
                     Open the schedule <ArrowRight size={14} />
@@ -69,8 +67,8 @@ export default function Pipeline() {
         )}
       </Panel>
 
-      <Panel title="Every request" description="Referred to you by EmpowerFI after its eligibility rules, and funded by investors when she allowed it to be shown to them.">
-        {rows.length === 0 ? <p className="text-sm text-muted-foreground">Nothing has been referred to you yet.</p> : (
+      <Panel title="Every opportunity" description="Qualified by EmpowerFI's eligibility rules, given a pool by the Capital Allocation Engine, and funded by investors when she allowed it to be shown to them.">
+        {rows.length === 0 ? <p className="text-sm text-muted-foreground">No qualified opportunity yet.</p> : (
           <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
             <table className="w-full min-w-[860px] text-sm">
               <thead className="text-left text-xs text-muted-foreground">
@@ -80,7 +78,7 @@ export default function Pipeline() {
                   <th className="py-2 pr-4 text-right font-medium">Amount</th>
                   <th className="w-56 py-2 pr-4 font-medium">Funding</th>
                   <th className="py-2 pr-4 font-medium">Stage</th>
-                  <th className="py-2 font-medium">Referred</th>
+                  <th className="py-2 font-medium">Qualified</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -100,7 +98,7 @@ export default function Pipeline() {
                       {money(loan?.principal_cents ?? o.amount_cents)}
                       <span className="block text-xs text-muted-foreground">{loan?.term_months ?? o.term_months} months</span>
                     </td>
-                    <td className="py-3 pr-4"><FundingSummary funding={o.funding} compact /></td>
+                    <td className="py-3 pr-4"><FundingSummary funding={o.funding} compact amountCents={o.amount_cents} /></td>
                     <td className="py-3 pr-4"><StagePill stage={stage} /></td>
                     <td className="py-3 text-xs text-muted-foreground">{shortDate(o.referred_at)}</td>
                   </tr>

@@ -37,6 +37,10 @@ const Footer = () => (
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">English</Link>
         </div>
       </div>
+      <p className="text-xs text-muted-foreground text-center md:text-left">
+        A demonstração da plataforma é um protótipo de uma futura arquitetura regulada de crédito produtivo P2P. Investimentos,
+        retornos, câmbio e liquidação via Pix do hackathon são simulados; as transações em blockchain usam ativos de teste na Devnet.
+      </p>
       <p className="text-xs text-muted-foreground text-center md:text-left">© {new Date().getFullYear()} EmpowerFI. Todos os direitos reservados.</p>
     </div>
   </footer>

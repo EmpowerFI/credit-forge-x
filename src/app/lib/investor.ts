@@ -46,6 +46,9 @@ export interface PortfolioRow {
   repaid_micro_usdc: number;
   evc_cents: number | null;
   proof: { status: string | null; signature: string | null; reconcile: string | null };
+  funding_pool: "domestic" | "global" | null;
+  amount_cents: number | null;
+  fx_brl_per_usdc_milli: number | null;
 }
 
 export interface Portfolio {

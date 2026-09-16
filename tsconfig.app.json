@@ -32,8 +32,8 @@
       "@empowerfi/eligibility-engine": [
         "./packages/eligibility-engine/src/index.ts"
       ],
-      "@empowerfi/capital-route": [
-        "./packages/capital-route/src/index.ts"
+      "@empowerfi/capital-allocation": [
+        "./packages/capital-allocation/src/index.ts"
       ]
     },
     "skipLibCheck": true,

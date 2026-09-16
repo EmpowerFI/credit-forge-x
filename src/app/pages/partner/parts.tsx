@@ -9,25 +9,33 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import PoolPill from "../../components/product/PoolPill";
 import StatusPill from "../../components/product/StatusPill";
+import { REASON, type AllocationReason } from "../../lib/capital";
 import FundingBar from "../investor/FundingBar";
-import { fundingLine, isRaising, STAGE, type DeskFunding, type DeskLoan, type DeskOpportunity, type DeskStage } from "../../lib/partner";
+import { fundingLine, rate, STAGE, type DeskFunding, type DeskLoan, type DeskOpportunity, type DeskStage } from "../../lib/partner";
 import { money } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
-import { useDecide, useRecordPayment, useTransition } from "./queries";
+import { useDecline, useFormaliseAndDisburse, useRecordPayment, useTransition } from "./queries";
 
 export function StagePill({ stage }: { stage: DeskStage }) {
   return <StatusPill tone={STAGE[stage].tone}>{STAGE[stage].label}</StatusPill>;
 }
 
-/** Where the capital for one opportunity stands: raised by investors, or the partner's own. */
-export function FundingSummary({ funding, compact = false }: { funding: DeskFunding; compact?: boolean }) {
+/** Where the capital for one opportunity stands: its pool, and how far investors have funded it. */
+export function FundingSummary({ funding, compact = false, amountCents = null }: { funding: DeskFunding; compact?: boolean; amountCents?: number | null }) {
   const line = fundingLine(funding);
   const listed = funding.status && funding.status !== "closed" && funding.target_micro_usdc;
+  const lead = (funding.reason_codes ?? [])[0] as AllocationReason | undefined;
   return (
     <div className="min-w-0 space-y-1.5">
+      <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <PoolPill pool={funding.pool} />
+        {!compact && lead && <span>{REASON[lead].label}</span>}
+      </p>
       {listed && !compact && funding.status !== "refunded" && (
-        <FundingBar funded={funding.funded_micro_usdc} target={funding.target_micro_usdc} investors={funding.investors} />
+        <FundingBar funded={funding.funded_micro_usdc} target={funding.target_micro_usdc} investors={funding.investors}
+          pool={funding.pool} fxMilli={funding.fx_brl_per_usdc_milli} amountCents={amountCents} />
       )}
       <p className="text-xs text-muted-foreground">
         <StatusPill tone={line.tone} dot={!compact}>{line.label}</StatusPill>
@@ -39,50 +47,69 @@ export function FundingSummary({ funding, compact = false }: { funding: DeskFund
   );
 }
 
-/** The partner's decision on a referred opportunity: approve at a price and term, or decline. */
-export function DecisionForm({ o }: { o: DeskOpportunity }) {
-  const [amount, setAmount] = useState(String(o.amount_cents / 100));
-  const [rate, setRate] = useState("3.0");
-  const [term, setTerm] = useState(String(o.term_months));
+/** Declining before a loan exists: a reason, and what it does to her investors, before anything happens. */
+function DeclineOpportunityDialog({ o, open, onOpenChange }: { o: DeskOpportunity; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [reason, setReason] = useState("");
-  const decide = useDecide();
-  const id = o.opportunity_id;
-  const amountCents = Math.round(Number(amount) * 100);
-  const invalid = !(amountCents >= 10000 && amountCents <= o.amount_cents) || !(Number(rate) >= 0 && Number(rate) <= 10)
-    || !(Number(term) >= 1 && Number(term) <= 24);
-
+  const decline = useDecline();
+  const f = o.funding;
   return (
-    <div className="space-y-3 border-t border-border pt-4">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor={`a-${id}`}>Amount (R$)</Label>
-          <Input id={`a-${id}`} type="number" inputMode="decimal" min={100} max={o.amount_cents / 100} step="0.01" value={amount}
-            onChange={(e) => setAmount(e.target.value)} />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Decline {o.participant}'s request</DialogTitle>
+          <DialogDescription>No loan is formalised. The opportunity leaves the market.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          {f.funded_micro_usdc > 0 ? (
+            <p className="rounded-lg border tone-caution p-3">
+              {f.investors} investor{f.investors === 1 ? "" : "s"} put capital into it. Every allocation is refunded:
+              {f.real_micro_usdc > 0 ? ` ${usdc(f.real_micro_usdc)} of real devnet USDC goes back from the vault to their wallets on its own,` : ""} simulated positions are closed.
+            </p>
+          ) : (
+            <p className="text-muted-foreground">No investor capital is in it: nothing to refund.</p>
+          )}
+          <div className="space-y-1.5">
+            <Label htmlFor={`why-o-${o.opportunity_id}`}>Reason</Label>
+            <Textarea id={`why-o-${o.opportunity_id}`} rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)}
+              placeholder="For example: documents incomplete, guarantor not reached" />
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor={`r-${id}`}>Your rate (% a month)</Label>
-          <Input id={`r-${id}`} type="number" inputMode="decimal" min={0} max={10} step="0.1" value={rate} onChange={(e) => setRate(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor={`t-${id}`}>Term (months)</Label>
-          <Input id={`t-${id}`} type="number" inputMode="numeric" min={1} max={24} value={term} onChange={(e) => setTerm(e.target.value)} />
-        </div>
-      </div>
-      <Textarea aria-label="Reason" rows={2} maxLength={500} placeholder="Note or reason (shared with EmpowerFI)"
-        value={reason} onChange={(e) => setReason(e.target.value)} />
-      {invalid && (
-        <p className="text-xs text-caution">The amount runs from R$ 100 up to the {money(o.amount_cents)} qualified; the rate from 0 to 10% a month; the term from 1 to 24 months.</p>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Keep it</Button>
+          <Button variant="destructive" disabled={!reason.trim() || decline.isPending}
+            onClick={() => decline.mutate({ opportunityId: o.opportunity_id, reason: reason.trim() }, { onSuccess: () => onOpenChange(false) })}>
+            {decline.isPending && <Loader2 size={14} className="mr-1 animate-spin" />} Decline and refund
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** What the desk can do with an opportunity before a loan exists: formalise it once funded, or decline it. */
+export function OpportunityActions({ o, decides }: { o: DeskOpportunity; decides: boolean }) {
+  const formalise = useFormaliseAndDisburse();
+  const [declining, setDeclining] = useState(false);
+  if (!decides || o.status !== "referred") return null;
+  const funded = o.funding.status === "funded";
+  const listed = Boolean(o.funding.status);
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button size="sm" disabled={!funded || formalise.isPending} className="gap-1.5" title={funded ? undefined : "Investors have not funded it yet"}
+        onClick={() => formalise.mutate({ opportunityId: o.opportunity_id })}>
+        {formalise.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />} Formalise and disburse
+      </Button>
+      <Button size="sm" variant="ghost" disabled={formalise.isPending} onClick={() => setDeclining(true)}>Decline</Button>
+      {!funded && (
+        <span className="text-xs text-muted-foreground">
+          {listed ? "Formalising opens once investors have funded it." : "No pool can fund it yet."}
+          {o.funding.rate_bps_month !== null && ` It will carry ${rate(o.funding.rate_bps_month)}, the engine's rate.`}
+        </span>
       )}
-      <div className="flex flex-wrap gap-3">
-        <Button disabled={decide.isPending || invalid} className="gap-2"
-          onClick={() => decide.mutate({ opportunityId: id, verdict: "approved", amountCents, rateBps: Math.round(Number(rate) * 100), termMonths: Number(term), reason })}>
-          {decide.isPending && decide.variables?.verdict === "approved" ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Approve
-        </Button>
-        <Button variant="outline" disabled={decide.isPending} className="gap-2"
-          onClick={() => decide.mutate({ opportunityId: id, verdict: "declined", reason })}>
-          {decide.isPending && decide.variables?.verdict === "declined" ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />} Decline
-        </Button>
-      </div>
+      {funded && o.funding.rate_bps_month !== null && (
+        <span className="text-xs text-muted-foreground">At {rate(o.funding.rate_bps_month)}: {o.term_months} × {money(o.funding.instalment_cents)}.</span>
+      )}
+      <DeclineOpportunityDialog o={o} open={declining} onOpenChange={setDeclining} />
     </div>
   );
 }
@@ -129,7 +156,7 @@ function DeclineDialog({ loan, open, onOpenChange }: { loan: DeskLoan; open: boo
   );
 }
 
-/** What the partner can do next with a loan, and why a step is not open yet. */
+/** What the desk can do next with a loan. */
 export function LoanActions({ loan, decides }: { loan: DeskLoan; decides: boolean }) {
   const move = useTransition();
   const pay = useRecordPayment();
@@ -140,15 +167,13 @@ export function LoanActions({ loan, decides }: { loan: DeskLoan; decides: boolea
   const spin = (on: boolean) => on && <Loader2 size={14} className="animate-spin" />;
 
   if (loan.status === "PARTNER_APPROVED") {
-    const raising = isRaising(loan.funding);
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" disabled={busy || raising} className="gap-1.5" title={raising ? "Investors are still funding it" : undefined}
+        <Button size="sm" disabled={busy} className="gap-1.5"
           onClick={() => move.mutate({ loanId: loan.id, to: "DISBURSED", note: "Contract signed; Pix sent" })}>
-          {spin(move.isPending && move.variables?.to === "DISBURSED") || <Banknote size={14} />} Formalise and disburse
+          {spin(move.isPending && move.variables?.to === "DISBURSED") || <Banknote size={14} />} Disburse
         </Button>
         <Button size="sm" variant="ghost" disabled={busy} onClick={() => setDeclining(true)}>Decline</Button>
-        {raising && <span className="text-xs text-muted-foreground">Disbursing opens once investors have funded it.</span>}
         <DeclineDialog loan={loan} open={declining} onOpenChange={setDeclining} />
       </div>
     );

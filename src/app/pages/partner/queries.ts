@@ -5,7 +5,7 @@ import { describeError } from "../../lib/errors";
 import type { PartnerDesk } from "../../lib/partner";
 import { platform } from "../../lib/platform";
 
-// The partner's reads and actions. The desk is one read; every action goes
+// The P2P desk's reads and actions. The desk is one read; every action goes
 // through the same functions the seed and the tests use, and refreshes it.
 
 export function usePartnerDesk() {
@@ -26,42 +26,48 @@ function useRefresh() {
   return () => queryClient.invalidateQueries({ queryKey: ["platform"] });
 }
 
-export interface Decision {
-  opportunityId: string;
-  verdict: "approved" | "declined";
-  amountCents?: number;
-  rateBps?: number;
-  termMonths?: number;
-  reason?: string;
-}
-
-export function useDecide() {
+/** A decline, before a loan exists: what investors put in goes back to them. */
+export function useDecline() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: async (d: Decision) => {
-      const { error } = await platform.rpc("partner_decide", {
-        p_opportunity_id: d.opportunityId,
-        p_verdict: d.verdict,
-        ...(d.verdict === "approved"
-          ? { p_approved_amount_cents: d.amountCents, p_rate_bps: d.rateBps, p_term_months: d.termMonths }
-          : {}),
-        p_reason: d.reason || undefined,
-      });
+    mutationFn: async ({ opportunityId, reason }: { opportunityId: string; reason: string }) => {
+      const { error } = await platform.rpc("partner_decide", { p_opportunity_id: opportunityId, p_verdict: "declined", p_reason: reason });
       if (error) throw error;
-      return d.verdict;
     },
-    onSuccess: (verdict) => {
-      toast.success(verdict === "approved"
-        ? "Approved. The loan terms are being proven on Solana."
-        : "Declined. Any investor capital in it is on its way back.");
+    onSuccess: () => {
+      toast.success("Declined. Any investor capital in it is on its way back.");
       refresh();
     },
     onError: (e) => toast.error(describeError(e)),
   });
 }
 
+/**
+ * Formalising a funded opportunity at the allocation engine's rate, and
+ * disbursing it: two proven steps, one click.
+ */
+export function useFormaliseAndDisburse() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: async ({ opportunityId }: { opportunityId: string }) => {
+      const { data: loanId, error } = await platform.rpc("formalise_loan", { p_opportunity_id: opportunityId });
+      if (error) throw error;
+      const { error: moveError } = await platform.rpc("transition_loan", { p_loan_id: loanId as string, p_to: "DISBURSED", p_note: "Contract signed; Pix sent" });
+      if (moveError) throw moveError;
+    },
+    onSuccess: () => {
+      toast.success("Formalised at the engine's rate and disbursed. Her Pix is recorded, and the loan is being proven on Solana.");
+      refresh();
+    },
+    onError: (e) => {
+      toast.error(describeError(e));
+      refresh();
+    },
+  });
+}
+
 const MOVED: Partial<Record<LoanStatus, string>> = {
-  DISBURSED: "Disbursed. Her Pix is recorded, and investor capital leaves the vault for the ramp.",
+  DISBURSED: "Disbursed. Her Pix is recorded; for a global loan, investor USDC leaves the vault for the off-ramp.",
   ACTIVE: "Repayment started. The first instalment is due in a month.",
   PAID: "Paid off.",
   DEFAULTED: "Marked defaulted.",
@@ -93,7 +99,7 @@ export function useRecordPayment() {
       return n;
     },
     onSuccess: (n) => {
-      toast.success(`Instalment ${n} recorded. Investors' shares go back through the ramp.`);
+      toast.success(`Instalment ${n} recorded. Investors' shares go back to them.`);
       refresh();
     },
     onError: (e) => toast.error(describeError(e)),
