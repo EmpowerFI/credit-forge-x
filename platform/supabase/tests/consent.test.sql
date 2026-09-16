@@ -213,11 +213,10 @@ set local role postgres;
 select is((select funding_status::text from qualified_credit_opportunities where id = (select id from sara)), null::text,
   'with nothing funded yet, it simply leaves the market');
 
--- The partner lends from its own capital what investors are no longer funding.
+-- Investors fund every P2P loan: what left the market cannot be formalised.
 select pg_temp.act_as('00000000-0000-0000-0000-0000000007a5');
-select partner_decide((select id from rita), 'approved', 200000, 250, 12);
-select lives_ok($$ select transition_loan((select id from loans where opportunity_id = (select id from rita)), 'DISBURSED') $$,
-  'a loan taken off the market is disbursed from the partner''s own capital');
+select throws_ok($$ select formalise_loan((select id from rita)) $$,
+  'P0001', 'not_fully_funded', 'a request taken off the market is not formalised: no investors fund it');
 set local role postgres;
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000007a4');
@@ -226,9 +225,8 @@ set local role postgres;
 select is((select funding_status::text from qualified_credit_opportunities where id = (select id from sara)), 'open',
   'giving it back lists again what was never funded');
 select pg_temp.act_as('00000000-0000-0000-0000-0000000007a5');
-select partner_decide((select id from sara), 'approved', 200000, 250, 12);
-select throws_ok($$ select transition_loan((select id from loans where opportunity_id = (select id from sara)), 'DISBURSED') $$,
-  'P0001', 'not_fully_funded', 'while investors are still funding, the partner waits');
+select throws_ok($$ select formalise_loan((select id from sara)) $$,
+  'P0001', 'not_fully_funded', 'while investors are still funding, the desk waits');
 set local role postgres;
 
 -- ----------------------------------------------------------------- audit

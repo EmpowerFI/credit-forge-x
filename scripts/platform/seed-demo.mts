@@ -202,6 +202,12 @@ const wiped = await must(
 );
 console.log("reset:", wiped);
 
+// The two pools of P2P capital, simulated. Sized to the seed's demand so the
+// demo reads as the specification's example does: domestic capital alone
+// covers about 38% of qualified demand, both pools together about 96%.
+await must("domestic pool", db.from("funding_pools").update({ capital_cents: 2_700_000, updated_at: new Date().toISOString() }).eq("pool", "domestic"));
+await must("global pool", db.from("funding_pools").update({ capital_micro_usdc: 7_800_000_000, updated_at: new Date().toISOString() }).eq("pool", "global"));
+
 // ------------------------------------------------------------- communities
 
 const COMMUNITIES = [
@@ -702,13 +708,13 @@ const intents = memberships
     statusOf.get(m.entrepreneur_id) === "CREDIT_READY" && m.entrepreneur_id !== leftAlone && m.entrepreneur_id !== maria.id &&
     !cycleIds.has(m.entrepreneur_id)) // borrowing already
   .filter((m) => {
-    const asks = random() < 0.5; // drawn for everyone, so the sequence does not depend on who is forced in
+    const asks = random() < 0.9; // drawn for everyone, so the sequence does not depend on who is forced in
     return asks || m.entrepreneur_id === recent;
   })
   .map((m) => ({
     entrepreneur_id: m.entrepreneur_id,
     purpose: PURPOSE_BY_SECTOR[sectorOf.get(m.entrepreneur_id) ?? "retail"],
-    requested_amount_cents: (10 + Math.floor(random() * 70)) * 10_000, // R$ 1,000–8,000
+    requested_amount_cents: (20 + Math.floor(random() * 80)) * 10_000, // R$ 2,000–9,900
     is_simulated: true,
     created_at: iso(new Date(Date.UTC(2026, 8, 12, 16) + Math.floor(random() * 36) * 3_600_000)),
   }));
@@ -773,6 +779,11 @@ const { data: referred, error: referredError } = await db.from("qualified_credit
 if (referredError) throw referredError;
 const toWorkOn = referred.slice(0, Math.max(0, referred.length - 3));
 let formalised = 0, declined = 0, ready = 0, raising = 0, cancelled = 0, unlisted = 0;
+// Most of the qualified demand is still raising, at different points: that is
+// what the capital console shows. A few have moved on: two loans formalised
+// (one repaying), one funded and waiting for the desk, one declined while
+// raising and one declined at formalisation, with their investors refunded.
+const PARTIAL = [0.6, 0.15, 0.45, 0.8, 0.3, 0, 0.55, 0.25];
 for (const [i, o] of toWorkOn.entries()) {
   const funding = async () =>
     (await db.from("qualified_credit_opportunities").select("funding_status").eq("id", o.id).single()).data?.funding_status as string | null;
@@ -781,46 +792,41 @@ for (const [i, o] of toWorkOn.entries()) {
     continue;
   }
   const ireneShare = i % 2 === 0 ? 0.2 : 0;
-  // Declined before it filled: partly funded, then refunded.
-  if (i % 5 === 4) {
-    await fund(o.id, 0.3, ireneShare, "2026-09-13T12:00:00-03:00");
+  const at = "2026-09-13T12:00:00-03:00";
+  if (formalised < 2) {
+    await fund(o.id, 1, ireneShare, at);
+    if ((await funding()) !== "funded") {
+      raising++;
+      continue;
+    }
+    const loanId = await must("formalise", asPartner.rpc("formalise_loan", { p_opportunity_id: o.id })) as string;
+    formalised++;
+    const { data: loan } = await asPartner.from("loans").select("id, instalment_cents").eq("id", loanId).single();
+    await must("disburse", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "DISBURSED", p_note: "Pix sent" }));
+    if (formalised === 1) {
+      await must("activate", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "ACTIVE" }));
+      await must("pay", asPartner.rpc("record_payment", { p_loan_id: loan!.id, p_instalment_no: 1, p_amount_cents: loan!.instalment_cents }));
+    }
+  } else if (ready === 0) {
+    // Funded, and left for the desk to formalise on camera.
+    await fund(o.id, 1, ireneShare, at);
+    ready++;
+  } else if (declined === 0) {
+    await fund(o.id, 0.3, ireneShare, at);
     await must("decline", asPartner.rpc("partner_decide", {
       p_opportunity_id: o.id, p_verdict: "declined", p_reason: "Outside the programme's current sector focus",
     }));
     declined++;
-    continue;
-  }
-  const slot = (formalised + ready + raising + cancelled) % 3;
-  if (slot === 0) {
-    // The first is funded and waits for the desk; the rest are still raising.
-    await fund(o.id, ready === 0 ? 1 : 0.6, ireneShare, "2026-09-13T12:00:00-03:00");
-    if (ready === 0) ready++;
-    else raising++;
-    continue;
-  }
-  await fund(o.id, 1, ireneShare, "2026-09-13T12:00:00-03:00");
-  if (slot === 1 && cancelled === 0) {
+  } else if (cancelled === 0) {
     // Funded, then declined at formalisation: its investors are refunded.
+    await fund(o.id, 1, ireneShare, at);
     await must("decline at formalisation", asPartner.rpc("partner_decide", {
       p_opportunity_id: o.id, p_verdict: "declined", p_reason: "Guarantor could not be reached at signing",
     }));
     cancelled++;
-    continue;
-  }
-  if ((await funding()) !== "funded") {
+  } else {
+    await fund(o.id, PARTIAL[raising % PARTIAL.length], ireneShare, at);
     raising++;
-    continue;
-  }
-  const loanId = await must("formalise", asPartner.rpc("formalise_loan", { p_opportunity_id: o.id })) as string;
-  formalised++;
-  const { data: loan } = await asPartner.from("loans").select("id, instalment_cents").eq("id", loanId).single();
-  // Loans at different points of their life: disbursed, or repaying.
-  await must("disburse", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "DISBURSED", p_note: "Pix sent" }));
-  if (formalised % 2 === 0) {
-    await must("activate", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "ACTIVE" }));
-    for (let n = 1; n <= 1 + (formalised % 4 === 0 ? 1 : 0); n++) {
-      await must("pay", asPartner.rpc("record_payment", { p_loan_id: loan!.id, p_instalment_no: n, p_amount_cents: loan!.instalment_cents }));
-    }
   }
 }
 // The last three are raising, at different points.

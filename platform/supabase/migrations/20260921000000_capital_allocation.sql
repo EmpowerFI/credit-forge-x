@@ -49,8 +49,8 @@ insert into public.funding_pools (
   pool, name, capital_cents, capital_micro_usdc, required_return_bps, eligible_risk_bands,
   min_ticket_cents, max_ticket_cents, purposes, impact_mandate, fx_hedge_bps, ramp_bps
 ) values
-  ('domestic', 'Domestic P2P', 4850000, null, 1600, '{LOW,MEDIUM}', 50000, 400000, '{}', false, 0, 0),
-  ('global', 'Global P2P', null, 18240000000, 800, '{LOW,MEDIUM}', 100000, 1000000,
+  ('domestic', 'Domestic P2P', 2700000, null, 1600, '{LOW,MEDIUM}', 50000, 400000, '{}', false, 0, 0),
+  ('global', 'Global P2P', null, 7800000000, 800, '{LOW,MEDIUM}', 100000, 1000000,
    '{working_capital,inventory,equipment}', true, 500, 100);
 
 alter table public.funding_pools enable row level security;

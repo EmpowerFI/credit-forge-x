@@ -11,7 +11,7 @@
 -- from their tables: what she needs arrives through these functions.
 
 -- Demand, funded, gap and each pool's share, from the three sums.
-create function private.capital_totals(p_demand bigint, p_domestic bigint, p_global bigint)
+create function private.capital_totals(p_demand numeric, p_domestic numeric, p_global numeric)
 returns jsonb
 language sql immutable set search_path = ''
 as $$
@@ -457,8 +457,8 @@ create policy loans_read on public.loans for select to authenticated using (
   or (select private.is_auditor_or_admin())
 );
 
-revoke all on function private.capital_totals(bigint, bigint, bigint) from public;
-grant execute on function private.capital_totals(bigint, bigint, bigint) to authenticated, service_role;
+revoke all on function private.capital_totals(numeric, numeric, numeric) from public;
+grant execute on function private.capital_totals(numeric, numeric, numeric) to authenticated, service_role;
 
 -- The consent wording changed with the P2P desk: new records carry the new
 -- version, and every record keeps the version it was given under.

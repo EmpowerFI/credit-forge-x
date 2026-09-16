@@ -814,9 +814,61 @@ export type Database = {
           },
         ]
       }
+      funding_pools: {
+        Row: {
+          capital_cents: number | null
+          capital_micro_usdc: number | null
+          eligible_risk_bands: Database["public"]["Enums"]["grade"][]
+          fx_hedge_bps: number
+          impact_mandate: boolean
+          is_simulated: boolean
+          max_ticket_cents: number
+          min_ticket_cents: number
+          name: string
+          pool: Database["public"]["Enums"]["funding_pool"]
+          purposes: Database["public"]["Enums"]["credit_purpose"][]
+          ramp_bps: number
+          required_return_bps: number
+          updated_at: string
+        }
+        Insert: {
+          capital_cents?: number | null
+          capital_micro_usdc?: number | null
+          eligible_risk_bands: Database["public"]["Enums"]["grade"][]
+          fx_hedge_bps?: number
+          impact_mandate?: boolean
+          is_simulated?: boolean
+          max_ticket_cents: number
+          min_ticket_cents: number
+          name: string
+          pool: Database["public"]["Enums"]["funding_pool"]
+          purposes?: Database["public"]["Enums"]["credit_purpose"][]
+          ramp_bps?: number
+          required_return_bps: number
+          updated_at?: string
+        }
+        Update: {
+          capital_cents?: number | null
+          capital_micro_usdc?: number | null
+          eligible_risk_bands?: Database["public"]["Enums"]["grade"][]
+          fx_hedge_bps?: number
+          impact_mandate?: boolean
+          is_simulated?: boolean
+          max_ticket_cents?: number
+          min_ticket_cents?: number
+          name?: string
+          pool?: Database["public"]["Enums"]["funding_pool"]
+          purposes?: Database["public"]["Enums"]["credit_purpose"][]
+          ramp_bps?: number
+          required_return_bps?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       investments: {
         Row: {
           allocation_ref: string
+          amount_cents: number | null
           amount_micro_usdc: number
           created_at: string
           deposit_signature: string | null
@@ -835,6 +887,7 @@ export type Database = {
         }
         Insert: {
           allocation_ref?: string
+          amount_cents?: number | null
           amount_micro_usdc: number
           created_at?: string
           deposit_signature?: string | null
@@ -853,6 +906,7 @@ export type Database = {
         }
         Update: {
           allocation_ref?: string
+          amount_cents?: number | null
           amount_micro_usdc?: number
           created_at?: string
           deposit_signature?: string | null
@@ -1348,12 +1402,17 @@ export type Database = {
       }
       qualified_credit_opportunities: {
         Row: {
+          allocated_at: string | null
+          allocation: Json | null
+          allocation_model_version: string | null
+          allocation_reason_codes: string[] | null
           amount_cents: number
           confidence: Database["public"]["Enums"]["grade"]
           created_at: string
           eligibility_id: string
           entrepreneur_id: string
           funded_micro_usdc: number
+          funding_pool: Database["public"]["Enums"]["funding_pool"] | null
           funding_status: Database["public"]["Enums"]["funding_status"] | null
           funding_target_micro_usdc: number | null
           fx_brl_per_usdc_milli: number | null
@@ -1370,12 +1429,17 @@ export type Database = {
           term_months: number
         }
         Insert: {
+          allocated_at?: string | null
+          allocation?: Json | null
+          allocation_model_version?: string | null
+          allocation_reason_codes?: string[] | null
           amount_cents: number
           confidence: Database["public"]["Enums"]["grade"]
           created_at?: string
           eligibility_id: string
           entrepreneur_id: string
           funded_micro_usdc?: number
+          funding_pool?: Database["public"]["Enums"]["funding_pool"] | null
           funding_status?: Database["public"]["Enums"]["funding_status"] | null
           funding_target_micro_usdc?: number | null
           fx_brl_per_usdc_milli?: number | null
@@ -1392,12 +1456,17 @@ export type Database = {
           term_months: number
         }
         Update: {
+          allocated_at?: string | null
+          allocation?: Json | null
+          allocation_model_version?: string | null
+          allocation_reason_codes?: string[] | null
           amount_cents?: number
           confidence?: Database["public"]["Enums"]["grade"]
           created_at?: string
           eligibility_id?: string
           entrepreneur_id?: string
           funded_micro_usdc?: number
+          funding_pool?: Database["public"]["Enums"]["funding_pool"] | null
           funding_status?: Database["public"]["Enums"]["funding_status"] | null
           funding_target_micro_usdc?: number | null
           fx_brl_per_usdc_milli?: number | null
@@ -1931,6 +2000,10 @@ export type Database = {
       }
     }
     Functions: {
+      allocate_domestic: {
+        Args: { p_amount_cents: number; p_opportunity_id: string }
+        Returns: Json
+      }
       audit_attestations: {
         Args: {
           p_kind?: Database["public"]["Enums"]["anchor_kind"]
@@ -1958,6 +2031,7 @@ export type Database = {
       audit_system: { Args: never; Returns: Json }
       audit_zcash: { Args: never; Returns: Json }
       audit_zcash_returns: { Args: never; Returns: Json }
+      capital_overview: { Args: never; Returns: Json }
       capital_portfolio: { Args: never; Returns: Json }
       claim_anchor_jobs: {
         Args: { p_limit?: number }
@@ -2055,6 +2129,10 @@ export type Database = {
         Returns: undefined
       }
       finish_anchor_run: { Args: never; Returns: undefined }
+      formalise_loan: {
+        Args: { p_note?: string; p_opportunity_id: string }
+        Returns: string
+      }
       investor_activity: {
         Args: { p_limit?: number }
         Returns: {
@@ -2073,6 +2151,8 @@ export type Database = {
         Args: never
         Returns: {
           affordability_bps: number
+          allocation: Json
+          allocation_reason_codes: string[]
           amount_cents: number
           business_sector: string
           code: string
@@ -2084,8 +2164,6 @@ export type Database = {
           eligibility_decision: Database["public"]["Enums"]["eligibility_decision"]
           eligibility_model: string
           eligibility_reasons: string[]
-          allocation: Json
-          allocation_reason_codes: string[]
           funded_micro_usdc: number
           funding_pool: Database["public"]["Enums"]["funding_pool"]
           funding_status: Database["public"]["Enums"]["funding_status"]
@@ -2142,15 +2220,6 @@ export type Database = {
         Returns: string
       }
       partner_desk: { Args: never; Returns: Json }
-      capital_overview: { Args: never; Returns: Json }
-      allocate_domestic: {
-        Args: { p_amount_cents: number; p_opportunity_id: string }
-        Returns: Json
-      }
-      formalise_loan: {
-        Args: { p_note?: string; p_opportunity_id: string }
-        Returns: string
-      }
       partner_pipeline: {
         Args: never
         Returns: {

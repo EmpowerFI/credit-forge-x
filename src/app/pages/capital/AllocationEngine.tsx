@@ -214,10 +214,10 @@ export default function AllocationEngine() {
       <CapitalPools engineLink={false} />
 
       {!domestic || !global ? <Skeleton className="h-96 w-full rounded-2xl bg-card" /> : (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-6">
             <Panel title="Input 1 · Qualified demand" description="An opportunity after readiness and eligibility. Try your own.">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field id="d-amount" label="Amount, R$">
                   <Input id="d-amount" type="number" min={100} step="100" value={demand.amount} onChange={(e) => setDemand({ ...demand, amount: e.target.value })} />
                 </Field>
@@ -341,7 +341,7 @@ export default function AllocationEngine() {
                     {parity.same ? "The browser's coverage matches the database's: " : "The browser's coverage differs from the database's: "}
                     {bpsPercent(parity.replay.domestic_coverage_bps)} domestic alone, {bpsPercent(parity.replay.combined_coverage_bps)} combined.
                   </p>
-                  <div className="relative -mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
+                  <div className="overflow-x-auto">
                     <table className="w-full min-w-[560px] text-sm">
                       <thead className="text-left text-xs text-muted-foreground">
                         <tr className="border-b border-border">

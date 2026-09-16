@@ -9,7 +9,7 @@ select set_config(
   true
 );
 
-select plan(59);
+select plan(58);
 
 -- ------------------------------------------------------------------ fixtures
 -- Maria, Bea and Cris are ready and asked; Ana is ready and did not ask.
@@ -198,13 +198,12 @@ select is(
 );
 select is((select count(*)::int from entrepreneurs), 0, 'and no way into the entrepreneurs themselves');
 select throws_ok(
-  $$ select partner_decide((select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000002e1'), 'approved', 900000, 300, 12) $$,
-  '22023', 'approval_above_opportunity', 'it cannot approve more than the opportunity'
+  $$ select partner_decide((select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000002e1'), 'approved', 200000, 300, 12) $$,
+  'P0001', 'approval_is_formalisation', 'there is no separate approval, and no rate of the desk''s own'
 );
-select lives_ok(
-  $$ select partner_decide((select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000002e1'),
-       'approved', 200000, 300, 12, 'Good history') $$,
-  'the partner approves Maria'
+select throws_ok(
+  $$ select formalise_loan((select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000002e1')) $$,
+  'P0001', 'not_fully_funded', 'nor a loan before investors fund it'
 );
 select lives_ok(
   $$ select partner_decide((select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000002e3'),
@@ -213,11 +212,18 @@ select lives_ok(
 );
 set local role postgres;
 
+-- Inês funds Maria's in full; the desk formalises it.
+select record_investment('00000000-0000-0000-0000-0000000002b3', o.id, o.funding_target_micro_usdc, 'simulated', p_is_simulated => true)
+from qualified_credit_opportunities o where o.entrepreneur_id = '00000000-0000-0000-0000-0000000002e1';
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002a7');
+select formalise_loan((select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000002e1'));
+set local role postgres;
+
 select results_eq(
-  $$ select l.status::text, l.principal_cents, l.instalment_cents from loans l
+  $$ select l.status::text, l.principal_cents, l.rate_bps, l.instalment_cents from loans l
      where l.entrepreneur_id = '00000000-0000-0000-0000-0000000002e1' $$,
-  $$ values ('PARTNER_APPROVED', 200000::bigint, 22667::bigint) $$,
-  'approval opens her loan at the partner''s terms (R$ 2,000 at 3%/month over 12: R$ 226.67)'
+  $$ values ('PARTNER_APPROVED', 200000::bigint, 200, 20667::bigint) $$,
+  'formalised at the allocation engine''s rate (R$ 2,000 at 2%/month over 12: R$ 206.67)'
 );
 select results_eq(
   $$ select e.decision::text, d.verdict::text, o.status::text
@@ -226,7 +232,7 @@ select results_eq(
      join partner_decisions d on d.opportunity_id = o.id
      where e.entrepreneur_id = '00000000-0000-0000-0000-0000000002e3' $$,
   $$ values ('ELIGIBLE', 'declined', 'partner_declined') $$,
-  'eligible to EmpowerFI, declined by the partner: two facts, two records'
+  'eligible to EmpowerFI, declined by the desk: two facts, two records'
 );
 select results_eq(
   $$ select (select count(*) from chain_anchors a where a.kind = 'loan' and a.entity_id = l.id)::int,
@@ -235,13 +241,13 @@ select results_eq(
             (select id from chain_anchors where kind = 'loan' and entity_id = l.id)
      from loans l where l.entrepreneur_id = '00000000-0000-0000-0000-0000000002e1' $$,
   $$ values (1, true) $$,
-  'the loan and its approval are queued for the chain, in order'
+  'the loan and its formalisation are queued for the chain, in order'
 );
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000002a1');
 select throws_ok(
   $$ select partner_decide((select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000002e4'), 'approved', 120000, 300, 6) $$,
-  '42501', 'not_your_opportunity', 'EmpowerFI never makes the lending decision, not even an admin'
+  '42501', 'not_your_opportunity', 'an admin does not decide on the desk''s behalf'
 );
 set local role postgres;
 
@@ -268,14 +274,7 @@ select throws_ok($$ select transition_loan((select id from loan), 'ACTIVE') $$,
   'P0001', 'invalid_loan_transition', 'a loan cannot skip disbursement');
 select throws_ok($$ select record_payment((select id from loan), 1, 21667) $$,
   'P0001', 'loan_not_repaying', 'nor be repaid before it is disbursed');
-select throws_ok($$ select transition_loan((select id from loan), 'DISBURSED', 'Pix sent') $$,
-  'P0001', 'not_fully_funded', 'nor be disbursed before investors fund it');
-set local role postgres;
--- Inês funds it in full.
-select record_investment('00000000-0000-0000-0000-0000000002b3', o.id, o.funding_target_micro_usdc, 'simulated', p_is_simulated => true)
-from qualified_credit_opportunities o where o.id = (select opportunity_id from loans where id = (select id from loan));
-select pg_temp.act_as('00000000-0000-0000-0000-0000000002a7');
-select lives_ok($$ select transition_loan((select id from loan), 'DISBURSED', 'Pix sent') $$, 'the partner disburses');
+select lives_ok($$ select transition_loan((select id from loan), 'DISBURSED', 'Pix sent') $$, 'the desk disburses');
 select lives_ok($$ select transition_loan((select id from loan), 'ACTIVE') $$, 'the loan becomes active');
 select lives_ok($$ select record_payment((select id from loan), 1, 21667) $$, 'the first instalment is recorded');
 select throws_ok($$ select record_payment((select id from loan), 1, 21667) $$,
@@ -426,8 +425,8 @@ set local role postgres;
 select results_eq(
   $$ select months_before, months_after, incremental_profit_cents, cost_of_credit_cents, evc_cents, confidence::text
      from productive_outcomes where loan_id = (select id from loan) $$,
-  $$ values (3::smallint, 3::smallint, 120000::bigint, 6000::bigint, 114000::bigint, 'HIGH') $$,
-  'EVC: R$ 400 more a month over three months, less R$ 60 of interest paid'
+  $$ values (3::smallint, 3::smallint, 120000::bigint, 4000::bigint, 116000::bigint, 'HIGH') $$,
+  'EVC: R$ 400 more a month over three months, less R$ 40 of interest paid'
 );
 select results_eq(
   $$ select (select depends_on from chain_anchors where kind = 'outcome' and entity_id = po.id) = private.latest_loan_anchor(po.loan_id)
@@ -448,8 +447,8 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000002b1');
 select results_eq(
   $$ select (capital_portfolio() -> 'outcomes' ->> 'measured')::int, (capital_portfolio() -> 'outcomes' ->> 'evm_bps')::int,
             (select count(*)::int from productive_outcomes) $$,
-  $$ values (1, 5700, 0) $$,
-  'the capital provider sees outcomes in aggregate — EVM 57% — and no row of hers'
+  $$ values (1, 5800, 0) $$,
+  'the capital provider sees outcomes in aggregate — EVM 58% — and no row of hers'
 );
 select throws_ok($$ select audit_record('outcome', (select id from outcome)) $$, '42501', 'not_allowed_to_audit',
   'nor the proof, whose record holds her figures');

@@ -13,8 +13,8 @@ select set_config(
 select plan(19);
 
 -- ------------------------------------------------------------------ fixtures
--- Ana's request and Bia's, both approved by the partner. Wanda funds 30 USDC
--- of Ana's from her wallet and the rest is simulated; Bia's is still raising.
+-- Ana's request and Bia's. Wanda funds 30 USDC of Ana's from her wallet and
+-- the rest is simulated, so the desk formalises it; Bia's is still raising.
 
 update partners set active = false where name not like 'pgTAP %';
 -- Every request here is funded in USDC: the global pool takes any of them.
@@ -109,9 +109,9 @@ select record_investment('00000000-0000-0000-0000-0000000007a7', (select id from
   'simulated', p_is_simulated => true);
 set local role postgres;
 
+-- Ana's is funded: the desk formalises it at the engine's rate. Bia's is still raising.
 select pg_temp.act_as('00000000-0000-0000-0000-0000000007a5');
-select partner_decide((select id from opp), 'approved', 200000, 300, 6);
-select partner_decide((select id from opp2), 'approved', 150000, 300, 6);
+select formalise_loan((select id from opp));
 set local role postgres;
 create temp table loan as select id from loans where opportunity_id = (select id from opp);
 create temp table loan2 as select id from loans where opportunity_id = (select id from opp2);
@@ -153,14 +153,14 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000007a8');
 select is((select jsonb_array_length(partner_desk() -> 'opportunities')), 0, 'another partner sees none of it');
 set local role postgres;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000007a6');
-select ok((select jsonb_array_length(partner_desk() -> 'loans') >= 2), 'an auditor follows every desk');
+select ok((select jsonb_array_length(partner_desk() -> 'loans') >= 1), 'an auditor follows every desk');
 set local role postgres;
 
 -- ------------------------------------------------------------- formalisation
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000007a5');
-select throws_ok($$ select transition_loan((select id from loan2), 'DISBURSED') $$, 'P0001', 'not_fully_funded',
-  'Bia''s loan waits while investors are still funding it');
+select throws_ok($$ select formalise_loan((select id from opp2)) $$, 'P0001', 'not_fully_funded',
+  'Bia''s waits while investors are still funding it');
 select throws_ok($$ select transition_loan((select id from loan), 'CANCELLED') $$, '22023', 'reason_required',
   'a decline at formalisation needs a reason');
 select transition_loan((select id from loan), 'CANCELLED', 'Guarantor not reached');
@@ -196,6 +196,10 @@ set local role service_role;
 select record_investment('00000000-0000-0000-0000-0000000007a7', (select id from opp2), (select target from opp2) - 10000000,
   'simulated', p_is_simulated => true);
 set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000007a5');
+select formalise_loan((select id from opp2));
+set local role postgres;
+insert into loan2 select id from loans where opportunity_id = (select id from opp2);
 select pg_temp.act_as('00000000-0000-0000-0000-0000000007a5');
 select transition_loan((select id from loan2), 'DISBURSED', 'Pix sent');
 select transition_loan((select id from loan2), 'ACTIVE');

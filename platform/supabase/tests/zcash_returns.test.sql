@@ -113,7 +113,7 @@ insert into zcash_payment_requests (ref, investor_id, opportunity_id, amount_mic
    'credited', (select id from yan), 'sig-yan-credit', now());
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000009a5');
-select partner_decide((select id from opp), 'approved', 200000, 300, 6);
+select formalise_loan((select id from opp));
 select transition_loan((select id from loans where opportunity_id = (select id from opp)), 'DISBURSED', 'Pix sent');
 select transition_loan((select id from loans where opportunity_id = (select id from opp)), 'ACTIVE');
 select record_payment((select id from loans where opportunity_id = (select id from opp)), 1, 36000);

@@ -79,7 +79,7 @@ export default function Overview() {
             <StatTile label="Available USDC" value={connected && balances.data ? usdc(balances.data.microUsdc) : "—"}
               hint={wallet ? (connected ? "in your wallet" : "reconnect wallet") : "demo mode"} />
             <StatTile label="Repaid to you" value={usdc(p.repaid_micro_usdc)} hintTone="positive" hint="your share of instalments" />
-            <StatTile label="Expected back · demo" value={usdc(p.expected_micro_usdc)} hintTone="positive"
+            <StatTile label="Expected back · simulated" value={usdc(p.expected_micro_usdc)} hintTone="positive"
               hint={gain !== null ? `+${percent(gain)} on invested` : undefined} />
           </>
         ) : [0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 rounded-2xl bg-card" />)}

@@ -11,7 +11,7 @@ select set_config(
   true
 );
 
-select plan(31);
+select plan(33);
 
 -- ------------------------------------------------------------ the vectors
 -- Generated from packages/capital-allocation/vectors/scenarios.json: the
@@ -291,6 +291,19 @@ set local role postgres;
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000008a2');
 select throws_ok($$ select capital_overview() $$, '42501', 'not_allowed_to_see_capital', 'a community leader sees no pools');
+set local role postgres;
+
+-- ------------------------------------------------------------ the community
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000008a2');
+select is((select count(*)::int from qualified_credit_opportunities) + (select count(*)::int from loans), 0,
+  'nor reads her members'' opportunities or loans from their tables');
+select is(
+  (select community_overview('00000000-0000-0000-0000-0000000008c1') -> 'capital')
+    - array['financed_cents', 'repaid_cents', 'instalments_paid', 'instalments_due', 'loans_repaying', 'loans_late', 'loans_paid', 'loans_defaulted', 'waiting_for_capital'],
+  '{"eligible_cents":800000,"funded_cents":200000,"gap_cents":600000,"domestic_cents":200000,"global_cents":0,"domestic_coverage_bps":2500,"global_coverage_bps":0}'::jsonb,
+  'she sees capital as totals: R$ 8,000 of P2P demand, R$ 2,000 funded at home, a R$ 6,000 gap'
+);
 set local role postgres;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000008a8');
 create temp table ov as select capital_overview() as v;

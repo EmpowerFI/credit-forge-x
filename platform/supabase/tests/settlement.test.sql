@@ -112,8 +112,8 @@ select record_investment('00000000-0000-0000-0000-0000000006a8', (select id from
   'simulated', p_is_simulated => true);
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000006a5');
-select partner_decide((select id from opp), 'approved', 200000, 300, 12);
-select partner_decide((select id from opp2), 'approved', 150000, 300, 12);
+select formalise_loan((select id from opp));
+select formalise_loan((select id from opp2));
 set local role postgres;
 create temp table loan as select id, principal_cents, instalment_cents from loans where opportunity_id = (select id from opp);
 grant select on loan to authenticated, service_role;
@@ -123,7 +123,7 @@ grant select on loan2 to authenticated, service_role;
 -- ------------------------------------------------------------ disbursement
 
 select is((select count(*)::int from settlement_legs where loan_id = (select id from loan)), 0,
-  'nothing moves before the partner disburses');
+  'nothing moves before the desk disburses');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000006a5');
 select transition_loan((select id from loan), 'DISBURSED', 'Pix sent');
