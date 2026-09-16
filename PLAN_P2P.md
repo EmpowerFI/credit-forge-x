@@ -2,7 +2,17 @@
 
 **Source:** *EmpowerFI Hackathon Dashboards — P2P North Star, adjustment specification v2* (founder, 16 Sep 2026). It supersedes the four-route Capital Route Optimizer.
 **Window:** feature freeze Thu 8 Oct, as in `PLAN_REDESIGN.md`. Work happens on `hackathon`; `main` only after the founder approves.
-**Status, 16 Sep:** gap analysis done, decisions D1–D2 taken (§5); P0 in progress.
+**Status, 16 Sep:** P0 built on `hackathon`, live on the hackathon environment and merged to `main` at the founder's request.
+
+> - **Verified locally:**
+>   - pgTAP 427, including the engine's ten vectors in SQL, allocation on listing, domestic allocations, formalisation, leader privacy and community capital totals;
+>   - Vitest 129, Deno 47, build, lint at baseline;
+>   - every new screen at 1440 and 390 px with no overflow and no console errors.
+> - **Live on the hackathon environment:**
+>   - migrations pushed and the environment reseeded: R$ 43,200 of qualified demand across 12 opportunities, R$ 17,800 of domestic liquidity and 4,779 test USDC of global liquidity;
+>   - coverage 38.19% domestic alone, 96.52% combined (the pools are sized to the seed's demand: eligibility trims requests to what each business can carry, so demand is smaller than the specification's R$ 126,300 example);
+>   - a simulated BRL allocation made in the investor console, and a funded opportunity formalised and disbursed from the desk.
+> - **Not in P0:** the public site's positioning (D2), per-pool returns paid back in reais.
 
 ---
 
