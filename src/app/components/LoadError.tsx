@@ -1,6 +1,7 @@
 import { AlertTriangle, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { describeError } from "../lib/errors";
+import { tr } from "../i18n";
 
 /** What a page shows when its data did not load: why, in words, and a way to try again. */
 export default function LoadError({ error, onRetry, compact = false }: { error: unknown; onRetry?: () => void; compact?: boolean }) {
@@ -11,7 +12,7 @@ export default function LoadError({ error, onRetry, compact = false }: { error: 
         <p className="text-sm">{describeError(error)}</p>
         {onRetry && (
           <Button size="sm" variant="outline" onClick={onRetry} className="gap-1.5">
-            <RotateCw size={14} /> Try again
+            <RotateCw size={14} /> {tr({ en: "Try again", pt: "Tentar de novo" })}
           </Button>
         )}
       </div>

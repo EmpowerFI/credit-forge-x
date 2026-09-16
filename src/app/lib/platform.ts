@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./platform.types";
+import { localized } from "../i18n";
 
 // The hackathon platform's own Supabase project (platform/), separate from the
 // website's (src/integrations/supabase). Two projects, two clients, two
@@ -28,22 +29,22 @@ export type CommunityStatus = Enums["community_status"];
 export type ChainAnchor = Tables["chain_anchors"]["Row"];
 export type AnchorKind = Enums["anchor_kind"];
 
-export const ROLE_LABEL: Record<Role, string> = {
-  entrepreneur: "Entrepreneur",
-  community_leader: "Community leader",
-  partner: "EmpowerFI P2P desk",
-  capital_provider: "Capital provider",
-  auditor: "Auditor",
-  admin: "EmpowerFI admin",
-};
+export const ROLE_LABEL: Record<Role, string> = localized({
+  entrepreneur: { en: "Entrepreneur", pt: "Empreendedora" },
+  community_leader: { en: "Community leader", pt: "Líder da comunidade" },
+  partner: { en: "EmpowerFI P2P desk", pt: "Mesa P2P da EmpowerFI" },
+  capital_provider: { en: "Capital provider", pt: "Provedor de capital" },
+  auditor: { en: "Auditor", pt: "Auditor" },
+  admin: { en: "EmpowerFI admin", pt: "Admin da EmpowerFI" },
+});
 
-export const KIND_LABEL: Record<CommunityKind, string> = {
-  education_programme: "Education programme",
-  association: "Association",
-  cooperative: "Cooperative",
-  collective: "Collective",
-  other: "Other",
-};
+export const KIND_LABEL: Record<CommunityKind, string> = localized({
+  education_programme: { en: "Education programme", pt: "Programa de formação" },
+  association: { en: "Association", pt: "Associação" },
+  cooperative: { en: "Cooperative", pt: "Cooperativa" },
+  collective: { en: "Collective", pt: "Coletivo" },
+  other: { en: "Other", pt: "Outro" },
+});
 
 export const BR_STATES = [
   "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA",

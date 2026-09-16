@@ -1,7 +1,7 @@
 import { Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LOCALES, tr } from "./index";
-import { useLocale } from "./LocaleProvider";
+import { useLocale } from "./useLocale";
 
 /** EN | PT, wherever the app has a header: the layout, the login and a shared report. */
 export default function LanguageSwitch({ className }: { className?: string }) {

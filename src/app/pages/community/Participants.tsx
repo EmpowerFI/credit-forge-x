@@ -16,23 +16,29 @@ import { ACTION, type OutreachAction, type ParticipantRow, READINESS_TONE, score
 import { SCOPES } from "../../lib/consent";
 import { describeError } from "../../lib/errors";
 import { platform } from "../../lib/platform";
-import { monthLabel, STATUS_LABEL } from "../../lib/readiness";
+import { monthLabel, sectorLabel, STATUS_LABEL } from "../../lib/readiness";
 import { useCommunity } from "./context";
 import ConsentDialog from "./ConsentDialog";
 import OutreachDialog from "./OutreachDialog";
 import { useParticipants } from "./queries";
+import { localized, tr } from "../../i18n";
 
 const ALL = "all";
 
-const SCOPE_SHORT = { assessment: "assessment", partner: "partner", investors: "investors", impact: "impact" } as const;
+const SCOPE_SHORT = localized({
+  assessment: { en: "assessment", pt: "avaliação" },
+  partner: { en: "partner", pt: "mesa P2P" },
+  investors: { en: "investors", pt: "investidores" },
+  impact: { en: "impact", pt: "impacto" },
+});
 
 /** Her consent in a word: all four uses, none, or which ones she withheld. */
 function ConsentCell({ consent }: { consent: ParticipantRow["consent"] }) {
-  if (!consent) return <StatusPill tone="alert">None</StatusPill>;
+  if (!consent) return <StatusPill tone="alert">{tr({ en: "None", pt: "Nenhum" })}</StatusPill>;
   const withheld = SCOPES.filter((s) => !consent[s]);
-  if (withheld.length === 0) return <StatusPill tone="positive">All four</StatusPill>;
-  if (withheld.length === SCOPES.length) return <StatusPill tone="alert">None given</StatusPill>;
-  return <span className="text-xs text-caution">Not {withheld.map((s) => SCOPE_SHORT[s]).join(", ")}</span>;
+  if (withheld.length === 0) return <StatusPill tone="positive">{tr({ en: "All four", pt: "Os quatro" })}</StatusPill>;
+  if (withheld.length === SCOPES.length) return <StatusPill tone="alert">{tr({ en: "None given", pt: "Nenhum dado" })}</StatusPill>;
+  return <span className="text-xs text-caution">{tr({ en: "Not", pt: "Sem" })} {withheld.map((s) => SCOPE_SHORT[s]).join(", ")}</span>;
 }
 
 export default function Participants() {
@@ -68,36 +74,41 @@ export default function Participants() {
   return (
     <div className="space-y-6">
       <Panel
-        title={participants.data ? `${rows.length} of ${participants.data.length} participants` : "Participants"}
-        description="Readiness, reporting and data quality, without anyone's accounts: amounts stay with the participant and EmpowerFI's P2P desk.">
+        title={participants.data
+          ? tr({ en: `${rows.length} of ${participants.data.length} participants`, pt: `${rows.length} de ${participants.data.length} participantes` })
+          : tr({ en: "Participants", pt: "Participantes" })}
+        description={tr({
+          en: "Readiness, reporting and data quality, without anyone's accounts: amounts stay with the participant and EmpowerFI's P2P desk.",
+          pt: "Prontidão, envio de dados e qualidade dos dados, sem as contas de ninguém: os valores ficam com a participante e a mesa P2P da EmpowerFI.",
+        })}>
         <div className="flex flex-wrap gap-2">
           <div className="relative min-w-[12rem] flex-1">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, business or sector"
-              className="pl-9" aria-label="Search participants" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr({ en: "Search name, business or sector", pt: "Buscar nome, negócio ou setor" })}
+              className="pl-9" aria-label={tr({ en: "Search participants", pt: "Buscar participantes" })} />
           </div>
           <Select value={stage} onValueChange={(v) => setFilter("stage", v)}>
-            <SelectTrigger className="w-[11rem]" aria-label="Stage"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[11rem]" aria-label={tr({ en: "Stage", pt: "Etapa" })}><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>Stage: all</SelectItem>
+              <SelectItem value={ALL}>{tr({ en: "Stage: all", pt: "Etapa: todas" })}</SelectItem>
               {STAGES.map((s) => <SelectItem key={s} value={s}>{STAGE_LABEL[s]}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={readiness} onValueChange={(v) => setFilter("readiness", v)}>
-            <SelectTrigger className="w-[12rem]" aria-label="Readiness"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[12rem]" aria-label={tr({ en: "Readiness", pt: "Prontidão" })}><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>Readiness: all</SelectItem>
+              <SelectItem value={ALL}>{tr({ en: "Readiness: all", pt: "Prontidão: todas" })}</SelectItem>
               {(Object.keys(STATUS_LABEL) as (keyof typeof STATUS_LABEL)[]).map((s) => (
                 <SelectItem key={s} value={s}>{STATUS_LABEL[s].title}</SelectItem>
               ))}
-              <SelectItem value="none">Not assessed yet</SelectItem>
+              <SelectItem value="none">{tr({ en: "Not assessed yet", pt: "Ainda não avaliada" })}</SelectItem>
             </SelectContent>
           </Select>
           <Select value={action} onValueChange={(v) => setFilter("action", v)}>
-            <SelectTrigger className="w-[13rem]" aria-label="Next action"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[13rem]" aria-label={tr({ en: "Next action", pt: "Próxima ação" })}><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>Next action: all</SelectItem>
-              <SelectItem value="any">Waiting on the community</SelectItem>
+              <SelectItem value={ALL}>{tr({ en: "Next action: all", pt: "Próxima ação: todas" })}</SelectItem>
+              <SelectItem value="any">{tr({ en: "Waiting on the community", pt: "Esperando pela comunidade" })}</SelectItem>
               {(Object.keys(ACTION) as OutreachAction[]).map((a) => <SelectItem key={a} value={a}>{ACTION[a].label}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -107,14 +118,14 @@ export default function Participants() {
           <table className="w-full min-w-[1000px] text-sm">
             <thead className="text-left text-xs text-muted-foreground">
               <tr className="border-b border-border">
-                <th className="py-2 pr-4 font-medium">Participant</th>
-                <th className="py-2 pr-4 font-medium">Education</th>
-                <th className="py-2 pr-4 font-medium">Reporting</th>
-                <th className="py-2 pr-4 text-right font-medium">Data quality</th>
-                <th className="py-2 pr-4 font-medium">Readiness</th>
-                <th className="py-2 pr-4 font-medium">Stage</th>
-                <th className="py-2 pr-4 font-medium">Consent</th>
-                <th className="py-2 font-medium">Next action</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Participant", pt: "Participante" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Education", pt: "Formação" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Reporting", pt: "Envio de dados" })}</th>
+                <th className="py-2 pr-4 text-right font-medium">{tr({ en: "Data quality", pt: "Qualidade dos dados" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Readiness", pt: "Prontidão" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Stage", pt: "Etapa" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Consent", pt: "Consentimento" })}</th>
+                <th className="py-2 font-medium">{tr({ en: "Next action", pt: "Próxima ação" })}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -128,7 +139,7 @@ export default function Participants() {
                     <td className="py-3 pr-4">
                       <Link to={p.entrepreneur_id} className="font-medium text-foreground hover:underline">{p.display_name}</Link>
                       <span className="block text-xs text-muted-foreground">
-                        {[p.business_sector, `joined ${monthLabel(p.intake)}`].filter(Boolean).join(" · ")}
+                        {[sectorLabel(p.business_sector), tr({ en: `joined ${monthLabel(p.intake)}`, pt: `entrou em ${monthLabel(p.intake)}` })].filter(Boolean).join(" · ")}
                       </span>
                     </td>
                     <td className="py-3 pr-4">
@@ -141,9 +152,11 @@ export default function Participants() {
                     </td>
                     <td className="py-3 pr-4">
                       <span className={`num text-xs ${p.reported_latest ? "text-positive" : "text-caution"}`}>
-                        {p.last_period ? monthLabel(p.last_period) : "never"}
+                        {p.last_period ? monthLabel(p.last_period) : tr({ en: "never", pt: "nunca" })}
                       </span>
-                      <span className="block text-xs text-muted-foreground">{p.checkins} month{p.checkins === 1 ? "" : "s"}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {tr({ en: `${p.checkins} month${p.checkins === 1 ? "" : "s"}`, pt: `${p.checkins} ${p.checkins === 1 ? "mês" : "meses"}` })}
+                      </span>
                     </td>
                     <td className="num py-3 pr-4 text-right text-muted-foreground">
                       {scorePct(p.data_quality) !== null ? `${scorePct(p.data_quality)}%` : "—"}
@@ -151,13 +164,13 @@ export default function Participants() {
                     <td className="py-3 pr-4">
                       {p.readiness_status
                         ? <StatusPill tone={READINESS_TONE[p.readiness_status]}>{STATUS_LABEL[p.readiness_status].title}</StatusPill>
-                        : <span className="text-xs text-muted-foreground">Not assessed</span>}
+                        : <span className="text-xs text-muted-foreground">{tr({ en: "Not assessed", pt: "Não avaliada" })}</span>}
                     </td>
                     <td className="py-3 pr-4 text-muted-foreground">{STAGE_LABEL[p.stage]}</td>
                     <td className="py-3 pr-4"><ConsentCell consent={p.consent} /></td>
                     <td className="py-3">
                       {!p.next_action ? <span className="text-xs text-muted-foreground">—</span>
-                        : p.contacted_at ? <StatusPill tone="neutral">Contacted</StatusPill>
+                        : p.contacted_at ? <StatusPill tone="neutral">{tr({ en: "Contacted", pt: "Contatada" })}</StatusPill>
                         : leads ? (
                           <Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs"
                             onClick={() => setLogFor({ action: p.next_action!, people: [p] })}>
@@ -169,7 +182,7 @@ export default function Participants() {
                 );
               })}
               {participants.data && rows.length === 0 && (
-                <tr><td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">No participant matches these filters.</td></tr>
+                <tr><td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">{tr({ en: "No participant matches these filters.", pt: "Nenhuma participante corresponde a estes filtros." })}</td></tr>
               )}
             </tbody>
           </table>
@@ -213,7 +226,10 @@ function EnrollForm({ onEnrolled }: { onEnrolled: (p: { entrepreneur_id: string;
       for (const key of ["ci-participants", "ci-overview", "ci-cohorts"]) {
         queryClient.invalidateQueries({ queryKey: ["platform", key, community.id] });
       }
-      toast.success("Enrolled. Her borrower reference is being registered on devnet. Now record her consent form.");
+      toast.success(tr({
+        en: "Enrolled. Her borrower reference is being registered on devnet. Now record her consent form.",
+        pt: "Cadastrada. A referência de tomadora dela está sendo registrada na devnet. Agora registre o formulário de consentimento dela.",
+      }));
       onEnrolled(enrolled);
     },
     onError: (error) => toast.error(describeError(error)),
@@ -224,22 +240,26 @@ function EnrollForm({ onEnrolled }: { onEnrolled: (p: { entrepreneur_id: string;
   };
 
   return (
-    <Panel title="Add a participant" description="She gets a random borrower reference; only its hash goes on chain. Her consent form comes next: nothing of hers is assessed without it.">
+    <Panel title={tr({ en: "Add a participant", pt: "Adicionar participante" })}
+      description={tr({
+        en: "She gets a random borrower reference; only its hash goes on chain. Her consent form comes next: nothing of hers is assessed without it.",
+        pt: "Ela recebe uma referência de tomadora aleatória; só o hash dela vai para a blockchain. Depois vem o formulário de consentimento: nada dela é avaliado sem ele.",
+      })}>
       <form onSubmit={submit} className="grid gap-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
         <div className="space-y-2">
-          <Label htmlFor="m-name">Name</Label>
+          <Label htmlFor="m-name">{tr({ en: "Name", pt: "Nome" })}</Label>
           <Input id="m-name" required maxLength={80} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="m-business">Business <span className="font-normal text-muted-foreground">— optional</span></Label>
+          <Label htmlFor="m-business">{tr({ en: "Business", pt: "Negócio" })} <span className="font-normal text-muted-foreground">— {tr({ en: "optional", pt: "opcional" })}</span></Label>
           <Input id="m-business" maxLength={120} value={form.business} onChange={(e) => setForm({ ...form, business: e.target.value })} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="m-sector">Sector <span className="font-normal text-muted-foreground">— optional</span></Label>
+          <Label htmlFor="m-sector">{tr({ en: "Sector", pt: "Setor" })} <span className="font-normal text-muted-foreground">— {tr({ en: "optional", pt: "opcional" })}</span></Label>
           <Input id="m-sector" maxLength={80} value={form.sector} onChange={(e) => setForm({ ...form, sector: e.target.value })} />
         </div>
         <Button type="submit" disabled={enroll.isPending} className="gap-2">
-          {enroll.isPending ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />} Enroll
+          {enroll.isPending ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />} {tr({ en: "Enroll", pt: "Cadastrar" })}
         </Button>
       </form>
     </Panel>

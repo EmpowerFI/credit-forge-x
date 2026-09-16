@@ -1,7 +1,8 @@
 import type { Tone } from "../components/product/StatusPill";
+import { localized, tr } from "../i18n";
 import type { Database } from "./platform.types";
 import { LOAN_LABEL, type LoanStatus } from "./credit";
-import { PURPOSE_LABEL, type CreditPurpose } from "./readiness";
+import { PURPOSE_LABEL, sectorLabel, type CreditPurpose } from "./readiness";
 
 // The investor console's vocabulary: opportunities as an investor sees them,
 // positions, and how states read. No name anywhere — a code, a purpose and a
@@ -61,23 +62,23 @@ export interface Portfolio {
   rows: PortfolioRow[];
 }
 
-export const FUNDING_LABEL: Record<FundingStatus, { label: string; tone: Tone }> = {
-  open: { label: "Open", tone: "info" },
-  partially_funded: { label: "Partially funded", tone: "caution" },
-  funded: { label: "Funded", tone: "positive" },
-  closed: { label: "Closed", tone: "neutral" },
-  refunded: { label: "Refunded", tone: "neutral" },
-};
+export const FUNDING_LABEL: Record<FundingStatus, { label: string; tone: Tone }> = localized({
+  open: { label: { en: "Open", pt: "Aberta" }, tone: "info" },
+  partially_funded: { label: { en: "Partially funded", pt: "Parcialmente captada" }, tone: "caution" },
+  funded: { label: { en: "Funded", pt: "Captada" }, tone: "positive" },
+  closed: { label: { en: "Closed", pt: "Encerrada" }, tone: "neutral" },
+  refunded: { label: { en: "Refunded", pt: "Reembolsada" }, tone: "neutral" },
+});
 
 /** Risk bands read as grades, the way credit investors expect them. */
-export const RISK: Record<Grade, { grade: string; label: string; tone: Tone; bar: string }> = {
-  LOW: { grade: "A", label: "A · lower risk", tone: "positive", bar: "bg-positive" },
-  MEDIUM: { grade: "B", label: "B · moderate", tone: "info", bar: "bg-info" },
-  HIGH: { grade: "C", label: "C · higher", tone: "caution", bar: "bg-caution" },
-};
+export const RISK: Record<Grade, { grade: string; label: string; tone: Tone; bar: string }> = localized({
+  LOW: { grade: "A", label: { en: "A · lower risk", pt: "A · risco menor" }, tone: "positive", bar: "bg-positive" },
+  MEDIUM: { grade: "B", label: { en: "B · moderate", pt: "B · moderado" }, tone: "info", bar: "bg-info" },
+  HIGH: { grade: "C", label: { en: "C · higher", pt: "C · maior" }, tone: "caution", bar: "bg-caution" },
+});
 
 export const title = (purpose: CreditPurpose, sector: string | null) =>
-  `${PURPOSE_LABEL[purpose]}${sector ? ` · ${sector}` : ""}`;
+  `${PURPOSE_LABEL[purpose]}${sector ? ` · ${sectorLabel(sector)}` : ""}`;
 
 /** Share of a target already raised, 0–100. */
 export const fundedPercent = (funded: number, target: number | null) =>
@@ -89,31 +90,36 @@ export const reaisFromUsdc = (micro: number, fxMilli: number | null) =>
 /** Centavos to micro-USDC at a quote in milli-reais per USDC; mirrors private.usdc_micro. */
 export const usdcFromReais = (cents: number, fxMilli: number) => (cents * 1e7) / fxMilli;
 
-export const ACTIVITY_LABEL: Record<string, string> = {
-  invested: "Investment allocated",
-  disbursed: "Loan disbursed",
-  repayment: "Repayment received",
-  paid_off: "Loan paid off",
-  outcome: "Outcome measured",
-  refund_due: "Refund due",
-};
+export const ACTIVITY_LABEL: Record<string, string> = localized({
+  invested: { en: "Investment allocated", pt: "Investimento alocado" },
+  disbursed: { en: "Loan disbursed", pt: "Empréstimo desembolsado" },
+  repayment: { en: "Repayment received", pt: "Pagamento recebido" },
+  paid_off: { en: "Loan paid off", pt: "Empréstimo quitado" },
+  outcome: { en: "Outcome measured", pt: "Resultado medido" },
+  refund_due: { en: "Refund due", pt: "Reembolso pendente" },
+});
 
-export const PROOF_LABEL: Record<string, string> = {
-  allocation: "Your allocation",
-  loan: "Loan terms",
-  loan_transition: "Loan status change",
-  payment: "Instalment paid",
-  readiness: "Readiness attestation",
-  eligibility: "Eligibility commitment",
-  opportunity: "Opportunity commitment",
-  consent: "Her consent to be shown",
-};
+export const PROOF_LABEL: Record<string, string> = localized({
+  allocation: { en: "Your allocation", pt: "Sua alocação" },
+  loan: { en: "Loan terms", pt: "Condições do empréstimo" },
+  loan_transition: { en: "Loan status change", pt: "Mudança de status do empréstimo" },
+  payment: { en: "Instalment paid", pt: "Parcela paga" },
+  readiness: { en: "Readiness attestation", pt: "Atestado de prontidão" },
+  eligibility: { en: "Eligibility commitment", pt: "Hash da elegibilidade" },
+  opportunity: { en: "Opportunity commitment", pt: "Hash da oportunidade" },
+  consent: { en: "Her consent to be shown", pt: "O consentimento dela para ser exibida" },
+});
 
 /** Where a position stands, in one pill: raising, the loan's state, or a refund. */
 export function positionState(r: Pick<PortfolioRow, "status" | "loan_status" | "funding_status">): { label: string; tone: Tone } {
-  if (r.status !== "allocated") return { label: r.status === "refund_due" ? "Refund due" : "Refunded", tone: "caution" };
+  if (r.status !== "allocated") {
+    return {
+      label: r.status === "refund_due" ? tr({ en: "Refund due", pt: "Reembolso pendente" }) : tr({ en: "Refunded", pt: "Reembolsada" }),
+      tone: "caution",
+    };
+  }
   if (!r.loan_status || r.loan_status === "PARTNER_APPROVED" || r.loan_status === "DRAFT") {
-    return r.funding_status === "funded" ? { label: "Funded · awaiting disbursement", tone: "info" } : FUNDING_LABEL[r.funding_status];
+    return r.funding_status === "funded" ? { label: tr({ en: "Funded · awaiting disbursement", pt: "Captada · aguardando desembolso" }), tone: "info" } : FUNDING_LABEL[r.funding_status];
   }
   const tone: Record<string, Tone> = { DISBURSED: "info", ACTIVE: "positive", PAID: "positive", DEFAULTED: "alert", CANCELLED: "neutral" };
   return { label: LOAN_LABEL[r.loan_status], tone: tone[r.loan_status] ?? "neutral" };

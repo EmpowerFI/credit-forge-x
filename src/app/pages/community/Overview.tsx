@@ -13,6 +13,7 @@ import { money, monthLabel } from "../../lib/readiness";
 import { useCommunity } from "./context";
 import OutreachDialog from "./OutreachDialog";
 import { useOverview } from "./queries";
+import { tr } from "../../i18n";
 
 const pct = (n: number, of: number) => (of > 0 ? Math.round((n / of) * 100) : 0);
 
@@ -34,17 +35,30 @@ export default function CommunityOverview() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Where the community stands{o?.as_of_period ? <> as of <span className="text-foreground">{monthLabel(o.as_of_period)}</span>, the latest month reported</> : null}.
-        {" "}The community produces preparation, data and qualified P2P demand; investors fund it, domestic or global.
+        {tr({
+          en: <>Where the community stands{o?.as_of_period ? <> as of <span className="text-foreground">{monthLabel(o.as_of_period)}</span>, the latest month reported</> : null}.</>,
+          pt: <>Como está a comunidade{o?.as_of_period ? <> em <span className="text-foreground">{monthLabel(o.as_of_period)}</span>, o último mês informado</> : null}.</>,
+        })}
+        {" "}{tr({
+          en: "The community produces preparation, data and qualified P2P demand; investors fund it, domestic or global.",
+          pt: "A comunidade gera preparo, dados e demanda qualificada P2P; investidores, domésticos ou globais, financiam essa demanda.",
+        })}
       </p>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {!o ? Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-[92px] rounded-xl" />) : (
           <>
-            <StatTile label="Qualified capital demand" value={money(o.hero.qualified_demand_cents)} hint={`${o.hero.p2p_opportunity} P2P opportunities`} hintTone="info" />
-            <StatTile label="Funded" value={money(o.capital.funded_cents)} hint={`${bpsPct(o.capital.domestic_coverage_bps + o.capital.global_coverage_bps)} of demand`} hintTone="positive" />
-            <StatTile label="Funding gap" value={money(o.capital.gap_cents)} hint={o.capital.waiting_for_capital ? `${o.capital.waiting_for_capital} waiting for a pool` : "still raising"} hintTone={o.capital.gap_cents ? "caution" : "positive"} />
-            <StatTile label="Coverage" value={`${bpsPct(o.capital.domestic_coverage_bps)} · ${bpsPct(o.capital.global_coverage_bps)}`} hint="domestic · global" />
+            <StatTile label={tr({ en: "Qualified capital demand", pt: "Demanda qualificada de capital" })} value={money(o.hero.qualified_demand_cents)}
+              hint={tr({ en: `${o.hero.p2p_opportunity} P2P opportunities`, pt: `${o.hero.p2p_opportunity} oportunidades P2P` })} hintTone="info" />
+            <StatTile label={tr({ en: "Funded", pt: "Captado" })} value={money(o.capital.funded_cents)}
+              hint={tr({ en: `${bpsPct(o.capital.domestic_coverage_bps + o.capital.global_coverage_bps)} of demand`, pt: `${bpsPct(o.capital.domestic_coverage_bps + o.capital.global_coverage_bps)} da demanda` })} hintTone="positive" />
+            <StatTile label={tr({ en: "Funding gap", pt: "Lacuna de captação" })} value={money(o.capital.gap_cents)}
+              hint={o.capital.waiting_for_capital
+                ? tr({ en: `${o.capital.waiting_for_capital} waiting for a pool`, pt: `${o.capital.waiting_for_capital} aguardando um pool` })
+                : tr({ en: "still raising", pt: "captação em andamento" })}
+              hintTone={o.capital.gap_cents ? "caution" : "positive"} />
+            <StatTile label={tr({ en: "Coverage", pt: "Cobertura" })} value={`${bpsPct(o.capital.domestic_coverage_bps)} · ${bpsPct(o.capital.global_coverage_bps)}`}
+              hint={tr({ en: "domestic · global", pt: "doméstico · global" })} />
           </>
         )}
       </div>
@@ -52,20 +66,24 @@ export default function CommunityOverview() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {!h ? Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-[92px] rounded-xl" />) : (
           <>
-            <StatTile label="Participants" value={h.participants}
-              hint={h.joined_this_month ? `+${h.joined_this_month} this month` : undefined} hintTone="positive" />
-            <StatTile label="Education complete" value={h.education_complete} hint={`${pct(h.education_complete, h.participants)}%`} />
-            <StatTile label="Credit ready" value={h.credit_ready} hint={`${pct(h.credit_ready, h.participants)}%`} />
-            <StatTile label="Credit intent" value={h.credit_intent} hint={`${pct(h.credit_intent, h.participants)}%`} />
-            <StatTile label="Eligible" value={h.eligible} hint={`${pct(h.eligible, h.participants)}%`} />
-            <StatTile label="Funded" value={h.funded} hint={`of ${h.p2p_opportunity} P2P opportunities`} />
+            <StatTile label={tr({ en: "Participants", pt: "Participantes" })} value={h.participants}
+              hint={h.joined_this_month ? tr({ en: `+${h.joined_this_month} this month`, pt: `+${h.joined_this_month} este mês` }) : undefined} hintTone="positive" />
+            <StatTile label={tr({ en: "Education complete", pt: "Formação concluída" })} value={h.education_complete} hint={`${pct(h.education_complete, h.participants)}%`} />
+            <StatTile label={tr({ en: "Credit ready", pt: "Prontas para crédito" })} value={h.credit_ready} hint={`${pct(h.credit_ready, h.participants)}%`} />
+            <StatTile label={tr({ en: "Credit intent", pt: "Pedidos de crédito" })} value={h.credit_intent} hint={`${pct(h.credit_intent, h.participants)}%`} />
+            <StatTile label={tr({ en: "Eligible", pt: "Elegíveis" })} value={h.eligible} hint={`${pct(h.eligible, h.participants)}%`} />
+            <StatTile label={tr({ en: "Funded", pt: "Captadas" })} value={h.funded}
+              hint={tr({ en: `of ${h.p2p_opportunity} P2P opportunities`, pt: `de ${h.p2p_opportunity} oportunidades P2P` })} />
           </>
         )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
-        <Panel title="Readiness funnel" className="lg:col-span-3"
-          description="Participants who reached at least each stage. Credit ready without asking is a complete outcome.">
+        <Panel title={tr({ en: "Readiness funnel", pt: "Funil de prontidão" })} className="lg:col-span-3"
+          description={tr({
+            en: "Participants who reached at least each stage. Credit ready without asking is a complete outcome.",
+            pt: "Participantes que chegaram pelo menos a cada etapa. Estar pronta para crédito sem pedir é um resultado completo.",
+          })}>
           {!o ? <Skeleton className="h-64 w-full" /> : (
             <ul className="space-y-2.5">
               {o.funnel.map((f, i) => {
@@ -95,21 +113,26 @@ export default function CommunityOverview() {
           )}
         </Panel>
 
-        <Panel title="Cohort health" className="lg:col-span-2" description="How well the community is keeping its record.">
+        <Panel title={tr({ en: "Cohort health", pt: "Saúde da turma" })} className="lg:col-span-2"
+          description={tr({ en: "How well the community is keeping its record.", pt: "Como a comunidade está mantendo seus registros." })}>
           {!o ? <Skeleton className="h-64 w-full" /> : (
             <dl className="divide-y divide-border text-sm">
               {[
-                { label: "Check-in completion", value: bpsPct(o.health.checkin_completion_bps), tone: "text-positive",
-                  hint: o.as_of_period ? `reported ${monthLabel(o.as_of_period)}` : "" },
-                { label: "Data quality", value: bpsPct(o.health.data_quality_bps), tone: "text-info", hint: "consistency of what is reported" },
-                { label: "Reporting regularity", value: bpsPct(o.health.regularity_bps), tone: "text-info", hint: "month after month" },
-                { label: "Needs human follow-up", value: String(o.health.needs_human_followup), tone: "text-caution", hint: "manual review" },
-                { label: "Avg. time to readiness", value: o.health.avg_days_to_ready !== null ? `${o.health.avg_days_to_ready} days` : "—",
-                  tone: "text-foreground", hint: "from joining" },
-                { label: "Credit alerts", value: String(o.health.credit_alerts), tone: o.health.credit_alerts ? "text-alert" : "text-foreground",
-                  hint: "late or defaulted loans" },
+                { key: "checkin", label: tr({ en: "Check-in completion", pt: "Check-ins feitos" }), value: bpsPct(o.health.checkin_completion_bps), tone: "text-positive",
+                  hint: o.as_of_period ? tr({ en: `reported ${monthLabel(o.as_of_period)}`, pt: `informados em ${monthLabel(o.as_of_period)}` }) : "" },
+                { key: "quality", label: tr({ en: "Data quality", pt: "Qualidade dos dados" }), value: bpsPct(o.health.data_quality_bps), tone: "text-info",
+                  hint: tr({ en: "consistency of what is reported", pt: "coerência do que é informado" }) },
+                { key: "regularity", label: tr({ en: "Reporting regularity", pt: "Regularidade dos dados" }), value: bpsPct(o.health.regularity_bps), tone: "text-info",
+                  hint: tr({ en: "month after month", pt: "mês após mês" }) },
+                { key: "human", label: tr({ en: "Needs human follow-up", pt: "Precisam de acompanhamento pessoal" }), value: String(o.health.needs_human_followup), tone: "text-caution",
+                  hint: tr({ en: "manual review", pt: "revisão manual" }) },
+                { key: "days", label: tr({ en: "Avg. time to readiness", pt: "Tempo médio até a prontidão" }),
+                  value: o.health.avg_days_to_ready !== null ? tr({ en: `${o.health.avg_days_to_ready} days`, pt: `${o.health.avg_days_to_ready} dias` }) : "—",
+                  tone: "text-foreground", hint: tr({ en: "from joining", pt: "desde a entrada" }) },
+                { key: "alerts", label: tr({ en: "Credit alerts", pt: "Alertas de crédito" }), value: String(o.health.credit_alerts), tone: o.health.credit_alerts ? "text-alert" : "text-foreground",
+                  hint: tr({ en: "late or defaulted loans", pt: "empréstimos em atraso ou inadimplentes" }) },
               ].map((r) => (
-                <div key={r.label} className="flex items-baseline justify-between gap-3 py-2.5">
+                <div key={r.key} className="flex items-baseline justify-between gap-3 py-2.5">
                   <dt>
                     <span className="text-foreground">{r.label}</span>
                     {r.hint && <span className="block text-xs text-muted-foreground">{r.hint}</span>}
@@ -122,25 +145,30 @@ export default function CommunityOverview() {
         </Panel>
       </div>
 
-      <Panel title="Action queue"
-        description="Who needs the community's attention now. Log each contact after you make it: it moves the queue and counts in cost to serve."
-        actions={<Link to="participants" className="inline-flex items-center gap-1 text-sm text-info hover:underline">All participants <ArrowRight size={14} /></Link>}>
+      <Panel title={tr({ en: "Action queue", pt: "Fila de ações" })}
+        description={tr({
+          en: "Who needs the community's attention now. Log each contact after you make it: it moves the queue and counts in cost to serve.",
+          pt: "Quem precisa da atenção da comunidade agora. Registre cada contato depois de fazê-lo: a fila anda e o contato entra no custo de servir.",
+        })}
+        actions={<Link to="participants" className="inline-flex items-center gap-1 text-sm text-info hover:underline">{tr({ en: "All participants", pt: "Todas as participantes" })} <ArrowRight size={14} /></Link>}>
         {!o ? <Skeleton className="h-40 w-full" /> : queue.length === 0 ? (
-          <p className="flex items-center gap-2 text-sm text-positive"><Check size={16} /> Nobody is waiting on the community right now.</p>
+          <p className="flex items-center gap-2 text-sm text-positive"><Check size={16} /> {tr({ en: "Nobody is waiting on the community right now.", pt: "Ninguém está esperando pela comunidade agora." })}</p>
         ) : (
           <ul className="divide-y divide-border">
             {queue.map((q) => (
               <li key={q.action} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="min-w-0 space-y-1">
                   <p className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-semibold text-foreground">{q.pending} participant{q.pending === 1 ? "" : "s"}</span>
+                    <span className="font-semibold text-foreground">
+                      {tr({ en: `${q.pending} participant${q.pending === 1 ? "" : "s"}`, pt: `${q.pending} participante${q.pending === 1 ? "" : "s"}` })}
+                    </span>
                     <span className="text-muted-foreground">{ACTION[q.action].queue}</span>
-                    {q.contacted > 0 && <StatusPill tone="neutral">{q.contacted} contacted this week</StatusPill>}
+                    {q.contacted > 0 && <StatusPill tone="neutral">{tr({ en: `${q.contacted} contacted this week`, pt: `${q.contacted} contatadas esta semana` })}</StatusPill>}
                   </p>
                   {q.participants.length > 0 && (
                     <p className="truncate text-xs text-muted-foreground">
                       {q.participants.slice(0, 5).map((p) => p.display_name).join(", ")}
-                      {q.participants.length > 5 && ` and ${q.participants.length - 5} more`}
+                      {q.participants.length > 5 && tr({ en: ` and ${q.participants.length - 5} more`, pt: ` e mais ${q.participants.length - 5}` })}
                     </p>
                   )}
                 </div>

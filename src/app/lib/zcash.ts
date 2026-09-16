@@ -1,7 +1,7 @@
 import type { Tone } from "../components/product/StatusPill";
 import type { Database } from "./platform.types";
 import { platform } from "./platform";
-import { formatNumber, getLocale } from "../i18n";
+import { formatNumber, getLocale, localized } from "../i18n";
 
 // Investing with shielded ZEC (R5): the request an investor pays from any
 // Zcash wallet, and how its progress reads, from the payment on Zcash to the
@@ -43,15 +43,15 @@ export interface ZcashRequest {
 /** Live: the request still holds its share, or its payment is on its way. */
 export const LIVE: ZcashStatus[] = ["awaiting", "seen", "confirmed"];
 
-export const STATUS_LABEL: Record<ZcashStatus, { label: string; tone: Tone }> = {
-  awaiting: { label: "Awaiting payment", tone: "info" },
-  seen: { label: "Seen on Zcash", tone: "caution" },
-  confirmed: { label: "Confirmed · crediting", tone: "caution" },
-  credited: { label: "Allocated", tone: "positive" },
-  underpaid: { label: "Paid less than asked", tone: "alert" },
-  expired: { label: "Expired unpaid", tone: "neutral" },
-  failed: { label: "Not allocated", tone: "alert" },
-};
+export const STATUS_LABEL: Record<ZcashStatus, { label: string; tone: Tone }> = localized({
+  awaiting: { label: { en: "Awaiting payment", pt: "Aguardando pagamento" }, tone: "info" },
+  seen: { label: { en: "Seen on Zcash", pt: "Visto na Zcash" }, tone: "caution" },
+  confirmed: { label: { en: "Confirmed · crediting", pt: "Confirmado · creditando" }, tone: "caution" },
+  credited: { label: { en: "Allocated", pt: "Alocado" }, tone: "positive" },
+  underpaid: { label: { en: "Paid less than asked", pt: "Pago abaixo do pedido" }, tone: "alert" },
+  expired: { label: { en: "Expired unpaid", pt: "Expirado sem pagamento" }, tone: "neutral" },
+  failed: { label: { en: "Not allocated", pt: "Não alocado" }, tone: "alert" },
+});
 
 export const POOL_LABEL: Record<string, string> = { sapling: "Sapling", orchard: "Orchard", ironwood: "Ironwood" };
 
@@ -129,12 +129,12 @@ export interface ZecReturn {
 
 export interface ZecReturns { return_address: string | null; network: "test" | "main" | null; returns: ZecReturn[] }
 
-export const RETURN_LABEL: Record<ReturnStatus, { label: string; tone: Tone }> = {
-  due: { label: "Owed in ZEC", tone: "info" },
-  sending: { label: "Being sent", tone: "info" },
-  sent: { label: "Sent in ZEC", tone: "positive" },
-  failed: { label: "Needs a look", tone: "alert" },
-};
+export const RETURN_LABEL: Record<ReturnStatus, { label: string; tone: Tone }> = localized({
+  due: { label: { en: "Owed in ZEC", pt: "A pagar em ZEC" }, tone: "info" },
+  sending: { label: { en: "Being sent", pt: "Sendo enviado" }, tone: "info" },
+  sent: { label: { en: "Sent in ZEC", pt: "Enviado em ZEC" }, tone: "positive" },
+  failed: { label: { en: "Needs a look", pt: "Precisa de atenção" }, tone: "alert" },
+});
 
 export const zecReturnsKey = (investmentId: string) => ["platform", "zec-returns", investmentId];
 

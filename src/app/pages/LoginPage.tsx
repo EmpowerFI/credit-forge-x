@@ -13,7 +13,9 @@ import { platformConfigured, type Role } from "../lib/platform";
 import { shortAddress } from "../lib/solana";
 import ConnectWalletDialog from "../wallet/ConnectWallet";
 import { useWalletSignIn } from "../wallet/useWalletSignIn";
-import { PROTOTYPE_NOTICE } from "../lib/capital";
+import { prototypeNotice } from "../lib/capital";
+import { localized, tr } from "../i18n";
+import LanguageSwitch from "../i18n/LanguageSwitch";
 
 // Judges have no inbox for magic links, so the demo runs on fixed-password
 // accounts (PLAN_HACKATHON.md §G.2). The password is public on purpose: this
@@ -21,20 +23,44 @@ import { PROTOTYPE_NOTICE } from "../lib/capital";
 const DEMO_PASSWORD = "EmpowerFI-demo-2026";
 
 // One entry per persona: the workspace it opens and what it is for.
-const PERSONAS: { email: string; role: Role; workspace: string; description: string; icon: LucideIcon }[] = [
-  { email: "investor@demo.empowerfi.io", role: "capital_provider", workspace: "P2P Capital Console",
-    description: "Qualified demand, the domestic and global pools, positions, repayments and the proofs behind them.", icon: Wallet },
-  { email: "leader@demo.empowerfi.io", role: "community_leader", workspace: "Community Intelligence",
-    description: "Where members stand on the way to readiness, and who needs what next.", icon: Users },
-  { email: "partner@demo.empowerfi.io", role: "partner", workspace: "EmpowerFI P2P desk",
-    description: "Funded opportunities to formalise at the engine's rate, loans to disburse and service.", icon: Briefcase },
-  { email: "auditor@demo.empowerfi.io", role: "auditor", workspace: "Audit",
-    description: "Every record, recomputed in your browser and checked against Solana.", icon: ShieldCheck },
-  { email: "maria@demo.empowerfi.io", role: "entrepreneur", workspace: "My business",
-    description: "Maria's readiness, her monthly check-in and what is still missing.", icon: Store },
-  { email: "admin@demo.empowerfi.io", role: "admin", workspace: "EmpowerFI Admin",
-    description: "Community verification and opportunities held for review.", icon: ClipboardCheck },
-];
+const PERSONAS: { email: string; role: Role; workspace: string; description: string; icon: LucideIcon }[] = localized([
+  { email: "investor@demo.empowerfi.io", role: "capital_provider",
+    workspace: { en: "P2P Capital Console", pt: "Console de Capital P2P" },
+    description: {
+      en: "Qualified demand, the domestic and global pools, positions, repayments and the proofs behind them.",
+      pt: "Demanda qualificada, os pools doméstico e global, posições, pagamentos e as provas por trás de tudo.",
+    }, icon: Wallet },
+  { email: "leader@demo.empowerfi.io", role: "community_leader",
+    workspace: { en: "Community Intelligence", pt: "Inteligência Comunitária" },
+    description: {
+      en: "Where members stand on the way to readiness, and who needs what next.",
+      pt: "Em que ponto cada integrante está no caminho da prontidão, e quem precisa do quê a seguir.",
+    }, icon: Users },
+  { email: "partner@demo.empowerfi.io", role: "partner",
+    workspace: { en: "EmpowerFI P2P desk", pt: "Mesa P2P da EmpowerFI" },
+    description: {
+      en: "Funded opportunities to formalise at the engine's rate, loans to disburse and service.",
+      pt: "Oportunidades captadas para formalizar na taxa do motor, empréstimos para desembolsar e acompanhar.",
+    }, icon: Briefcase },
+  { email: "auditor@demo.empowerfi.io", role: "auditor",
+    workspace: { en: "Audit", pt: "Auditoria" },
+    description: {
+      en: "Every record, recomputed in your browser and checked against Solana.",
+      pt: "Cada registro, recalculado no seu navegador e conferido na Solana.",
+    }, icon: ShieldCheck },
+  { email: "maria@demo.empowerfi.io", role: "entrepreneur",
+    workspace: { en: "My business", pt: "Meu negócio" },
+    description: {
+      en: "Maria's readiness, her monthly check-in and what is still missing.",
+      pt: "A prontidão da Maria, o check-in mensal dela e o que ainda falta.",
+    }, icon: Store },
+  { email: "admin@demo.empowerfi.io", role: "admin",
+    workspace: { en: "EmpowerFI Admin", pt: "Admin da EmpowerFI" },
+    description: {
+      en: "Community verification and opportunities held for review.",
+      pt: "Verificação de comunidades e oportunidades retidas para revisão.",
+    }, icon: ClipboardCheck },
+]);
 
 /** After a wallet connects: one signature, and the investor is in. */
 function WalletSignIn({ account, onDone, onCancel }: { account: UiWalletAccount; onDone: () => void; onCancel: () => void }) {
@@ -42,11 +68,16 @@ function WalletSignIn({ account, onDone, onCancel }: { account: UiWalletAccount;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   return (
-    <div className="panel space-y-4 p-5" role="dialog" aria-label="Sign in with your wallet">
+    <div className="panel space-y-4 p-5" role="dialog" aria-label={tr({ en: "Sign in with your wallet", pt: "Entrar com sua carteira" })}>
       <div className="space-y-1">
-        <h2 className="font-heading text-lg font-bold text-foreground">Sign in with {shortAddress(account.address)}</h2>
+        <h2 className="font-heading text-lg font-bold text-foreground">
+          {tr({ en: `Sign in with ${shortAddress(account.address)}`, pt: `Entrar com ${shortAddress(account.address)}` })}
+        </h2>
         <p className="text-sm text-muted-foreground">
-          Your wallet will ask you to sign a message proving you hold this address. No transaction, no fee.
+          {tr({
+            en: "Your wallet will ask you to sign a message proving you hold this address. No transaction, no fee.",
+            pt: "Sua carteira vai pedir que você assine uma mensagem provando que controla este endereço. Sem transação, sem taxa.",
+          })}
         </p>
       </div>
       {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
@@ -64,9 +95,9 @@ function WalletSignIn({ account, onDone, onCancel }: { account: UiWalletAccount;
               setBusy(false);
             }
           }}>
-          {busy ? <Loader2 size={16} className="animate-spin" /> : <PenLine size={16} />} Sign the message
+          {busy ? <Loader2 size={16} className="animate-spin" /> : <PenLine size={16} />} {tr({ en: "Sign the message", pt: "Assinar a mensagem" })}
         </Button>
-        <Button variant="ghost" onClick={onCancel} disabled={busy}>Cancel</Button>
+        <Button variant="ghost" onClick={onCancel} disabled={busy}>{tr({ en: "Cancel", pt: "Cancelar" })}</Button>
       </div>
     </div>
   );
@@ -92,7 +123,7 @@ export default function LoginPage() {
     setError(null);
     const { error } = await signIn(address.trim(), secret);
     setBusy(null);
-    if (error) setError(error === "Invalid login credentials" ? "Wrong email or password." : error);
+    if (error) setError(error === "Invalid login credentials" ? tr({ en: "Wrong email or password.", pt: "E-mail ou senha incorretos." }) : error);
     else navigate(next, { replace: true });
   };
   const submit = (e: FormEvent) => {
@@ -107,8 +138,9 @@ export default function LoginPage() {
           <Link to="/" className="font-heading text-xl font-bold text-gradient">EmpowerFI</Link>
           <div className="flex items-center gap-2">
             <span className="hidden rounded-full border border-caution/35 px-2.5 py-1 text-xs font-medium text-caution sm:inline">
-              Simulated data
+              {tr({ en: "Simulated data", pt: "Dados simulados" })}
             </span>
+            <LanguageSwitch />
             <NetworkBadge />
           </div>
         </div>
@@ -116,18 +148,24 @@ export default function LoginPage() {
 
       <main className="mx-auto max-w-6xl space-y-10 px-4 py-10 md:py-14">
         <div className="max-w-3xl space-y-3">
-          <p className="text-xs font-medium uppercase tracking-widest text-accent">EmpowerFI platform</p>
-          <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">Choose a workspace</h1>
+          <p className="text-xs font-medium uppercase tracking-widest text-accent">{tr({ en: "EmpowerFI platform", pt: "Plataforma EmpowerFI" })}</p>
+          <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">{tr({ en: "Choose a workspace", pt: "Escolha uma área de trabalho" })}</h1>
           <p className="text-muted-foreground">
-            P2P productive credit from readiness to capital, with every step proven on Solana: enter any workspace as its demo account.
+            {tr({
+              en: "P2P productive credit from readiness to capital, with every step proven on Solana: enter any workspace as its demo account.",
+              pt: "Crédito produtivo P2P da prontidão ao capital, com cada etapa provada na Solana: entre em qualquer área de trabalho com a conta de demonstração.",
+            })}
           </p>
-          <p className="rounded-xl border tone-caution px-4 py-3 text-sm">{PROTOTYPE_NOTICE}</p>
+          <p className="rounded-xl border tone-caution px-4 py-3 text-sm">{prototypeNotice()}</p>
           <DataLegend />
         </div>
 
         {!platformConfigured && (
           <p className="rounded-lg border tone-alert p-3 text-sm">
-            The platform is not configured in this build (VITE_PLATFORM_SUPABASE_*).
+            {tr({
+              en: "The platform is not configured in this build (VITE_PLATFORM_SUPABASE_*).",
+              pt: "A plataforma não está configurada nesta build (VITE_PLATFORM_SUPABASE_*).",
+            })}
           </p>
         )}
         {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
@@ -152,12 +190,16 @@ export default function LoginPage() {
               <div className="space-y-2">
                 {role === "capital_provider" && (
                   <Button onClick={() => setConnecting(true)} className="w-full justify-between">
-                    <span>Connect wallet</span> <Wallet size={16} />
+                    <span>{tr({ en: "Connect wallet", pt: "Conectar carteira" })}</span> <Wallet size={16} />
                   </Button>
                 )}
                 <Button onClick={() => enter(address, DEMO_PASSWORD)} disabled={busy !== null}
-                  variant="secondary" className="w-full justify-between" aria-label={`Enter ${workspace}`}>
-                  <span>{role === "capital_provider" ? "Explore without a wallet" : "Enter as demo"}</span>
+                  variant="secondary" className="w-full justify-between" aria-label={tr({ en: `Enter ${workspace}`, pt: `Entrar em ${workspace}` })}>
+                  <span>
+                    {role === "capital_provider"
+                      ? tr({ en: "Explore without a wallet", pt: "Explorar sem carteira" })
+                      : tr({ en: "Enter as demo", pt: "Entrar como demo" })}
+                  </span>
                   {busy === address ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
                 </Button>
               </div>
@@ -169,23 +211,26 @@ export default function LoginPage() {
           onConnected={(a) => { setConnecting(false); setAccount(a); }} />
 
         <details className="panel max-w-xl p-5">
-          <summary className="cursor-pointer text-sm font-medium text-foreground">Sign in with email</summary>
+          <summary className="cursor-pointer text-sm font-medium text-foreground">{tr({ en: "Sign in with email", pt: "Entrar com e-mail" })}</summary>
           <form onSubmit={submit} className="mt-4 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="login-email">Email</Label>
+              <Label htmlFor="login-email">{tr({ en: "Email", pt: "E-mail" })}</Label>
               <Input id="login-email" type="email" autoComplete="email" required value={email}
                 onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="login-password">Password</Label>
+              <Label htmlFor="login-password">{tr({ en: "Password", pt: "Senha" })}</Label>
               <Input id="login-password" type="password" autoComplete="current-password" required
                 value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             <Button type="submit" disabled={busy !== null} className="w-full gap-2">
-              {busy === email ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />} Sign in
+              {busy === email ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />} {tr({ en: "Sign in", pt: "Entrar" })}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Demo accounts use the password <code className="text-foreground">{DEMO_PASSWORD}</code>.
+              {tr({
+                en: <>Demo accounts use the password <code className="text-foreground">{DEMO_PASSWORD}</code>.</>,
+                pt: <>As contas de demonstração usam a senha <code className="text-foreground">{DEMO_PASSWORD}</code>.</>,
+              })}
             </p>
           </form>
         </details>

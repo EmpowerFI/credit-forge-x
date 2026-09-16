@@ -4,6 +4,7 @@ import { useAuth } from "../../auth/useAuth";
 import type { Cohort, CommunityOverview, Journey, OutreachAction, ParticipantRow } from "../../lib/community";
 import { ACTION } from "../../lib/community";
 import { describeError } from "../../lib/errors";
+import { tr } from "../../i18n";
 import { platform } from "../../lib/platform";
 
 // Community Intelligence reads. The database scopes every one to the leaders of
@@ -96,7 +97,10 @@ export function useRecordOutreach(communityId: string) {
       return { n: data as number, action };
     },
     onSuccess: ({ n, action }) => {
-      toast.success(`${ACTION[action].label} logged for ${n} participant${n === 1 ? "" : "s"}. Counted in cost to serve.`);
+      toast.success(tr({
+        en: `${ACTION[action].label} logged for ${n} participant${n === 1 ? "" : "s"}. Counted in cost to serve.`,
+        pt: `Registrado: ${ACTION[action].label.toLowerCase()}, para ${n} participante${n === 1 ? "" : "s"}. Entra no custo de servir.`,
+      }));
       for (const key of ["ci-overview", "ci-participants", "ci-journey", "ci-cohorts"]) {
         queryClient.invalidateQueries({ queryKey: ["platform", key, communityId] });
       }

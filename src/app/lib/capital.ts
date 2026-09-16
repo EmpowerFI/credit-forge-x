@@ -2,7 +2,7 @@ import type { AllocationReason, AllocationResult, PoolId } from "@empowerfi/capi
 import type { Tone } from "../components/product/StatusPill";
 import { platform } from "./platform";
 import type { Reality } from "./settlement";
-import { formatNumber, tr } from "../i18n";
+import { formatNumber, localized, tr } from "../i18n";
 
 // P2P capital in two pools, and the engine that chooses between them for each
 // qualified opportunity. Domestic P2P is Brazilian investors' capital in
@@ -20,49 +20,111 @@ export const POOL: Record<PoolId, {
   reality: Reality;
   tone: Tone;
   bar: string;
-}> = {
+}> = localized({
   domestic: {
-    name: "Domestic P2P",
-    route: "Domestic / Pix",
-    investors: "Brazilian investors",
-    asset: "Reais, a simulated pool",
-    lastMile: "Pix, in reais",
+    name: { en: "Domestic P2P", pt: "P2P Doméstico" },
+    route: { en: "Domestic / Pix", pt: "Doméstico / Pix" },
+    investors: { en: "Brazilian investors", pt: "Investidores brasileiros" },
+    asset: { en: "Reais, a simulated pool", pt: "Reais, um pool simulado" },
+    lastMile: { en: "Pix, in reais", pt: "Pix, em reais" },
     reality: "simulated",
     tone: "positive",
     bar: "bg-positive",
   },
   global: {
-    name: "Global P2P",
-    route: "Global / USDC",
-    investors: "International and impact investors",
-    asset: "Test USDC on Solana devnet",
-    lastMile: "Regulated off-ramp, then Pix in reais",
+    name: { en: "Global P2P", pt: "P2P Global" },
+    route: { en: "Global / USDC", pt: "Global / USDC" },
+    investors: { en: "International and impact investors", pt: "Investidores internacionais e de impacto" },
+    asset: { en: "Test USDC on Solana devnet", pt: "USDC de teste na devnet da Solana" },
+    lastMile: { en: "Regulated off-ramp, then Pix in reais", pt: "Off-ramp regulado, depois Pix em reais" },
     reality: "real",
     tone: "info",
     bar: "bg-info",
   },
-};
+});
 
 /** What each reason code means, in a sentence an investor can read. */
-export const REASON: Record<AllocationReason, { label: string; says: string; tone: Tone }> = {
-  DOMESTIC_LOWEST_COST: { label: "Domestic costs her less", says: "Both pools could fund it; domestic capital costs her less a year.", tone: "positive" },
-  DOMESTIC_LIQUIDITY_AVAILABLE: { label: "Domestic liquidity available", says: "The domestic pool has the capital, the risk appetite and the ticket for it.", tone: "positive" },
-  DOMESTIC_POOL_EXHAUSTED: { label: "Domestic pool exhausted", says: "What the domestic pool has left is less than this request.", tone: "caution" },
-  GLOBAL_EXPANDS_CAPACITY: { label: "Global expands capacity", says: "The domestic pool cannot take it; global capital funds a qualified opportunity that would otherwise wait.", tone: "info" },
-  GLOBAL_IMPACT_MANDATE_MATCH: { label: "Impact mandate match", says: "The global pool holds a mandate for women-led businesses in verified communities, and this is one.", tone: "info" },
-  GLOBAL_LOWER_REQUIRED_RETURN: { label: "Global costs her less", says: "Global investors ask a lower return, and it outweighs the FX hedge and the ramp.", tone: "info" },
-  GLOBAL_FX_COST_DOMINATES: { label: "FX hedge outweighs", says: "Global investors ask less, but hedging reais over the loan takes the difference away.", tone: "neutral" },
-  GLOBAL_RAMP_COST_DOMINATES: { label: "Ramp cost outweighs", says: "Global investors ask less, but converting in and out costs too much over a loan this short.", tone: "neutral" },
-  GLOBAL_POOL_EXHAUSTED: { label: "Global pool exhausted", says: "What the global pool has left is less than this request.", tone: "caution" },
-  RISK_BAND_NOT_ELIGIBLE: { label: "Risk band not eligible", says: "Its risk band is outside a pool's risk appetite.", tone: "caution" },
-  TICKET_OUTSIDE_POOL_POLICY: { label: "Ticket outside policy", says: "The amount is outside a pool's ticket range.", tone: "caution" },
-  PURPOSE_OUTSIDE_POOL_MANDATE: { label: "Purpose outside mandate", says: "The productive purpose is outside a pool's mandate.", tone: "caution" },
-  NO_POOL_AVAILABLE: { label: "No pool available", says: "Neither pool can take it now; it waits for capital.", tone: "alert" },
-};
+export const REASON: Record<AllocationReason, { label: string; says: string; tone: Tone }> = localized({
+  DOMESTIC_LOWEST_COST: {
+    label: { en: "Domestic costs her less", pt: "O doméstico custa menos para ela" },
+    says: { en: "Both pools could fund it; domestic capital costs her less a year.", pt: "Os dois pools poderiam financiá-la; o capital doméstico custa menos para ela ao ano." },
+    tone: "positive",
+  },
+  DOMESTIC_LIQUIDITY_AVAILABLE: {
+    label: { en: "Domestic liquidity available", pt: "Liquidez doméstica disponível" },
+    says: { en: "The domestic pool has the capital, the risk appetite and the ticket for it.", pt: "O pool doméstico tem o capital, o apetite a risco e o ticket para ela." },
+    tone: "positive",
+  },
+  DOMESTIC_POOL_EXHAUSTED: {
+    label: { en: "Domestic pool exhausted", pt: "Pool doméstico esgotado" },
+    says: { en: "What the domestic pool has left is less than this request.", pt: "O que resta no pool doméstico é menos do que este pedido." },
+    tone: "caution",
+  },
+  GLOBAL_EXPANDS_CAPACITY: {
+    label: { en: "Global expands capacity", pt: "O global amplia a capacidade" },
+    says: { en: "The domestic pool cannot take it; global capital funds a qualified opportunity that would otherwise wait.", pt: "O pool doméstico não consegue atendê-la; o capital global financia uma oportunidade qualificada que, sem ele, ficaria esperando." },
+    tone: "info",
+  },
+  GLOBAL_IMPACT_MANDATE_MATCH: {
+    label: { en: "Impact mandate match", pt: "Dentro do mandato de impacto" },
+    says: { en: "The global pool holds a mandate for women-led businesses in verified communities, and this is one.", pt: "O pool global tem um mandato para negócios liderados por mulheres em comunidades verificadas, e este é um deles." },
+    tone: "info",
+  },
+  GLOBAL_LOWER_REQUIRED_RETURN: {
+    label: { en: "Global costs her less", pt: "O global custa menos para ela" },
+    says: { en: "Global investors ask a lower return, and it outweighs the FX hedge and the ramp.", pt: "Investidores globais exigem um retorno menor, e isso compensa o hedge cambial e a rampa." },
+    tone: "info",
+  },
+  GLOBAL_FX_COST_DOMINATES: {
+    label: { en: "FX hedge outweighs", pt: "O hedge cambial pesa mais" },
+    says: { en: "Global investors ask less, but hedging reais over the loan takes the difference away.", pt: "Investidores globais pedem menos, mas o hedge dos reais durante o empréstimo anula a diferença." },
+    tone: "neutral",
+  },
+  GLOBAL_RAMP_COST_DOMINATES: {
+    label: { en: "Ramp cost outweighs", pt: "O custo da rampa pesa mais" },
+    says: { en: "Global investors ask less, but converting in and out costs too much over a loan this short.", pt: "Investidores globais pedem menos, mas converter na entrada e na saída custa caro demais para um empréstimo tão curto." },
+    tone: "neutral",
+  },
+  GLOBAL_POOL_EXHAUSTED: {
+    label: { en: "Global pool exhausted", pt: "Pool global esgotado" },
+    says: { en: "What the global pool has left is less than this request.", pt: "O que resta no pool global é menos do que este pedido." },
+    tone: "caution",
+  },
+  RISK_BAND_NOT_ELIGIBLE: {
+    label: { en: "Risk band not eligible", pt: "Faixa de risco não elegível" },
+    says: { en: "Its risk band is outside a pool's risk appetite.", pt: "A faixa de risco dela está fora do apetite a risco de um pool." },
+    tone: "caution",
+  },
+  TICKET_OUTSIDE_POOL_POLICY: {
+    label: { en: "Ticket outside policy", pt: "Ticket fora da política" },
+    says: { en: "The amount is outside a pool's ticket range.", pt: "O valor está fora da faixa de ticket de um pool." },
+    tone: "caution",
+  },
+  PURPOSE_OUTSIDE_POOL_MANDATE: {
+    label: { en: "Purpose outside mandate", pt: "Finalidade fora do mandato" },
+    says: { en: "The productive purpose is outside a pool's mandate.", pt: "A finalidade produtiva está fora do mandato de um pool." },
+    tone: "caution",
+  },
+  NO_POOL_AVAILABLE: {
+    label: { en: "No pool available", pt: "Nenhum pool disponível" },
+    says: { en: "Neither pool can take it now; it waits for capital.", pt: "Nenhum dos pools pode atendê-la agora; ela aguarda capital." },
+    tone: "alert",
+  },
+});
 
-/** The required disclaimer, word for word. */
+/**
+ * The required disclaimer, word for word, in English. A plain string cannot
+ * change language: where it is shown, render prototypeNotice().
+ */
 export const PROTOTYPE_NOTICE =
   "Prototype of a future regulated P2P productive-credit architecture. Hackathon investments, returns, FX and Pix settlement are simulated; blockchain transactions use test assets on Devnet.";
+
+/** The required disclaimer, word for word, in the current language. */
+export const prototypeNotice = () =>
+  tr({
+    en: PROTOTYPE_NOTICE,
+    pt: "Protótipo de uma futura arquitetura regulada de crédito produtivo P2P. Investimentos, retornos, câmbio e liquidação via Pix do hackathon são simulados; as transações em blockchain usam ativos de teste na Devnet.",
+  });
 
 export interface PoolPolicyView {
   id: PoolId;

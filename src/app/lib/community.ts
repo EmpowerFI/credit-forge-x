@@ -3,7 +3,7 @@ import type { Database } from "./platform.types";
 import type { CreditPurpose, ReadinessStatus } from "./readiness";
 import type { EligibilityDecision, LoanStatus, OpportunityStatus } from "./credit";
 import type { ConsentRecord } from "./consent";
-import { formatDate } from "../i18n";
+import { formatDate, localized, tr } from "../i18n";
 
 // Community Intelligence, as the database computes it (community_overview,
 // community_participants, community_cohorts, community_participant). No
@@ -13,53 +13,111 @@ import { formatDate } from "../i18n";
 export type OutreachAction = Database["public"]["Enums"]["outreach_action"];
 
 /** The six views of a community, as paths under /app/community/:id. */
-export const COMMUNITY_TABS = [
-  { to: "", label: "Overview", end: true },
-  { to: "cohorts", label: "Cohorts" },
-  { to: "participants", label: "Participants" },
-  { to: "readiness", label: "Readiness" },
-  { to: "pipeline", label: "P2P pipeline" },
-  { to: "impact", label: "Impact" },
-] as const;
+export const COMMUNITY_TABS = localized([
+  { to: "", label: { en: "Overview", pt: "Visão geral" }, end: true },
+  { to: "cohorts", label: { en: "Cohorts", pt: "Turmas" } },
+  { to: "participants", label: { en: "Participants", pt: "Participantes" } },
+  { to: "readiness", label: { en: "Readiness", pt: "Prontidão" } },
+  { to: "pipeline", label: { en: "P2P pipeline", pt: "Pipeline P2P" } },
+  { to: "impact", label: { en: "Impact", pt: "Impacto" } },
+] as const);
 
 export const STAGES = [
   "joined", "education", "data_sufficient", "credit_ready", "credit_intent", "eligible", "p2p_opportunity", "funded",
 ] as const;
 export type Stage = (typeof STAGES)[number];
 
-export const STAGE_LABEL: Record<Stage, string> = {
-  joined: "Joined",
-  education: "Education",
-  data_sufficient: "Data sufficient",
-  credit_ready: "Credit ready",
-  credit_intent: "Credit intent",
-  eligible: "Eligible",
-  p2p_opportunity: "P2P opportunity",
-  funded: "Funded",
-};
+export const STAGE_LABEL: Record<Stage, string> = localized({
+  joined: { en: "Joined", pt: "Entrou" },
+  education: { en: "Education", pt: "Formação" },
+  data_sufficient: { en: "Data sufficient", pt: "Dados suficientes" },
+  credit_ready: { en: "Credit ready", pt: "Pronta para crédito" },
+  credit_intent: { en: "Credit intent", pt: "Pedido de crédito" },
+  eligible: { en: "Eligible", pt: "Elegível" },
+  p2p_opportunity: { en: "P2P opportunity", pt: "Oportunidade P2P" },
+  funded: { en: "Funded", pt: "Captada" },
+});
 
 /** What each stage means, for tooltips and legends. */
-export const STAGE_HINT: Record<Stage, string> = {
-  joined: "Active members of the community.",
-  education: "Finished EmpowerFI's core readiness programme.",
-  data_sufficient: "Educated, and reporting enough for the rules to judge.",
-  credit_ready: "The readiness engine says CREDIT_READY.",
-  credit_intent: "Ready, and asking for capital. Ready without asking is a complete outcome.",
-  eligible: "The eligibility engine found an amount the business can carry.",
-  p2p_opportunity: "A qualified P2P opportunity, given a pool of capital by the allocation engine.",
-  funded: "Investors funded it, or the loan was disbursed.",
-};
+export const STAGE_HINT: Record<Stage, string> = localized({
+  joined: { en: "Active members of the community.", pt: "Integrantes ativas da comunidade." },
+  education: {
+    en: "Finished EmpowerFI's core readiness programme.",
+    pt: "Concluíram a formação essencial de prontidão da EmpowerFI.",
+  },
+  data_sufficient: {
+    en: "Educated, and reporting enough for the rules to judge.",
+    pt: "Com a formação concluída e dados suficientes para as regras avaliarem.",
+  },
+  credit_ready: { en: "The readiness engine says CREDIT_READY.", pt: "O motor de prontidão indica CREDIT_READY." },
+  credit_intent: {
+    en: "Ready, and asking for capital. Ready without asking is a complete outcome.",
+    pt: "Prontas e pedindo capital. Estar pronta sem pedir também é um resultado completo.",
+  },
+  eligible: {
+    en: "The eligibility engine found an amount the business can carry.",
+    pt: "O motor de elegibilidade encontrou um valor que o negócio consegue pagar.",
+  },
+  p2p_opportunity: {
+    en: "A qualified P2P opportunity, given a pool of capital by the allocation engine.",
+    pt: "Uma oportunidade P2P qualificada, com um pool de capital definido pelo Motor de Alocação de Capital.",
+  },
+  funded: {
+    en: "Investors funded it, or the loan was disbursed.",
+    pt: "Os investidores completaram a captação, ou o empréstimo foi desembolsado.",
+  },
+});
 
-export const ACTION: Record<OutreachAction, { label: string; queue: string; button: string; minutes: number; tone: Tone }> = {
-  checkin_reminder: { label: "Check-in reminder", queue: "Missing the latest check-in", button: "Log reminder", minutes: 5, tone: "info" },
-  education_followup: { label: "Education follow-up", queue: "Core education unfinished", button: "Log follow-up", minutes: 15, tone: "info" },
-  human_followup: { label: "Human follow-up", queue: "Manual review: needs a conversation", button: "Log conversation", minutes: 30, tone: "caution" },
-  readiness_followup: { label: "Readiness follow-up", queue: "One requirement from credit ready", button: "Log follow-up", minutes: 15, tone: "info" },
-  credit_intent_check: { label: "Credit intent check", queue: "Credit ready, not asking: is there a need?", button: "Log check", minutes: 15, tone: "positive" },
-  capital_need_check: { label: "Eligibility check", queue: "Asking: eligibility not assessed yet", button: "Log check", minutes: 15, tone: "positive" },
-  funding_followup: { label: "Funding update", queue: "Her P2P opportunity is not funded yet", button: "Log update", minutes: 10, tone: "info" },
-  servicing_followup: { label: "Servicing follow-up", queue: "A loan instalment is late", button: "Log follow-up", minutes: 20, tone: "alert" },
-};
+export const ACTION: Record<OutreachAction, { label: string; queue: string; button: string; minutes: number; tone: Tone }> = localized({
+  checkin_reminder: {
+    label: { en: "Check-in reminder", pt: "Lembrete de check-in" },
+    queue: { en: "Missing the latest check-in", pt: "Falta o último check-in" },
+    button: { en: "Log reminder", pt: "Registrar lembrete" },
+    minutes: 5, tone: "info",
+  },
+  education_followup: {
+    label: { en: "Education follow-up", pt: "Acompanhamento da formação" },
+    queue: { en: "Core education unfinished", pt: "Formação essencial não concluída" },
+    button: { en: "Log follow-up", pt: "Registrar acompanhamento" },
+    minutes: 15, tone: "info",
+  },
+  human_followup: {
+    label: { en: "Human follow-up", pt: "Acompanhamento pessoal" },
+    queue: { en: "Manual review: needs a conversation", pt: "Revisão manual: precisa de uma conversa" },
+    button: { en: "Log conversation", pt: "Registrar conversa" },
+    minutes: 30, tone: "caution",
+  },
+  readiness_followup: {
+    label: { en: "Readiness follow-up", pt: "Acompanhamento de prontidão" },
+    queue: { en: "One requirement from credit ready", pt: "A um requisito de ficar pronta para crédito" },
+    button: { en: "Log follow-up", pt: "Registrar acompanhamento" },
+    minutes: 15, tone: "info",
+  },
+  credit_intent_check: {
+    label: { en: "Credit intent check", pt: "Conversa sobre pedido de crédito" },
+    queue: { en: "Credit ready, not asking: is there a need?", pt: "Pronta para crédito, sem pedido: existe uma necessidade?" },
+    button: { en: "Log check", pt: "Registrar conversa" },
+    minutes: 15, tone: "positive",
+  },
+  capital_need_check: {
+    label: { en: "Eligibility check", pt: "Verificação de elegibilidade" },
+    queue: { en: "Asking: eligibility not assessed yet", pt: "Pediu crédito: elegibilidade ainda não avaliada" },
+    button: { en: "Log check", pt: "Registrar verificação" },
+    minutes: 15, tone: "positive",
+  },
+  funding_followup: {
+    label: { en: "Funding update", pt: "Atualização da captação" },
+    queue: { en: "Her P2P opportunity is not funded yet", pt: "A oportunidade P2P dela ainda não foi captada" },
+    button: { en: "Log update", pt: "Registrar atualização" },
+    minutes: 10, tone: "info",
+  },
+  servicing_followup: {
+    label: { en: "Servicing follow-up", pt: "Acompanhamento de pagamentos" },
+    queue: { en: "A loan instalment is late", pt: "Uma parcela do empréstimo está em atraso" },
+    button: { en: "Log follow-up", pt: "Registrar acompanhamento" },
+    minutes: 20, tone: "alert",
+  },
+});
 
 export const READINESS_TONE: Record<ReadinessStatus, Tone> = {
   CREDIT_READY: "positive",
@@ -70,27 +128,45 @@ export const READINESS_TONE: Record<ReadinessStatus, Tone> = {
 
 /** A readiness requirement in the leader's words: what is missing, how far along. */
 export function requirementForLeader(r: { code: string; current: number | null; required: number }): string {
+  const current = r.current ?? 0;
   switch (r.code) {
-    case "COMMUNITY_NOT_VERIFIED": return "Community not verified yet";
-    case "CORE_EDUCATION_INCOMPLETE": return `Core education: ${r.current ?? 0} of ${r.required} modules`;
-    case "RECORD_KEEPING": return `Records kept in ${Math.round((r.current ?? 0) / 100)}% of months (needs ${Math.round(r.required / 100)}%)`;
-    case "CASH_FLOW_NOT_POSITIVE": return `${r.current ?? 0} of the last 3 months positive (needs ${r.required})`;
-    case "INSUFFICIENT_HISTORY": return `${r.current ?? 0} months reported (needs ${r.required})`;
-    case "IRREGULAR_REPORTING": return `Reporting run of ${r.current ?? 0} months (needs ${r.required})`;
-    case "STALE_REPORTING": return r.current === null ? "No check-in yet" : `Last check-in ${r.current} months ago`;
+    case "COMMUNITY_NOT_VERIFIED": return tr({ en: "Community not verified yet", pt: "Comunidade ainda não verificada" });
+    case "CORE_EDUCATION_INCOMPLETE": return tr({
+      en: `Core education: ${current} of ${r.required} modules`,
+      pt: `Formação essencial: ${current} de ${r.required} módulos`,
+    });
+    case "RECORD_KEEPING": return tr({
+      en: `Records kept in ${Math.round(current / 100)}% of months (needs ${Math.round(r.required / 100)}%)`,
+      pt: `Registros mantidos em ${Math.round(current / 100)}% dos meses (precisa de ${Math.round(r.required / 100)}%)`,
+    });
+    case "CASH_FLOW_NOT_POSITIVE": return tr({
+      en: `${current} of the last 3 months positive (needs ${r.required})`,
+      pt: `${current} dos últimos 3 meses no positivo (precisa de ${r.required})`,
+    });
+    case "INSUFFICIENT_HISTORY": return tr({
+      en: `${current} months reported (needs ${r.required})`,
+      pt: `${current} meses informados (precisa de ${r.required})`,
+    });
+    case "IRREGULAR_REPORTING": return tr({
+      en: `Reporting run of ${current} months (needs ${r.required})`,
+      pt: `${current} meses seguidos informados (precisa de ${r.required})`,
+    });
+    case "STALE_REPORTING": return r.current === null
+      ? tr({ en: "No check-in yet", pt: "Nenhum check-in ainda" })
+      : tr({ en: `Last check-in ${r.current} months ago`, pt: `Último check-in há ${r.current} meses` });
     default: return r.code;
   }
 }
 
-export const REQUIREMENT_SHORT: Record<string, string> = {
-  COMMUNITY_NOT_VERIFIED: "Community not verified",
-  CORE_EDUCATION_INCOMPLETE: "Core education unfinished",
-  RECORD_KEEPING: "Records not kept",
-  CASH_FLOW_NOT_POSITIVE: "Cash flow not positive",
-  INSUFFICIENT_HISTORY: "Too few months reported",
-  IRREGULAR_REPORTING: "Irregular reporting",
-  STALE_REPORTING: "Reporting stopped",
-};
+export const REQUIREMENT_SHORT: Record<string, string> = localized({
+  COMMUNITY_NOT_VERIFIED: { en: "Community not verified", pt: "Comunidade não verificada" },
+  CORE_EDUCATION_INCOMPLETE: { en: "Core education unfinished", pt: "Formação essencial não concluída" },
+  RECORD_KEEPING: { en: "Records not kept", pt: "Sem registros do negócio" },
+  CASH_FLOW_NOT_POSITIVE: { en: "Cash flow not positive", pt: "Fluxo de caixa não positivo" },
+  INSUFFICIENT_HISTORY: { en: "Too few months reported", pt: "Poucos meses informados" },
+  IRREGULAR_REPORTING: { en: "Irregular reporting", pt: "Dados informados sem regularidade" },
+  STALE_REPORTING: { en: "Reporting stopped", pt: "Parou de informar os dados" },
+});
 
 export interface Requirement { code: string; current: number | null; required: number }
 

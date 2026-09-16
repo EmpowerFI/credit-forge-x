@@ -14,7 +14,8 @@ import PageHeader from "../../components/product/PageHeader";
 import Panel from "../../components/product/Panel";
 import PoolPill from "../../components/product/PoolPill";
 import StatusPill from "../../components/product/StatusPill";
-import { bpsPercent, type CapitalOverview, POOL, PROTOTYPE_NOTICE, REASON, type PoolId } from "../../lib/capital";
+import { localized, tr } from "../../i18n";
+import { bpsPercent, type CapitalOverview, POOL, prototypeNotice, REASON, type PoolId } from "../../lib/capital";
 import { money, PURPOSE_LABEL } from "../../lib/readiness";
 import CapitalPools from "../investor/CapitalPools";
 import { useCapitalOverview } from "../investor/queries";
@@ -24,7 +25,11 @@ import { useCapitalOverview } from "../investor/queries";
 // Nothing on this page writes anything.
 
 const BANDS: RiskBand[] = ["LOW", "MEDIUM", "HIGH"];
-const BAND_LABEL: Record<RiskBand, string> = { LOW: "A · lower", MEDIUM: "B · moderate", HIGH: "C · higher" };
+const BAND_LABEL: Record<RiskBand, string> = localized({
+  LOW: { en: "A · lower", pt: "A · menor" },
+  MEDIUM: { en: "B · moderate", pt: "B · moderada" },
+  HIGH: { en: "C · higher", pt: "C · maior" },
+});
 /** Eligibility proposes nothing whose instalment takes more than this of her monthly result. */
 const AFFORDABILITY_LIMIT_BPS = 3000;
 
@@ -87,34 +92,35 @@ function PoolInputs({ id, form, onChange }: { id: PoolId; form: PoolForm; onChan
   const toggle = <T extends string>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
   const global = id === "global";
   return (
-    <Panel title={`Input ${global ? 3 : 2} · ${POOL[id].name} pool`} description={`${POOL[id].investors} · ${POOL[id].asset}.`}
-      actions={<StatusPill tone="caution" dot={false}>Simulated</StatusPill>}>
+    <Panel title={tr({ en: `Input ${global ? 3 : 2} · ${POOL[id].name} pool`, pt: `Entrada ${global ? 3 : 2} · pool ${POOL[id].name}` })}
+      description={`${POOL[id].investors} · ${POOL[id].asset}.`}
+      actions={<StatusPill tone="caution" dot={false}>{tr({ en: "Simulated", pt: "Simulado" })}</StatusPill>}>
       <div className="grid grid-cols-2 gap-3">
-        <Field id={`${id}-available`} label={global ? "Available, USDC" : "Available, R$"}>
+        <Field id={`${id}-available`} label={global ? tr({ en: "Available, USDC", pt: "Disponível, USDC" }) : tr({ en: "Available, R$", pt: "Disponível, R$" })}>
           <Input id={`${id}-available`} type="number" min={0} value={form.available} onChange={(e) => set("available")(e.target.value)} />
         </Field>
-        <Field id={`${id}-return`} label="Required return, % a year">
+        <Field id={`${id}-return`} label={tr({ en: "Required return, % a year", pt: "Retorno exigido, % ao ano" })}>
           <Input id={`${id}-return`} type="number" min={0} step="0.5" value={form.requiredReturn} onChange={(e) => set("requiredReturn")(e.target.value)} />
         </Field>
-        <Field id={`${id}-min`} label="Ticket from, R$">
+        <Field id={`${id}-min`} label={tr({ en: "Ticket from, R$", pt: "Ticket mínimo, R$" })}>
           <Input id={`${id}-min`} type="number" min={0} value={form.minTicket} onChange={(e) => set("minTicket")(e.target.value)} />
         </Field>
-        <Field id={`${id}-max`} label="Ticket up to, R$">
+        <Field id={`${id}-max`} label={tr({ en: "Ticket up to, R$", pt: "Ticket máximo, R$" })}>
           <Input id={`${id}-max`} type="number" min={0} value={form.maxTicket} onChange={(e) => set("maxTicket")(e.target.value)} />
         </Field>
         {global && (
           <>
-            <Field id={`${id}-hedge`} label="FX hedge, % a year">
+            <Field id={`${id}-hedge`} label={tr({ en: "FX hedge, % a year", pt: "Hedge cambial, % ao ano" })}>
               <Input id={`${id}-hedge`} type="number" min={0} step="0.25" value={form.fxHedge} onChange={(e) => set("fxHedge")(e.target.value)} />
             </Field>
-            <Field id={`${id}-ramp`} label="Ramp, % each way">
+            <Field id={`${id}-ramp`} label={tr({ en: "Ramp, % each way", pt: "Rampa, % em cada sentido" })}>
               <Input id={`${id}-ramp`} type="number" min={0} step="0.25" value={form.ramp} onChange={(e) => set("ramp")(e.target.value)} />
             </Field>
           </>
         )}
       </div>
       <fieldset className="space-y-2">
-        <legend className="text-xs font-medium text-foreground">Risk appetite</legend>
+        <legend className="text-xs font-medium text-foreground">{tr({ en: "Risk appetite", pt: "Apetite a risco" })}</legend>
         <div className="flex flex-wrap gap-4">
           {BANDS.map((b) => (
             <label key={b} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -124,7 +130,7 @@ function PoolInputs({ id, form, onChange }: { id: PoolId; form: PoolForm; onChan
         </div>
       </fieldset>
       <fieldset className="space-y-2">
-        <legend className="text-xs font-medium text-foreground">Mandate: productive purposes {form.purposes.length === 0 && <span className="font-normal text-muted-foreground">(any)</span>}</legend>
+        <legend className="text-xs font-medium text-foreground">{tr({ en: "Mandate: productive purposes", pt: "Mandato: finalidades produtivas" })} {form.purposes.length === 0 && <span className="font-normal text-muted-foreground">{tr({ en: "(any)", pt: "(qualquer uma)" })}</span>}</legend>
         <div className="flex flex-wrap gap-x-4 gap-y-2">
           {Object.entries(PURPOSE_LABEL).map(([k, label]) => (
             <label key={k} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -135,7 +141,7 @@ function PoolInputs({ id, form, onChange }: { id: PoolId; form: PoolForm; onChan
       </fieldset>
       {global && (
         <label className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
-          Impact mandate: women-led businesses in verified communities
+          {tr({ en: "Impact mandate: women-led businesses in verified communities", pt: "Mandato de impacto: negócios liderados por mulheres em comunidades verificadas" })}
           <Switch checked={form.impact} onCheckedChange={set("impact")} />
         </label>
       )}
@@ -149,7 +155,7 @@ function Decision({ n, title, ok, children }: { n: number; title: string; ok: bo
       <span className="mt-0.5">
         {ok === null ? <CircleDashed size={18} className="text-muted-foreground" /> : ok ? <Check size={18} className="text-positive" /> : <X size={18} className="text-caution" />}
       </span>
-      <span className="text-sm font-medium text-foreground">Decision {n} · {title}</span>
+      <span className="text-sm font-medium text-foreground">{tr({ en: `Decision ${n} · ${title}`, pt: `Decisão ${n} · ${title}` })}</span>
       <span />
       <div className="text-sm text-muted-foreground">{children}</div>
     </li>
@@ -206,46 +212,55 @@ export default function AllocationEngine() {
 
   const d = result?.domestic;
   const g = result?.global;
+  const waiting = tr({ en: "Waiting for a qualified opportunity.", pt: "Aguardando uma oportunidade qualificada." });
+  const fits = tr({ en: "Yes: liquidity, risk appetite, ticket and mandate all fit.", pt: "Sim: liquidez, apetite a risco, ticket e mandato se encaixam." });
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="P2P capital" title="Capital Allocation Engine"
-        description="Which pool of capital can fund a qualified opportunity sustainably — domestic P2P capital or global P2P capital? Feasibility first: availability, risk appetite, ticket and mandate. Economics second: what it costs her a year." />
+      <PageHeader eyebrow={tr({ en: "P2P capital", pt: "Capital P2P" })} title={tr({ en: "Capital Allocation Engine", pt: "Motor de Alocação de Capital" })}
+        description={tr({
+          en: "Which pool of capital can fund a qualified opportunity sustainably — domestic P2P capital or global P2P capital? Feasibility first: availability, risk appetite, ticket and mandate. Economics second: what it costs her a year.",
+          pt: "Qual pool de capital pode financiar uma oportunidade qualificada de forma sustentável — o capital P2P doméstico ou o global? Primeiro a viabilidade: disponibilidade, apetite a risco, ticket e mandato. Depois a economia: quanto custa para ela ao ano.",
+        })} />
 
       <CapitalPools engineLink={false} />
 
       {!domestic || !global ? <Skeleton className="h-96 w-full rounded-2xl bg-card" /> : (
         <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-6">
-            <Panel title="Input 1 · Qualified demand" description="An opportunity after readiness and eligibility. Try your own.">
+            <Panel title={tr({ en: "Input 1 · Qualified demand", pt: "Entrada 1 · Demanda qualificada" })}
+              description={tr({ en: "An opportunity after readiness and eligibility. Try your own.", pt: "Uma oportunidade depois da prontidão e da elegibilidade. Teste a sua." })}>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field id="d-amount" label="Amount, R$">
+                <Field id="d-amount" label={tr({ en: "Amount, R$", pt: "Valor, R$" })}>
                   <Input id="d-amount" type="number" min={100} step="100" value={demand.amount} onChange={(e) => setDemand({ ...demand, amount: e.target.value })} />
                 </Field>
-                <Field id="d-term" label="Term">
+                <Field id="d-term" label={tr({ en: "Term", pt: "Prazo" })}>
                   <Select value={demand.term} onValueChange={(v) => setDemand({ ...demand, term: v })}>
                     <SelectTrigger id="d-term"><SelectValue /></SelectTrigger>
-                    <SelectContent>{["3", "6", "9", "12"].map((t) => <SelectItem key={t} value={t}>{t} months</SelectItem>)}</SelectContent>
+                    <SelectContent>{["3", "6", "9", "12"].map((t) => <SelectItem key={t} value={t}>{tr({ en: `${t} months`, pt: `${t} meses` })}</SelectItem>)}</SelectContent>
                   </Select>
                 </Field>
-                <Field id="d-band" label="Risk band">
+                <Field id="d-band" label={tr({ en: "Risk band", pt: "Faixa de risco" })}>
                   <Select value={demand.band} onValueChange={(v) => setDemand({ ...demand, band: v as RiskBand })}>
                     <SelectTrigger id="d-band"><SelectValue /></SelectTrigger>
                     <SelectContent>{BANDS.map((b) => <SelectItem key={b} value={b}>{BAND_LABEL[b]}</SelectItem>)}</SelectContent>
                   </Select>
                 </Field>
-                <Field id="d-purpose" label="Productive purpose">
+                <Field id="d-purpose" label={tr({ en: "Productive purpose", pt: "Finalidade produtiva" })}>
                   <Select value={demand.purpose} onValueChange={(v) => setDemand({ ...demand, purpose: v })}>
                     <SelectTrigger id="d-purpose"><SelectValue /></SelectTrigger>
                     <SelectContent>{Object.entries(PURPOSE_LABEL).map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}</SelectContent>
                   </Select>
                 </Field>
-                <Field id="d-afford" label="Affordability: instalment, % of her monthly result">
+                <Field id="d-afford" label={tr({ en: "Affordability: instalment, % of her monthly result", pt: "Capacidade de pagamento: parcela, % do resultado mensal dela" })}>
                   <Input id="d-afford" type="number" min={0} step="1" value={demand.affordability} onChange={(e) => setDemand({ ...demand, affordability: e.target.value })} />
                 </Field>
               </div>
               {!qualified && (
                 <p className="rounded-xl border tone-caution px-3 py-2 text-xs">
-                  Above {bpsPercent(AFFORDABILITY_LIMIT_BPS)} of her monthly result, eligibility proposes a smaller amount: this would not be a qualified opportunity, and no pool is asked.
+                  {tr({
+                    en: `Above ${bpsPercent(AFFORDABILITY_LIMIT_BPS)} of her monthly result, eligibility proposes a smaller amount: this would not be a qualified opportunity, and no pool is asked.`,
+                    pt: `Acima de ${bpsPercent(AFFORDABILITY_LIMIT_BPS)} do resultado mensal dela, a elegibilidade propõe um valor menor: esta não seria uma oportunidade qualificada, e nenhum pool é consultado.`,
+                  })}
                 </p>
               )}
             </Panel>
@@ -254,35 +269,35 @@ export default function AllocationEngine() {
           </div>
 
           <div className="space-y-6">
-            <Panel title="Decisions" description={CAPITAL_ALLOCATION_MODEL_VERSION}>
+            <Panel title={tr({ en: "Decisions", pt: "Decisões" })} description={CAPITAL_ALLOCATION_MODEL_VERSION}>
               <ol className="space-y-4">
-                <Decision n={1} title="Is domestic capital available and eligible?" ok={d ? d.feasible : null}>
-                  {!d ? "Waiting for a qualified opportunity." : d.feasible ? "Yes: liquidity, risk appetite, ticket and mandate all fit."
+                <Decision n={1} title={tr({ en: "Is domestic capital available and eligible?", pt: "O capital doméstico está disponível e é elegível?" })} ok={d ? d.feasible : null}>
+                  {!d ? waiting : d.feasible ? fits
                     : d.blocks.map((b) => REASON[b].label).join(" · ")}
                 </Decision>
-                <Decision n={2} title="Is global capital available and eligible?" ok={g ? g.feasible : null}>
-                  {!g ? "Waiting for a qualified opportunity." : g.feasible ? "Yes: liquidity, risk appetite, ticket and mandate all fit."
+                <Decision n={2} title={tr({ en: "Is global capital available and eligible?", pt: "O capital global está disponível e é elegível?" })} ok={g ? g.feasible : null}>
+                  {!g ? waiting : g.feasible ? fits
                     : g.blocks.map((b) => REASON[b].label).join(" · ")}
                 </Decision>
-                <Decision n={3} title="Among eligible pools, which has the best sustainable economics?" ok={result ? result.pool !== null : null}>
+                <Decision n={3} title={tr({ en: "Among eligible pools, which has the best sustainable economics?", pt: "Entre os pools elegíveis, qual tem a economia mais sustentável?" })} ok={result ? result.pool !== null : null}>
                   {!result || !d || !g ? "—" : (
                     <div className="num grid grid-cols-[1fr_auto_auto] gap-x-4 gap-y-1 text-xs">
                       <span />
                       <span className="text-right">{POOL.domestic.name}</span>
                       <span className="text-right">{POOL.global.name}</span>
-                      <span>Required return</span>
+                      <span>{tr({ en: "Required return", pt: "Retorno exigido" })}</span>
                       <span className="text-right text-foreground">{bpsPercent(policies!.d.required_return_bps)}</span>
                       <span className="text-right text-foreground">{bpsPercent(policies!.g.required_return_bps)}</span>
-                      <span>Expected loss + cost to serve</span>
+                      <span>{tr({ en: "Expected loss + cost to serve", pt: "Perda esperada + custo de servir" })}</span>
                       <span className="text-right text-foreground">{bpsPercent(d.all_in_bps - policies!.d.required_return_bps - d.fx_hedge_bps - d.ramp_bps_year)}</span>
                       <span className="text-right text-foreground">{bpsPercent(g.all_in_bps - policies!.g.required_return_bps - g.fx_hedge_bps - g.ramp_bps_year)}</span>
-                      <span>FX hedge</span>
+                      <span>{tr({ en: "FX hedge", pt: "Hedge cambial" })}</span>
                       <span className="text-right text-foreground">{bpsPercent(d.fx_hedge_bps)}</span>
                       <span className="text-right text-foreground">{bpsPercent(g.fx_hedge_bps)}</span>
-                      <span>Ramp, in and out over the term</span>
+                      <span>{tr({ en: "Ramp, in and out over the term", pt: "Rampa, entrada e saída ao longo do prazo" })}</span>
                       <span className="text-right text-foreground">{bpsPercent(d.ramp_bps_year)}</span>
                       <span className="text-right text-foreground">{bpsPercent(g.ramp_bps_year)}</span>
-                      <span className="font-medium text-foreground">Her all-in cost, a year</span>
+                      <span className="font-medium text-foreground">{tr({ en: "Her all-in cost, a year", pt: "Custo total para ela, ao ano" })}</span>
                       <span className={`text-right font-semibold ${result.pool === "domestic" ? "text-positive" : "text-foreground"}`}>{bpsPercent(d.all_in_bps)}{!d.feasible && " ✗"}</span>
                       <span className={`text-right font-semibold ${result.pool === "global" ? "text-positive" : "text-foreground"}`}>{bpsPercent(g.all_in_bps)}{!g.feasible && " ✗"}</span>
                     </div>
@@ -291,8 +306,8 @@ export default function AllocationEngine() {
               </ol>
             </Panel>
 
-            <Panel title="Output" actions={result ? <PoolPill pool={result.pool} /> : undefined}>
-              {!result ? <p className="text-sm text-muted-foreground">Not a qualified opportunity: nothing to allocate.</p> : (
+            <Panel title={tr({ en: "Output", pt: "Resultado" })} actions={result ? <PoolPill pool={result.pool} /> : undefined}>
+              {!result ? <p className="text-sm text-muted-foreground">{tr({ en: "Not a qualified opportunity: nothing to allocate.", pt: "Não é uma oportunidade qualificada: nada a alocar." })}</p> : (
                 <div className="space-y-4">
                   <ul className="space-y-2">
                     {result.reason_codes.map((r) => (
@@ -305,28 +320,34 @@ export default function AllocationEngine() {
                   {result.pool && (
                     <div className="grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
                       <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Borrower economics</p>
-                        <p className="num text-sm text-foreground">{bpsPercent(result.borrower_rate_bps_month!)} a month</p>
-                        <p className="num text-sm text-foreground">{opportunity.term_months} × {money(result.instalment_cents)}, in reais by Pix</p>
+                        <p className="text-xs font-medium text-muted-foreground">{tr({ en: "Borrower economics", pt: "Economia para a empreendedora" })}</p>
+                        <p className="num text-sm text-foreground">{tr({ en: `${bpsPercent(result.borrower_rate_bps_month!)} a month`, pt: `${bpsPercent(result.borrower_rate_bps_month!)} ao mês` })}</p>
+                        <p className="num text-sm text-foreground">{tr({ en: `${opportunity.term_months} × ${money(result.instalment_cents)}, in reais by Pix`, pt: `${opportunity.term_months} × ${money(result.instalment_cents)}, em reais via Pix` })}</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground">Investor economics · simulated</p>
-                        <p className="num text-sm text-foreground">{bpsPercent(result.investor_return_bps!)} asked a year</p>
-                        <p className="num text-sm text-foreground">{bpsPercent(result.investor_net_return_bps!)} after expected loss</p>
+                        <p className="text-xs font-medium text-muted-foreground">{tr({ en: "Investor economics · simulated", pt: "Economia para o investidor · simulada" })}</p>
+                        <p className="num text-sm text-foreground">{tr({ en: `${bpsPercent(result.investor_return_bps!)} asked a year`, pt: `${bpsPercent(result.investor_return_bps!)} exigidos ao ano` })}</p>
+                        <p className="num text-sm text-foreground">{tr({ en: `${bpsPercent(result.investor_net_return_bps!)} after expected loss`, pt: `${bpsPercent(result.investor_net_return_bps!)} depois da perda esperada` })}</p>
                       </div>
                     </div>
                   )}
                   {impact && (
                     <div className="space-y-1 border-t border-border pt-4 text-sm">
-                      <p className="text-xs font-medium text-muted-foreground">Funding-gap impact, on today's demand</p>
+                      <p className="text-xs font-medium text-muted-foreground">{tr({ en: "Funding-gap impact, on today's demand", pt: "Efeito na lacuna de captação, sobre a demanda de hoje" })}</p>
                       <p className="num text-foreground">
-                        Gap {money(impact.before.demand_cents - impact.before.combined_cents)} → {money(impact.after.demand_cents - impact.after.combined_cents)}
-                        {" "}· coverage {bpsPercent(impact.before.combined_coverage_bps)} → {bpsPercent(impact.after.combined_coverage_bps)}
+                        {tr({ en: "Gap", pt: "Lacuna" })} {money(impact.before.demand_cents - impact.before.combined_cents)} → {money(impact.after.demand_cents - impact.after.combined_cents)}
+                        {" "}· {tr({ en: "coverage", pt: "cobertura" })} {bpsPercent(impact.before.combined_coverage_bps)} → {bpsPercent(impact.after.combined_coverage_bps)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        With the pools above, this opportunity joins the queue last: {impact.after.results.at(-1)?.pool
-                          ? `it is funded, from the ${POOL[impact.after.results.at(-1)!.pool!].name} pool.`
-                          : "the pools run out before it."}
+                        {impact.after.results.at(-1)?.pool
+                          ? tr({
+                            en: `With the pools above, this opportunity joins the queue last: it is funded, from the ${POOL[impact.after.results.at(-1)!.pool!].name} pool.`,
+                            pt: `Com os pools acima, esta oportunidade entra por último na fila: ela é financiada pelo pool ${POOL[impact.after.results.at(-1)!.pool!].name}.`,
+                          })
+                          : tr({
+                            en: "With the pools above, this opportunity joins the queue last: the pools run out before it.",
+                            pt: "Com os pools acima, esta oportunidade entra por último na fila: os pools se esgotam antes dela.",
+                          })}
                       </p>
                     </div>
                   )}
@@ -334,22 +355,31 @@ export default function AllocationEngine() {
               )}
             </Panel>
 
-            <Panel title="The live portfolio, replayed" description="The database allocates each opportunity when it opens to investors. Here the browser runs the same engine over today's demand and liquidity.">
+            <Panel title={tr({ en: "The live portfolio, replayed", pt: "A carteira real, reprocessada" })}
+              description={tr({
+                en: "The database allocates each opportunity when it opens to investors. Here the browser runs the same engine over today's demand and liquidity.",
+                pt: "O banco de dados aloca cada oportunidade quando ela abre para investidores. Aqui o navegador roda o mesmo motor sobre a demanda e a liquidez de hoje.",
+              })}>
               {!parity || !q.data ? <Skeleton className="h-24 w-full" /> : (
                 <div className="space-y-3">
                   <p className={`text-sm ${parity.same ? "text-positive" : "text-caution"}`}>
-                    {parity.same ? "The browser's coverage matches the database's: " : "The browser's coverage differs from the database's: "}
-                    {bpsPercent(parity.replay.domestic_coverage_bps)} domestic alone, {bpsPercent(parity.replay.combined_coverage_bps)} combined.
+                    {parity.same
+                      ? tr({ en: "The browser's coverage matches the database's: ", pt: "A cobertura do navegador é igual à do banco de dados: " })
+                      : tr({ en: "The browser's coverage differs from the database's: ", pt: "A cobertura do navegador é diferente da do banco de dados: " })}
+                    {tr({
+                      en: `${bpsPercent(parity.replay.domestic_coverage_bps)} domestic alone, ${bpsPercent(parity.replay.combined_coverage_bps)} combined.`,
+                      pt: `${bpsPercent(parity.replay.domestic_coverage_bps)} só com o doméstico, ${bpsPercent(parity.replay.combined_coverage_bps)} combinados.`,
+                    })}
                   </p>
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[560px] text-sm">
                       <thead className="text-left text-xs text-muted-foreground">
                         <tr className="border-b border-border">
-                          <th className="py-2 pr-3 font-medium">Opportunity</th>
-                          <th className="py-2 pr-3 text-right font-medium">Need</th>
-                          <th className="py-2 pr-3 font-medium">Risk · term</th>
-                          <th className="py-2 pr-3 font-medium">At listing</th>
-                          <th className="py-2 font-medium">Replayed now</th>
+                          <th className="py-2 pr-3 font-medium">{tr({ en: "Opportunity", pt: "Oportunidade" })}</th>
+                          <th className="py-2 pr-3 text-right font-medium">{tr({ en: "Need", pt: "Necessidade" })}</th>
+                          <th className="py-2 pr-3 font-medium">{tr({ en: "Risk · term", pt: "Risco · prazo" })}</th>
+                          <th className="py-2 pr-3 font-medium">{tr({ en: "At listing", pt: "Na abertura" })}</th>
+                          <th className="py-2 font-medium">{tr({ en: "Replayed now", pt: "Reprocessada agora" })}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -366,12 +396,15 @@ export default function AllocationEngine() {
                     </table>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    An opportunity keeps the pool it was given while investors fund it; a replay with today's liquidity can answer differently.
+                    {tr({
+                      en: "An opportunity keeps the pool it was given while investors fund it; a replay with today's liquidity can answer differently.",
+                      pt: "Uma oportunidade mantém o pool que recebeu enquanto os investidores a financiam; reprocessar com a liquidez de hoje pode dar outra resposta.",
+                    })}
                   </p>
                 </div>
               )}
             </Panel>
-            <p className="px-1 text-xs text-muted-foreground">{PROTOTYPE_NOTICE}</p>
+            <p className="px-1 text-xs text-muted-foreground">{prototypeNotice()}</p>
           </div>
         </div>
       )}

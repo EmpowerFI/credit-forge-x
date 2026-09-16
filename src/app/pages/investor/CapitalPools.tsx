@@ -4,6 +4,7 @@ import LoadError from "../../components/LoadError";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
+import { tr } from "../../i18n";
 import { bpsPercent, POOL, reaisShort, usdcShort } from "../../lib/capital";
 import { money } from "../../lib/readiness";
 import { REALITY } from "../../lib/settlement";
@@ -35,31 +36,50 @@ export default function CapitalPools({ engineLink = true }: { engineLink?: boole
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {d && domestic && global ? (
           <>
-            <StatTile label="Qualified demand" value={reaisShort(d.coverage.demand_cents)} hint={`${d.demand.length} opportunities`} />
-            <StatTile label="Domestic liquidity" value={reaisShort(domestic.liquidity_cents)} hint="simulated BRL pool" />
-            <StatTile label="Global liquidity" value={usdcShort(global.liquidity_micro_usdc ?? 0)} hint={`≈ ${reaisShort(global.liquidity_cents)}`} />
-            <StatTile label="Funding coverage" value={bpsPercent(d.coverage.combined_coverage_bps)}
-              hint={`${bpsPercent(d.coverage.domestic_coverage_bps)} domestic alone`} hintTone="info" />
+            <StatTile label={tr({ en: "Qualified demand", pt: "Demanda qualificada" })} value={reaisShort(d.coverage.demand_cents)}
+              hint={tr({ en: `${d.demand.length} opportunities`, pt: `${d.demand.length} oportunidades` })} />
+            <StatTile label={tr({ en: "Domestic liquidity", pt: "Liquidez doméstica" })} value={reaisShort(domestic.liquidity_cents)}
+              hint={tr({ en: "simulated BRL pool", pt: "pool em reais, simulado" })} />
+            <StatTile label={tr({ en: "Global liquidity", pt: "Liquidez global" })} value={usdcShort(global.liquidity_micro_usdc ?? 0)} hint={`≈ ${reaisShort(global.liquidity_cents)}`} />
+            <StatTile label={tr({ en: "Funding coverage", pt: "Cobertura de captação" })} value={bpsPercent(d.coverage.combined_coverage_bps)}
+              hint={tr({ en: `${bpsPercent(d.coverage.domestic_coverage_bps)} domestic alone`, pt: `${bpsPercent(d.coverage.domestic_coverage_bps)} só com o doméstico` })} hintTone="info" />
           </>
         ) : [0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-2xl bg-card" />)}
       </div>
 
-      <Panel title="Capital availability"
-        description="How much qualified demand each pool can fund: the allocation engine replayed over every opportunity not yet lent, in the order they came."
-        actions={engineLink ? <Link to="/app/capital" className="text-sm text-info hover:underline">Capital Allocation Engine →</Link> : undefined}>
+      <Panel title={tr({ en: "Capital availability", pt: "Capital disponível" })}
+        description={tr({
+          en: "How much qualified demand each pool can fund: the allocation engine replayed over every opportunity not yet lent, in the order they came.",
+          pt: "Quanto da demanda qualificada cada pool consegue captar: o motor de alocação refeito sobre cada oportunidade ainda não emprestada, na ordem em que chegaram.",
+        })}
+        actions={engineLink ? <Link to="/app/capital" className="text-sm text-info hover:underline">{tr({ en: "Capital Allocation Engine →", pt: "Motor de Alocação de Capital →" })}</Link> : undefined}>
         {!d ? <Skeleton className="h-16 w-full" /> : (
           <div className="space-y-3">
-            {bar(d.coverage.domestic_coverage_bps, POOL.domestic.bar, "Domestic P2P")}
-            {bar(d.coverage.combined_coverage_bps, POOL.global.bar, "Domestic + Global")}
+            {bar(d.coverage.domestic_coverage_bps, POOL.domestic.bar, tr({ en: "Domestic P2P", pt: "P2P Doméstico" }))}
+            {bar(d.coverage.combined_coverage_bps, POOL.global.bar, tr({ en: "Domestic + Global", pt: "Doméstico + Global" }))}
             <p className="text-xs text-muted-foreground">
-              Of {money(d.coverage.demand_cents)} qualified, domestic capital alone covers {money(d.coverage.domestic_only_cents)};
-              with global capital, {money(d.coverage.combined_cents)}. A pool can be cheaper and still unavailable: global capital
-              funds what a specific domestic pool has no liquidity, mandate or risk appetite for.
+              {tr({
+                en: <>
+                  Of {money(d.coverage.demand_cents)} qualified, domestic capital alone covers {money(d.coverage.domestic_only_cents)};
+                  with global capital, {money(d.coverage.combined_cents)}. A pool can be cheaper and still unavailable: global capital
+                  funds what a specific domestic pool has no liquidity, mandate or risk appetite for.
+                </>,
+                pt: <>
+                  De {money(d.coverage.demand_cents)} em demanda qualificada, só o capital doméstico cobre {money(d.coverage.domestic_only_cents)};
+                  com o capital global, {money(d.coverage.combined_cents)}. Um pool pode ser mais barato e mesmo assim não estar disponível:
+                  o capital global financia o que um pool doméstico específico não cobre por falta de liquidez, mandato ou apetite a risco.
+                </>,
+              })}
             </p>
             <div className="flex flex-wrap items-center gap-2 rounded-xl border tone-caution px-3 py-2 text-xs">
-              <span className="font-semibold">Routing principle:</span>
-              <span>choose between domestic P2P and global USDC by cost, availability, mandate and risk appetite.</span>
-              <StatusPill tone={REALITY.simulated.tone} dot={false}>Pools {REALITY.simulated.label.toLowerCase()}</StatusPill>
+              <span className="font-semibold">{tr({ en: "Routing principle:", pt: "Princípio de roteamento:" })}</span>
+              <span>{tr({
+                en: "choose between domestic P2P and global USDC by cost, availability, mandate and risk appetite.",
+                pt: "escolher entre P2P doméstico e USDC global por custo, disponibilidade, mandato e apetite a risco.",
+              })}</span>
+              <StatusPill tone={REALITY.simulated.tone} dot={false}>
+                {tr({ en: `Pools ${REALITY.simulated.label.toLowerCase()}`, pt: "Pools simulados" })}
+              </StatusPill>
             </div>
           </div>
         )}

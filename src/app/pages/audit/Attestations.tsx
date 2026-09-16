@@ -8,6 +8,7 @@ import ExplorerLink from "../../components/product/ExplorerLink";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
 import StatusPill, { type Tone } from "../../components/product/StatusPill";
+import { formatDateTime, localized, tr } from "../../i18n";
 import { PROOF_KIND_LABEL } from "../../lib/audit";
 import type { AnchorKind } from "../../lib/platform";
 import { type Attestation, type AttestationState, useAttestations } from "./queries";
@@ -15,22 +16,40 @@ import { type Attestation, type AttestationState, useAttestations } from "./quer
 const ALL = "all";
 const SIZE = 25;
 
-const STATES: { key: AttestationState; label: string; tone: Tone; hint: string }[] = [
-  { key: "verified", label: "Verified", tone: "positive", hint: "on chain, re-checked by reconciliation" },
-  { key: "unchecked", label: "Not yet re-checked", tone: "info", hint: "on chain, awaiting reconciliation" },
-  { key: "queued", label: "Queued", tone: "caution", hint: "on their way to Solana" },
-  { key: "failed", label: "Failed", tone: "alert", hint: "the chain refused them" },
-  { key: "flagged", label: "Flagged", tone: "alert", hint: "missing on chain, or changed since" },
-];
+const STATES: { key: AttestationState; label: string; tone: Tone; hint: string }[] = localized([
+  {
+    key: "verified", label: { en: "Verified", pt: "Verificadas" }, tone: "positive",
+    hint: { en: "on chain, re-checked by reconciliation", pt: "na blockchain, conferidas de novo pela conciliação" },
+  },
+  {
+    key: "unchecked", label: { en: "Not yet re-checked", pt: "Ainda não conferidas" }, tone: "info",
+    hint: { en: "on chain, awaiting reconciliation", pt: "na blockchain, aguardando a conciliação" },
+  },
+  { key: "queued", label: { en: "Queued", pt: "Na fila" }, tone: "caution", hint: { en: "on their way to Solana", pt: "a caminho da Solana" } },
+  { key: "failed", label: { en: "Failed", pt: "Falharam" }, tone: "alert", hint: { en: "the chain refused them", pt: "a blockchain as recusou" } },
+  {
+    key: "flagged", label: { en: "Flagged", pt: "Sinalizadas" }, tone: "alert",
+    hint: { en: "missing on chain, or changed since", pt: "ausentes na blockchain, ou alteradas depois" },
+  },
+]);
 
 function state(a: Attestation): { label: string; tone: Tone } {
-  if (a.reconcile === "missing" || a.reconcile === "mismatch") return { label: a.reconcile === "missing" ? "Missing" : "Mismatch", tone: "alert" };
-  if (a.status === "failed") return { label: "Failed", tone: "alert" };
-  if (a.status !== "confirmed") return { label: a.attempts > 1 ? `Retrying (${a.attempts})` : "Queued", tone: "caution" };
-  return a.reconcile === "verified" ? { label: "Verified", tone: "positive" } : { label: "On chain", tone: "info" };
+  if (a.reconcile === "missing" || a.reconcile === "mismatch") {
+    return { label: a.reconcile === "missing" ? tr({ en: "Missing", pt: "Ausente" }) : tr({ en: "Mismatch", pt: "Divergente" }), tone: "alert" };
+  }
+  if (a.status === "failed") return { label: tr({ en: "Failed", pt: "Falhou" }), tone: "alert" };
+  if (a.status !== "confirmed") {
+    return {
+      label: a.attempts > 1 ? tr({ en: `Retrying (${a.attempts})`, pt: `Tentando de novo (${a.attempts})` }) : tr({ en: "Queued", pt: "Na fila" }),
+      tone: "caution",
+    };
+  }
+  return a.reconcile === "verified"
+    ? { label: tr({ en: "Verified", pt: "Verificada" }), tone: "positive" }
+    : { label: tr({ en: "On chain", pt: "Na blockchain" }), tone: "info" };
 }
 
-const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—");
+const when = (iso: string | null) => (iso ? formatDateTime(iso, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—");
 
 /** Every proof the platform wrote, with what it commits to and where to check it. */
 export default function Attestations() {
@@ -65,13 +84,16 @@ export default function Attestations() {
         ))}
       </div>
 
-      <Panel title={`${d.total} proof${d.total === 1 ? "" : "s"}`}
-        description="Each is a SHA-256 commitment to a record in the database. Verify recomputes it in your browser from the record and compares it with the account on Solana."
+      <Panel title={tr({ en: `${d.total} proof${d.total === 1 ? "" : "s"}`, pt: `${d.total} prova${d.total === 1 ? "" : "s"}` })}
+        description={tr({
+          en: "Each is a SHA-256 commitment to a record in the database. Verify recomputes it in your browser from the record and compares it with the account on Solana.",
+          pt: "Cada uma é um compromisso SHA-256 com um registro do banco de dados. Verificar o recalcula no seu navegador a partir do registro e o compara com a conta na Solana.",
+        })}
         actions={
           <Select value={kind ?? ALL} onValueChange={(v) => set("kind", v)}>
-            <SelectTrigger className="w-[14rem]" aria-label="Kind of proof"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[14rem]" aria-label={tr({ en: "Kind of proof", pt: "Tipo de prova" })}><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>Every kind</SelectItem>
+              <SelectItem value={ALL}>{tr({ en: "Every kind", pt: "Todos os tipos" })}</SelectItem>
               {(Object.keys(PROOF_KIND_LABEL) as AnchorKind[]).map((k) => (
                 <SelectItem key={k} value={k}>{PROOF_KIND_LABEL[k]} · {d.by_kind[k] ?? 0}</SelectItem>
               ))}
@@ -82,13 +104,13 @@ export default function Attestations() {
           <table className="w-full min-w-[960px] text-sm">
             <thead className="text-left text-xs text-muted-foreground">
               <tr className="border-b border-border">
-                <th className="py-2 pr-4 font-medium">Proof</th>
-                <th className="py-2 pr-4 font-medium">State</th>
-                <th className="py-2 pr-4 font-medium">Model</th>
-                <th className="py-2 pr-4 font-medium">Commitment</th>
-                <th className="py-2 pr-4 font-medium">Transaction</th>
-                <th className="py-2 pr-4 font-medium">Anchored</th>
-                <th className="py-2 font-medium"><span className="sr-only">Verify</span></th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Proof", pt: "Prova" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "State", pt: "Estado" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Model", pt: "Modelo" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Commitment", pt: "Compromisso" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Transaction", pt: "Transação" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Anchored", pt: "Registrada na Solana" })}</th>
+                <th className="py-2 font-medium"><span className="sr-only">{tr({ en: "Verify", pt: "Verificar" })}</span></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -109,23 +131,23 @@ export default function Attestations() {
                     <td className="py-2.5 pr-4 text-xs text-muted-foreground">{when(a.confirmed_at ?? a.created_at)}</td>
                     <td className="py-2.5 text-right">
                       {a.status === "confirmed" && (
-                        <Link to={`/app/audit/${a.kind}/${a.entity_id}`} className="text-xs font-medium text-info hover:underline">Verify</Link>
+                        <Link to={`/app/audit/${a.kind}/${a.entity_id}`} className="text-xs font-medium text-info hover:underline">{tr({ en: "Verify", pt: "Verificar" })}</Link>
                       )}
                     </td>
                   </tr>
                 );
               })}
-              {d.rows.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No proof matches.</td></tr>}
+              {d.rows.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">{tr({ en: "No proof matches.", pt: "Nenhuma prova corresponde." })}</td></tr>}
             </tbody>
           </table>
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Page {page + 1} of {pages}</span>
+          <span>{tr({ en: `Page ${page + 1} of ${pages}`, pt: `Página ${page + 1} de ${pages}` })}</span>
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => set("page", String(page - 1))} aria-label="Previous page">
+            <Button variant="secondary" size="sm" disabled={page === 0} onClick={() => set("page", String(page - 1))} aria-label={tr({ en: "Previous page", pt: "Página anterior" })}>
               <ChevronLeft size={14} />
             </Button>
-            <Button variant="secondary" size="sm" disabled={page + 1 >= pages} onClick={() => set("page", String(page + 1))} aria-label="Next page">
+            <Button variant="secondary" size="sm" disabled={page + 1 >= pages} onClick={() => set("page", String(page + 1))} aria-label={tr({ en: "Next page", pt: "Próxima página" })}>
               <ChevronRight size={14} />
             </Button>
           </div>

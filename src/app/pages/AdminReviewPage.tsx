@@ -11,6 +11,7 @@ import { KIND_LABEL, platform } from "../lib/platform";
 import { ELIGIBILITY_REASON, pseudonym } from "../lib/credit";
 import { money, PURPOSE_LABEL } from "../lib/readiness";
 import LoadError from "../components/LoadError";
+import { tr } from "../i18n";
 
 export default function AdminReviewPage() {
   const { profile } = useAuth();
@@ -49,7 +50,10 @@ export default function AdminReviewPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platform"] });
-      toast.success("Opened to P2P investors: the allocation engine chose its pool.");
+      toast.success(tr({
+        en: "Opened to P2P investors: the allocation engine chose its pool.",
+        pt: "Aberta a investidores P2P: o motor de alocação escolheu o pool.",
+      }));
     },
     onError: (error) => toast.error(describeError(error)),
   });
@@ -66,7 +70,12 @@ export default function AdminReviewPage() {
     },
     onSuccess: (verdict) => {
       queryClient.invalidateQueries({ queryKey: ["platform"] });
-      toast.success(verdict === "verify" ? "Verified. The verification is being anchored on devnet." : "Rejected.");
+      toast.success(verdict === "verify"
+        ? tr({
+            en: "Verified. The verification is being anchored on devnet.",
+            pt: "Verificada. A verificação está sendo registrada na blockchain, na devnet.",
+          })
+        : tr({ en: "Rejected.", pt: "Rejeitada." }));
     },
     onError: (error) => toast.error(describeError(error)),
   });
@@ -74,17 +83,20 @@ export default function AdminReviewPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-1">
-        <h1 className="font-heading text-3xl font-bold text-foreground">Review queue</h1>
+        <h1 className="font-heading text-3xl font-bold text-foreground">{tr({ en: "Review queue", pt: "Fila de revisão" })}</h1>
         <p className="text-muted-foreground">
-          Communities waiting for verification. Nobody verifies a community they lead.
+          {tr({
+            en: "Communities waiting for verification. Nobody verifies a community they lead.",
+            pt: "Comunidades aguardando verificação. Ninguém verifica uma comunidade que lidera.",
+          })}
         </p>
       </div>
 
-      {pending.isLoading && <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />}
+      {pending.isLoading && <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Loading", pt: "Carregando" })} />}
       {pending.isError && <LoadError error={pending.error} onRetry={() => pending.refetch()} />}
       {pending.data?.length === 0 && (
         <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          Nothing to review.
+          {tr({ en: "Nothing to review.", pt: "Nada para revisar." })}
         </p>
       )}
 
@@ -104,20 +116,25 @@ export default function AdminReviewPage() {
                 {c.description && <p className="text-sm text-muted-foreground">{c.description}</p>}
               </div>
               {own ? (
-                <p className="text-sm text-muted-foreground">You lead this community, so another admin has to review it.</p>
+                <p className="text-sm text-muted-foreground">
+                  {tr({
+                    en: "You lead this community, so another admin has to review it.",
+                    pt: "Você lidera esta comunidade, então outro admin precisa revisá-la.",
+                  })}
+                </p>
               ) : (
                 <>
-                  <Textarea aria-label="Review note" rows={2} maxLength={500}
-                    placeholder="Note — required to reject, optional to verify"
+                  <Textarea aria-label={tr({ en: "Review note", pt: "Nota da revisão" })} rows={2} maxLength={500}
+                    placeholder={tr({ en: "Note — required to reject, optional to verify", pt: "Nota — obrigatória para rejeitar, opcional para verificar" })}
                     value={notes[c.id] ?? ""} onChange={(e) => setNotes({ ...notes, [c.id]: e.target.value })} />
                   <div className="flex flex-wrap gap-3">
                     <Button disabled={busy} onClick={() => review.mutate({ id: c.id, verdict: "verify" })}
                       className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-                      {busy ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Verify
+                      {busy ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} {tr({ en: "Verify", pt: "Verificar" })}
                     </Button>
                     <Button variant="outline" disabled={busy} onClick={() => review.mutate({ id: c.id, verdict: "reject" })}
                       className="gap-2">
-                      <X size={16} /> Reject
+                      <X size={16} /> {tr({ en: "Reject", pt: "Rejeitar" })}
                     </Button>
                   </div>
                 </>
@@ -128,28 +145,34 @@ export default function AdminReviewPage() {
       </ul>
 
       <div className="space-y-1 pt-4">
-        <h2 className="font-heading text-2xl font-bold text-foreground">Opportunities for review</h2>
+        <h2 className="font-heading text-2xl font-bold text-foreground">{tr({ en: "Opportunities for review", pt: "Oportunidades para revisão" })}</h2>
         <p className="text-muted-foreground">
-          Requests the eligibility rules were not confident about. Review, then open them to P2P investors: the allocation engine chooses the pool.
+          {tr({
+            en: "Requests the eligibility rules were not confident about. Review, then open them to P2P investors: the allocation engine chooses the pool.",
+            pt: "Pedidos sobre os quais as regras de elegibilidade não tiveram segurança. Revise e depois abra a investidores P2P: o motor de alocação escolhe o pool.",
+          })}
         </p>
       </div>
       {flagged.isError && <LoadError compact error={flagged.error} onRetry={() => flagged.refetch()} />}
       {flagged.data?.length === 0 && (
-        <p className="rounded-2xl border border-dashed border-border p-6 text-center text-muted-foreground">Nothing flagged.</p>
+        <p className="rounded-2xl border border-dashed border-border p-6 text-center text-muted-foreground">{tr({ en: "Nothing flagged.", pt: "Nada sinalizado." })}</p>
       )}
       <ul className="space-y-3">
         {flagged.data?.map((o) => (
           <li key={o.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl p-5 glass glow-border">
             <div className="space-y-1 text-sm">
               <p className="font-medium text-foreground">
-                {pseudonym(o.entrepreneur_id)} · {money(o.amount_cents)} over {o.term_months} months · {PURPOSE_LABEL[o.purpose].toLowerCase()}
+                {tr({
+                  en: `${pseudonym(o.entrepreneur_id)} · ${money(o.amount_cents)} over ${o.term_months} months · ${PURPOSE_LABEL[o.purpose].toLowerCase()}`,
+                  pt: `${pseudonym(o.entrepreneur_id)} · ${money(o.amount_cents)} em ${o.term_months} meses · ${PURPOSE_LABEL[o.purpose].toLowerCase()}`,
+                })}
               </p>
               <p className="text-xs text-muted-foreground">
                 {(o.eligibility?.reason_codes ?? []).map((r) => ELIGIBILITY_REASON[r] ?? r).join(" · ")}
               </p>
             </div>
             <Button disabled={refer.isPending} onClick={() => refer.mutate(o.id)} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-              {refer.isPending && refer.variables === o.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Open to P2P investors
+              {refer.isPending && refer.variables === o.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} {tr({ en: "Open to P2P investors", pt: "Abrir a investidores P2P" })}
             </Button>
           </li>
         ))}

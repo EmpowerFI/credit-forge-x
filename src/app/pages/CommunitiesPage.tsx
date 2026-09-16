@@ -6,6 +6,7 @@ import StatusBadge from "../components/StatusBadge";
 import { useAuth } from "../auth/useAuth";
 import { KIND_LABEL, platform } from "../lib/platform";
 import LoadError from "../components/LoadError";
+import { tr } from "../i18n";
 
 export default function CommunitiesPage() {
   const { profile } = useAuth();
@@ -29,23 +30,28 @@ export default function CommunitiesPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="font-heading text-3xl font-bold text-foreground">Communities</h1>
+          <h1 className="font-heading text-3xl font-bold text-foreground">{tr({ en: "Communities", pt: "Comunidades" })}</h1>
           <p className="text-muted-foreground">
-            Programmes and groups that prepare entrepreneurs before credit.
+            {tr({
+              en: "Programmes and groups that prepare entrepreneurs before credit.",
+              pt: "Programas e grupos que preparam empreendedoras antes do crédito.",
+            })}
           </p>
         </div>
         {canCreate && (
           <Button asChild className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-            <Link to="/app/community/new"><Plus size={16} /> New community</Link>
+            <Link to="/app/community/new"><Plus size={16} /> {tr({ en: "New community", pt: "Nova comunidade" })}</Link>
           </Button>
         )}
       </div>
 
-      {isLoading && <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />}
+      {isLoading && <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Loading", pt: "Carregando" })} />}
       {error && <LoadError error={error} onRetry={() => refetch()} />}
       {data && data.length === 0 && (
         <p className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          No communities yet{canCreate ? " — create the first one." : "."}
+          {canCreate
+            ? tr({ en: "No communities yet — create the first one.", pt: "Ainda não há comunidades — crie a primeira." })
+            : tr({ en: "No communities yet.", pt: "Ainda não há comunidades." })}
         </p>
       )}
 
@@ -61,7 +67,7 @@ export default function CommunitiesPage() {
               <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
                 <MapPin size={14} /> {c.city}, {c.state} · {KIND_LABEL[c.kind]}
               </p>
-              {c.leader_id === profile?.id && <p className="text-xs font-medium text-accent">You lead this community</p>}
+              {c.leader_id === profile?.id && <p className="text-xs font-medium text-accent">{tr({ en: "You lead this community", pt: "Você lidera esta comunidade" })}</p>}
             </Link>
           </li>
         ))}

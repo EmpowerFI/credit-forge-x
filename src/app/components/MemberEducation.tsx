@@ -1,6 +1,7 @@
 import { Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Programme } from "../lib/education";
+import { tr } from "../i18n";
 
 interface Props {
   programmes: Programme[];
@@ -32,10 +33,10 @@ export default function MemberEducation({ programmes, completed, onCompleteNext,
                     variant="outline"
                     disabled={busy}
                     onClick={() => onCompleteNext(next.id)}
-                    title={`Mark "${next.title}" as completed`}
+                    title={tr({ en: `Mark "${next.title}" as completed`, pt: `Marcar "${next.title}" como concluído` })}
                     className="h-6 gap-1 px-2 text-[11px]"
                   >
-                    {busy ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Next module
+                    {busy ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} {tr({ en: "Next module", pt: "Próximo módulo" })}
                   </Button>
                 )}
               </span>
@@ -43,7 +44,7 @@ export default function MemberEducation({ programmes, completed, onCompleteNext,
             <div
               className="h-1.5 overflow-hidden rounded-full bg-border"
               role="progressbar"
-              aria-label={`${p.title}: ${done} of ${p.modules.length} modules`}
+              aria-label={tr({ en: `${p.title}: ${done} of ${p.modules.length} modules`, pt: `${p.title}: ${done} de ${p.modules.length} módulos` })}
               aria-valuenow={pct}
               aria-valuemin={0}
               aria-valuemax={100}

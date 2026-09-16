@@ -1,33 +1,45 @@
 import type { Database } from "./platform.types";
-import { formatDate } from "../i18n";
+import { formatDate, localized, tr } from "../i18n";
 
 export type ReadinessStatus = Database["public"]["Enums"]["readiness_status"];
 export type CreditPurpose = Database["public"]["Enums"]["credit_purpose"];
 
 // The engine speaks in codes (packages/readiness-engine); people read these.
 
-export const STATUS_LABEL: Record<ReadinessStatus, { title: string; summary: string; tone: string }> = {
+export const STATUS_LABEL: Record<ReadinessStatus, { title: string; summary: string; tone: string }> = localized({
   CREDIT_READY: {
-    title: "Ready for credit",
-    summary: "The business is prepared, with enough data behind the judgement.",
+    title: { en: "Ready for credit", pt: "Pronta para crédito" },
+    summary: {
+      en: "The business is prepared, with enough data behind the judgement.",
+      pt: "O negócio está preparado, com dados suficientes para embasar a avaliação.",
+    },
     tone: "tone-positive",
   },
   NEEDS_MORE_DATA: {
-    title: "Needs more data",
-    summary: "The business is running; the record of it is still too thin.",
+    title: { en: "Needs more data", pt: "Precisa de mais dados" },
+    summary: {
+      en: "The business is running; the record of it is still too thin.",
+      pt: "O negócio está funcionando; o histórico dele ainda é pequeno demais.",
+    },
     tone: "tone-info",
   },
   NEEDS_PREPARATION: {
-    title: "Needs more preparation",
-    summary: "Organisation or education is still in progress.",
+    title: { en: "Needs more preparation", pt: "Precisa de mais preparo" },
+    summary: {
+      en: "Organisation or education is still in progress.",
+      pt: "A organização ou a educação ainda estão em andamento.",
+    },
     tone: "tone-caution",
   },
   MANUAL_REVIEW: {
-    title: "Manual review",
-    summary: "The figures need a person to look at them before the rules decide.",
+    title: { en: "Manual review", pt: "Revisão manual" },
+    summary: {
+      en: "The figures need a person to look at them before the rules decide.",
+      pt: "Os números precisam ser vistos por uma pessoa antes que as regras decidam.",
+    },
     tone: "tone-neutral",
   },
-};
+});
 
 interface Requirement {
   code: string;
@@ -36,52 +48,87 @@ interface Requirement {
 }
 
 export function describeRequirement(r: Requirement): string {
+  const current = r.current ?? 0;
   switch (r.code) {
     case "COMMUNITY_NOT_VERIFIED":
-      return "Join a community EmpowerFI has verified.";
+      return tr({ en: "Join a community EmpowerFI has verified.", pt: "Entre em uma comunidade verificada pela EmpowerFI." });
     case "CORE_EDUCATION_INCOMPLETE":
-      return `Finish the credit readiness programme — ${r.current ?? 0} of ${r.required} modules done.`;
-    case "RECORD_KEEPING":
-      return `Record every sale — you did in ${Math.round((r.current ?? 0) / 100)}% of recent months; two in three is the bar.`;
+      return tr({
+        en: `Finish the credit readiness programme — ${current} of ${r.required} modules done.`,
+        pt: `Conclua o programa de prontidão para crédito — ${current} de ${r.required} módulos feitos.`,
+      });
+    case "RECORD_KEEPING": {
+      const share = Math.round(current / 100);
+      return tr({
+        en: `Record every sale — you did in ${share}% of recent months; two in three is the bar.`,
+        pt: `Registre todas as vendas — você registrou em ${share}% dos meses recentes; o mínimo é dois em cada três.`,
+      });
+    }
     case "CASH_FLOW_NOT_POSITIVE":
-      return `Bring in more than the business spends — ${r.current ?? 0} of your last 3 months were positive; ${r.required} are needed.`;
+      return tr({
+        en: `Bring in more than the business spends — ${current} of your last 3 months were positive; ${r.required} are needed.`,
+        pt: `Faça o negócio ganhar mais do que gasta — ${current} dos seus últimos 3 meses foram positivos; são necessários ${r.required}.`,
+      });
     case "INSUFFICIENT_HISTORY":
-      return `Report more months — ${r.current ?? 0} so far in the last six; ${r.required} are needed.`;
+      return tr({
+        en: `Report more months — ${current} so far in the last six; ${r.required} are needed.`,
+        pt: `Informe mais meses — ${current} até agora nos últimos seis; são necessários ${r.required}.`,
+      });
     case "IRREGULAR_REPORTING":
-      return `Report month after month — your current run is ${r.current ?? 0}; ${r.required} in a row are needed.`;
+      return tr({
+        en: `Report month after month — your current run is ${current}; ${r.required} in a row are needed.`,
+        pt: `Informe mês após mês — sua sequência atual é de ${current}; são necessários ${r.required} seguidos.`,
+      });
     case "STALE_REPORTING":
       return r.current === null
-        ? "Send your first monthly check-in."
-        : `Report this month — your last check-in was ${r.current} months ago.`;
+        ? tr({ en: "Send your first monthly check-in.", pt: "Envie seu primeiro check-in mensal." })
+        : tr({
+            en: `Report this month — your last check-in was ${r.current} months ago.`,
+            pt: `Informe este mês — seu último check-in foi há ${r.current} meses.`,
+          });
     default:
       return r.code;
   }
 }
 
-export const REASON_LABEL: Record<string, { text: string; positive: boolean }> = {
-  EDUCATION_COMPLETE: { text: "Readiness programme completed", positive: true },
-  KEEPS_RECORDS: { text: "Every sale recorded", positive: true },
-  CONSISTENT_REPORTING: { text: "Six months reported in a row", positive: true },
-  POSITIVE_CASH_FLOW: { text: "Positive cash flow, three months running", positive: true },
-  STEADY_REVENUE: { text: "Steady revenue", positive: true },
-  GROWING_REVENUE: { text: "Revenue growing", positive: true },
-  DECLINING_REVENUE: { text: "Revenue falling", positive: false },
-  VOLATILE_REVENUE: { text: "Revenue swings a lot", positive: false },
-  HIGH_HOUSEHOLD_DRAW: { text: "Most of the profit goes to the household", positive: false },
-  DATA_INCONSISTENT: { text: "Some figures contradict each other", positive: false },
-};
+export const REASON_LABEL: Record<string, { text: string; positive: boolean }> = localized({
+  EDUCATION_COMPLETE: { text: { en: "Readiness programme completed", pt: "Programa de prontidão concluído" }, positive: true },
+  KEEPS_RECORDS: { text: { en: "Every sale recorded", pt: "Todas as vendas registradas" }, positive: true },
+  CONSISTENT_REPORTING: { text: { en: "Six months reported in a row", pt: "Seis meses informados seguidos" }, positive: true },
+  POSITIVE_CASH_FLOW: { text: { en: "Positive cash flow, three months running", pt: "Fluxo de caixa positivo, três meses seguidos" }, positive: true },
+  STEADY_REVENUE: { text: { en: "Steady revenue", pt: "Receita estável" }, positive: true },
+  GROWING_REVENUE: { text: { en: "Revenue growing", pt: "Receita em alta" }, positive: true },
+  DECLINING_REVENUE: { text: { en: "Revenue falling", pt: "Receita em queda" }, positive: false },
+  VOLATILE_REVENUE: { text: { en: "Revenue swings a lot", pt: "Receita oscila muito" }, positive: false },
+  HIGH_HOUSEHOLD_DRAW: { text: { en: "Most of the profit goes to the household", pt: "A maior parte do lucro vai para as despesas da casa" }, positive: false },
+  DATA_INCONSISTENT: { text: { en: "Some figures contradict each other", pt: "Alguns números se contradizem" }, positive: false },
+});
 
-export const PURPOSE_LABEL: Record<CreditPurpose, string> = {
-  working_capital: "Working capital",
-  inventory: "Stock and materials",
-  equipment: "Equipment",
-  renovation: "Improving the workspace",
-  other: "Something else",
-};
+export const PURPOSE_LABEL: Record<CreditPurpose, string> = localized({
+  working_capital: { en: "Working capital", pt: "Capital de giro" },
+  inventory: { en: "Stock and materials", pt: "Estoque e materiais" },
+  equipment: { en: "Equipment", pt: "Equipamentos" },
+  renovation: { en: "Improving the workspace", pt: "Melhorias no espaço de trabalho" },
+  other: { en: "Something else", pt: "Outra finalidade" },
+});
+
+// A business's sector is free text a leader types. The ones the demo uses are
+// read in the current language; anything else shows as it was written.
+const SECTOR_LABEL: Record<string, string> = localized({
+  food: { en: "food", pt: "alimentação" },
+  beauty: { en: "beauty", pt: "beleza" },
+  crafts: { en: "crafts", pt: "artesanato" },
+  fashion: { en: "fashion", pt: "moda" },
+  retail: { en: "retail", pt: "comércio" },
+  services: { en: "services", pt: "serviços" },
+});
+
+export const sectorLabel = <T extends string | null | undefined>(sector: T) =>
+  (sector && Object.prototype.hasOwnProperty.call(SECTOR_LABEL, sector) ? SECTOR_LABEL[sector] : sector) as T;
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 export const money = (cents: number | null | undefined) => (cents === null || cents === undefined ? "—" : brl.format(cents / 100));
 
-/** "2026-09" → "Sep 2026". */
+/** "2026-09" → "Sep 2026", "set. de 2026". */
 export const monthLabel = (period: string) =>
   formatDate(`${period}-01T12:00:00Z`, { month: "short", year: "numeric", timeZone: "UTC" });

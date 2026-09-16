@@ -29,6 +29,7 @@ import {
   type CreditPurpose,
 } from "../lib/readiness";
 import LoadError from "../components/LoadError";
+import { formatNumber, tr } from "../i18n";
 
 type Credit = {
   eligibility: {
@@ -70,7 +71,10 @@ function CreditProgress({ credit }: { credit: Credit }) {
         </span>
         {e.proposed_amount_cents !== null && (
           <p className="mt-1 text-foreground">
-            {money(e.proposed_amount_cents)} over {e.term_months} months — about {money(e.instalment_cents)} a month.
+            {tr({
+              en: `${money(e.proposed_amount_cents)} over ${e.term_months} months — about ${money(e.instalment_cents)} a month.`,
+              pt: `${money(e.proposed_amount_cents)} em ${e.term_months} meses — cerca de ${money(e.instalment_cents)} por mês.`,
+            })}
           </p>
         )}
         <p className="mt-1 text-xs text-muted-foreground">{e.reason_codes.map((r) => ELIGIBILITY_REASON[r] ?? r).join(" · ")}</p>
@@ -79,27 +83,50 @@ function CreditProgress({ credit }: { credit: Credit }) {
         <li className="text-foreground">
           {o.status === "referred" && o.funding_status ? (
             <>
-              Your request is open to investors — {money(fundedReais(o))} of {money(o.amount_cents)} funded.
+              {tr({
+                en: `Your request is open to investors — ${money(fundedReais(o))} of ${money(o.amount_cents)} funded.`,
+                pt: `Seu pedido está aberto a investidores — ${money(fundedReais(o))} de ${money(o.amount_cents)} captados.`,
+              })}
               <span className="block text-xs text-muted-foreground">
-                {o.funding_pool === "global" ? "Funded by global investors in USDC, converted" : "Funded by Brazilian investors"}: you receive it in reais, by Pix.
+                {o.funding_pool === "global"
+                  ? tr({
+                      en: "Funded by global investors in USDC, converted: you receive it in reais, by Pix.",
+                      pt: "Captado com investidores globais em USDC, convertido: você recebe em reais, via Pix.",
+                    })
+                  : tr({
+                      en: "Funded by Brazilian investors: you receive it in reais, by Pix.",
+                      pt: "Captado com investidores brasileiros: você recebe em reais, via Pix.",
+                    })}
               </span>
             </>
           ) : o.status === "referred" ? (
-            <>Your request waits for capital: no pool of investors can take it yet.</>
+            <>{tr({
+              en: "Your request waits for capital: no pool of investors can take it yet.",
+              pt: "Seu pedido aguarda capital: nenhum pool de investidores pode assumi-lo ainda.",
+            })}</>
           ) : <>{OPPORTUNITY_LABEL[o.status]}.</>}
           {decision?.verdict === "approved" && (
             <span className="block text-xs text-muted-foreground">
-              Formalised: {money(decision.approved_amount_cents)} at {((decision.rate_bps ?? 0) / 100).toFixed(2)}% a month over {decision.term_months} months.
+              {(() => {
+                const rate = formatNumber((decision.rate_bps ?? 0) / 100, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return tr({
+                  en: `Formalised: ${money(decision.approved_amount_cents)} at ${rate}% a month over ${decision.term_months} months.`,
+                  pt: `Formalizado: ${money(decision.approved_amount_cents)} a ${rate}% ao mês em ${decision.term_months} meses.`,
+                });
+              })()}
             </span>
           )}
           {decision?.verdict === "declined" && decision.reason && (
-            <span className="block text-xs text-muted-foreground">Reason given: {decision.reason}</span>
+            <span className="block text-xs text-muted-foreground">{tr({ en: "Reason given:", pt: "Motivo informado:" })} {decision.reason}</span>
           )}
         </li>
       )}
       {loan && (
         <li className="text-foreground">
-          Loan · {LOAN_LABEL[loan.status]} — {loan.payments.length} of {loan.term_months} instalments of {money(loan.instalment_cents)} paid.
+          {tr({
+            en: `Loan · ${LOAN_LABEL[loan.status]} — ${loan.payments.length} of ${loan.term_months} instalments of ${money(loan.instalment_cents)} paid.`,
+            pt: `Empréstimo · ${LOAN_LABEL[loan.status]} — ${loan.payments.length} de ${loan.term_months} parcelas de ${money(loan.instalment_cents)} pagas.`,
+          })}
         </li>
       )}
     </ol>
@@ -182,7 +209,12 @@ export default function MePage() {
     mutationFn: () => requestAssessment(id!),
     onSuccess: (r) => {
       refresh();
-      toast.success(r.reused ? "Nothing has changed since your last assessment." : `Assessment ${r.assessment_no}: ${STATUS_LABEL[r.result.status].title}.`);
+      toast.success(r.reused
+        ? tr({ en: "Nothing has changed since your last assessment.", pt: "Nada mudou desde a sua última avaliação." })
+        : tr({
+            en: `Assessment ${r.assessment_no}: ${STATUS_LABEL[r.result.status].title}.`,
+            pt: `Avaliação ${r.assessment_no}: ${STATUS_LABEL[r.result.status].title}.`,
+          }));
     },
     onError: (e) => toast.error(describeError(e)),
   });
@@ -202,7 +234,11 @@ export default function MePage() {
       setAsking(false);
       try {
         const e = await requestEligibility(id!);
-        toast.success(`Request recorded. EmpowerFI's assessment: ${DECISION_LABEL[e.result.decision as keyof typeof DECISION_LABEL].title}. If eligible, it opens to P2P investors.`);
+        const decision = DECISION_LABEL[e.result.decision as keyof typeof DECISION_LABEL].title;
+        toast.success(tr({
+          en: `Request recorded. EmpowerFI's assessment: ${decision}. If eligible, it opens to P2P investors.`,
+          pt: `Pedido registrado. Avaliação da EmpowerFI: ${decision}. Se for elegível, ele fica aberto a investidores P2P.`,
+        }));
       } catch (err) {
         toast.error(describeError(err));
       }
@@ -222,17 +258,24 @@ export default function MePage() {
     },
     onSuccess: () => {
       refresh();
-      toast.success("Request withdrawn.");
+      toast.success(tr({ en: "Request withdrawn.", pt: "Pedido retirado." }));
     },
     onError: (e) => toast.error(describeError(e)),
   });
 
-  if (me.isLoading || business.isLoading) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
+  if (me.isLoading || business.isLoading) return <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Loading", pt: "Carregando" })} />;
   if (me.isError || business.isError) {
     return <LoadError error={me.error ?? business.error} onRetry={() => { me.refetch(); business.refetch(); }} />;
   }
   if (!me.data) {
-    return <p className="text-muted-foreground">This page is for entrepreneurs. Your account has no business on record.</p>;
+    return (
+      <p className="text-muted-foreground">
+        {tr({
+          en: "This page is for entrepreneurs. Your account has no business on record.",
+          pt: "Esta página é para empreendedoras. Sua conta não tem um negócio registrado.",
+        })}
+      </p>
+    );
   }
 
   const readiness = business.data?.readiness;
@@ -242,7 +285,7 @@ export default function MePage() {
 
   const submitIntent = (e: FormEvent) => {
     e.preventDefault();
-    if (!intentForm.purpose) return toast.error("Choose what the capital is for.");
+    if (!intentForm.purpose) return toast.error(tr({ en: "Choose what the capital is for.", pt: "Escolha para que é o capital." }));
     declare.mutate();
   };
 
@@ -251,30 +294,42 @@ export default function MePage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground">{me.data.display_name}</p>
-          <h1 className="font-heading text-3xl font-bold text-foreground">{me.data.business_name ?? "My business"}</h1>
+          <h1 className="font-heading text-3xl font-bold text-foreground">{me.data.business_name ?? tr({ en: "My business", pt: "Meu negócio" })}</h1>
         </div>
         <Button asChild className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Link to="/app/check-in"><ClipboardPlus size={16} /> Monthly check-in</Link>
+          <Link to="/app/check-in"><ClipboardPlus size={16} /> {tr({ en: "Monthly check-in", pt: "Check-in mensal" })}</Link>
         </Button>
       </div>
 
       {/* -------------------------------------------------------- consent */}
       {(() => {
         const c = business.data?.consent;
-        const message = !c ? "You have not recorded your consent yet: nothing of yours is assessed or shared until you do."
-          : !c.assessment ? "You have not allowed your business to be assessed."
-          : !c.partner ? "You have not allowed EmpowerFI's P2P desk to see a request, so you cannot ask for credit here."
-          : null;
+        const message = !c
+          ? tr({
+              en: "You have not recorded your consent yet: nothing of yours is assessed or shared until you do.",
+              pt: "Você ainda não registrou seu consentimento: nada seu é avaliado ou compartilhado até você fazer isso.",
+            })
+          : !c.assessment
+            ? tr({ en: "You have not allowed your business to be assessed.", pt: "Você não autorizou a avaliação do seu negócio." })
+            : !c.partner
+              ? tr({
+                  en: "You have not allowed EmpowerFI's P2P desk to see a request, so you cannot ask for credit here.",
+                  pt: "Você não autorizou a mesa P2P da EmpowerFI a ver um pedido, então não pode pedir crédito aqui.",
+                })
+              : null;
         return (
           <Link to="/app/consent"
             className={`flex items-start justify-between gap-3 rounded-2xl border p-4 text-sm transition-colors hover:bg-secondary/40 ${message ? "tone-caution" : "border-border"}`}>
             <span className="flex items-start gap-2">
               <ShieldCheck size={16} className={`mt-0.5 shrink-0 ${message ? "" : "text-positive"}`} />
               <span className={message ? "" : "text-muted-foreground"}>
-                {message ?? `Your consent is in force (record #${c!.consent_no}). You decide what your data is used for.`}
+                {message ?? tr({
+                  en: `Your consent is in force (record #${c!.consent_no}). You decide what your data is used for.`,
+                  pt: `Seu consentimento está em vigor (registro nº ${c!.consent_no}). Você decide para que seus dados são usados.`,
+                })}
               </span>
             </span>
-            <span className="shrink-0 font-medium">Review</span>
+            <span className="shrink-0 font-medium">{tr({ en: "Review", pt: "Revisar" })}</span>
           </Link>
         );
       })()}
@@ -282,21 +337,27 @@ export default function MePage() {
       {/* ------------------------------------------------------ readiness */}
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-heading text-xl font-bold text-foreground">Readiness</h2>
+          <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Readiness", pt: "Prontidão" })}</h2>
           <Button variant="outline" size="sm" disabled={assess.isPending} onClick={() => assess.mutate()} className="gap-2">
-            {assess.isPending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Re-assess
+            {assess.isPending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} {tr({ en: "Re-assess", pt: "Reavaliar" })}
           </Button>
         </div>
 
         {!readiness || !status ? (
           <p className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground">
-            No assessment yet. Send your first monthly check-in, and the business will be assessed.
+            {tr({
+              en: "No assessment yet. Send your first monthly check-in, and the business will be assessed.",
+              pt: "Nenhuma avaliação ainda. Envie seu primeiro check-in mensal e o negócio será avaliado.",
+            })}
           </p>
         ) : (
           <div className="space-y-4">
             <div className={`rounded-2xl border p-5 ${status.tone}`}>
               <p className="text-xs font-medium uppercase tracking-widest opacity-80">
-                Assessment {readiness.assessment_no} · {monthLabel(readiness.as_of_period)} · band {readiness.band.toLowerCase()}
+                {tr({
+                  en: `Assessment ${readiness.assessment_no} · ${monthLabel(readiness.as_of_period)} · band ${readiness.band.toLowerCase()}`,
+                  pt: `Avaliação ${readiness.assessment_no} · ${monthLabel(readiness.as_of_period)} · faixa ${({ LOW: "baixa", MEDIUM: "média", HIGH: "alta" } as Record<string, string>)[readiness.band] ?? readiness.band.toLowerCase()}`,
+                })}
               </p>
               <p className="mt-1 font-heading text-2xl font-bold">{status.title}</p>
               <p className="text-sm">{status.summary}</p>
@@ -304,7 +365,7 @@ export default function MePage() {
 
             {missing.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Still to do</p>
+                <p className="text-sm font-medium text-foreground">{tr({ en: "Still to do", pt: "Falta fazer" })}</p>
                 <ul className="space-y-2">
                   {missing.map((m) => (
                     <li key={m.code} className="flex items-start gap-2 text-sm text-foreground">
@@ -340,11 +401,13 @@ export default function MePage() {
             )}
 
             <div className="rounded-xl border border-border bg-background/60 px-4">
-              <ProofStatus loading={anchors.isPending} label="Assessment attested" anchor={anchorOf(readiness.id)} />
+              <ProofStatus loading={anchors.isPending} label={tr({ en: "Assessment attested", pt: "Avaliação atestada" })} anchor={anchorOf(readiness.id)} />
             </div>
             <p className="text-xs text-muted-foreground">
-              Model {readiness.model_version}. Readiness is not a credit decision: it says whether the business is prepared
-              to have that conversation.
+              {tr({
+                en: `Model ${readiness.model_version}. Readiness is not a credit decision: it says whether the business is prepared to have that conversation.`,
+                pt: `Modelo ${readiness.model_version}. Prontidão não é uma decisão de crédito: ela diz se o negócio está preparado para essa conversa.`,
+              })}
             </p>
           </div>
         )}
@@ -353,23 +416,36 @@ export default function MePage() {
       {/* --------------------------------------------------------- credit */}
       {readiness?.status === "CREDIT_READY" && (
         <section className="space-y-4 rounded-2xl p-6 glass glow-border">
-          <h2 className="font-heading text-xl font-bold text-foreground">Capital</h2>
+          <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Capital", pt: "Capital" })}</h2>
           {intent ? (
             <div className="space-y-4">
               <p className="text-sm text-foreground">
-                You asked for <strong>{money(intent.requested_amount_cents)}</strong> for{" "}
-                {PURPOSE_LABEL[intent.purpose].toLowerCase()}. EmpowerFI assesses whether it fits the business; if it does,
-                P2P investors fund it and you receive and repay in reais, by Pix.
+                {tr({
+                  en: (
+                    <>
+                      You asked for <strong>{money(intent.requested_amount_cents)}</strong> for{" "}
+                      {PURPOSE_LABEL[intent.purpose].toLowerCase()}. EmpowerFI assesses whether it fits the business; if it does,
+                      P2P investors fund it and you receive and repay in reais, by Pix.
+                    </>
+                  ),
+                  pt: (
+                    <>
+                      Você pediu <strong>{money(intent.requested_amount_cents)}</strong> para{" "}
+                      {PURPOSE_LABEL[intent.purpose].toLowerCase()}. A EmpowerFI avalia se o valor cabe no negócio; se couber,
+                      investidores P2P financiam o pedido e você recebe e paga em reais, via Pix.
+                    </>
+                  ),
+                })}
               </p>
               <CreditProgress credit={business.data?.credit ?? null} />
               {!business.data?.credit?.eligibility && (
                 <Button size="sm" variant="outline" disabled={checkEligibility.isPending} onClick={() => checkEligibility.mutate()}>
-                  {checkEligibility.isPending && <Loader2 size={14} className="mr-1 animate-spin" />} Assess my request
+                  {checkEligibility.isPending && <Loader2 size={14} className="mr-1 animate-spin" />} {tr({ en: "Assess my request", pt: "Avaliar meu pedido" })}
                 </Button>
               )}
               {!business.data?.credit?.opportunity?.loans?.length && (
                 <Button variant="ghost" size="sm" disabled={withdraw.isPending} onClick={() => withdraw.mutate()}>
-                  Withdraw the request
+                  {tr({ en: "Withdraw the request", pt: "Retirar o pedido" })}
                 </Button>
               )}
             </div>
@@ -377,37 +453,42 @@ export default function MePage() {
             <div className="space-y-3">
               <p className="flex items-start gap-2 text-sm text-foreground">
                 <CircleCheck size={16} className="mt-0.5 shrink-0 text-positive" />
-                Your business is ready for a credit conversation. Nothing happens unless you ask — being ready and not
-                needing credit is a good place to be.
+                {tr({
+                  en: "Your business is ready for a credit conversation. Nothing happens unless you ask — being ready and not needing credit is a good place to be.",
+                  pt: "Seu negócio está pronto para uma conversa sobre crédito. Nada acontece se você não pedir — estar pronta e não precisar de crédito é uma ótima situação.",
+                })}
               </p>
-              <Button variant="outline" onClick={() => setAsking(true)}>I would like to request capital</Button>
+              <Button variant="outline" onClick={() => setAsking(true)}>{tr({ en: "I would like to request capital", pt: "Quero pedir capital" })}</Button>
             </div>
           ) : (
             <form onSubmit={submitIntent} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="i-purpose">What is it for?</Label>
+                <Label htmlFor="i-purpose">{tr({ en: "What is it for?", pt: "Para que é?" })}</Label>
                 <Select value={intentForm.purpose} onValueChange={(v) => setIntentForm({ ...intentForm, purpose: v as CreditPurpose })}>
-                  <SelectTrigger id="i-purpose"><SelectValue placeholder="Choose a purpose" /></SelectTrigger>
+                  <SelectTrigger id="i-purpose"><SelectValue placeholder={tr({ en: "Choose a purpose", pt: "Escolha uma finalidade" })} /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(PURPOSE_LABEL).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="i-amount">How much? (R$ 100 to R$ 50,000)</Label>
+                <Label htmlFor="i-amount">{tr({ en: "How much? (R$ 100 to R$ 50,000)", pt: "Quanto? (de R$ 100 a R$ 50.000)" })}</Label>
                 <Input id="i-amount" type="number" inputMode="decimal" min={100} max={50000} step="0.01" required
                   value={intentForm.amount} onChange={(e) => setIntentForm({ ...intentForm, amount: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="i-desc">In a sentence <span className="font-normal text-muted-foreground">— optional</span></Label>
+                <Label htmlFor="i-desc">
+                  {tr({ en: "In a sentence", pt: "Em uma frase" })}{" "}
+                  <span className="font-normal text-muted-foreground">{tr({ en: "— optional", pt: "— opcional" })}</span>
+                </Label>
                 <Textarea id="i-desc" rows={2} maxLength={500} value={intentForm.description}
                   onChange={(e) => setIntentForm({ ...intentForm, description: e.target.value })} />
               </div>
               <div className="flex flex-wrap gap-3">
                 <Button type="submit" disabled={declare.isPending} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-                  {declare.isPending && <Loader2 size={16} className="animate-spin" />} Send request
+                  {declare.isPending && <Loader2 size={16} className="animate-spin" />} {tr({ en: "Send request", pt: "Enviar pedido" })}
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => setAsking(false)}>Not now</Button>
+                <Button type="button" variant="ghost" onClick={() => setAsking(false)}>{tr({ en: "Not now", pt: "Agora não" })}</Button>
               </div>
             </form>
           )}
@@ -416,9 +497,9 @@ export default function MePage() {
 
       {/* ------------------------------------------------------ cash flow */}
       <section className="space-y-4">
-        <h2 className="font-heading text-xl font-bold text-foreground">Cash flow</h2>
+        <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Cash flow", pt: "Fluxo de caixa" })}</h2>
         {business.data?.months.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No months reported yet.</p>
+          <p className="text-sm text-muted-foreground">{tr({ en: "No months reported yet.", pt: "Nenhum mês informado ainda." })}</p>
         ) : (
           <ul className="divide-y divide-border rounded-2xl border border-border bg-background/60">
             {business.data?.months.map((m) => (
@@ -426,15 +507,15 @@ export default function MePage() {
                 <p className="font-medium text-foreground">{monthLabel(m.period!)}</p>
                 <div className="space-y-1">
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
-                    <span><span className="text-xs text-muted-foreground">Sales</span><br />{money(m.revenue_cents)}</span>
-                    <span><span className="text-xs text-muted-foreground">Costs</span><br />{money((m.cogs_cents ?? 0) + (m.opex_cents ?? 0))}</span>
-                    <span><span className="text-xs text-muted-foreground">Household</span><br />{money(m.household_cents)}</span>
+                    <span><span className="text-xs text-muted-foreground">{tr({ en: "Sales", pt: "Vendas" })}</span><br />{money(m.revenue_cents)}</span>
+                    <span><span className="text-xs text-muted-foreground">{tr({ en: "Costs", pt: "Custos" })}</span><br />{money((m.cogs_cents ?? 0) + (m.opex_cents ?? 0))}</span>
+                    <span><span className="text-xs text-muted-foreground">{tr({ en: "Household", pt: "Despesas da casa" })}</span><br />{money(m.household_cents)}</span>
                     <span>
-                      <span className="text-xs text-muted-foreground">Business result</span><br />
+                      <span className="text-xs text-muted-foreground">{tr({ en: "Business result", pt: "Resultado do negócio" })}</span><br />
                       <span className={(m.net_business_cents ?? 0) > 0 ? "text-positive" : "text-alert"}>{money(m.net_business_cents)}</span>
                     </span>
                   </div>
-                  <ProofStatus loading={anchors.isPending} label="Month anchored" anchor={anchorOf(m.checkin_id!)} />
+                  <ProofStatus loading={anchors.isPending} label={tr({ en: "Month anchored", pt: "Mês registrado na blockchain" })} anchor={anchorOf(m.checkin_id!)} />
                 </div>
               </li>
             ))}
@@ -445,7 +526,7 @@ export default function MePage() {
       {/* ------------------------------------------------------ education */}
       {education.data && (
         <section className="space-y-3">
-          <h2 className="font-heading text-xl font-bold text-foreground">Education</h2>
+          <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Education", pt: "Formação" })}</h2>
           <div className="rounded-2xl border border-border bg-background/60 p-4">
             <MemberEducation programmes={education.data.programmes} completed={education.data.completed.get(id!)} />
           </div>

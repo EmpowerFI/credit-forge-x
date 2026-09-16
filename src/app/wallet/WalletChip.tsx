@@ -10,6 +10,7 @@ import { explorerAddress } from "../lib/platform";
 import { FAUCETS, shortAddress, sol, usdc } from "../lib/solana";
 import ConnectWalletDialog from "./ConnectWallet";
 import { useBalances } from "./useBalances";
+import { tr } from "../i18n";
 
 /** The investor's wallet in the top bar: address, balances, faucets. */
 export default function WalletChip() {
@@ -27,8 +28,11 @@ export default function WalletChip() {
     return (
       <Button size="sm" variant="secondary" className="gap-2"
         onClick={async () => { await signOut(); navigate("/app/login"); }}
-        title="You are exploring as the demo investor. Sign in with your own wallet to invest.">
-        <Wallet size={15} /> <span className="hidden sm:inline">Demo · use your wallet</span>
+        title={tr({
+          en: "You are exploring as the demo investor. Sign in with your own wallet to invest.",
+          pt: "Você está explorando como o investidor de demonstração. Entre com a sua carteira para investir.",
+        })}>
+        <Wallet size={15} /> <span className="hidden sm:inline">{tr({ en: "Demo · use your wallet", pt: "Demo · use sua carteira" })}</span>
       </Button>
     );
   }
@@ -37,12 +41,17 @@ export default function WalletChip() {
     return (
       <>
         <Button size="sm" variant="secondary" className="gap-2" onClick={() => setConnecting(true)}>
-          <Wallet size={15} /> <span className="hidden sm:inline">Reconnect {shortAddress(wallet)}</span>
+          <Wallet size={15} /> <span className="hidden sm:inline">
+            {tr({ en: `Reconnect ${shortAddress(wallet)}`, pt: `Reconectar ${shortAddress(wallet)}` })}
+          </span>
         </Button>
         <ConnectWalletDialog open={connecting} onOpenChange={setConnecting}
           onConnected={(a) => {
             setConnecting(false);
-            if (a.address !== wallet) toast.error(`That wallet is ${shortAddress(a.address)}; you signed in as ${shortAddress(wallet)}.`);
+            if (a.address !== wallet) toast.error(tr({
+              en: `That wallet is ${shortAddress(a.address)}; you signed in as ${shortAddress(wallet)}.`,
+              pt: `Essa carteira é ${shortAddress(a.address)}; você entrou como ${shortAddress(wallet)}.`,
+            }));
           }} />
       </>
     );
@@ -59,8 +68,8 @@ export default function WalletChip() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 space-y-4 border-border bg-card">
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Wallet · Solana Devnet</p>
-          <button className="text-muted-foreground hover:text-foreground" onClick={() => balances.refetch()} aria-label="Refresh balances">
+          <p className="text-xs text-muted-foreground">{tr({ en: "Wallet · Solana Devnet", pt: "Carteira · Solana Devnet" })}</p>
+          <button className="text-muted-foreground hover:text-foreground" onClick={() => balances.refetch()} aria-label={tr({ en: "Refresh balances", pt: "Atualizar saldos" })}>
             <RefreshCw size={14} className={balances.isFetching ? "animate-spin" : ""} />
           </button>
         </div>
@@ -69,34 +78,41 @@ export default function WalletChip() {
             {shortAddress(wallet)}
           </a>
           <button className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            onClick={() => { void navigator.clipboard?.writeText(wallet); toast.success("Address copied"); }}>
-            <Copy size={12} /> Copy
+            onClick={() => { void navigator.clipboard?.writeText(wallet); toast.success(tr({ en: "Address copied", pt: "Endereço copiado" })); }}>
+            <Copy size={12} /> {tr({ en: "Copy", pt: "Copiar" })}
           </button>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg bg-secondary/60 p-3">
-            <p className="text-xs text-muted-foreground">SOL · fees</p>
+            <p className="text-xs text-muted-foreground">{tr({ en: "SOL · fees", pt: "SOL · taxas" })}</p>
             <p className="num font-heading text-lg font-bold text-foreground">{balances.data ? sol(balances.data.lamports) : "…"}</p>
           </div>
           <div className="rounded-lg bg-secondary/60 p-3">
-            <p className="text-xs text-muted-foreground">USDC · to invest</p>
+            <p className="text-xs text-muted-foreground">{tr({ en: "USDC · to invest", pt: "USDC · para investir" })}</p>
             <p className="num font-heading text-lg font-bold text-foreground">{balances.data ? usdc(balances.data.microUsdc) : "…"}</p>
           </div>
         </div>
         <div className="space-y-2 text-sm">
-          <p className="text-xs text-muted-foreground">Test tokens, no real value. Copy your address into a faucet:</p>
+          <p className="text-xs text-muted-foreground">
+            {tr({
+              en: "Test tokens, no real value. Copy your address into a faucet:",
+              pt: "Tokens de teste, sem valor real. Cole seu endereço em um faucet:",
+            })}
+          </p>
           <div className="flex flex-wrap gap-2">
             <a href={FAUCETS.sol} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 hover:bg-secondary">
-              Get test SOL <ExternalLink size={12} aria-hidden />
+              {tr({ en: "Get test SOL", pt: "Obter SOL de teste" })} <ExternalLink size={12} aria-hidden />
             </a>
             <a href={FAUCETS.usdc} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 hover:bg-secondary">
-              Get test USDC <ExternalLink size={12} aria-hidden />
+              {tr({ en: "Get test USDC", pt: "Obter USDC de teste" })} <ExternalLink size={12} aria-hidden />
             </a>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="w-full" onClick={() => setAccount(undefined)}>Disconnect wallet</Button>
+        <Button variant="ghost" size="sm" className="w-full" onClick={() => setAccount(undefined)}>
+          {tr({ en: "Disconnect wallet", pt: "Desconectar carteira" })}
+        </Button>
       </PopoverContent>
     </Popover>
   );

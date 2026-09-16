@@ -1,12 +1,6 @@
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 import { initialLocale, setCurrentLocale, STORAGE_KEY, type Locale } from "./index";
-
-interface LocaleContextValue {
-  locale: Locale;
-  setLocale: (locale: Locale) => void;
-}
-
-const LocaleContext = createContext<LocaleContextValue>({ locale: "en", setLocale: () => {} });
+import { LocaleContext } from "./useLocale";
 
 const readStored = () => {
   try {
@@ -52,5 +46,3 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({ locale, setLocale }), [locale, setLocale]);
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }
-
-export const useLocale = () => useContext(LocaleContext);

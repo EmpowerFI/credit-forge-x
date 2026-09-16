@@ -8,6 +8,7 @@ import { READINESS_TONE, requirementForLeader, REQUIREMENT_SHORT } from "../../l
 import { REASON_LABEL, STATUS_LABEL, type ReadinessStatus } from "../../lib/readiness";
 import { useCommunity } from "./context";
 import { useParticipants } from "./queries";
+import { tr } from "../../i18n";
 
 const STATUSES = Object.keys(STATUS_LABEL) as ReadinessStatus[];
 
@@ -49,8 +50,10 @@ export default function Readiness() {
   return (
     <div className="space-y-6">
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
-        <DataTag kind="derived" /> Derived by the readiness engine from education, reporting and data quality. Readiness is not a
-        credit decision: eligibility and P2P funding come later.
+        <DataTag kind="derived" /> {tr({
+          en: "Derived by the readiness engine from education, reporting and data quality. Readiness is not a credit decision: eligibility and P2P funding come later.",
+          pt: "Calculado pelo motor de prontidão a partir da formação, dos dados informados e da qualidade dos dados. Prontidão não é decisão de crédito: elegibilidade e captação P2P vêm depois.",
+        })}
       </p>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -61,13 +64,14 @@ export default function Readiness() {
           </Link>
         ))}
         <Link to="../participants?readiness=none" relative="path" className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <StatTile label="Not assessed yet" value={byStatus.get("none") ?? 0} hint="no check-in yet" />
+          <StatTile label={tr({ en: "Not assessed yet", pt: "Ainda não avaliadas" })} value={byStatus.get("none") ?? 0} hint={tr({ en: "no check-in yet", pt: "sem check-in ainda" })} />
         </Link>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="What is missing" description="Requirements not yet met, among those who need more data or preparation.">
-          {missingList.length === 0 ? <p className="text-sm text-muted-foreground">Nothing missing.</p> : (
+        <Panel title={tr({ en: "What is missing", pt: "O que falta" })}
+          description={tr({ en: "Requirements not yet met, among those who need more data or preparation.", pt: "Requisitos ainda não cumpridos por quem precisa de mais dados ou preparo." })}>
+          {missingList.length === 0 ? <p className="text-sm text-muted-foreground">{tr({ en: "Nothing missing.", pt: "Nada falta." })}</p> : (
             <ul className="space-y-2">
               {missingList.map(([code, n]) => (
                 <li key={code} className="grid grid-cols-[1fr_2.5rem] items-center gap-3 text-sm">
@@ -84,7 +88,8 @@ export default function Readiness() {
           )}
         </Panel>
 
-        <Panel title="Score distribution" description="The readiness score, 0–100: preparation, regularity, data quality and the business.">
+        <Panel title={tr({ en: "Score distribution", pt: "Distribuição das notas" })}
+          description={tr({ en: "The readiness score, 0–100: preparation, regularity, data quality and the business.", pt: "A nota de prontidão, de 0 a 100: preparo, regularidade, qualidade dos dados e o negócio." })}>
           <ul className="space-y-2">
             {bands.map((b) => (
               <li key={b.label} className="grid grid-cols-[4rem_1fr_2.5rem] items-center gap-3 text-sm">
@@ -100,8 +105,12 @@ export default function Readiness() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="One step from ready" description="A single requirement stands between them and CREDIT_READY: where the community's help goes furthest.">
-          {closest.length === 0 ? <p className="text-sm text-muted-foreground">Nobody is one requirement away right now.</p> : (
+        <Panel title={tr({ en: "One step from ready", pt: "A um passo de ficar pronta" })}
+          description={tr({
+            en: "A single requirement stands between them and CREDIT_READY: where the community's help goes furthest.",
+            pt: "Só um requisito separa essas participantes do CREDIT_READY: é onde a ajuda da comunidade rende mais.",
+          })}>
+          {closest.length === 0 ? <p className="text-sm text-muted-foreground">{tr({ en: "Nobody is one requirement away right now.", pt: "Ninguém está a um requisito de distância agora." })}</p> : (
             <ul className="divide-y divide-border text-sm">
               {closest.map((p) => (
                 <li key={p.entrepreneur_id} className="flex flex-wrap items-center justify-between gap-2 py-2">
@@ -113,18 +122,21 @@ export default function Readiness() {
           )}
         </Panel>
 
-        <Panel title="What the engine sees" description="Reason codes behind the latest assessments.">
+        <Panel title={tr({ en: "What the engine sees", pt: "O que o motor vê" })}
+          description={tr({ en: "Reason codes behind the latest assessments.", pt: "Os motivos por trás das últimas avaliações." })}>
           <div className="flex flex-wrap gap-2">
             {reasonList.map(([r, n]) => (
               <span key={r} className={`rounded-full border px-2.5 py-1 text-xs ${REASON_LABEL[r]?.positive === false ? "tone-caution" : "tone-positive"}`}>
                 {REASON_LABEL[r]?.text ?? r} · <span className="num">{n}</span>
               </span>
             ))}
-            {reasonList.length === 0 && <p className="text-sm text-muted-foreground">No assessments yet.</p>}
+            {reasonList.length === 0 && <p className="text-sm text-muted-foreground">{tr({ en: "No assessments yet.", pt: "Nenhuma avaliação ainda." })}</p>}
           </div>
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">{readyNotAsking.length}</span> ready and not asking for credit. That is a
-            complete outcome, not a gap to close.
+            {tr({
+              en: <><span className="font-medium text-foreground">{readyNotAsking.length}</span> ready and not asking for credit. That is a complete outcome, not a gap to close.</>,
+              pt: <><span className="font-medium text-foreground">{readyNotAsking.length}</span> prontas e sem pedir crédito. Isso é um resultado completo, não uma lacuna a fechar.</>,
+            })}
           </p>
         </Panel>
       </div>

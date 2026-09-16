@@ -6,7 +6,7 @@ import {
   type Signature,
 } from "@solana/kit";
 import { findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
-import { formatNumber } from "../i18n";
+import { formatNumber, tr } from "../i18n";
 
 // Devnet, where the whole platform runs: Circle's test USDC, the program's
 // vault, and the reads the investor console needs. Devnet tokens have no value.
@@ -85,11 +85,14 @@ export async function confirmSignature(signature: string, timeoutMs = 60_000): P
   while (Date.now() - started < timeoutMs) {
     const { value } = await rpc.getSignatureStatuses([signature as Signature]).send();
     const status = value[0];
-    if (status?.err) throw new Error("The transaction failed on chain.");
+    if (status?.err) throw new Error(tr({ en: "The transaction failed on chain.", pt: "A transação falhou na blockchain." }));
     if (status?.confirmationStatus === "confirmed" || status?.confirmationStatus === "finalized") return;
     await new Promise((r) => setTimeout(r, 1200));
   }
-  throw new Error("The transaction was not confirmed in time. It may still land; check the explorer.");
+  throw new Error(tr({
+    en: "The transaction was not confirmed in time. It may still land; check the explorer.",
+    pt: "A transação não foi confirmada a tempo. Ela ainda pode entrar; confira no explorer.",
+  }));
 }
 
 // ------------------------------------------------------------------ format

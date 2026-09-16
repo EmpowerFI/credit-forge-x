@@ -2,6 +2,7 @@ import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "../auth/useAuth";
 import { useLedCommunity } from "./community/queries";
+import { tr } from "../i18n";
 
 /**
  * Entrepreneurs start at their business, the P2P desk at its desk, capital
@@ -11,7 +12,7 @@ import { useLedCommunity } from "./community/queries";
 export default function HomeRedirect() {
   const { profile } = useAuth();
   const led = useLedCommunity();
-  if (profile?.role === "community_leader" && led.isPending) return <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
+  if (profile?.role === "community_leader" && led.isPending) return <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Loading", pt: "Carregando" })} />;
   const home =
     profile?.role === "community_leader" && led.data ? `/app/community/${led.data.id}` :
     profile?.role === "entrepreneur" ? "/app/me"

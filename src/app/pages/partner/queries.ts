@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { localized, tr } from "../../i18n";
 import type { LoanStatus } from "../../lib/credit";
 import { describeError } from "../../lib/errors";
 import type { PartnerDesk } from "../../lib/partner";
@@ -35,7 +36,10 @@ export function useDecline() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Declined. Any investor capital in it is on its way back.");
+      toast.success(tr({
+        en: "Declined. Any investor capital in it is on its way back.",
+        pt: "Recusada. O capital de investidores que houver nela está voltando para eles.",
+      }));
       refresh();
     },
     onError: (e) => toast.error(describeError(e)),
@@ -56,7 +60,10 @@ export function useFormaliseAndDisburse() {
       if (moveError) throw moveError;
     },
     onSuccess: () => {
-      toast.success("Formalised at the engine's rate and disbursed. Her Pix is recorded, and the loan is being proven on Solana.");
+      toast.success(tr({
+        en: "Formalised at the engine's rate and disbursed. Her Pix is recorded, and the loan is being proven on Solana.",
+        pt: "Formalizado com a taxa do motor e desembolsado. O Pix dela está registrado, e a prova do empréstimo está sendo registrada na Solana.",
+      }));
       refresh();
     },
     onError: (e) => {
@@ -66,13 +73,16 @@ export function useFormaliseAndDisburse() {
   });
 }
 
-const MOVED: Partial<Record<LoanStatus, string>> = {
-  DISBURSED: "Disbursed. Her Pix is recorded; for a global loan, investor USDC leaves the vault for the off-ramp.",
-  ACTIVE: "Repayment started. The first instalment is due in a month.",
-  PAID: "Paid off.",
-  DEFAULTED: "Marked defaulted.",
-  CANCELLED: "Declined at formalisation. Investors are being refunded.",
-};
+const MOVED: Partial<Record<LoanStatus, string>> = localized({
+  DISBURSED: {
+    en: "Disbursed. Her Pix is recorded; for a global loan, investor USDC leaves the vault for the off-ramp.",
+    pt: "Desembolsado. O Pix dela está registrado; num empréstimo global, o USDC dos investidores sai do cofre para o off-ramp.",
+  },
+  ACTIVE: { en: "Repayment started. The first instalment is due in a month.", pt: "Pagamentos iniciados. A primeira parcela vence em um mês." },
+  PAID: { en: "Paid off.", pt: "Quitado." },
+  DEFAULTED: { en: "Marked defaulted.", pt: "Marcado como inadimplente." },
+  CANCELLED: { en: "Declined at formalisation. Investors are being refunded.", pt: "Recusado na formalização. Os investidores estão sendo reembolsados." },
+});
 
 export function useTransition() {
   const refresh = useRefresh();
@@ -83,7 +93,7 @@ export function useTransition() {
       return to;
     },
     onSuccess: (to) => {
-      toast.success(MOVED[to] ?? "Updated.");
+      toast.success(MOVED[to] ?? tr({ en: "Updated.", pt: "Atualizado." }));
       refresh();
     },
     onError: (e) => toast.error(describeError(e)),
@@ -99,7 +109,10 @@ export function useRecordPayment() {
       return n;
     },
     onSuccess: (n) => {
-      toast.success(`Instalment ${n} recorded. Investors' shares go back to them.`);
+      toast.success(tr({
+        en: `Instalment ${n} recorded. Investors' shares go back to them.`,
+        pt: `Parcela ${n} registrada. As partes dos investidores voltam para eles.`,
+      }));
       refresh();
     },
     onError: (e) => toast.error(describeError(e)),

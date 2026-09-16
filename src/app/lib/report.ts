@@ -6,6 +6,7 @@ import {
   type Signature,
 } from "@solana/kit";
 import type { ConsentAudit, Models } from "../pages/audit/queries";
+import { localized, tr } from "../i18n";
 import { platform } from "./platform";
 import { PROGRAM_ID, rpc, vaultAddress } from "./solana";
 
@@ -137,6 +138,17 @@ async function statuses(signatures: string[]) {
   return out;
 }
 
+/**
+ * What a check found wrong with a proof. The issue is recorded in English with
+ * the report's checks; it reads in the current language through this.
+ */
+export const PROOF_ISSUE_LABEL: Record<string, string> = localized({
+  "transaction not found": { en: "transaction not found", pt: "transação não encontrada" },
+  "commitment not found": { en: "commitment not found", pt: "compromisso não encontrado" },
+});
+
+export const proofIssue = (issue: string) => PROOF_ISSUE_LABEL[issue] ?? issue;
+
 export interface ProofToVerify { kind: string; signature: string; account: string | null; commitment: string | null }
 
 export interface ProofVerification {
@@ -158,10 +170,10 @@ export async function verifyProofs(all: ProofToVerify[], onProgress?: (step: str
   const proofs = all.filter((p) => p.commitment && p.signature);
   const problems: ProofVerification["problems"] = [];
 
-  onProgress?.(`Looking up ${proofs.length} proof transactions`);
+  onProgress?.(tr({ en: `Looking up ${proofs.length} proof transactions`, pt: `Buscando ${proofs.length} transações de prova` }));
   const landed = await statuses(proofs.map((p) => p.signature));
 
-  onProgress?.("Reading the accounts that hold the commitments");
+  onProgress?.(tr({ en: "Reading the accounts that hold the commitments", pt: "Lendo as contas que guardam os compromissos" }));
   const found = new Set<string>();
   const withAccount = proofs.filter((p) => p.account);
   for (const batch of chunks(withAccount, 100)) {
@@ -175,7 +187,12 @@ export async function verifyProofs(all: ProofToVerify[], onProgress?: (step: str
   // The rest: in the transaction itself, two at a time to spare the public RPC.
   const rest = proofs.filter((p) => !found.has(p.signature) && landed.get(p.signature));
   const unreadable = new Set<string>();
-  onProgress?.(rest.length ? `Reading ${rest.length} transactions for commitments an account has moved past` : "Commitments read");
+  onProgress?.(rest.length
+    ? tr({
+      en: `Reading ${rest.length} transactions for commitments an account has moved past`,
+      pt: `Lendo ${rest.length} transações em busca de compromissos que a conta já não guarda`,
+    })
+    : tr({ en: "Commitments read", pt: "Compromissos lidos" }));
   for (const batch of chunks(rest, 2)) {
     await Promise.all(batch.map(async (p) => {
       const tx = await retried(() => rpc.getTransaction(p.signature as Signature, { encoding: "base64", maxSupportedTransactionVersion: 0 }).send())
@@ -210,10 +227,10 @@ export async function checkOnChain(snapshot: ReportSnapshot, onProgress?: (step:
     ...snapshot.settlement.refunds.map((r) => r.signature),
     ...(snapshot.zcash?.receipts ?? []).flatMap((r) => (r.credit_signature ? [r.credit_signature] : [])),
   ].filter(Boolean);
-  onProgress?.(`Looking up ${movements.length} vault transactions`);
+  onProgress?.(tr({ en: `Looking up ${movements.length} vault transactions`, pt: `Buscando ${movements.length} transações do cofre` }));
   const moved = await statuses(movements);
 
-  onProgress?.("Reading the vault's balance");
+  onProgress?.(tr({ en: "Reading the vault's balance", pt: "Lendo o saldo do cofre" }));
   const vault = await vaultAddress();
   const balance = await retried(() => rpc.getTokenAccountBalance(vault, { commitment: "confirmed" }).send())
     .then(({ value }) => Number(value.amount)).catch(() => null);

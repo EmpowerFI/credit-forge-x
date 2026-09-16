@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import PoolPill from "../../components/product/PoolPill";
 import StatusPill from "../../components/product/StatusPill";
+import { tr } from "../../i18n";
 import { REASON, type AllocationReason } from "../../lib/capital";
 import FundingBar from "../investor/FundingBar";
 import { fundingLine, rate, STAGE, type DeskFunding, type DeskLoan, type DeskOpportunity, type DeskStage } from "../../lib/partner";
@@ -40,12 +41,35 @@ export function FundingSummary({ funding, compact = false, amountCents = null }:
       <p className="text-xs text-muted-foreground">
         <StatusPill tone={line.tone} dot={!compact}>{line.label}</StatusPill>
         {!compact && funding.real_micro_usdc > 0 && (
-          <span className="ml-2">{usdc(funding.real_micro_usdc)} of it real devnet USDC, the rest simulated</span>
+          <span className="ml-2">{tr({
+            en: `${usdc(funding.real_micro_usdc)} of it real devnet USDC, the rest simulated`,
+            pt: `${usdc(funding.real_micro_usdc)} disso em USDC real na devnet; o resto é simulado`,
+          })}</span>
         )}
       </p>
     </div>
   );
 }
+
+/** What a decline does to the investors in it, before anything happens. */
+function RefundNote({ f, amount }: { f: DeskFunding; amount: boolean }) {
+  const real = f.real_micro_usdc > 0;
+  const one = f.investors === 1;
+  return (
+    <p className="rounded-lg border tone-caution p-3">
+      {tr({
+        en: `${f.investors} investor${one ? "" : "s"} put ${amount ? usdc(f.funded_micro_usdc) : "capital"} into it. Every allocation is refunded:${
+          real ? ` ${usdc(f.real_micro_usdc)} of real devnet USDC goes back from the vault to their wallets on its own,` : ""} simulated positions are closed.`,
+        pt: `${f.investors} ${one ? "investidor colocou" : "investidores colocaram"} ${amount ? usdc(f.funded_micro_usdc) : "capital"} nela. Toda alocação é reembolsada:${
+          real ? ` ${usdc(f.real_micro_usdc)} em USDC real na devnet voltam do cofre para as carteiras dos investidores automaticamente;` : ""} as posições simuladas são encerradas.`,
+      })}
+    </p>
+  );
+}
+
+const NOTHING_TO_REFUND = () => tr({ en: "No investor capital is in it: nothing to refund.", pt: "Não há capital de investidores nela: nada a reembolsar." });
+const REASON_PLACEHOLDER = () =>
+  tr({ en: "For example: documents incomplete, guarantor not reached", pt: "Por exemplo: documentos incompletos, avalista não localizado" });
 
 /** Declining before a loan exists: a reason, and what it does to her investors, before anything happens. */
 function DeclineOpportunityDialog({ o, open, onOpenChange }: { o: DeskOpportunity; open: boolean; onOpenChange: (v: boolean) => void }) {
@@ -56,29 +80,26 @@ function DeclineOpportunityDialog({ o, open, onOpenChange }: { o: DeskOpportunit
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Decline {o.participant}'s request</DialogTitle>
-          <DialogDescription>No loan is formalised. The opportunity leaves the market.</DialogDescription>
+          <DialogTitle>{tr({ en: `Decline ${o.participant}'s request`, pt: `Recusar o pedido de ${o.participant}` })}</DialogTitle>
+          <DialogDescription>
+            {tr({ en: "No loan is formalised. The opportunity leaves the market.", pt: "Nenhum empréstimo é formalizado. A oportunidade sai do mercado." })}
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
-          {f.funded_micro_usdc > 0 ? (
-            <p className="rounded-lg border tone-caution p-3">
-              {f.investors} investor{f.investors === 1 ? "" : "s"} put capital into it. Every allocation is refunded:
-              {f.real_micro_usdc > 0 ? ` ${usdc(f.real_micro_usdc)} of real devnet USDC goes back from the vault to their wallets on its own,` : ""} simulated positions are closed.
-            </p>
-          ) : (
-            <p className="text-muted-foreground">No investor capital is in it: nothing to refund.</p>
+          {f.funded_micro_usdc > 0 ? <RefundNote f={f} amount={false} /> : (
+            <p className="text-muted-foreground">{NOTHING_TO_REFUND()}</p>
           )}
           <div className="space-y-1.5">
-            <Label htmlFor={`why-o-${o.opportunity_id}`}>Reason</Label>
+            <Label htmlFor={`why-o-${o.opportunity_id}`}>{tr({ en: "Reason", pt: "Motivo" })}</Label>
             <Textarea id={`why-o-${o.opportunity_id}`} rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)}
-              placeholder="For example: documents incomplete, guarantor not reached" />
+              placeholder={REASON_PLACEHOLDER()} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Keep it</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{tr({ en: "Keep it", pt: "Manter" })}</Button>
           <Button variant="destructive" disabled={!reason.trim() || decline.isPending}
             onClick={() => decline.mutate({ opportunityId: o.opportunity_id, reason: reason.trim() }, { onSuccess: () => onOpenChange(false) })}>
-            {decline.isPending && <Loader2 size={14} className="mr-1 animate-spin" />} Decline and refund
+            {decline.isPending && <Loader2 size={14} className="mr-1 animate-spin" />} {tr({ en: "Decline and refund", pt: "Recusar e reembolsar" })}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -95,19 +116,27 @@ export function OpportunityActions({ o, decides }: { o: DeskOpportunity; decides
   const listed = Boolean(o.funding.status);
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button size="sm" disabled={!funded || formalise.isPending} className="gap-1.5" title={funded ? undefined : "Investors have not funded it yet"}
+      <Button size="sm" disabled={!funded || formalise.isPending} className="gap-1.5" title={funded ? undefined : tr({ en: "Investors have not funded it yet", pt: "Ainda não está 100% captada" })}
         onClick={() => formalise.mutate({ opportunityId: o.opportunity_id })}>
-        {formalise.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />} Formalise and disburse
+        {formalise.isPending ? <Loader2 size={14} className="animate-spin" /> : <Banknote size={14} />} {tr({ en: "Formalise and disburse", pt: "Formalizar e desembolsar" })}
       </Button>
-      <Button size="sm" variant="ghost" disabled={formalise.isPending} onClick={() => setDeclining(true)}>Decline</Button>
+      <Button size="sm" variant="ghost" disabled={formalise.isPending} onClick={() => setDeclining(true)}>{tr({ en: "Decline", pt: "Recusar" })}</Button>
       {!funded && (
         <span className="text-xs text-muted-foreground">
-          {listed ? "Formalising opens once investors have funded it." : "No pool can fund it yet."}
-          {o.funding.rate_bps_month !== null && ` It will carry ${rate(o.funding.rate_bps_month)}, the engine's rate.`}
+          {listed
+            ? tr({ en: "Formalising opens once investors have funded it.", pt: "A formalização abre quando ela estiver 100% captada." })
+            : tr({ en: "No pool can fund it yet.", pt: "Nenhum pool pode financiá-la ainda." })}
+          {o.funding.rate_bps_month !== null
+            && tr({ en: ` It will carry ${rate(o.funding.rate_bps_month)}, the engine's rate.`, pt: ` Ela terá ${rate(o.funding.rate_bps_month)}, a taxa do motor.` })}
         </span>
       )}
       {funded && o.funding.rate_bps_month !== null && (
-        <span className="text-xs text-muted-foreground">At {rate(o.funding.rate_bps_month)}: {o.term_months} × {money(o.funding.instalment_cents)}.</span>
+        <span className="text-xs text-muted-foreground">
+          {tr({
+            en: `At ${rate(o.funding.rate_bps_month)}: ${o.term_months} × ${money(o.funding.instalment_cents)}.`,
+            pt: `Com ${rate(o.funding.rate_bps_month)}: ${o.term_months} × ${money(o.funding.instalment_cents)}.`,
+          })}
+        </span>
       )}
       <DeclineOpportunityDialog o={o} open={declining} onOpenChange={setDeclining} />
     </div>
@@ -123,32 +152,32 @@ function DeclineDialog({ loan, open, onOpenChange }: { loan: DeskLoan; open: boo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Decline at formalisation</DialogTitle>
+          <DialogTitle>{tr({ en: "Decline at formalisation", pt: "Recusar na formalização" })}</DialogTitle>
           <DialogDescription>
-            {loan.participant}'s loan of {money(loan.principal_cents)} will not be signed. The opportunity closes and is proven cancelled on Solana.
+            {tr({
+              en: `${loan.participant}'s loan of ${money(loan.principal_cents)} will not be signed. The opportunity closes and is proven cancelled on Solana.`,
+              pt: `O empréstimo de ${money(loan.principal_cents)} para ${loan.participant} não será assinado. A oportunidade é encerrada, e o cancelamento é registrado na Solana.`,
+            })}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
-          {f.status && f.funded_micro_usdc > 0 ? (
-            <p className="rounded-lg border tone-caution p-3">
-              {f.investors} investor{f.investors === 1 ? "" : "s"} put {usdc(f.funded_micro_usdc)} into it. Every allocation is refunded:
-              {f.real_micro_usdc > 0 ? ` ${usdc(f.real_micro_usdc)} of real devnet USDC goes back from the vault to their wallets on its own,` : ""} simulated positions are closed.
-            </p>
-          ) : (
-            <p className="text-muted-foreground">No investor capital is in it: nothing to refund.</p>
+          {f.status && f.funded_micro_usdc > 0 ? <RefundNote f={f} amount /> : (
+            <p className="text-muted-foreground">{NOTHING_TO_REFUND()}</p>
           )}
           <div className="space-y-1.5">
-            <Label htmlFor={`why-${loan.id}`}>Reason</Label>
+            <Label htmlFor={`why-${loan.id}`}>{tr({ en: "Reason", pt: "Motivo" })}</Label>
             <Textarea id={`why-${loan.id}`} rows={3} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)}
-              placeholder="For example: documents incomplete, guarantor not reached" />
-            <p className="text-xs text-muted-foreground">Her investors see this reason on their position.</p>
+              placeholder={REASON_PLACEHOLDER()} />
+            <p className="text-xs text-muted-foreground">
+              {tr({ en: "Her investors see this reason on their position.", pt: "Os investidores dela veem este motivo na posição deles." })}
+            </p>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Keep the loan</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{tr({ en: "Keep the loan", pt: "Manter o empréstimo" })}</Button>
           <Button variant="destructive" disabled={!reason.trim() || move.isPending}
             onClick={() => move.mutate({ loanId: loan.id, to: "CANCELLED", note: reason.trim() }, { onSuccess: () => onOpenChange(false) })}>
-            {move.isPending && <Loader2 size={14} className="mr-1 animate-spin" />} Decline and refund
+            {move.isPending && <Loader2 size={14} className="mr-1 animate-spin" />} {tr({ en: "Decline and refund", pt: "Recusar e reembolsar" })}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -171,9 +200,9 @@ export function LoanActions({ loan, decides }: { loan: DeskLoan; decides: boolea
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" disabled={busy} className="gap-1.5"
           onClick={() => move.mutate({ loanId: loan.id, to: "DISBURSED", note: "Contract signed; Pix sent" })}>
-          {spin(move.isPending && move.variables?.to === "DISBURSED") || <Banknote size={14} />} Disburse
+          {spin(move.isPending && move.variables?.to === "DISBURSED") || <Banknote size={14} />} {tr({ en: "Disburse", pt: "Desembolsar" })}
         </Button>
-        <Button size="sm" variant="ghost" disabled={busy} onClick={() => setDeclining(true)}>Decline</Button>
+        <Button size="sm" variant="ghost" disabled={busy} onClick={() => setDeclining(true)}>{tr({ en: "Decline", pt: "Recusar" })}</Button>
         <DeclineDialog loan={loan} open={declining} onOpenChange={setDeclining} />
       </div>
     );
@@ -181,7 +210,7 @@ export function LoanActions({ loan, decides }: { loan: DeskLoan; decides: boolea
   if (loan.status === "DISBURSED") {
     return (
       <Button size="sm" disabled={busy} className="gap-1.5" onClick={() => move.mutate({ loanId: loan.id, to: "ACTIVE" })}>
-        {spin(move.isPending) || <PlayCircle size={14} />} Start repayment
+        {spin(move.isPending) || <PlayCircle size={14} />} {tr({ en: "Start repayment", pt: "Iniciar pagamentos" })}
       </Button>
     );
   }
@@ -191,32 +220,36 @@ export function LoanActions({ loan, decides }: { loan: DeskLoan; decides: boolea
         {next && (
           <Button size="sm" disabled={busy} className="gap-1.5"
             onClick={() => pay.mutate({ loanId: loan.id, n: next.instalment_no, cents: loan.instalment_cents })}>
-            {spin(pay.isPending) || <Receipt size={14} />} Record instalment {next.instalment_no}
+            {spin(pay.isPending) || <Receipt size={14} />} {tr({ en: `Record instalment ${next.instalment_no}`, pt: `Registrar parcela ${next.instalment_no}` })}
           </Button>
         )}
         {!next && (
           <Button size="sm" disabled={busy} onClick={() => move.mutate({ loanId: loan.id, to: "PAID", note: "All instalments received" })}>
-            {spin(move.isPending)} Mark paid off
+            {spin(move.isPending)} {tr({ en: "Mark paid off", pt: "Marcar como quitado" })}
           </Button>
         )}
         {loan.overdue > 0 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button size="sm" variant="ghost" disabled={busy}>Mark defaulted</Button>
+              <Button size="sm" variant="ghost" disabled={busy}>{tr({ en: "Mark defaulted", pt: "Marcar como inadimplente" })}</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Mark {loan.participant}'s loan defaulted?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {tr({ en: `Mark ${loan.participant}'s loan defaulted?`, pt: `Marcar o empréstimo de ${loan.participant} como inadimplente?` })}
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  {loan.overdue} instalment{loan.overdue === 1 ? " is" : "s are"} overdue. A default is final: it is proven on Solana, her investors see it on
-                  their positions, and no further instalments can be recorded.
+                  {tr({
+                    en: `${loan.overdue} instalment${loan.overdue === 1 ? " is" : "s are"} overdue. A default is final: it is proven on Solana, her investors see it on their positions, and no further instalments can be recorded.`,
+                    pt: `${loan.overdue} ${loan.overdue === 1 ? "parcela está" : "parcelas estão"} em atraso. A inadimplência é definitiva: ela é registrada na Solana, os investidores dela a veem nas posições deles, e nenhuma outra parcela pode ser registrada.`,
+                  })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Keep following up</AlertDialogCancel>
+                <AlertDialogCancel>{tr({ en: "Keep following up", pt: "Continuar acompanhando" })}</AlertDialogCancel>
                 <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   onClick={() => move.mutate({ loanId: loan.id, to: "DEFAULTED", note: `${loan.overdue} instalment${loan.overdue === 1 ? "" : "s"} overdue` })}>
-                  Mark defaulted
+                  {tr({ en: "Mark defaulted", pt: "Marcar como inadimplente" })}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

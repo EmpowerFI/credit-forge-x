@@ -16,6 +16,13 @@ import { fetchRampQuote, inRampRange, RAMP_MIN_MICRO_USDC, rampFeeBps, rampQuote
 import { money } from "../../lib/readiness";
 import { mockPixE2e, reaisAtRamp, REALITY, type Reality, type SettlementOverview, WHAT_IS_REAL } from "../../lib/settlement";
 import { rpc, usdc, vaultAddress } from "../../lib/solana";
+import { formatDateTime, formatNumber, formatTime, tr } from "../../i18n";
+
+/** A percentage to two places: 0.50% or 0,50%. */
+const pct2 = (value: number) => `${formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+/** Reais per USDC, in the Brazilian format in both languages. */
+const reaisRate = (value: number, digits: number) =>
+  `R$ ${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value)}`;
 
 // Where capital goes after it is allocated, and how it comes back: the legs
 // that are real transactions on devnet, and the ones that are simulated or
@@ -108,9 +115,16 @@ function Simulator({ fxMilli, rampBps }: { fxMilli: number; rampBps: number }) {
     </div>
   );
   return (
-    <Panel title="Global route · off-ramp simulator" description="What a USDC release becomes in reais on her side of the global route, at MoneyGram's sandbox quote or at assumptions you set. The domestic route has no conversion: reais in, reais out.">
-      <div role="radiogroup" aria-label="Quote from" className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
-        {([["moneygram", "MoneyGram sandbox", "a live quote, $2–$200"], ["demo", "Demo assumptions", "a quote and spread you set"]] as const).map(([key, label, hint]) => (
+    <Panel title={tr({ en: "Global route · off-ramp simulator", pt: "Rota global · simulador de off-ramp" })}
+      description={tr({
+        en: "What a USDC release becomes in reais on her side of the global route, at MoneyGram's sandbox quote or at assumptions you set. The domestic route has no conversion: reais in, reais out.",
+        pt: "Quanto uma liberação em USDC vira em reais do lado dela na rota global, pela cotação do sandbox da MoneyGram ou por premissas que você define. A rota doméstica não tem conversão: entra real, sai real.",
+      })}>
+      <div role="radiogroup" aria-label={tr({ en: "Quote from", pt: "Cotação de" })} className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
+        {([
+          ["moneygram", tr({ en: "MoneyGram sandbox", pt: "Sandbox da MoneyGram" }), tr({ en: "a live quote, $2–$200", pt: "cotação ao vivo, US$ 2–200" })],
+          ["demo", tr({ en: "Demo assumptions", pt: "Premissas da demo" }), tr({ en: "a quote and spread you set", pt: "cotação e spread definidos por você" })],
+        ] as const).map(([key, label, hint]) => (
           <button key={key} type="button" role="radio" aria-checked={source === key} onClick={() => change(setSource)(key)}
             className={`rounded-lg px-2 py-1.5 text-left transition-colors ${source === key ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
             <span className="block text-sm font-semibold">{label}</span>
@@ -121,41 +135,46 @@ function Simulator({ fxMilli, rampBps }: { fxMilli: number; rampBps: number }) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2 space-y-1.5">
-          <Label htmlFor="sim-usdc">USDC released</Label>
+          <Label htmlFor="sim-usdc">{tr({ en: "USDC released", pt: "USDC liberados" })}</Label>
           <Input id="sim-usdc" type="number" min={0} step="1" value={amount} onChange={(e) => change(setAmount)(Math.max(0, Number(e.target.value) || 0))} />
         </div>
         {source === "demo" && (
           <>
             <div className="space-y-1.5">
-              <Label htmlFor="sim-fx" className="text-xs">Quote, R$ per USDC</Label>
+              <Label htmlFor="sim-fx" className="text-xs">{tr({ en: "Quote, R$ per USDC", pt: "Cotação, R$ por USDC" })}</Label>
               <Input id="sim-fx" type="number" min={0} step="0.01" value={fx} onChange={(e) => change(setFx)(Math.max(0, Number(e.target.value) || 0))} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="sim-spread" className="text-xs">Ramp spread, %</Label>
+              <Label htmlFor="sim-spread" className="text-xs">{tr({ en: "Ramp spread, %", pt: "Spread da rampa, %" })}</Label>
               <Input id="sim-spread" type="number" min={0} step="0.05" value={spread} onChange={(e) => change(setSpread)(Math.max(0, Number(e.target.value) || 0))} />
             </div>
           </>
         )}
         <div className="col-span-2 space-y-1.5">
-          <Label htmlFor="sim-tax" className="text-xs">Tax on the inbound conversion, % (an assumption to be validated)</Label>
+          <Label htmlFor="sim-tax" className="text-xs">{tr({ en: "Tax on the inbound conversion, % (an assumption to be validated)", pt: "Imposto sobre a conversão de entrada, % (premissa a validar)" })}</Label>
           <Input id="sim-tax" type="number" min={0} step="0.01" value={tax} onChange={(e) => change(setTax)(Math.max(0, Number(e.target.value) || 0))} />
         </div>
       </div>
 
       {source === "demo" ? (
         <div className="divide-y divide-border rounded-xl border border-border px-3">
-          {row("At the quote", money(gross))}
-          {row(`Ramp spread (${spread.toFixed(2)}%)`, `− ${money(spreadCents)}`)}
-          {row(`Tax (${tax.toFixed(2)}%)`, `− ${money(demoTax)}`)}
-          {row("Pix fee", money(0))}
-          {row("She receives by Pix", money(demoNet), true)}
+          {row(tr({ en: "At the quote", pt: "Pela cotação" }), money(gross))}
+          {row(tr({ en: `Ramp spread (${pct2(spread)})`, pt: `Spread da rampa (${pct2(spread)})` }), `− ${money(spreadCents)}`)}
+          {row(tr({ en: `Tax (${pct2(tax)})`, pt: `Imposto (${pct2(tax)})` }), `− ${money(demoTax)}`)}
+          {row(tr({ en: "Pix fee", pt: "Tarifa do Pix" }), money(0))}
+          {row(tr({ en: "She receives by Pix", pt: "Ela recebe por Pix" }), money(demoNet), true)}
         </div>
       ) : !inRampRange(micro) ? (
         <div className="space-y-2 rounded-xl border border-dashed border-border p-3 text-sm">
-          <p className="text-foreground">MoneyGram's sandbox quotes a transfer from 2 to 200 USDC.</p>
-          <p className="text-xs text-muted-foreground">A loan is released in larger amounts: switch to the demo assumptions for those, or quote a transfer MoneyGram would carry.</p>
+          <p className="text-foreground">{tr({ en: "MoneyGram's sandbox quotes a transfer from 2 to 200 USDC.", pt: "O sandbox da MoneyGram cota transferências de 2 a 200 USDC." })}</p>
+          <p className="text-xs text-muted-foreground">
+            {tr({
+              en: "A loan is released in larger amounts: switch to the demo assumptions for those, or quote a transfer MoneyGram would carry.",
+              pt: "Um empréstimo é liberado em valores maiores: para esses, use as premissas da demo, ou cote uma transferência que a MoneyGram faria.",
+            })}
+          </p>
           <Button size="sm" variant="outline" onClick={() => change(setAmount)(micro < RAMP_MIN_MICRO_USDC ? 2 : 200)}>
-            Quote {micro < RAMP_MIN_MICRO_USDC ? "2" : "200"} USDC
+            {tr({ en: "Quote", pt: "Cotar" })} {micro < RAMP_MIN_MICRO_USDC ? "2" : "200"} USDC
           </Button>
         </div>
       ) : quote.isError && !waiting ? (
@@ -163,34 +182,41 @@ function Simulator({ fxMilli, rampBps }: { fxMilli: number; rampBps: number }) {
       ) : (
         <div className="space-y-2" aria-live="polite" aria-busy={waiting}>
           <div className="divide-y divide-border rounded-xl border border-border px-3">
-            {row("Sent to MoneyGram", q ? usdc(q.send_micro_usdc) : "…")}
-            {row(q ? `MoneyGram's fee (${(rampFeeBps(q) / 100).toFixed(2)}%)` : "MoneyGram's fee", q ? `− ${usdc(q.fee_micro_usdc)}` : "…")}
-            {row(q ? `At MoneyGram's rate, R$ ${q.brl_per_usdc.toFixed(4)}${q.rate_estimated ? " (estimated)" : ""}` : "At MoneyGram's rate", q ? money(q.receive_cents) : "…")}
-            {row(`Tax (${tax.toFixed(2)}%)`, mg ? `− ${money(mg.tax_cents)}` : "…")}
-            {row("She receives", mg ? money(mg.net_cents) : "…", true)}
+            {row(tr({ en: "Sent to MoneyGram", pt: "Enviado à MoneyGram" }), q ? usdc(q.send_micro_usdc) : "…")}
+            {row(q ? tr({ en: `MoneyGram's fee (${pct2(rampFeeBps(q) / 100)})`, pt: `Taxa da MoneyGram (${pct2(rampFeeBps(q) / 100)})` })
+              : tr({ en: "MoneyGram's fee", pt: "Taxa da MoneyGram" }), q ? `− ${usdc(q.fee_micro_usdc)}` : "…")}
+            {row(q ? tr({
+              en: `At MoneyGram's rate, ${reaisRate(q.brl_per_usdc, 4)}${q.rate_estimated ? " (estimated)" : ""}`,
+              pt: `Pelo câmbio da MoneyGram, ${reaisRate(q.brl_per_usdc, 4)}${q.rate_estimated ? " (estimado)" : ""}`,
+            }) : tr({ en: "At MoneyGram's rate", pt: "Pelo câmbio da MoneyGram" }), q ? money(q.receive_cents) : "…")}
+            {row(tr({ en: `Tax (${pct2(tax)})`, pt: `Imposto (${pct2(tax)})` }), mg ? `− ${money(mg.tax_cents)}` : "…")}
+            {row(tr({ en: "She receives", pt: "Ela recebe" }), mg ? money(mg.net_cents) : "…", true)}
           </div>
           <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
             {waiting ? <Loader2 size={12} className="mt-0.5 shrink-0 animate-spin" /> : <StatusPill tone={REALITY.sandbox.tone} dot={false}>{REALITY.sandbox.label}</StatusPill>}
             <span>
-              {q ? <>Quoted at {new Date(q.quoted_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} as <span title={q.service}>a cash pickup in Brazil</span>, the only delivery the sandbox prices there; the Pix to her account stays a mock. </> : "Asking MoneyGram's sandbox… "}
-              At the demo assumptions she would receive {money(demoNet)}.
+              {q ? tr({
+                en: <>Quoted at {formatTime(q.quoted_at, { hour: "2-digit", minute: "2-digit" })} as <span title={q.service}>a cash pickup in Brazil</span>, the only delivery the sandbox prices there; the Pix to her account stays a mock. </>,
+                pt: <>Cotado às {formatTime(q.quoted_at, { hour: "2-digit", minute: "2-digit" })} como <span title={q.service}>retirada em dinheiro no Brasil</span>, a única forma de entrega que o sandbox cota lá; o Pix para a conta dela continua fictício. </>,
+              }) : tr({ en: "Asking MoneyGram's sandbox… ", pt: "Consultando o sandbox da MoneyGram… " })}
+              {tr({ en: <>At the demo assumptions she would receive {money(demoNet)}.</>, pt: <>Pelas premissas da demo, ela receberia {money(demoNet)}.</> })}
             </span>
           </p>
         </div>
       )}
 
       <Button variant="secondary" className="w-full" disabled={net <= 0} onClick={() => setReceipt({ e2e: mockPixE2e(), at: new Date(), cents: net })}>
-        <Receipt size={15} /> Run a mock Pix settlement
+        <Receipt size={15} /> {tr({ en: "Run a mock Pix settlement", pt: "Simular uma liquidação por Pix fictícia" })}
       </Button>
       {receipt && (
         <div className="space-y-1.5 rounded-xl border border-dashed border-border p-3 text-sm" aria-live="polite">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-medium text-foreground">Pix settled</span>
-            <StatusPill tone={REALITY.mock.tone}>Mock · no Pix was sent</StatusPill>
+            <span className="font-medium text-foreground">{tr({ en: "Pix settled", pt: "Pix liquidado" })}</span>
+            <StatusPill tone={REALITY.mock.tone}>{tr({ en: "Mock · no Pix was sent", pt: "Fictício · nenhum Pix foi enviado" })}</StatusPill>
           </div>
-          <p className="num text-foreground">{money(receipt.cents)} → her business account, by Pix</p>
+          <p className="num text-foreground">{money(receipt.cents)} → {tr({ en: "her business account, by Pix", pt: "conta do negócio dela, por Pix" })}</p>
           <p className="break-all font-mono text-xs text-muted-foreground">{receipt.e2e}</p>
-          <p className="text-xs text-muted-foreground">{receipt.at.toLocaleString("en-GB")} · end-to-end id in Pix's format, invented</p>
+          <p className="text-xs text-muted-foreground">{formatDateTime(receipt.at)} · {tr({ en: "end-to-end id in Pix's format, invented", pt: "ID end-to-end no formato do Pix, inventado" })}</p>
         </div>
       )}
 
@@ -215,66 +241,114 @@ export default function Settlement() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Investor console" title="Settlement"
-        description="How capital reaches her business and comes back, by either route. Global P2P: deposits, releases and payouts are real transactions on Solana devnet, the conversion to reais is simulated (with a live MoneyGram sandbox quote in the simulator), and Pix is a mock. Domestic P2P: a simulated BRL pool and a mock Pix. Every screen says which is which." />
+      <PageHeader eyebrow={tr({ en: "Investor console", pt: "Console do investidor" })} title={tr({ en: "Settlement", pt: "Liquidação" })}
+        description={tr({
+          en: "How capital reaches her business and comes back, by either route. Global P2P: deposits, releases and payouts are real transactions on Solana devnet, the conversion to reais is simulated (with a live MoneyGram sandbox quote in the simulator), and Pix is a mock. Domestic P2P: a simulated BRL pool and a mock Pix. Every screen says which is which.",
+          pt: "Como o capital chega ao negócio dela e volta, pelas duas rotas. P2P Global: depósitos, liberações e repasses são transações reais na Solana devnet, a conversão para reais é simulada (com uma cotação ao vivo do sandbox da MoneyGram no simulador) e o Pix é fictício. P2P Doméstico: um pool em reais simulado e um Pix fictício. Cada tela diz o que é o quê.",
+        })} />
 
       {!d ? <Skeleton className="h-64 w-full" /> : (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile label="Paid out to you" value={usdc(d.mine.paid_out_micro_usdc)} hint={`${d.mine.payouts} payout${d.mine.payouts === 1 ? "" : "s"} to your wallet`} hintTone="positive" />
-            <StatTile label="On its way to you" value={usdc(d.mine.due_micro_usdc)} hint="instalments being paid out" />
-            <StatTile label="Held for you" value={usdc(d.mine.held_micro_usdc)} hint="ZEC positions with no Solana wallet" hintTone={d.mine.held_micro_usdc ? "caution" : undefined} />
-            <StatTile label="In the vault" value={chain.data ? usdc(chain.data.micro) : chain.isPending ? "…" : "—"}
-              hint={chain.data && chain.data.micro === d.vault.in_vault_micro_usdc ? "matches every recorded movement" : `ledger says ${usdc(d.vault.in_vault_micro_usdc)}`}
+            <StatTile label={tr({ en: "Paid out to you", pt: "Repassado a você" })} value={usdc(d.mine.paid_out_micro_usdc)}
+              hint={tr({
+                en: `${d.mine.payouts} payout${d.mine.payouts === 1 ? "" : "s"} to your wallet`,
+                pt: `${d.mine.payouts} ${d.mine.payouts === 1 ? "repasse" : "repasses"} para a sua carteira`,
+              })} hintTone="positive" />
+            <StatTile label={tr({ en: "On its way to you", pt: "A caminho de você" })} value={usdc(d.mine.due_micro_usdc)} hint={tr({ en: "instalments being paid out", pt: "parcelas sendo repassadas" })} />
+            <StatTile label={tr({ en: "Held for you", pt: "Retido para você" })} value={usdc(d.mine.held_micro_usdc)}
+              hint={tr({ en: "ZEC positions with no Solana wallet", pt: "posições em ZEC sem carteira Solana" })} hintTone={d.mine.held_micro_usdc ? "caution" : undefined} />
+            <StatTile label={tr({ en: "In the vault", pt: "No cofre" })} value={chain.data ? usdc(chain.data.micro) : chain.isPending ? "…" : "—"}
+              hint={chain.data && chain.data.micro === d.vault.in_vault_micro_usdc
+                ? tr({ en: "matches every recorded movement", pt: "confere com cada movimentação registrada" })
+                : tr({ en: `ledger says ${usdc(d.vault.in_vault_micro_usdc)}`, pt: `o livro-razão diz ${usdc(d.vault.in_vault_micro_usdc)}` })}
               hintTone={chain.data && chain.data.micro === d.vault.in_vault_micro_usdc ? "positive" : "caution"} />
           </div>
 
-          <Panel title="Domestic P2P · the route" description="Brazilian investors' capital, in reais: no wallet, no conversion.">
+          <Panel title={tr({ en: "Domestic P2P · the route", pt: "P2P Doméstico · a rota" })}
+            description={tr({ en: "Brazilian investors' capital, in reais: no wallet, no conversion.", pt: "Capital de investidores brasileiros, em reais: sem carteira, sem conversão." })}>
             <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
-              <Node icon={Landmark} title="Brazilian investors" reality="simulated">A BRL pool, allocated in reais. No bank transfer in this prototype.</Node>
-              <Arrow label="allocation" />
-              <Node icon={Vault} title="P2P structure" reality="simulated">Formalised and serviced by EmpowerFI's P2P desk, at the allocation engine's rate.</Node>
+              <Node icon={Landmark} title={tr({ en: "Brazilian investors", pt: "Investidores brasileiros" })} reality="simulated">
+                {tr({ en: "A BRL pool, allocated in reais. No bank transfer in this prototype.", pt: "Um pool em reais, alocado em reais. Sem transferência bancária neste protótipo." })}
+              </Node>
+              <Arrow label={tr({ en: "allocation", pt: "alocação" })} />
+              <Node icon={Vault} title={tr({ en: "P2P structure", pt: "Estrutura P2P" })} reality="simulated">
+                {tr({
+                  en: "Formalised and serviced by EmpowerFI's P2P desk, at the allocation engine's rate.",
+                  pt: "Formalizado e acompanhado pela mesa P2P da EmpowerFI, à taxa do Motor de Alocação de Capital.",
+                })}
+              </Node>
               <Arrow label="Pix" />
-              <Node icon={Store} title="Her business" reality="mock">Receives and repays in reais, by Pix.</Node>
+              <Node icon={Store} title={tr({ en: "Her business", pt: "O negócio dela" })} reality="mock">
+                {tr({ en: "Receives and repays in reais, by Pix.", pt: "Recebe e paga em reais, por Pix." })}
+              </Node>
             </div>
           </Panel>
 
-          <Panel title="Global P2P · the route" description="Out to her business when EmpowerFI's P2P desk disburses, and back to investors with each instalment.">
+          <Panel title={tr({ en: "Global P2P · the route", pt: "P2P Global · a rota" })}
+            description={tr({
+              en: "Out to her business when EmpowerFI's P2P desk disburses, and back to investors with each instalment.",
+              pt: "Vai para o negócio dela quando a mesa P2P da EmpowerFI desembolsa, e volta aos investidores a cada parcela.",
+            })}>
             <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
-              <Node icon={Wallet} title="Investors" reality="real">
-                {usdc(d.vault.deposits_micro_usdc)} deposited by wallet or shielded ZEC, and not refunded.
+              <Node icon={Wallet} title={tr({ en: "Investors", pt: "Investidores" })} reality="real">
+                {tr({
+                  en: <>{usdc(d.vault.deposits_micro_usdc)} deposited by wallet or shielded ZEC, and not refunded.</>,
+                  pt: <>{usdc(d.vault.deposits_micro_usdc)} depositados por carteira ou ZEC blindado, e não reembolsados.</>,
+                })}
               </Node>
-              <Arrow label="deposit" />
-              <Node icon={Vault} title="Program vault" reality="real">
-                Holds {chain.data ? usdc(chain.data.micro) : "…"}. {chain.data && <ExplorerLink address={chain.data.vault} />}
+              <Arrow label={tr({ en: "deposit", pt: "depósito" })} />
+              <Node icon={Vault} title={tr({ en: "Program vault", pt: "Cofre do programa" })} reality="real">
+                {tr({ en: "Holds", pt: "Guarda" })} {chain.data ? usdc(chain.data.micro) : "…"}. {chain.data && <ExplorerLink address={chain.data.vault} />}
               </Node>
-              <Arrow label="release, batched" />
-              <Node icon={Landmark} title="Regulated off-ramp" reality="simulated">
-                {usdc(d.vault.released_micro_usdc)} released, turned into reais at R$ {(d.fx_brl_per_usdc_milli / 1000).toFixed(2)} less {(d.ramp_bps / 100).toFixed(2)}%. The simulator prices it with MoneyGram's sandbox.
+              <Arrow label={tr({ en: "release, batched", pt: "liberação, em lote" })} />
+              <Node icon={Landmark} title={tr({ en: "Regulated off-ramp", pt: "Off-ramp regulado" })} reality="simulated">
+                {tr({
+                  en: `${usdc(d.vault.released_micro_usdc)} released, turned into reais at ${money(d.fx_brl_per_usdc_milli / 10)} less ${pct2(d.ramp_bps / 100)}. The simulator prices it with MoneyGram's sandbox.`,
+                  pt: `${usdc(d.vault.released_micro_usdc)} liberados, convertidos em reais a ${money(d.fx_brl_per_usdc_milli / 10)}, menos ${pct2(d.ramp_bps / 100)}. O simulador cota com o sandbox da MoneyGram.`,
+                })}
               </Node>
               <Arrow label="Pix" />
-              <Node icon={Store} title="Her business" reality="mock">
-                {d.pix.payouts} loan{d.pix.payouts === 1 ? "" : "s"} paid by Pix, {money(d.pix.payout_cents)}.
+              <Node icon={Store} title={tr({ en: "Her business", pt: "O negócio dela" })} reality="mock">
+                {tr({
+                  en: `${d.pix.payouts} loan${d.pix.payouts === 1 ? "" : "s"} paid by Pix, ${money(d.pix.payout_cents)}.`,
+                  pt: `${d.pix.payouts} ${d.pix.payouts === 1 ? "empréstimo pago" : "empréstimos pagos"} por Pix, ${money(d.pix.payout_cents)}.`,
+                })}
               </Node>
             </div>
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-border bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Back:</span>
-              <span>{d.pix.ins} instalments by Pix ({money(d.pix.in_cents)}, mock)</span>
+              <span className="font-medium text-foreground">{tr({ en: "Back:", pt: "Volta:" })}</span>
+              <span>{tr({
+                en: `${d.pix.ins} instalments by Pix (${money(d.pix.in_cents)}, mock)`,
+                pt: `${d.pix.ins} parcelas por Pix (${money(d.pix.in_cents)}, fictício)`,
+              })}</span>
               <ArrowRight size={12} aria-hidden />
-              <span>the ramp returns real investors' shares to the vault, {usdc(d.vault.repaid_in_micro_usdc)}</span>
+              <span>{tr({
+                en: `the ramp returns real investors' shares to the vault, ${usdc(d.vault.repaid_in_micro_usdc)}`,
+                pt: `a rampa devolve ao cofre as partes dos investidores reais, ${usdc(d.vault.repaid_in_micro_usdc)}`,
+              })}</span>
               <ArrowRight size={12} aria-hidden />
-              <span>paid out to their wallets in the same transaction, {usdc(d.vault.paid_out_micro_usdc)}</span>
+              <span>{tr({
+                en: `paid out to their wallets in the same transaction, ${usdc(d.vault.paid_out_micro_usdc)}`,
+                pt: `repassadas às carteiras deles na mesma transação, ${usdc(d.vault.paid_out_micro_usdc)}`,
+              })}</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Releases leave in one transfer for every loan disbursed at the same time, so no transfer's amount is a loan's principal.
-              Simulated positions move no USDC.
+              {tr({
+                en: "Releases leave in one transfer for every loan disbursed at the same time, so no transfer's amount is a loan's principal. Simulated positions move no USDC.",
+                pt: "As liberações saem numa única transferência para todos os empréstimos desembolsados ao mesmo tempo, então nenhum valor transferido é o principal de um empréstimo. Posições simuladas não movimentam USDC.",
+              })}
             </p>
           </Panel>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Simulator fxMilli={d.fx_brl_per_usdc_milli} rampBps={d.ramp_bps} />
 
-            <Panel title="What is real in this demo" description="Leg by leg: a transaction you can open on an explorer, a figure at an assumed quote, or a mock.">
+            <Panel title={tr({ en: "What is real in this demo", pt: "O que é real nesta demo" })}
+              description={tr({
+                en: "Leg by leg: a transaction you can open on an explorer, a figure at an assumed quote, or a mock.",
+                pt: "Etapa por etapa: uma transação que você pode abrir num explorer, um valor a uma cotação assumida, ou algo fictício.",
+              })}>
               <ul className="divide-y divide-border">
                 {WHAT_IS_REAL.map((r) => (
                   <li key={r.what} className="space-y-1 py-2.5">
@@ -289,33 +363,46 @@ export default function Settlement() {
             </Panel>
           </div>
 
-          <Panel title="Vault transfers" description="The operator-signed transactions that moved USDC out of the vault, newest first.">
+          <Panel title={tr({ en: "Vault transfers", pt: "Transferências do cofre" })}
+            description={tr({
+              en: "The operator-signed transactions that moved USDC out of the vault, newest first.",
+              pt: "As transações assinadas pelo operador que tiraram USDC do cofre, das mais recentes para as mais antigas.",
+            })}>
             {d.transfers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No release or payout yet: they start when EmpowerFI's P2P desk disburses a global loan with real deposits.</p>
+              <p className="text-sm text-muted-foreground">
+                {tr({
+                  en: "No release or payout yet: they start when EmpowerFI's P2P desk disburses a global loan with real deposits.",
+                  pt: "Nenhuma liberação ou repasse ainda: eles começam quando a mesa P2P da EmpowerFI desembolsa um empréstimo global com depósitos reais.",
+                })}
+              </p>
             ) : (
               <div className="relative -mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
                 <table className="w-full min-w-[640px] text-sm">
                   <thead className="text-left text-xs text-muted-foreground">
                     <tr className="border-b border-border">
-                      <th className="py-2 pr-4 font-medium">Transfer</th>
-                      <th className="py-2 pr-4 text-right font-medium">Out of the vault</th>
-                      <th className="py-2 pr-4 text-right font-medium">Back in</th>
-                      <th className="py-2 pr-4 font-medium">State</th>
-                      <th className="py-2 font-medium">Transaction</th>
+                      <th className="py-2 pr-4 font-medium">{tr({ en: "Transfer", pt: "Transferência" })}</th>
+                      <th className="py-2 pr-4 text-right font-medium">{tr({ en: "Out of the vault", pt: "Saída do cofre" })}</th>
+                      <th className="py-2 pr-4 text-right font-medium">{tr({ en: "Back in", pt: "Retorno" })}</th>
+                      <th className="py-2 pr-4 font-medium">{tr({ en: "State", pt: "Situação" })}</th>
+                      <th className="py-2 font-medium">{tr({ en: "Transaction", pt: "Transação" })}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {[...d.transfers].sort((a, b) => b.id - a.id).map((t) => (
                       <tr key={t.id}>
                         <td className="py-2.5 pr-4">
-                          <span className="block text-foreground">{t.kind === "release" ? `Release · ${t.legs} loan${t.legs === 1 ? "" : "s"}` : `Payout · ${t.legs} investor${t.legs === 1 ? "" : "s"}`}</span>
-                          <span className="text-xs text-muted-foreground">{new Date(t.at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                          <span className="block text-foreground">
+                            {t.kind === "release"
+                              ? tr({ en: `Release · ${t.legs} loan${t.legs === 1 ? "" : "s"}`, pt: `Liberação · ${t.legs} ${t.legs === 1 ? "empréstimo" : "empréstimos"}` })
+                              : tr({ en: `Payout · ${t.legs} investor${t.legs === 1 ? "" : "s"}`, pt: `Repasse · ${t.legs} ${t.legs === 1 ? "investidor" : "investidores"}` })}
+                          </span>
+                          <span className="text-xs text-muted-foreground">{formatDateTime(t.at, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                         </td>
                         <td className="num py-2.5 pr-4 text-right text-foreground">{usdc(t.outflow_micro_usdc)}</td>
                         <td className="num py-2.5 pr-4 text-right text-muted-foreground">{t.inflow_micro_usdc ? usdc(t.inflow_micro_usdc) : "—"}</td>
                         <td className="py-2.5 pr-4">
                           <StatusPill tone={t.status === "confirmed" ? "positive" : t.status === "failed" ? "alert" : "caution"}>
-                            {t.status === "confirmed" ? "Confirmed" : t.status === "failed" ? "Failed" : "Sending"}
+                            {t.status === "confirmed" ? tr({ en: "Confirmed", pt: "Confirmada" }) : t.status === "failed" ? tr({ en: "Failed", pt: "Falhou" }) : tr({ en: "Sending", pt: "Enviando" })}
                           </StatusPill>
                         </td>
                         <td className="py-2.5">{t.signature ? <ExplorerLink tx={t.signature} /> : q.isFetching ? <Loader2 size={12} className="animate-spin" /> : "—"}</td>

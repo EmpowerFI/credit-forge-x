@@ -18,6 +18,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { localized, tr } from "../../i18n";
 import Panel from "../../components/product/Panel";
 import { useAuth } from "../../auth/useAuth";
 import { describeError } from "../../lib/errors";
@@ -30,12 +31,12 @@ import ConnectWalletDialog from "../../wallet/ConnectWallet";
 import ZecInvest from "./ZecInvest";
 
 type Step = "sign" | "confirm" | "record" | "done";
-const STEPS: { key: Step; label: string }[] = [
-  { key: "sign", label: "Approve the transfer in your wallet" },
-  { key: "confirm", label: "Confirming on Solana" },
-  { key: "record", label: "Recording your allocation" },
-  { key: "done", label: "Allocated" },
-];
+const STEPS: { key: Step; label: string }[] = localized([
+  { key: "sign", label: { en: "Approve the transfer in your wallet", pt: "Aprove a transferência na sua carteira" } },
+  { key: "confirm", label: { en: "Confirming on Solana", pt: "Confirmando na Solana" } },
+  { key: "record", label: { en: "Recording your allocation", pt: "Registrando sua alocação" } },
+  { key: "done", label: { en: "Allocated", pt: "Alocado" } },
+]);
 
 async function recordAllocation(opportunityId: string, signature: string) {
   const { data, error } = await platform.functions.invoke("investment-confirm", {
@@ -104,11 +105,11 @@ function InvestAction({ account, row, micro, disabled }: {
     <div className="space-y-4">
       {step !== "done" && (
         <Button className="h-11 w-full text-base font-semibold" disabled={disabled || busy} onClick={invest}>
-          {busy ? <Loader2 size={18} className="animate-spin" /> : <Wallet size={18} />} Invest with Devnet USDC
+          {busy ? <Loader2 size={18} className="animate-spin" /> : <Wallet size={18} />} {tr({ en: "Invest with Devnet USDC", pt: "Investir com USDC da Devnet" })}
         </Button>
       )}
       {step && (
-        <ol className="space-y-2 rounded-xl border border-border bg-secondary/40 p-4" aria-label="Transaction progress">
+        <ol className="space-y-2 rounded-xl border border-border bg-secondary/40 p-4" aria-label={tr({ en: "Transaction progress", pt: "Andamento da transação" })}>
           {STEPS.map((s, i) => {
             const failed = failedAt?.step === s.key;
             const doneStep = i < position || step === "done";
@@ -135,10 +136,10 @@ function InvestAction({ account, row, micro, disabled }: {
         </ol>
       )}
       {failedAt && (
-        <Button variant="secondary" className="w-full" onClick={invest}>Try again</Button>
+        <Button variant="secondary" className="w-full" onClick={invest}>{tr({ en: "Try again", pt: "Tentar de novo" })}</Button>
       )}
       {step === "done" && investmentId && (
-        <Button className="w-full" onClick={() => navigate(`/app/investor/positions/${investmentId}`)}>View your position</Button>
+        <Button className="w-full" onClick={() => navigate(`/app/investor/positions/${investmentId}`)}>{tr({ en: "View your position", pt: "Ver sua posição" })}</Button>
       )}
     </div>
   );
@@ -185,24 +186,30 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
   const via = method ?? (requestId ? "zec" : "usdc");
 
   const problem =
-    !open ? "This opportunity is no longer raising."
-    : micro <= 0 ? "Enter an amount."
-    : micro > remaining ? `Only ${usdc(remaining)} is left to fund.`
-    : via === "zec" && micro < 10 ** USDC_DECIMALS ? "The smallest allocation is 1 USDC."
-    : via === "usdc" && connected && balances.data && micro > balance ? `Your wallet holds ${usdc(balance)}.`
-    : via === "usdc" && connected && balances.data && balances.data.lamports === 0n ? "Your wallet needs a little test SOL for the network fee."
+    !open ? tr({ en: "This opportunity is no longer raising.", pt: "Esta oportunidade não está mais captando." })
+    : micro <= 0 ? tr({ en: "Enter an amount.", pt: "Informe um valor." })
+    : micro > remaining ? tr({ en: `Only ${usdc(remaining)} is left to fund.`, pt: `Faltam só ${usdc(remaining)} para captar.` })
+    : via === "zec" && micro < 10 ** USDC_DECIMALS ? tr({ en: "The smallest allocation is 1 USDC.", pt: "A alocação mínima é de 1 USDC." })
+    : via === "usdc" && connected && balances.data && micro > balance ? tr({ en: `Your wallet holds ${usdc(balance)}.`, pt: `Sua carteira tem ${usdc(balance)}.` })
+    : via === "usdc" && connected && balances.data && balances.data.lamports === 0n
+      ? tr({ en: "Your wallet needs a little test SOL for the network fee.", pt: "Sua carteira precisa de um pouco de SOL de teste para a taxa da rede." })
     : null;
 
   return (
-    <Panel title="Invest">
+    <Panel title={tr({ en: "Invest", pt: "Investir" })}>
       {!open && !requestId ? (
         <p className="text-sm text-muted-foreground">
-          {row.funding_status === "funded" ? "Fully funded — EmpowerFI's P2P desk formalises and disburses next." : "Closed to new investment."}
+          {row.funding_status === "funded"
+            ? tr({ en: "Fully funded — EmpowerFI's P2P desk formalises and disburses next.", pt: "100% captada. Agora a mesa P2P da EmpowerFI formaliza e desembolsa." })
+            : tr({ en: "Closed to new investment.", pt: "Fechada para novos investimentos." })}
         </p>
       ) : (
         <div className="space-y-4">
-          <div role="radiogroup" aria-label="Pay with" className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
-            {([["usdc", "Devnet USDC", "from a Solana wallet"], ["zec", "Shielded ZEC", "from a Zcash wallet"]] as const).map(([key, label, hint]) => (
+          <div role="radiogroup" aria-label={tr({ en: "Pay with", pt: "Pagar com" })} className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
+            {([
+              ["usdc", tr({ en: "Devnet USDC", pt: "USDC da Devnet" }), tr({ en: "from a Solana wallet", pt: "de uma carteira Solana" })],
+              ["zec", tr({ en: "Shielded ZEC", pt: "ZEC blindado" }), tr({ en: "from a Zcash wallet", pt: "de uma carteira Zcash" })],
+            ] as const).map(([key, label, hint]) => (
               <button key={key} type="button" role="radio" aria-checked={via === key} onClick={() => setMethod(key)}
                 className={`rounded-lg px-2 py-1.5 text-left transition-colors ${via === key ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
                 <span className="block text-sm font-semibold">{label}</span>
@@ -217,12 +224,12 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
           <>
           {via === "usdc" && connected && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Wallet balance</span>
+              <span className="text-muted-foreground">{tr({ en: "Wallet balance", pt: "Saldo da carteira" })}</span>
               <span className="num font-semibold text-foreground">{balances.data ? usdc(balance) : "…"}</span>
             </div>
           )}
           <div className="space-y-1.5">
-            <Label htmlFor="invest-amount">Amount</Label>
+            <Label htmlFor="invest-amount">{tr({ en: "Amount", pt: "Valor" })}</Label>
             <div className="relative">
               <Input id="invest-amount" type="number" inputMode="decimal" min={1} step="1" value={amount}
                 onChange={(e) => setAmount(e.target.value)} className="h-12 pr-16 text-lg font-semibold" />
@@ -234,7 +241,7 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
                   className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground">{v}</button>
               ))}
               <button type="button" onClick={() => setAmount(String(Math.floor(Math.min(remaining, connected ? balance || remaining : remaining) / 1e6)))}
-                className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground">Max</button>
+                className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground">{tr({ en: "Max", pt: "Máx." })}</button>
             </div>
           </div>
           {problem && micro > 0 && <p className="text-xs text-caution">{problem}</p>}
@@ -244,15 +251,18 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
           ) : !wallet ? (
             <div className="space-y-2">
               <Button className="h-11 w-full" onClick={async () => { await signOut(); navigate("/app/login"); }}>
-                <Wallet size={18} /> Sign in with your wallet to invest
+                <Wallet size={18} /> {tr({ en: "Sign in with your wallet to invest", pt: "Entre com a sua carteira para investir" })}
               </Button>
               <p className="text-xs text-muted-foreground">
-                You are exploring as the demo investor, whose seeded positions are simulated. Sign in with a Solana wallet, or pay with shielded ZEC.
+                {tr({
+                  en: "You are exploring as the demo investor, whose seeded positions are simulated. Sign in with a Solana wallet, or pay with shielded ZEC.",
+                  pt: "Você está explorando como o investidor de demonstração, com posições simuladas. Entre com uma carteira Solana ou pague com ZEC blindado.",
+                })}
               </p>
             </div>
           ) : !connected ? (
             <>
-              <Button className="h-11 w-full" onClick={() => setConnecting(true)}><Wallet size={18} /> Reconnect your wallet</Button>
+              <Button className="h-11 w-full" onClick={() => setConnecting(true)}><Wallet size={18} /> {tr({ en: "Reconnect your wallet", pt: "Reconecte sua carteira" })}</Button>
               <ConnectWalletDialog open={connecting} onOpenChange={setConnecting} onConnected={() => setConnecting(false)} />
             </>
           ) : (
@@ -263,12 +273,12 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
             <div className="flex flex-wrap gap-2 text-xs">
               {balances.data.lamports === 0n && (
                 <a href={FAUCETS.sol} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 hover:bg-secondary">
-                  Get test SOL <ExternalLink size={11} />
+                  {tr({ en: "Get test SOL", pt: "Obter SOL de teste" })} <ExternalLink size={11} />
                 </a>
               )}
               {balance === 0 && (
                 <a href={FAUCETS.usdc} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 hover:bg-secondary">
-                  Get test USDC <ExternalLink size={11} />
+                  {tr({ en: "Get test USDC", pt: "Obter USDC de teste" })} <ExternalLink size={11} />
                 </a>
               )}
             </div>
@@ -279,17 +289,23 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
 
           <p className="text-xs text-muted-foreground">
             {via === "zec"
-              ? "Real on Zcash testnet and Solana devnet: the payment, the vault's USDC and the proof. Simulated: the ZEC→USDC conversion, which NEAR Intents does in production and has no testnet."
-              : "Simulation only · Devnet tokens have no real value."}
+              ? tr({
+                en: "Real on Zcash testnet and Solana devnet: the payment, the vault's USDC and the proof. Simulated: the ZEC→USDC conversion, which NEAR Intents does in production and has no testnet.",
+                pt: "Real na testnet da Zcash e na devnet da Solana: o pagamento, o USDC do cofre e a prova. Simulado: a conversão de ZEC para USDC, que a NEAR Intents faz em produção e não tem testnet.",
+              })
+              : tr({ en: "Simulation only · Devnet tokens have no real value.", pt: "Apenas simulação · Os tokens da Devnet não têm valor real." })}
           </p>
           <div className="space-y-1 border-t border-border pt-3 text-sm">
-            <p className="font-medium text-foreground">Expected cash flows</p>
+            <p className="font-medium text-foreground">{tr({ en: "Expected cash flows", pt: "Fluxo de caixa esperado" })}</p>
             <p className="text-muted-foreground">
               {expectedBack !== null && micro > 0 && !(via === "zec" && requestId)
-                ? <>Your share of scheduled repayments: <span className="num text-foreground">≈ {usdc(expectedBack)}</span> over {row.term_months} months, at the reference rate and today's demo quote. Indicative, not a promise.</>
-                : "Principal plus your share of each instalment, as the loan is repaid."}
+                ? tr({
+                  en: <>Your share of scheduled repayments: <span className="num text-foreground">≈ {usdc(expectedBack)}</span> over {row.term_months} months, at the reference rate and today's demo quote. Indicative, not a promise.</>,
+                  pt: <>Sua parte dos pagamentos previstos: <span className="num text-foreground">≈ {usdc(expectedBack)}</span> em {row.term_months} meses, à taxa de referência e à cotação de demonstração de hoje. Indicativo, não é promessa.</>,
+                })
+                : tr({ en: "Principal plus your share of each instalment, as the loan is repaid.", pt: "O principal mais a sua parte de cada parcela, conforme o empréstimo é pago." })}
             </p>
-            <Link to="/app/investor/portfolio" className="text-xs text-info hover:underline">Your positions →</Link>
+            <Link to="/app/investor/portfolio" className="text-xs text-info hover:underline">{tr({ en: "Your positions →", pt: "Suas posições →" })}</Link>
           </div>
         </div>
       )}

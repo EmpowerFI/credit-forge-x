@@ -14,7 +14,8 @@ import NewCommunityPage from "./pages/NewCommunityPage";
 import type { Role } from "./lib/platform";
 import WalletProvider from "./wallet/WalletProvider";
 import { tr } from "./i18n";
-import { LocaleProvider, useLocale } from "./i18n/LocaleProvider";
+import { LocaleProvider } from "./i18n/LocaleProvider";
+import { useLocale } from "./i18n/useLocale";
 
 // The Solana client is heavy and only the audit screens need it in the browser.
 const AuditPage = lazy(() => import("./pages/AuditPage"));
@@ -74,7 +75,6 @@ const investor = (page: React.ReactNode) => (
  */
 export default function PlatformApp() {
   useLayoutEffect(() => {
-    document.title = "EmpowerFI Platform";
     // Nothing here is for search engines.
     const robots = document.createElement("meta");
     robots.name = "robots";
@@ -103,6 +103,9 @@ export default function PlatformApp() {
 /** Keyed on the language, so switching it re-renders every page's text. */
 function Pages() {
   const { locale } = useLocale();
+  useLayoutEffect(() => {
+    document.title = tr({ en: "EmpowerFI Platform", pt: "Plataforma EmpowerFI" });
+  }, [locale]);
   return (
     <Routes key={locale}>
       <Route path="login" element={<LoginPage />} />

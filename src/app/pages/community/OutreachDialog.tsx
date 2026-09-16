@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ACTION, type OutreachAction } from "../../lib/community";
 import { useRecordOutreach } from "./queries";
+import { tr } from "../../i18n";
 
 /**
  * Logs outreach the community did on its own channels. Nothing is sent from
@@ -49,18 +50,20 @@ export default function OutreachDialog({ communityId, action, people, open, onOp
         <DialogHeader>
           <DialogTitle>{a.label}</DialogTitle>
           <DialogDescription>
-            Reach them on your usual channel, then log it here. Nothing is sent from EmpowerFI. Each contact counts about{" "}
-            {a.minutes} minutes of the community's time in cost to serve.
+            {tr({
+              en: `Reach them on your usual channel, then log it here. Nothing is sent from EmpowerFI. Each contact counts about ${a.minutes} minutes of the community's time in cost to serve.`,
+              pt: `Fale com elas pelo canal de costume e registre aqui. A EmpowerFI não envia nada. Cada contato conta cerca de ${a.minutes} minutos do tempo da comunidade no custo de servir.`,
+            })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {people.length > 1 && (
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{selected.size} of {people.length} selected</span>
+              <span>{tr({ en: `${selected.size} of ${people.length} selected`, pt: `${selected.size} de ${people.length} selecionadas` })}</span>
               <button type="button" className="text-info hover:underline"
                 onClick={() => setSelected(selected.size === people.length ? new Set() : new Set(people.map((p) => p.entrepreneur_id)))}>
-                {selected.size === people.length ? "Clear" : "Select all"}
+                {selected.size === people.length ? tr({ en: "Clear", pt: "Limpar" }) : tr({ en: "Select all", pt: "Selecionar todas" })}
               </button>
             </div>
           )}
@@ -75,17 +78,17 @@ export default function OutreachDialog({ communityId, action, people, open, onOp
             ))}
           </ul>
           <div className="space-y-2">
-            <Label htmlFor="outreach-note">Note <span className="font-normal text-muted-foreground">— optional</span></Label>
-            <Textarea id="outreach-note" maxLength={500} rows={2} value={note} placeholder="e.g. WhatsApp, will report on Friday"
+            <Label htmlFor="outreach-note">{tr({ en: "Note", pt: "Observação" })} <span className="font-normal text-muted-foreground">— {tr({ en: "optional", pt: "opcional" })}</span></Label>
+            <Textarea id="outreach-note" maxLength={500} rows={2} value={note} placeholder={tr({ en: "e.g. WhatsApp, will report on Friday", pt: "ex.: WhatsApp, vai enviar os dados na sexta" })}
               onChange={(e) => setNote(e.target.value)} />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{tr({ en: "Cancel", pt: "Cancelar" })}</Button>
           <Button onClick={submit} disabled={selected.size === 0 || record.isPending} className="gap-2">
             {record.isPending ? <Loader2 size={15} className="animate-spin" /> : <MessageCircle size={15} />}
-            Log for {selected.size}
+            {tr({ en: `Log for ${selected.size}`, pt: `Registrar para ${selected.size}` })}
           </Button>
         </DialogFooter>
       </DialogContent>

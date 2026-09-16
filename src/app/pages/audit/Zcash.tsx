@@ -7,20 +7,24 @@ import ExplorerLink from "../../components/product/ExplorerLink";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
+import { formatNumber, tr } from "../../i18n";
 import { usdc } from "../../lib/solana";
 import { POOL_LABEL, RETURN_LABEL, STATUS_LABEL, usdPerZec, zcashExplorerTx, zec } from "../../lib/zcash";
 import { useZcashAudit, useZcashReturnsAudit } from "./queries";
 
 const ago = (iso: string | null) => {
-  if (!iso) return "never";
+  if (!iso) return tr({ en: "never", pt: "nunca" });
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  return s < 90 ? `${Math.round(s)} s ago` : s < 5400 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago`;
+  if (s < 90) return tr({ en: `${Math.round(s)} s ago`, pt: `há ${Math.round(s)} s` });
+  if (s < 5400) return tr({ en: `${Math.round(s / 60)} min ago`, pt: `há ${Math.round(s / 60)} min` });
+  return tr({ en: `${Math.round(s / 3600)} h ago`, pt: `há ${Math.round(s / 3600)} h` });
 };
 
+/** label: what is copied, already in the current language. */
 function Copyable({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <Button variant="secondary" size="sm" aria-label={`Copy ${label}`} onClick={async () => {
+    <Button variant="secondary" size="sm" aria-label={tr({ en: `Copy ${label}`, pt: `Copiar ${label}` })} onClick={async () => {
       try {
         await navigator.clipboard.writeText(value);
         setCopied(true);
@@ -29,7 +33,7 @@ function Copyable({ value, label }: { value: string; label: string }) {
         // clipboard refused: the value is on screen to select
       }
     }}>
-      {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied" : "Copy"}
+      {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? tr({ en: "Copied", pt: "Copiado" }) : tr({ en: "Copy", pt: "Copiar" })}
     </Button>
   );
 }
@@ -46,7 +50,13 @@ export default function Zcash() {
   if (!q.data) return <div className="space-y-6"><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>;
   const d = q.data;
   if (!d.configured) {
-    return <Panel title="No treasury yet"><p className="text-sm text-muted-foreground">EmpowerFI's Zcash treasury is not set up in this environment.</p></Panel>;
+    return (
+      <Panel title={tr({ en: "No treasury yet", pt: "Ainda sem tesouraria" })}>
+        <p className="text-sm text-muted-foreground">
+          {tr({ en: "EmpowerFI's Zcash treasury is not set up in this environment.", pt: "A tesouraria Zcash da EmpowerFI não está configurada neste ambiente." })}
+        </p>
+      </Panel>
+    );
   }
   const behind = d.tip_height !== null && d.scanned_height !== null ? d.tip_height - d.scanned_height : null;
   const matched = d.receipts.filter((r) => r.ref).length;
@@ -59,15 +69,29 @@ zcash-devtool wallet -w ./audit-view list-tx`;
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatTile label="Received" value={zec(d.received_zat, d.network)} hint={`${d.receipts.length} note${d.receipts.length === 1 ? "" : "s"} read`} />
-        <StatTile label="Matched to a request" value={matched} hint={`${d.receipts.length - matched} with no EmpowerFI memo`} />
-        <StatTile label="Allocated" value={credited} hint="credited to the vault, proven on Solana" hintTone={credited ? "positive" : "info"} />
-        <StatTile label="Watcher" value={behind === null ? "—" : behind <= 1 ? "Up to date" : `${behind} blocks behind`}
-          hint={`block ${d.scanned_height?.toLocaleString("en-US") ?? "—"} · ${ago(d.scanned_at)}`} hintTone={behind !== null && behind <= 2 ? "positive" : "caution"} />
+        <StatTile label={tr({ en: "Received", pt: "Recebido" })} value={zec(d.received_zat, d.network)}
+          hint={tr({
+            en: `${d.receipts.length} note${d.receipts.length === 1 ? "" : "s"} read`,
+            pt: `${d.receipts.length} nota${d.receipts.length === 1 ? " lida" : "s lidas"}`,
+          })} />
+        <StatTile label={tr({ en: "Matched to a request", pt: "Ligadas a um pedido" })} value={matched}
+          hint={tr({ en: `${d.receipts.length - matched} with no EmpowerFI memo`, pt: `${d.receipts.length - matched} sem memo da EmpowerFI` })} />
+        <StatTile label={tr({ en: "Allocated", pt: "Alocados" })} value={credited}
+          hint={tr({ en: "credited to the vault, proven on Solana", pt: "creditados no cofre, com prova na Solana" })} hintTone={credited ? "positive" : "info"} />
+        <StatTile label={tr({ en: "Watcher", pt: "Monitor" })}
+          value={behind === null ? "—" : behind <= 1 ? tr({ en: "Up to date", pt: "Em dia" }) : tr({ en: `${behind} blocks behind`, pt: `${behind} blocos atrás` })}
+          hint={tr({
+            en: `block ${d.scanned_height !== null ? formatNumber(d.scanned_height) : "—"} · ${ago(d.scanned_at)}`,
+            pt: `bloco ${d.scanned_height !== null ? formatNumber(d.scanned_height) : "—"} · ${ago(d.scanned_at)}`,
+          })} hintTone={behind !== null && behind <= 2 ? "positive" : "caution"} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title="The viewing key" description={`Disclosed to auditors, and to no one else. It reads every payment the treasury receives on ${net}, amounts and memos included, and can spend none of it.`}>
+        <Panel title={tr({ en: "The viewing key", pt: "A chave de visualização" })}
+          description={tr({
+            en: `Disclosed to auditors, and to no one else. It reads every payment the treasury receives on ${net}, amounts and memos included, and can spend none of it.`,
+            pt: `Revelada aos auditores, e a mais ninguém. Ela lê cada pagamento que a tesouraria recebe na ${net}, com valores e memos, e não pode gastar nada.`,
+          })}>
           <div className="space-y-3">
             <div className="flex items-start gap-2 rounded-xl border border-border bg-secondary/40 p-3">
               <KeyRound size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
@@ -77,57 +101,67 @@ zcash-devtool wallet -w ./audit-view list-tx`;
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="secondary" size="sm" onClick={() => setReveal((v) => !v)}>
-                {reveal ? <EyeOff size={14} /> : <Eye size={14} />} {reveal ? "Hide" : "Reveal"}
+                {reveal ? <EyeOff size={14} /> : <Eye size={14} />} {reveal ? tr({ en: "Hide", pt: "Ocultar" }) : tr({ en: "Reveal", pt: "Mostrar" })}
               </Button>
-              <Copyable value={d.ufvk} label="viewing key" />
+              <Copyable value={d.ufvk} label={tr({ en: "viewing key", pt: "chave de visualização" })} />
             </div>
             <dl className="space-y-1.5 text-sm">
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-muted-foreground">Treasury address</dt>
-                <dd className="flex min-w-0 items-center gap-2"><span className="truncate font-mono text-xs text-foreground">{d.address.slice(0, 12)}…{d.address.slice(-6)}</span><Copyable value={d.address} label="address" /></dd>
+                <dt className="text-muted-foreground">{tr({ en: "Treasury address", pt: "Endereço da tesouraria" })}</dt>
+                <dd className="flex min-w-0 items-center gap-2"><span className="truncate font-mono text-xs text-foreground">{d.address.slice(0, 12)}…{d.address.slice(-6)}</span><Copyable value={d.address} label={tr({ en: "address", pt: "endereço" })} /></dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-muted-foreground">Read from block</dt>
-                <dd className="num text-foreground">{d.birthday_height.toLocaleString("en-US")}</dd>
+                <dt className="text-muted-foreground">{tr({ en: "Read from block", pt: "Lida a partir do bloco" })}</dt>
+                <dd className="num text-foreground">{formatNumber(d.birthday_height)}</dd>
               </div>
               <div className="flex items-center justify-between gap-3">
-                <dt className="text-muted-foreground">Credited after</dt>
-                <dd className="text-foreground">{d.confirmations_needed} confirmations</dd>
+                <dt className="text-muted-foreground">{tr({ en: "Credited after", pt: "Creditado após" })}</dt>
+                <dd className="text-foreground">{tr({ en: `${d.confirmations_needed} confirmations`, pt: `${d.confirmations_needed} confirmações` })}</dd>
               </div>
             </dl>
           </div>
         </Panel>
 
-        <Panel title="Check it without us" description="Import the key into any Zcash wallet that takes a viewing key and it lists the same payments. With zcash-devtool:">
+        <Panel title={tr({ en: "Check it without us", pt: "Confira sem depender de nós" })}
+          description={tr({
+            en: "Import the key into any Zcash wallet that takes a viewing key and it lists the same payments. With zcash-devtool:",
+            pt: "Importe a chave em qualquer carteira Zcash que aceite chave de visualização, e ela lista os mesmos pagamentos. Com o zcash-devtool:",
+          })}>
           <div className="relative overflow-x-auto rounded-xl border border-border bg-secondary/40">
             <pre className="p-3 font-mono text-xs leading-relaxed text-foreground">{devtool}</pre>
           </div>
           <p className="text-xs text-muted-foreground">
-            Each memo names a random reference (EFI-…), never the investor or the opportunity: the reference ties the payment to its
-            allocation here, and the allocation's proof is on Solana. A block explorer shows only that a shielded transaction happened.
+            {tr({
+              en: "Each memo names a random reference (EFI-…), never the investor or the opportunity: the reference ties the payment to its allocation here, and the allocation's proof is on Solana. A block explorer shows only that a shielded transaction happened.",
+              pt: "Cada memo traz uma referência aleatória (EFI-…), nunca o investidor ou a oportunidade: a referência liga o pagamento à sua alocação aqui, e a prova da alocação está na Solana. Um explorador de blocos mostra só que uma transação blindada aconteceu.",
+            })}
           </p>
         </Panel>
       </div>
 
-      <Panel title="Notes received" description="Every shielded note the viewing key decrypts, newest first, with what it paid for.">
+      <Panel title={tr({ en: "Notes received", pt: "Notas recebidas" })}
+        description={tr({
+          en: "Every shielded note the viewing key decrypts, newest first, with what it paid for.",
+          pt: "Cada nota blindada que a chave de visualização decifra, das mais recentes às mais antigas, com o que ela pagou.",
+        })}>
         <div className="relative -mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
           <table className="w-full min-w-[980px] text-sm">
             <thead className="text-left text-xs text-muted-foreground">
               <tr className="border-b border-border">
-                <th className="py-2 pr-4 font-medium">Block</th>
-                <th className="py-2 pr-4 font-medium">Transaction</th>
-                <th className="py-2 pr-4 font-medium">Pool</th>
-                <th className="py-2 pr-4 text-right font-medium">Amount</th>
-                <th className="py-2 pr-4 font-medium">Memo</th>
-                <th className="py-2 pr-4 font-medium">Request</th>
-                <th className="py-2 pr-4 font-medium">USDC credit</th>
-                <th className="py-2 font-medium">Allocation proof</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Block", pt: "Bloco" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Transaction", pt: "Transação" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Pool", pt: "Pool" })}</th>
+                <th className="py-2 pr-4 text-right font-medium">{tr({ en: "Amount", pt: "Valor" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Memo", pt: "Memo" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "Request", pt: "Pedido" })}</th>
+                <th className="py-2 pr-4 font-medium">{tr({ en: "USDC credit", pt: "Crédito em USDC" })}</th>
+                <th className="py-2 font-medium">{tr({ en: "Allocation proof", pt: "Prova da alocação" })}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {d.receipts.map((r) => (
                 <tr key={`${r.txid}:${r.pool}:${r.index}`}>
-                  <td className="num py-2.5 pr-4 text-muted-foreground">{r.height.toLocaleString("en-US")}</td>
+                  <td className="num py-2.5 pr-4 text-muted-foreground">{formatNumber(r.height)}</td>
                   <td className="py-2.5 pr-4">
                     <a href={zcashExplorerTx(r.txid, d.network)} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
@@ -143,13 +177,13 @@ zcash-devtool wallet -w ./audit-view list-tx`;
                         <span className="font-mono text-xs text-foreground">{r.ref} · {r.opportunity_code}</span>
                         {r.status && <span><StatusPill tone={STATUS_LABEL[r.status].tone}>{STATUS_LABEL[r.status].label}</StatusPill> <span className="num text-xs text-muted-foreground">{usdc(r.amount_micro_usdc)}</span></span>}
                       </span>
-                    ) : <span className="text-xs text-muted-foreground">none</span>}
+                    ) : <span className="text-xs text-muted-foreground">{tr({ en: "none", pt: "nenhum" })}</span>}
                   </td>
                   <td className="py-2.5 pr-4">{r.credit_signature ? <ExplorerLink tx={r.credit_signature} /> : <span className="text-xs text-muted-foreground">—</span>}</td>
                   <td className="py-2.5">{r.allocation_signature ? <ExplorerLink tx={r.allocation_signature} /> : <span className="text-xs text-muted-foreground">—</span>}</td>
                 </tr>
               ))}
-              {d.receipts.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">Nothing received yet.</td></tr>}
+              {d.receipts.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">{tr({ en: "Nothing received yet.", pt: "Nada recebido ainda." })}</td></tr>}
             </tbody>
           </table>
         </div>
@@ -166,25 +200,33 @@ function ReturnsPaid({ network }: { network: "test" | "main" }) {
   if (returns.isError) return <LoadError compact error={returns.error} onRetry={() => returns.refetch()} />;
   const r = returns.data;
   return (
-    <Panel title="Paid back in ZEC"
-      description="Instalment shares and refunds owed to investors who paid in ZEC and have no Solana wallet, sent from the treasury by the operator, who alone holds its spending key. Listed by reference and transaction, never by the investor's address.">
+    <Panel title={tr({ en: "Paid back in ZEC", pt: "Devolvido em ZEC" })}
+      description={tr({
+        en: "Instalment shares and refunds owed to investors who paid in ZEC and have no Solana wallet, sent from the treasury by the operator, who alone holds its spending key. Listed by reference and transaction, never by the investor's address.",
+        pt: "Partes de parcelas e reembolsos devidos a investidores que pagaram em ZEC e não têm carteira Solana, enviados da tesouraria pelo operador, o único com a chave de gasto. Listados por referência e transação, nunca pelo endereço do investidor.",
+      })}>
       {!r ? <Skeleton className="h-20 w-full" /> : (
         <>
           <div className="flex flex-wrap gap-2 text-xs">
             {(["due", "sending", "sent", "failed"] as const).map((k) => (
               <StatusPill key={k} tone={RETURN_LABEL[k].tone}>{RETURN_LABEL[k].label} · {r.counts[k] ?? 0}</StatusPill>
             ))}
-            <span className="self-center text-muted-foreground">{zec(r.sent_zat, network)} sent in all</span>
+            <span className="self-center text-muted-foreground">{tr({ en: `${zec(r.sent_zat, network)} sent in all`, pt: `${zec(r.sent_zat, network)} enviados no total` })}</span>
           </div>
-          {r.rows.length === 0 ? <p className="text-sm text-muted-foreground">Nothing owed or paid back yet.</p> : (
+          {r.rows.length === 0 ? <p className="text-sm text-muted-foreground">{tr({ en: "Nothing owed or paid back yet.", pt: "Nada devido nem devolvido ainda." })}</p> : (
             <ul className="divide-y divide-border">
               {r.rows.map((x, i) => (
                 <li key={x.txid ?? `${x.ref}-${i}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
                   <span className="min-w-0">
-                    <span className="text-foreground">{x.kind === "refund" ? "Refund" : "Instalment share"}</span>
+                    <span className="text-foreground">{x.kind === "refund" ? tr({ en: "Refund", pt: "Reembolso" }) : tr({ en: "Instalment share", pt: "Parte da parcela" })}</span>
                     <span className="ml-2 font-mono text-xs text-muted-foreground">{x.ref ?? "—"}</span>
                     <span className="block text-xs text-muted-foreground">
-                      {usdc(x.amount_micro_usdc)}{x.amount_zat ? ` → ${zec(x.amount_zat, network)} at ${usdPerZec(x.usd_per_zec_cents!)}` : ""}
+                      {usdc(x.amount_micro_usdc)}{x.amount_zat
+                        ? tr({
+                          en: ` → ${zec(x.amount_zat, network)} at ${usdPerZec(x.usd_per_zec_cents!)}`,
+                          pt: ` → ${zec(x.amount_zat, network)} a ${usdPerZec(x.usd_per_zec_cents!)}`,
+                        })
+                        : ""}
                       {x.error && x.status !== "sent" ? ` · ${x.error}` : ""}
                     </span>
                   </span>

@@ -13,10 +13,11 @@ import Panel from "../components/product/Panel";
 import { anchorsSettled } from "../lib/anchors";
 import { shortDate } from "../lib/community";
 import {
-  CHANNEL_LABEL, type Choices, choicesOf, consequences, type ConsentRecord, NONE, sameChoices, SCOPE_TEXT, SCOPES,
+  CHANNEL_LABEL, type Choices, choicesOf, consequences, CONSENT_TEXT_VERSION, type ConsentRecord, NONE, sameChoices, SCOPE_TEXT, SCOPES,
 } from "../lib/consent";
 import { describeError } from "../lib/errors";
 import { platform } from "../lib/platform";
+import { tr } from "../i18n";
 
 /**
  * Her consent, in her hands: the four uses of her data, what each reads and
@@ -88,7 +89,12 @@ export default function ConsentPage() {
     onSuccess: (r) => {
       setTouched(false);
       for (const key of ["consents", "consent-anchors", "my-business"]) queryClient.invalidateQueries({ queryKey: ["platform", key] });
-      toast.success(r.reused ? "Nothing changed." : `Saved as record #${r.consent_no}. Its proof is on its way to Solana.`);
+      toast.success(r.reused
+        ? tr({ en: "Nothing changed.", pt: "Nada mudou." })
+        : tr({
+            en: `Saved as record #${r.consent_no}. Its proof is on its way to Solana.`,
+            pt: `Salvo como registro nº ${r.consent_no}. A prova está a caminho da Solana.`,
+          }));
     },
     onError: (e) => toast.error(describeError(e)),
   });
@@ -97,39 +103,56 @@ export default function ConsentPage() {
     return <LoadError error={me.error ?? records.error} onRetry={() => { me.refetch(); records.refetch(); }} />;
   }
   if (me.isPending || (id && records.isPending)) return <div className="space-y-6"><Skeleton className="h-16 w-full" /><Skeleton className="h-96 w-full" /></div>;
-  if (!me.data) return <p className="text-muted-foreground">This page is for entrepreneurs. Your account has no business on record.</p>;
+  if (!me.data) {
+    return (
+      <p className="text-muted-foreground">
+        {tr({
+          en: "This page is for entrepreneurs. Your account has no business on record.",
+          pt: "Esta página é para empreendedoras. Sua conta não tem um negócio registrado.",
+        })}
+      </p>
+    );
+  }
 
   const changed = !current || !sameChoices(draft, choicesOf(current));
   const effects = changed ? consequences(current ? choicesOf(current) : null, draft) : [];
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Privacy" title="Your consent"
-        description="You decide what your data is used for. Every change is a new record, proven on Solana, so what you agreed to, and when, can always be checked." />
+      <PageHeader eyebrow={tr({ en: "Privacy", pt: "Privacidade" })} title={tr({ en: "Your consent", pt: "Seu consentimento" })}
+        description={tr({
+          en: "You decide what your data is used for. Every change is a new record, proven on Solana, so what you agreed to, and when, can always be checked.",
+          pt: "Você decide para que seus dados são usados. Cada mudança é um novo registro, comprovado na Solana, para que sempre seja possível verificar com o que você concordou, e quando.",
+        })} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <Panel title="What you allow" description={`Wording ${history[0]?.text_version ?? "consent-v1"}. Change any of it at any time.`}>
+        <Panel title={tr({ en: "What you allow", pt: "O que você autoriza" })}
+          description={tr({
+            en: `Wording ${history[0]?.text_version ?? CONSENT_TEXT_VERSION}. Change any of it at any time.`,
+            pt: `Texto ${history[0]?.text_version ?? CONSENT_TEXT_VERSION}. Mude o que quiser, quando quiser.`,
+          })}>
           <ConsentScopes value={draft} onChange={(v) => { setDraft(v); setTouched(true); }} disabled={save.isPending} />
 
           {changed && (
             <div className="space-y-3 rounded-xl border border-info/40 bg-info/5 p-4 text-sm">
-              <p className="font-medium text-foreground">{current ? "If you save" : "Your first record"}</p>
+              <p className="font-medium text-foreground">{current ? tr({ en: "If you save", pt: "Se você salvar" }) : tr({ en: "Your first record", pt: "Seu primeiro registro" })}</p>
               {effects.length > 0 ? (
                 <ul className="list-disc space-y-1 pl-5 text-muted-foreground">{effects.map((e) => <li key={e}>{e}</li>)}</ul>
               ) : (
                 <p className="text-muted-foreground">
                   {SCOPES.filter((s) => draft[s]).length === 0
-                    ? "Nothing of yours will be assessed or shared."
-                    : `Allowed: ${SCOPES.filter((s) => draft[s]).map((s) => SCOPE_TEXT[s].title.toLowerCase()).join("; ")}.`}
+                    ? tr({ en: "Nothing of yours will be assessed or shared.", pt: "Nada seu será avaliado ou compartilhado." })
+                    : tr({ en: "Allowed: ", pt: "Autorizado: " }) +
+                      `${SCOPES.filter((s) => draft[s]).map((s) => SCOPE_TEXT[s].title.toLowerCase()).join("; ")}.`}
                 </p>
               )}
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => save.mutate()} disabled={save.isPending} className="gap-2">
-                  {save.isPending ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />} Save my choices
+                  {save.isPending ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />} {tr({ en: "Save my choices", pt: "Salvar minhas escolhas" })}
                 </Button>
                 {current && (
                   <Button variant="ghost" className="gap-2" onClick={() => { setDraft(choicesOf(current)); setTouched(false); }}>
-                    <Undo2 size={15} /> Keep them as they are
+                    <Undo2 size={15} /> {tr({ en: "Keep them as they are", pt: "Manter como estão" })}
                   </Button>
                 )}
               </div>
@@ -138,12 +161,16 @@ export default function ConsentPage() {
         </Panel>
 
         <div className="space-y-6">
-          <Panel title="In force">
+          <Panel title={tr({ en: "In force", pt: "Em vigor" })}>
             <ConsentSummary record={current} compact />
           </Panel>
 
-          <Panel title="Every record" description="Nothing is edited: each change is added, and each is proven.">
-            {history.length === 0 ? <p className="text-sm text-muted-foreground">None yet.</p> : (
+          <Panel title={tr({ en: "Every record", pt: "Todos os registros" })}
+            description={tr({
+              en: "Nothing is edited: each change is added, and each is proven.",
+              pt: "Nada é editado: cada mudança é acrescentada, e cada uma é comprovada.",
+            })}>
+            {history.length === 0 ? <p className="text-sm text-muted-foreground">{tr({ en: "None yet.", pt: "Nenhum ainda." })}</p> : (
               <ol className="space-y-3">
                 {history.map((r) => (
                   <li key={r.id} className="space-y-1 border-b border-border/60 pb-3 text-sm last:border-0 last:pb-0">
@@ -152,7 +179,7 @@ export default function ConsentPage() {
                       <span className="text-xs text-muted-foreground">{shortDate(r.at)}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {SCOPES.filter((s) => r[s]).map((s) => SCOPE_TEXT[s].title).join(" · ") || "Nothing allowed"}
+                      {SCOPES.filter((s) => r[s]).map((s) => SCOPE_TEXT[s].title).join(" · ") || tr({ en: "Nothing allowed", pt: "Nada autorizado" })}
                     </p>
                     <p className="text-xs text-muted-foreground">{CHANNEL_LABEL[r.channel]}</p>
                     <div className="text-xs"><ProofLine proof={r.proof} /></div>
@@ -162,11 +189,11 @@ export default function ConsentPage() {
             )}
           </Panel>
 
-          <Panel title="Whatever you choose">
+          <Panel title={tr({ en: "Whatever you choose", pt: "Seja qual for sua escolha" })}>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-start gap-2"><span className="mt-0.5"><DataTag kind="private" /></span>Your name, documents, contacts and monthly figures never go on chain.</li>
-              <li className="flex items-start gap-2"><span className="mt-0.5"><DataTag kind="proven" /></span>Only a hash of each record does, so anyone can check it was not changed.</li>
-              <li className="flex items-start gap-2"><span className="mt-0.5"><DataTag kind="derived" /></span>Scores and grades are computed from your data, and shown only where you allow.</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5"><DataTag kind="private" /></span>{tr({ en: "Your name, documents, contacts and monthly figures never go on chain.", pt: "Seu nome, documentos, contatos e números mensais nunca vão para a blockchain." })}</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5"><DataTag kind="proven" /></span>{tr({ en: "Only a hash of each record does, so anyone can check it was not changed.", pt: "Só um hash de cada registro vai, para que qualquer pessoa possa verificar que ele não foi alterado." })}</li>
+              <li className="flex items-start gap-2"><span className="mt-0.5"><DataTag kind="derived" /></span>{tr({ en: "Scores and grades are computed from your data, and shown only where you allow.", pt: "Pontuações e notas são calculadas a partir dos seus dados e mostradas só onde você autoriza." })}</li>
             </ul>
           </Panel>
         </div>

@@ -9,6 +9,7 @@ import { ConsentScopes } from "../../components/consent/ConsentScopes";
 import { type Choices, choicesOf, consequences, type ConsentRecord, NONE, sameChoices } from "../../lib/consent";
 import { describeError } from "../../lib/errors";
 import { platform } from "../../lib/platform";
+import { tr } from "../../i18n";
 
 /**
  * A leader records a participant's consent from the form she signed: how most
@@ -44,7 +45,9 @@ export default function ConsentDialog({ communityId, entrepreneur, current, open
     },
     onSuccess: (r) => {
       for (const key of ["ci-journey", "ci-participants"]) queryClient.invalidateQueries({ queryKey: ["platform", key, communityId] });
-      toast.success(r.reused ? "Nothing changed." : `Recorded as #${r.consent_no}. Its proof is on its way to Solana.`);
+      toast.success(r.reused
+        ? tr({ en: "Nothing changed.", pt: "Nada mudou." })
+        : tr({ en: `Recorded as #${r.consent_no}. Its proof is on its way to Solana.`, pt: `Registrado como #${r.consent_no}. A prova está a caminho da Solana.` }));
       onOpenChange(false);
     },
     onError: (e) => toast.error(describeError(e)),
@@ -57,10 +60,12 @@ export default function ConsentDialog({ communityId, entrepreneur, current, open
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{entrepreneur.display_name}'s consent</DialogTitle>
+          <DialogTitle>{tr({ en: `${entrepreneur.display_name}'s consent`, pt: `Consentimento de ${entrepreneur.display_name}` })}</DialogTitle>
           <DialogDescription>
-            Record exactly what she chose on the signed form. She can change it herself in the app at any time; each
-            change is a new record.
+            {tr({
+              en: "Record exactly what she chose on the signed form. She can change it herself in the app at any time; each change is a new record.",
+              pt: "Registre exatamente o que ela escolheu no formulário assinado. Ela pode mudar isso sozinha no app a qualquer momento; cada mudança gera um novo registro.",
+            })}
           </DialogDescription>
         </DialogHeader>
 
@@ -74,13 +79,13 @@ export default function ConsentDialog({ communityId, entrepreneur, current, open
 
         <label className="flex cursor-pointer items-start gap-3 text-sm text-foreground">
           <Checkbox checked={signed} onCheckedChange={(v) => setSigned(v === true)} className="mt-0.5" />
-          I have her signed form, and these are her choices.
+          {tr({ en: "I have her signed form, and these are her choices.", pt: "Tenho o formulário assinado por ela, e estas são as escolhas dela." })}
         </label>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{tr({ en: "Cancel", pt: "Cancelar" })}</Button>
           <Button onClick={() => save.mutate()} disabled={!signed || !changed || save.isPending} className="gap-2">
-            {save.isPending ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />} Record consent
+            {save.isPending ? <Loader2 size={15} className="animate-spin" /> : <ShieldCheck size={15} />} {tr({ en: "Record consent", pt: "Registrar consentimento" })}
           </Button>
         </DialogFooter>
       </DialogContent>

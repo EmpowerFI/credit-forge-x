@@ -1,4 +1,5 @@
 import type { Tone } from "../components/product/StatusPill";
+import { formatNumber, localized, tr } from "../i18n";
 import type { CapitalUse, EligibilityDecision, LoanStatus, OpportunityStatus } from "./credit";
 import type { FundingStatus, Grade } from "./investor";
 import type { Database } from "./platform.types";
@@ -11,13 +12,13 @@ type ReadinessBand = Database["public"]["Enums"]["readiness_band"];
 // loan with its schedule and settlement. Participants appear under a P- code.
 // (The database still calls the desk a partner.)
 
-export const PARTNER_TABS = [
-  { to: "", label: "Pipeline", end: true },
-  { to: "reviews", label: "Opportunities" },
-  { to: "decisions", label: "Decisions" },
-  { to: "portfolio", label: "Portfolio" },
-  { to: "servicing", label: "Servicing" },
-] as const;
+export const PARTNER_TABS = localized([
+  { to: "", label: { en: "Pipeline", pt: "Pipeline" }, end: true },
+  { to: "reviews", label: { en: "Opportunities", pt: "Oportunidades" } },
+  { to: "decisions", label: { en: "Decisions", pt: "Decisões" } },
+  { to: "portfolio", label: { en: "Portfolio", pt: "Carteira" } },
+  { to: "servicing", label: { en: "Servicing", pt: "Acompanhamento de pagamentos" } },
+] as const);
 
 export interface DeskProof {
   kind: string;
@@ -149,20 +150,20 @@ export type DeskStage =
   | "waiting" | "raising" | "to_formalise" | "formalised" | "disbursed" | "repaying" | "overdue"
   | "paid" | "defaulted" | "cancelled" | "declined" | "withdrawn";
 
-export const STAGE: Record<DeskStage, { label: string; tone: Tone; next: string }> = {
-  waiting: { label: "Waiting for capital", tone: "neutral", next: "No pool can take it yet" },
-  raising: { label: "Investors funding", tone: "caution", next: "Wait for funding, or decline" },
-  to_formalise: { label: "Ready to formalise", tone: "positive", next: "Formalise and disburse" },
-  formalised: { label: "Formalised", tone: "info", next: "Disburse" },
-  disbursed: { label: "Disbursed", tone: "info", next: "Start the repayment schedule" },
-  repaying: { label: "Repaying", tone: "positive", next: "Record instalments" },
-  overdue: { label: "Overdue", tone: "alert", next: "Follow up" },
-  paid: { label: "Paid off", tone: "positive", next: "—" },
-  defaulted: { label: "Defaulted", tone: "alert", next: "—" },
-  cancelled: { label: "Declined at formalisation", tone: "neutral", next: "—" },
-  declined: { label: "Declined", tone: "neutral", next: "—" },
-  withdrawn: { label: "Withdrawn", tone: "neutral", next: "—" },
-};
+export const STAGE: Record<DeskStage, { label: string; tone: Tone; next: string }> = localized({
+  waiting: { label: { en: "Waiting for capital", pt: "Aguardando capital" }, tone: "neutral", next: { en: "No pool can take it yet", pt: "Nenhum pool pode assumir ainda" } },
+  raising: { label: { en: "Investors funding", pt: "Em captação" }, tone: "caution", next: { en: "Wait for funding, or decline", pt: "Aguarde a captação ou recuse" } },
+  to_formalise: { label: { en: "Ready to formalise", pt: "Pronta para formalizar" }, tone: "positive", next: { en: "Formalise and disburse", pt: "Formalizar e desembolsar" } },
+  formalised: { label: { en: "Formalised", pt: "Formalizado" }, tone: "info", next: { en: "Disburse", pt: "Desembolsar" } },
+  disbursed: { label: { en: "Disbursed", pt: "Desembolsado" }, tone: "info", next: { en: "Start the repayment schedule", pt: "Iniciar o cronograma de pagamentos" } },
+  repaying: { label: { en: "Repaying", pt: "Em pagamento" }, tone: "positive", next: { en: "Record instalments", pt: "Registrar parcelas" } },
+  overdue: { label: { en: "Overdue", pt: "Em atraso" }, tone: "alert", next: { en: "Follow up", pt: "Acompanhar" } },
+  paid: { label: { en: "Paid off", pt: "Quitado" }, tone: "positive", next: "—" },
+  defaulted: { label: { en: "Defaulted", pt: "Inadimplente" }, tone: "alert", next: "—" },
+  cancelled: { label: { en: "Declined at formalisation", pt: "Recusado na formalização" }, tone: "neutral", next: "—" },
+  declined: { label: { en: "Declined", pt: "Recusada" }, tone: "neutral", next: "—" },
+  withdrawn: { label: { en: "Withdrawn", pt: "Retirada" }, tone: "neutral", next: "—" },
+});
 
 /** Funding still under way: the desk waits before it can formalise. */
 export const isRaising = (f: DeskFunding) => f.status === "open" || f.status === "partially_funded";
@@ -187,12 +188,28 @@ export function stageOf(o: DeskOpportunity, loan?: DeskLoan): DeskStage {
 /** Where the capital comes from, in one line. */
 export function fundingLine(f: DeskFunding): { label: string; tone: Tone } {
   switch (f.status) {
-    case null: return { label: f.pool ? "Not shown to investors" : "Waiting for capital · no pool yet", tone: "neutral" };
-    case "open": return { label: "Open to investors · nothing raised yet", tone: "info" };
-    case "partially_funded": return { label: `Investors funding · ${pct(f)}% raised`, tone: "caution" };
-    case "funded": return { label: `Funded by ${f.investors} investor${f.investors === 1 ? "" : "s"}`, tone: "positive" };
-    case "refunded": return { label: f.refund_due ? "Investors being refunded" : "Investors refunded", tone: "neutral" };
-    case "closed": return { label: "Closed · nothing was raised", tone: "neutral" };
+    case null: return {
+      label: f.pool
+        ? tr({ en: "Not shown to investors", pt: "Não exibida a investidores" })
+        : tr({ en: "Waiting for capital · no pool yet", pt: "Aguardando capital · ainda sem pool" }),
+      tone: "neutral",
+    };
+    case "open": return { label: tr({ en: "Open to investors · nothing raised yet", pt: "Aberta a investidores · nada captado ainda" }), tone: "info" };
+    case "partially_funded": return { label: tr({ en: `Investors funding · ${pct(f)}% raised`, pt: `Em captação · ${pct(f)}% captado` }), tone: "caution" };
+    case "funded": return {
+      label: tr({
+        en: `Funded by ${f.investors} investor${f.investors === 1 ? "" : "s"}`,
+        pt: `Captada com ${f.investors} ${f.investors === 1 ? "investidor" : "investidores"}`,
+      }),
+      tone: "positive",
+    };
+    case "refunded": return {
+      label: f.refund_due
+        ? tr({ en: "Investors being refunded", pt: "Investidores sendo reembolsados" })
+        : tr({ en: "Investors refunded", pt: "Investidores reembolsados" }),
+      tone: "neutral",
+    };
+    case "closed": return { label: tr({ en: "Closed · nothing was raised", pt: "Encerrada · nada foi captado" }), tone: "neutral" };
   }
 }
 
@@ -203,6 +220,20 @@ export const pct = (f: DeskFunding) =>
 export const outstandingCents = (l: DeskLoan) =>
   ["ACTIVE", "DISBURSED"].includes(l.status) ? Math.max(0, l.principal_cents - Math.round((l.principal_cents * l.paid) / l.term_months)) : 0;
 
-export const rate = (bps: number | null | undefined) => (bps === null || bps === undefined ? "—" : `${(bps / 100).toFixed(2)}% a month`);
+/** A monthly rate in basis points: 2.17% a month, 2,17% ao mês. */
+export const ratePercent = (bps: number) => formatNumber(bps / 100, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+export const rate = (bps: number | null | undefined) =>
+  bps === null || bps === undefined ? "—" : tr({ en: `${ratePercent(bps)}% a month`, pt: `${ratePercent(bps)}% ao mês` });
+
+/**
+ * A LOW / MEDIUM / HIGH grade as a word: "risk low", "readiness high". In
+ * Portuguese the word agrees with its noun: risco baixo, prontidão baixa.
+ */
+export const level = (g: "LOW" | "MEDIUM" | "HIGH", gender: "m" | "f" = "m") =>
+  tr({
+    en: g.toLowerCase(),
+    pt: { LOW: gender === "f" ? "baixa" : "baixo", MEDIUM: gender === "f" ? "média" : "médio", HIGH: gender === "f" ? "alta" : "alto" }[g],
+  });
 
 export const LIVE_LOAN: LoanStatus[] = ["DISBURSED", "ACTIVE", "PAID", "DEFAULTED"];

@@ -39,73 +39,85 @@ import NetworkBadge from "./components/product/NetworkBadge";
 import WalletChip from "./wallet/WalletChip";
 import { useAuth } from "./auth/useAuth";
 import { ROLE_LABEL, type Role } from "./lib/platform";
-import { PROTOTYPE_NOTICE } from "./lib/capital";
+import { prototypeNotice } from "./lib/capital";
 import { COMMUNITY_TABS } from "./lib/community";
 import { useLedCommunity } from "./pages/community/queries";
+import { localized, tr } from "./i18n";
+import LanguageSwitch from "./i18n/LanguageSwitch";
 
 // One workspace per persona: the same brand as the corporate site, in the
 // product's dark financial theme. Each role sees its own navigation.
 
 interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean }
 
-const COMMUNITIES: NavItem = { to: "/app/community", label: "Communities", icon: Users };
-const PIPELINE: NavItem = { to: "/app/partner", label: "P2P desk", icon: Briefcase };
-const ENGINE: NavItem = { to: "/app/capital", label: "Allocation engine", icon: Split };
+// Each constant is localized on its own: wrapping one that is already
+// localized would copy its texts in the language of the moment.
+const COMMUNITIES: NavItem = localized({ to: "/app/community", label: { en: "Communities", pt: "Comunidades" }, icon: Users });
+const PIPELINE: NavItem = localized({ to: "/app/partner", label: { en: "P2P desk", pt: "Mesa P2P" }, icon: Briefcase });
+const ENGINE: NavItem = localized({ to: "/app/capital", label: { en: "Allocation engine", pt: "Motor de alocação" }, icon: Split });
 
-const AUDIT: NavItem[] = [
-  { to: "/app/audit", label: "Attestations", icon: FileCheck2, end: true },
-  { to: "/app/audit/events", label: "Events", icon: History },
-  { to: "/app/audit/models", label: "Models", icon: Cpu },
-  { to: "/app/audit/consents", label: "Consents", icon: ShieldCheck },
-  { to: "/app/audit/zcash", label: "Zcash treasury", icon: KeyRound },
-  { to: "/app/audit/system", label: "System", icon: ServerCog },
-  { to: "/app/audit/reports", label: "Reports", icon: Share2 },
-];
+const AUDIT: NavItem[] = localized([
+  { to: "/app/audit", label: { en: "Attestations", pt: "Atestados" }, icon: FileCheck2, end: true },
+  { to: "/app/audit/events", label: { en: "Events", pt: "Eventos" }, icon: History },
+  { to: "/app/audit/models", label: { en: "Models", pt: "Modelos" }, icon: Cpu },
+  { to: "/app/audit/consents", label: { en: "Consents", pt: "Consentimentos" }, icon: ShieldCheck },
+  { to: "/app/audit/zcash", label: { en: "Zcash treasury", pt: "Tesouraria Zcash" }, icon: KeyRound },
+  { to: "/app/audit/system", label: { en: "System", pt: "Sistema" }, icon: ServerCog },
+  { to: "/app/audit/reports", label: { en: "Reports", pt: "Relatórios" }, icon: Share2 },
+]);
 
 const NAV: Record<Role, NavItem[]> = {
-  entrepreneur: [
-    { to: "/app/me", label: "My business", icon: Store },
-    { to: "/app/check-in", label: "Monthly check-in", icon: CalendarCheck },
-    { to: "/app/consent", label: "Consent", icon: ShieldCheck },
-  ],
+  entrepreneur: localized([
+    { to: "/app/me", label: { en: "My business", pt: "Meu negócio" }, icon: Store },
+    { to: "/app/check-in", label: { en: "Monthly check-in", pt: "Check-in mensal" }, icon: CalendarCheck },
+    { to: "/app/consent", label: { en: "Consent", pt: "Consentimento" }, icon: ShieldCheck },
+  ]),
   community_leader: [COMMUNITIES],
   partner: [
-    { to: "/app/partner", label: "Pipeline", icon: RouteIcon, end: true },
-    { to: "/app/partner/reviews", label: "Opportunities", icon: ClipboardCheck },
-    { to: "/app/partner/decisions", label: "Decisions", icon: Gavel },
-    { to: "/app/partner/portfolio", label: "Portfolio", icon: PieChart },
-    { to: "/app/partner/servicing", label: "Servicing", icon: CalendarClock },
+    ...localized([
+      { to: "/app/partner", label: { en: "Pipeline", pt: "Pipeline" }, icon: RouteIcon, end: true },
+      { to: "/app/partner/reviews", label: { en: "Opportunities", pt: "Oportunidades" }, icon: ClipboardCheck },
+      { to: "/app/partner/decisions", label: { en: "Decisions", pt: "Decisões" }, icon: Gavel },
+      { to: "/app/partner/portfolio", label: { en: "Portfolio", pt: "Carteira" }, icon: PieChart },
+      { to: "/app/partner/servicing", label: { en: "Servicing", pt: "Acompanhamento de pagamentos" }, icon: CalendarClock },
+    ]),
     ENGINE,
   ],
   capital_provider: [
-    { to: "/app/investor", label: "Overview", icon: LayoutDashboard, end: true },
-    { to: "/app/investor/opportunities", label: "Opportunities", icon: Coins },
+    ...localized([
+      { to: "/app/investor", label: { en: "Overview", pt: "Visão geral" }, icon: LayoutDashboard, end: true },
+      { to: "/app/investor/opportunities", label: { en: "Opportunities", pt: "Oportunidades" }, icon: Coins },
+    ]),
     ENGINE,
-    { to: "/app/investor/portfolio", label: "Portfolio", icon: PieChart },
-    { to: "/app/investor/settlement", label: "Settlement", icon: ArrowLeftRight },
-    { to: "/app/investor/audit", label: "Audit trail", icon: BadgeCheck },
+    ...localized([
+      { to: "/app/investor/portfolio", label: { en: "Portfolio", pt: "Carteira" }, icon: PieChart },
+      { to: "/app/investor/settlement", label: { en: "Settlement", pt: "Liquidação" }, icon: ArrowLeftRight },
+      { to: "/app/investor/audit", label: { en: "Audit trail", pt: "Trilha de auditoria" }, icon: BadgeCheck },
+    ]),
   ],
   auditor: [...AUDIT, COMMUNITIES, PIPELINE, ENGINE],
   admin: [
-    { to: "/app/admin", label: "Review queue", icon: ClipboardCheck },
-    { to: "/app/audit", label: "Audit console", icon: ScanSearch },
+    ...localized([
+      { to: "/app/admin", label: { en: "Review queue", pt: "Fila de revisão" }, icon: ClipboardCheck },
+      { to: "/app/audit", label: { en: "Audit console", pt: "Console de auditoria" }, icon: ScanSearch },
+    ]),
     COMMUNITIES, PIPELINE, ENGINE,
   ],
 };
 
-const WORKSPACE: Record<Role, string> = {
-  entrepreneur: "My business",
-  community_leader: "Community Intelligence",
-  partner: "EmpowerFI P2P desk",
-  capital_provider: "P2P Capital Console",
-  auditor: "Audit",
-  admin: "EmpowerFI Admin",
-};
+const WORKSPACE: Record<Role, string> = localized({
+  entrepreneur: { en: "My business", pt: "Meu negócio" },
+  community_leader: { en: "Community Intelligence", pt: "Inteligência Comunitária" },
+  partner: { en: "EmpowerFI P2P desk", pt: "Mesa P2P da EmpowerFI" },
+  capital_provider: { en: "P2P Capital Console", pt: "Console de Capital P2P" },
+  auditor: { en: "Audit", pt: "Auditoria" },
+  admin: { en: "EmpowerFI Admin", pt: "Admin da EmpowerFI" },
+});
 
 function Sidebar({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col justify-between gap-8 p-4">
-      <nav className="space-y-1" aria-label="Workspace">
+      <nav className="space-y-1" aria-label={tr({ en: "Workspace", pt: "Área de trabalho" })}>
         {items.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} onClick={onNavigate}
             className={({ isActive }) =>
@@ -120,7 +132,7 @@ function Sidebar({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => v
       </nav>
       <div className="space-y-4 border-t border-border pt-4">
         <DataLegend compact />
-        <p className="text-xs leading-relaxed text-muted-foreground">{PROTOTYPE_NOTICE}</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">{prototypeNotice()}</p>
         <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
           empowerfi.io <ArrowUpRight size={12} aria-hidden />
         </Link>
@@ -129,8 +141,9 @@ function Sidebar({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => v
   );
 }
 
+// Keyed on the route, which does not change with the language.
 const TAB_ICON: Record<string, LucideIcon> = {
-  Overview: LayoutDashboard, Cohorts: Layers, Participants: Users, Readiness: Gauge, "Credit pipeline": RouteIcon, Impact: Sprout,
+  "": LayoutDashboard, cohorts: Layers, participants: Users, readiness: Gauge, pipeline: RouteIcon, impact: Sprout,
 };
 
 export default function AppLayout() {
@@ -141,7 +154,7 @@ export default function AppLayout() {
   const items = !profile ? []
     : profile.role === "community_leader" && led.data
       ? COMMUNITY_TABS.map((t) => ({
-          to: `/app/community/${led.data!.id}${t.to ? `/${t.to}` : ""}`, label: t.label, icon: TAB_ICON[t.label] ?? Activity, end: "end" in t,
+          to: `/app/community/${led.data!.id}${t.to ? `/${t.to}` : ""}`, label: t.label, icon: TAB_ICON[t.to] ?? Activity, end: "end" in t,
         }))
       : NAV[profile.role];
   const initials = profile?.display_name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -153,7 +166,7 @@ export default function AppLayout() {
           <div className="flex min-w-0 items-center gap-3">
             {items.length > 0 && (
               <button className="rounded-md p-1.5 text-muted-foreground hover:text-foreground lg:hidden" onClick={() => setOpen(true)}
-                aria-label="Open navigation">
+                aria-label={tr({ en: "Open navigation", pt: "Abrir navegação" })}>
                 <Menu size={22} />
               </button>
             )}
@@ -169,10 +182,12 @@ export default function AppLayout() {
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="hidden rounded-full border border-caution/35 px-2.5 py-1 text-xs font-medium text-caution md:inline">
-              Simulated data
+              {tr({ en: "Simulated data", pt: "Dados simulados" })}
             </span>
             <NetworkBadge />
             <WalletChip />
+            {/* On smaller screens the switch sits in the navigation sheet, where the header has no room. */}
+            <LanguageSwitch className={items.length > 0 ? "hidden lg:inline-flex" : undefined} />
             {profile && (
               <>
                 <div className="hidden items-center gap-2.5 sm:flex">
@@ -184,7 +199,8 @@ export default function AppLayout() {
                     <p className="text-xs text-muted-foreground">{ROLE_LABEL[profile.role]}</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={signOut} aria-label="Sign out" title="Sign out">
+                <Button variant="ghost" size="icon" onClick={signOut}
+                  aria-label={tr({ en: "Sign out", pt: "Sair" })} title={tr({ en: "Sign out", pt: "Sair" })}>
                   <LogOut size={17} />
                 </Button>
               </>
@@ -202,6 +218,7 @@ export default function AppLayout() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent side="left" className="w-72 border-border bg-sidebar p-0">
             <SheetTitle className="px-7 pt-6 font-heading text-lg text-foreground">{profile ? WORKSPACE[profile.role] : "EmpowerFI"}</SheetTitle>
+            <LanguageSwitch className="px-7 pt-3" />
             <Sidebar items={items} onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>

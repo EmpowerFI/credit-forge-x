@@ -8,23 +8,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
 import Panel from "../../components/product/Panel";
 import StatusPill from "../../components/product/StatusPill";
+import { tr } from "../../i18n";
 import { shortDate } from "../../lib/community";
 import { describeError } from "../../lib/errors";
 import { type ModelVersion, useModels } from "./queries";
 import { rerun } from "./rerun";
 
+const kindLabel = (kind: "readiness" | "eligibility") =>
+  tr(kind === "readiness" ? { en: "readiness", pt: "prontidão" } : { en: "eligibility", pt: "elegibilidade" });
+
 function Versions({ rows, current }: { rows: ModelVersion[]; current?: string }) {
-  if (rows.length === 0) return <p className="text-sm text-muted-foreground">Not run yet.</p>;
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground">{tr({ en: "Not run yet.", pt: "Ainda não rodou." })}</p>;
   return (
     <div className="relative -mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
       <table className="w-full min-w-[640px] text-sm">
         <thead className="text-left text-xs text-muted-foreground">
           <tr className="border-b border-border">
-            <th className="py-2 pr-4 font-medium">Version</th>
-            <th className="py-2 pr-4 text-right font-medium">Runs</th>
-            <th className="py-2 pr-4 font-medium">Concluded</th>
-            <th className="py-2 pr-4 text-right font-medium">On chain</th>
-            <th className="py-2 font-medium">In use</th>
+            <th className="py-2 pr-4 font-medium">{tr({ en: "Version", pt: "Versão" })}</th>
+            <th className="py-2 pr-4 text-right font-medium">{tr({ en: "Runs", pt: "Execuções" })}</th>
+            <th className="py-2 pr-4 font-medium">{tr({ en: "Concluded", pt: "Conclusões" })}</th>
+            <th className="py-2 pr-4 text-right font-medium">{tr({ en: "On chain", pt: "Na blockchain" })}</th>
+            <th className="py-2 font-medium">{tr({ en: "In use", pt: "Em uso" })}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -32,7 +36,7 @@ function Versions({ rows, current }: { rows: ModelVersion[]; current?: string })
             <tr key={v.version}>
               <td className="py-2.5 pr-4">
                 <span className="font-mono text-xs text-foreground">{v.version}</span>
-                {current && <span className="ml-2">{v.version === current ? <StatusPill tone="positive">this build</StatusPill> : <StatusPill tone="neutral">earlier</StatusPill>}</span>}
+                {current && <span className="ml-2">{v.version === current ? <StatusPill tone="positive">{tr({ en: "this build", pt: "esta versão do app" })}</StatusPill> : <StatusPill tone="neutral">{tr({ en: "earlier", pt: "anterior" })}</StatusPill>}</span>}
               </td>
               <td className="num py-2.5 pr-4 text-right text-foreground">{v.runs}</td>
               <td className="py-2.5 pr-4">
@@ -57,7 +61,7 @@ function Versions({ rows, current }: { rows: ModelVersion[]; current?: string })
 function Parameters({ rules }: { rules: Record<string, unknown> }) {
   return (
     <details className="group rounded-lg border border-border px-4 py-2.5">
-      <summary className="cursor-pointer text-sm text-muted-foreground group-open:text-foreground">Parameters of this version</summary>
+      <summary className="cursor-pointer text-sm text-muted-foreground group-open:text-foreground">{tr({ en: "Parameters of this version", pt: "Parâmetros desta versão" })}</summary>
       <dl className="mt-3 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
         {Object.entries(rules).map(([k, v]) => (
           <div key={k} className="flex items-baseline justify-between gap-3 border-b border-border/50 py-1">
@@ -82,11 +86,14 @@ export default function Models() {
 
   return (
     <div className="space-y-6">
-      <Panel title="Reproduce the latest decisions"
-        description="Rules, not a black box: the same inputs always give the same result. This re-runs the twelve latest readiness and eligibility assessments through the engines bundled in this page, and compares every stored field."
+      <Panel title={tr({ en: "Reproduce the latest decisions", pt: "Reproduzir as decisões mais recentes" })}
+        description={tr({
+          en: "Rules, not a black box: the same inputs always give the same result. This re-runs the twelve latest readiness and eligibility assessments through the engines bundled in this page, and compares every stored field.",
+          pt: "Regras, não uma caixa-preta: os mesmos dados sempre dão o mesmo resultado. Isto roda de novo as doze avaliações de prontidão e de elegibilidade mais recentes nos motores incluídos nesta página e compara cada campo guardado.",
+        })}
         actions={
           <Button onClick={() => check.mutate()} disabled={check.isPending} className="gap-2">
-            {check.isPending ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />} Re-run in my browser
+            {check.isPending ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />} {tr({ en: "Re-run in my browser", pt: "Rodar de novo no meu navegador" })}
           </Button>
         }>
         {check.isError && <p className="text-sm text-alert">{describeError(check.error)}</p>}
@@ -94,14 +101,14 @@ export default function Models() {
           <div className="space-y-3">
             <p className={`flex items-center gap-2 text-sm font-medium ${passed === check.data.length ? "text-positive" : "text-alert"}`}>
               {passed === check.data.length ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-              {passed} of {check.data.length} reproduce exactly.
+              {tr({ en: `${passed} of ${check.data.length} reproduce exactly.`, pt: `${passed} de ${check.data.length} se reproduzem exatamente.` })}
             </p>
             <ul className="flex flex-wrap gap-2">
               {check.data.map((r) => (
                 <li key={r.id}>
-                  <Link to={`/app/audit/${r.kind}/${r.id}`} title={`${r.kind} · ${r.version}`}
+                  <Link to={`/app/audit/${r.kind}/${r.id}`} title={`${kindLabel(r.kind)} · ${r.version}`}
                     className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${r.ok ? "tone-positive" : "tone-alert"}`}>
-                    {r.ok ? <CheckCircle2 size={11} /> : <XCircle size={11} />} {r.kind}
+                    {r.ok ? <CheckCircle2 size={11} /> : <XCircle size={11} />} {kindLabel(r.kind)}
                   </Link>
                 </li>
               ))}
@@ -110,17 +117,29 @@ export default function Models() {
         )}
       </Panel>
 
-      <Panel title="Readiness engine" description="Is the business prepared for a credit conversation? Education, reporting, data quality and the business itself.">
+      <Panel title={tr({ en: "Readiness engine", pt: "Motor de prontidão" })}
+        description={tr({
+          en: "Is the business prepared for a credit conversation? Education, reporting, data quality and the business itself.",
+          pt: "O negócio está preparado para uma conversa sobre crédito? Formação, envio de dados, qualidade dos dados e o próprio negócio.",
+        })}>
         <Versions rows={m.readiness} current={READINESS_MODEL_VERSION} />
         <Parameters rules={READINESS_RULES} />
       </Panel>
 
-      <Panel title="Eligibility engine" description="Only for those ready and asking: an amount and a term the business can carry. The allocation engine then chooses the pool of capital.">
+      <Panel title={tr({ en: "Eligibility engine", pt: "Motor de elegibilidade" })}
+        description={tr({
+          en: "Only for those ready and asking: an amount and a term the business can carry. The allocation engine then chooses the pool of capital.",
+          pt: "Só para quem está pronta e pede crédito: um valor e um prazo que o negócio consegue sustentar. Depois, o Motor de Alocação de Capital escolhe o pool.",
+        })}>
         <Versions rows={m.eligibility} current={ELIGIBILITY_MODEL_VERSION} />
         <Parameters rules={ELIGIBILITY_RULES} />
       </Panel>
 
-      <Panel title="Productive outcome" description="After a loan: did sales change, was the capital used as declared, what value did it create?">
+      <Panel title={tr({ en: "Productive outcome", pt: "Resultado produtivo" })}
+        description={tr({
+          en: "After a loan: did sales change, was the capital used as declared, what value did it create?",
+          pt: "Depois do empréstimo: as vendas mudaram, o capital foi usado como declarado, que valor ele gerou?",
+        })}>
         <Versions rows={m.outcome} />
       </Panel>
     </div>

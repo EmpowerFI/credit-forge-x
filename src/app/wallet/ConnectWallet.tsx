@@ -5,6 +5,7 @@ import { type UiWallet, type UiWalletAccount, useConnect } from "@wallet-standar
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { describeError } from "../lib/errors";
 import { CLUSTER } from "../lib/solana";
+import { tr } from "../i18n";
 
 const INSTALL = [
   { name: "Phantom", url: "https://phantom.com/download" },
@@ -24,7 +25,7 @@ function WalletOption({ wallet, onConnected, onError }: {
         try {
           const accounts = await connect();
           const account = accounts.find((a) => a.chains.includes(CLUSTER)) ?? accounts[0];
-          if (!account) throw new Error("The wallet did not share an account.");
+          if (!account) throw new Error(tr({ en: "The wallet did not share an account.", pt: "A carteira não compartilhou uma conta." }));
           onConnected(account);
         } catch (err) {
           onError(describeError(err));
@@ -51,9 +52,12 @@ export default function ConnectWalletDialog({ open, onOpenChange, onConnected }:
     <Dialog open={open} onOpenChange={(o) => { setError(null); onOpenChange(o); }}>
       <DialogContent className="max-w-md border-border bg-card">
         <DialogHeader>
-          <DialogTitle className="font-heading">Connect a wallet</DialogTitle>
+          <DialogTitle className="font-heading">{tr({ en: "Connect a wallet", pt: "Conectar uma carteira" })}</DialogTitle>
           <DialogDescription>
-            Solana devnet only: test tokens with no real value. Signing in signs a message — no transaction, no fee.
+            {tr({
+              en: "Solana devnet only: test tokens with no real value. Signing in signs a message — no transaction, no fee.",
+              pt: "Somente Solana devnet: tokens de teste, sem valor real. Para entrar, você assina uma mensagem — sem transação, sem taxa.",
+            })}
           </DialogDescription>
         </DialogHeader>
         {wallets.length > 0 ? (
@@ -65,7 +69,12 @@ export default function ConnectWalletDialog({ open, onOpenChange, onConnected }:
           </div>
         ) : (
           <div className="space-y-3 text-sm">
-            <p className="text-muted-foreground">No Solana wallet found in this browser. Install one, switch it to devnet, and come back:</p>
+            <p className="text-muted-foreground">
+              {tr({
+                en: "No Solana wallet found in this browser. Install one, switch it to devnet, and come back:",
+                pt: "Nenhuma carteira Solana encontrada neste navegador. Instale uma, mude para a devnet e volte:",
+              })}
+            </p>
             <ul className="flex flex-wrap gap-2">
               {INSTALL.map((w) => (
                 <li key={w.name}>
@@ -76,7 +85,12 @@ export default function ConnectWalletDialog({ open, onOpenChange, onConnected }:
                 </li>
               ))}
             </ul>
-            <p className="text-muted-foreground">Or explore the console as the demo investor, without a wallet.</p>
+            <p className="text-muted-foreground">
+              {tr({
+                en: "Or explore the console as the demo investor, without a wallet.",
+                pt: "Ou explore o console como o investidor de demonstração, sem carteira.",
+              })}
+            </p>
           </div>
         )}
         {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
