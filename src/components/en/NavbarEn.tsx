@@ -31,7 +31,7 @@ const NavbarEn = () => {
         </Link>
 
         <div className="flex items-center gap-3">
-          <LaunchAppButton label="Launch App" />
+          <LaunchAppButton />
           <button
             className="text-foreground"
             onClick={() => setOpen(!open)}

@@ -29,7 +29,7 @@ const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
         </Link>
 
         <div className="flex items-center gap-3">
-          <LaunchAppButton label={nav.launchApp} />
+          <LaunchAppButton />
           <button
             className="text-foreground"
             onClick={() => setOpen(!open)}

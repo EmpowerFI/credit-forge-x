@@ -39,7 +39,7 @@ const FERNANDO_LINKEDIN_URL = "https://www.linkedin.com/in/fernando-blanco/";
 
 export interface AboutContent {
   meta: { title: string; description: string };
-  nav: { links: { label: string; href: string }[]; home: string; langSwitch: string; launchApp: string };
+  nav: { links: { label: string; href: string }[]; home: string; langSwitch: string };
   hero: {
     badge: string;
     titleLead: string;
@@ -202,7 +202,6 @@ export const aboutPt: AboutContent = {
     ],
     home: "Início",
     langSwitch: "EN",
-    launchApp: "Acessar a plataforma",
   },
   hero: {
     badge: "Sobre a empresa",
@@ -529,7 +528,6 @@ export const aboutEn: AboutContent = {
     ],
     home: "Home",
     langSwitch: "PT",
-    launchApp: "Launch App",
   },
   hero: {
     badge: "About the company",
