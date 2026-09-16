@@ -14,7 +14,7 @@ const FirstMarketSectionEn = () => (
         eyebrow="First market"
         title="Brazil as the laboratory."
         accent="Architecture ready for more."
-        subtitle="Brazil is the first market because the conditions are unusually good for testing: scale, a mature instant-payment rail, and established microcredit and public programmes. The core travels; compliance, partners and the last mile change by country."
+        subtitle="Brazil is the first market because the conditions are unusually good for testing: scale, a mature instant-payment rail, and established microcredit and public programmes. The core travels; regulation, payment rails and the last mile change by country."
       />
 
       <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
@@ -33,9 +33,10 @@ const FirstMarketSectionEn = () => (
             How we begin
           </h3>
           <p className="leading-relaxed text-muted-foreground">
-            EmpowerFI will begin by testing small productive loans with women-led businesses
-            and verified local communities — small enough to learn from, real enough to
-            prove the model.
+            EmpowerFI will begin with a pilot of small productive loans for women-led businesses
+            in verified local communities, funded by a regulated financial partner's capital —
+            small enough to learn from, real enough to prove the model. P2P investors come in
+            the next phase.
           </p>
         </div>
       </div>

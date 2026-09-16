@@ -15,10 +15,13 @@ const empowerfi = [
   { label: "Organization" },
   { label: "Business data" },
   { label: "Readiness", emphasis: true },
-  { label: "Credit intent", emphasis: true },
+  { label: "Credit intent" },
   { label: "Eligibility" },
-  { label: "Credit" },
-  { label: "Servicing" },
+  { label: "Qualified opportunity", emphasis: true },
+  { label: "Pool", sub: "Reais or USDC" },
+  { label: "Formalisation", sub: "P2P desk" },
+  { label: "Disbursement", sub: "Pix, in reais" },
+  { label: "Repayment", sub: "Pix, in reais", emphasis: true },
 ];
 
 // The six answers the system is allowed to give. Most lending products can only
@@ -28,7 +31,7 @@ const outcomes = [
   { title: "Ready for credit", desc: "Prepared, with enough data behind the judgement." },
   { title: "Needs more data", desc: "The business is running; the record of it is too thin." },
   { title: "Needs more preparation", desc: "Organization or education still in progress." },
-  { title: "No current need for capital", desc: "Ready, and not looking to borrow. A good outcome." },
+  { title: "No current need for capital", desc: "Ready, and not asking. A complete outcome." },
   { title: "Manual review", desc: "The rules are not confident enough to decide alone." },
   { title: "Not eligible right now", desc: "With the reason codes that say what would change it." },
 ];
@@ -60,8 +63,12 @@ const HowItWorksSectionEn = () => (
           </p>
           <CapitalFlow
             steps={empowerfi}
-            caption="The journey does two jobs at once: for the entrepreneur it prepares the business to access capital; for the credit provider it produces a qualified origination pipeline before the final analysis."
+            caption="The journey does two jobs at once: for the entrepreneur it prepares the business to access capital; for investors it produces qualified opportunities. The Capital Allocation Engine matches each one to a pool, EmpowerFI's P2P desk formalises the loan, and she receives and repays in reais, by Pix."
           />
+          <p className="text-center text-sm leading-relaxed text-muted-foreground">
+            This is the P2P model, demonstrated in the devnet prototype. In the pilot, a regulated
+            financial partner provides the capital and makes the credit decision.
+          </p>
         </div>
       </div>
 

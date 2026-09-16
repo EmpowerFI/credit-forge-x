@@ -83,7 +83,7 @@ export const sourceGroups: SourceGroup[] = [
         supports:
           "Admits digital and electronic technologies in place of in-person contact for orientation and obtaining credit.",
         caveat:
-          "This permits digital methodology. It does not authorise EmpowerFI to grant credit — real operations depend on the applicable regulatory structure and on licensed partners.",
+          "This permits digital methodology. It does not authorise EmpowerFI to grant credit: in the pilot, a regulated financial partner provides the capital and makes the credit decision, and the P2P model will operate under the applicable regulated structure.",
         url: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/lei/l15364.htm",
       },
       {
@@ -97,13 +97,15 @@ export const sourceGroups: SourceGroup[] = [
         supports:
           "Governs direct credit companies (SCD) and peer-to-peer lending companies (SEP) operating through an electronic platform.",
         caveat:
-          "Cited as the future regulated architecture for EmpowerFI's P2P productive credit. EmpowerFI holds no such licence today: the platform demo is a prototype, not an authorised P2P lender.",
+          "Cited as the kind of regulated structure EmpowerFI's P2P productive credit would operate under, such as a SEP. EmpowerFI holds no such licence today: the devnet platform is a prototype of a future regulated architecture, not an authorised P2P lender.",
         url: "https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?numero=5050&tipo=Resolu%C3%A7%C3%A3o+CMN",
       },
       {
         title: "BNDES — accreditation requirements for financial agents",
         supports:
           "Current requirements including technical capacity, minimum net equity and minimum time in operation.",
+        caveat:
+          "Context for regulated financial institutions that operate BNDES credit lines. It is not a requirement EmpowerFI claims to meet, and not part of the P2P model.",
         url: "https://www.bndes.gov.br/wps/portal/site/home/instituicoes-financeiras-credenciadas/como-credenciar",
       },
     ],

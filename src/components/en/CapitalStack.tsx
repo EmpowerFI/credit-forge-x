@@ -1,4 +1,4 @@
-import { ArrowDown, Globe, Store } from "lucide-react";
+import { ArrowDown, Banknote, Globe, Store } from "lucide-react";
 import logoMark from "@/assets/logo-mark.png";
 
 /** Official Solana mark — three slanted bars, teal to purple. */
@@ -19,7 +19,7 @@ const SolanaMark = () => (
   </svg>
 );
 
-/** Fading dot field — the texture behind the capital and business cards. */
+/** Fading dot field — the texture behind the pool and business cards. */
 const DotField = ({ id, className }: { id: string; className?: string }) => (
   <svg className={className} aria-hidden focusable="false">
     <defs>
@@ -60,55 +60,53 @@ const Connector = () => (
   </div>
 );
 
+/** The two P2P pools. Either one can fund a loan; the engine picks, per opportunity. */
+const pools = [
+  { id: "cs-domestic", icon: Banknote, title: "Domestic pool", sub: "Brazilian investors, in reais" },
+  { id: "cs-global", icon: Globe, title: "Global pool", sub: "International and impact investors, in USDC" },
+];
+
 /**
- * The thesis as a stack: where the capital starts, what it settles on, who turns
- * it into credit, and who ends up holding it.
+ * The model as a stack: two pools of P2P capital, the engine and desk that turn
+ * them into a loan, and the business that receives and repays it by Pix. Solana
+ * sits apart, under the chain, because it is the proof of every step — not a
+ * rail every loan travels (only the global pool moves on it).
  *
  * Built in markup rather than shipped as an image so it stays readable on a
- * phone, selectable, and legible to a screen reader — a four-node diagram with
- * baked-in text is none of those things.
+ * phone, selectable, and legible to a screen reader — a diagram with baked-in
+ * text is none of those things.
  */
 const CapitalStack = () => (
   <ol className="space-y-1">
-    {/* 1 — Global capital */}
-    <li className="relative flex items-center gap-4 overflow-hidden rounded-2xl gradient-primary px-5 py-5 shadow-glow sm:gap-5 sm:px-6 sm:py-6">
-      <DotField
-        id="cs-globe"
-        className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 text-primary-foreground/25 sm:block"
-      />
-      <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-card shadow-sm sm:h-14 sm:w-14">
-        <Globe className="text-accent" size={24} />
-      </span>
-      <span className="relative">
-        <span className="block font-heading text-lg font-bold leading-tight text-primary-foreground">
-          Global capital
-        </span>
-        <span className="block text-sm text-primary-foreground/85">USDC</span>
-      </span>
+    {/* 1 — The two pools */}
+    <li className="grid grid-cols-2 gap-2">
+      {pools.map(({ id, icon: Icon, title, sub }) => (
+        <div
+          key={id}
+          className="relative flex flex-col gap-3 overflow-hidden rounded-2xl gradient-primary px-4 py-4 shadow-glow sm:px-5 sm:py-5"
+        >
+          <DotField
+            id={id}
+            className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 text-primary-foreground/25 sm:block"
+          />
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card shadow-sm sm:h-12 sm:w-12">
+            <Icon className="text-accent" size={22} />
+          </span>
+          <span className="relative">
+            <span className="block font-heading text-base font-bold leading-tight text-primary-foreground sm:text-lg">
+              {title}
+            </span>
+            <span className="mt-0.5 block text-xs leading-snug text-primary-foreground/85 sm:text-sm">
+              {sub}
+            </span>
+          </span>
+        </div>
+      ))}
     </li>
 
     <Connector />
 
-    {/* 2 — Solana */}
-    <li className="relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card px-5 py-5 shadow-card sm:gap-5 sm:px-6 sm:py-6">
-      <DotField
-        id="cs-solana-bg"
-        className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 text-foreground/[0.07] sm:block"
-      />
-      <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background shadow-sm ring-1 ring-border sm:h-14 sm:w-14">
-        <SolanaMark />
-      </span>
-      <span className="relative">
-        <span className="block font-heading text-lg font-bold leading-tight text-foreground">
-          Solana
-        </span>
-        <span className="block text-sm text-muted-foreground">Settlement layer</span>
-      </span>
-    </li>
-
-    <Connector />
-
-    {/* 3 — EmpowerFI: the anchor of the chain, so it carries the brand navy. */}
+    {/* 2 — EmpowerFI: the anchor of the chain, so it carries the brand navy. */}
     <li className="relative flex items-center gap-4 overflow-hidden rounded-2xl bg-primary px-5 py-5 shadow-card sm:gap-5 sm:px-6 sm:py-6">
       <NodeWeb
         className="pointer-events-none absolute -right-4 bottom-0 top-0 hidden h-full w-1/2 text-accent/45 sm:block"
@@ -120,13 +118,15 @@ const CapitalStack = () => (
         <span className="block font-heading text-lg font-bold leading-tight text-primary-foreground">
           EmpowerFI
         </span>
-        <span className="block text-sm font-medium text-accent">Credit infrastructure</span>
+        <span className="block text-sm font-medium text-accent">
+          Capital Allocation Engine · P2P desk
+        </span>
       </span>
     </li>
 
     <Connector />
 
-    {/* 4 — Microbusiness */}
+    {/* 3 — Her business */}
     <li className="relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card px-5 py-5 shadow-card sm:gap-5 sm:px-6 sm:py-6">
       <DotField
         id="cs-store"
@@ -137,9 +137,30 @@ const CapitalStack = () => (
       </span>
       <span className="relative">
         <span className="block font-heading text-lg font-bold leading-tight text-foreground">
-          Microbusiness
+          Her business
         </span>
-        <span className="block text-sm text-muted-foreground">Pix / local currency</span>
+        <span className="block text-sm text-muted-foreground">
+          Receives and repays in reais, by Pix
+        </span>
+      </span>
+    </li>
+
+    {/* 4 — Solana, under the whole chain rather than in it. */}
+    <li className="relative !mt-4 flex items-center gap-4 overflow-hidden rounded-2xl border border-dashed border-accent/50 bg-card/60 px-5 py-4 sm:gap-5 sm:px-6">
+      <DotField
+        id="cs-solana-bg"
+        className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 text-foreground/[0.07] sm:block"
+      />
+      <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background shadow-sm ring-1 ring-border sm:h-14 sm:w-14">
+        <SolanaMark />
+      </span>
+      <span className="relative">
+        <span className="block font-heading text-lg font-bold leading-tight text-foreground">
+          Solana
+        </span>
+        <span className="block text-sm text-muted-foreground">
+          Proof of every step · no personal data on chain
+        </span>
       </span>
     </li>
   </ol>

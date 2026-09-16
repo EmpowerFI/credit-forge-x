@@ -5,7 +5,7 @@ import entrepreneursPhoto from "@/assets/entrepreneurs.webp";
 const features = [
   "Divulgar o que você vende e ser encontrada por novos clientes",
   "Acompanhar vendas e recebimentos no mesmo lugar",
-  "Construir seu histórico sem preencher formulário nenhum",
+  "Começar a construir seu histórico no dia a dia do negócio",
   "Fazer parte de uma rede de empreendedoras",
 ];
 

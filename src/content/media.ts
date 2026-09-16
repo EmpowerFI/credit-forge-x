@@ -82,7 +82,7 @@ export const mediaItemsPt: MediaItem[] = [
     youtubeId: "m9YNq-fOdQQ",
     lang: "pt-BR",
     date: "10/09/2026",
-    upcoming: true,
+    upcoming: false,
   },
 ];
 
@@ -95,6 +95,6 @@ export const mediaItemsEn: MediaItem[] = [
     youtubeId: "m9YNq-fOdQQ",
     lang: "pt-BR",
     date: "10 September 2026",
-    upcoming: true,
+    upcoming: false,
   },
 ];

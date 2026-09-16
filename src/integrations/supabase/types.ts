@@ -109,8 +109,11 @@ export type Database = {
           email: string
           id: string
           investor_type: string
+          language: string
           motivation: string
+          pool_interest: string
           source: string | null
+          ticket_currency: string
           ticket_range: string
           wallet_address: string | null
         }
@@ -121,8 +124,11 @@ export type Database = {
           email: string
           id?: string
           investor_type: string
+          language?: string
           motivation: string
+          pool_interest?: string
           source?: string | null
+          ticket_currency?: string
           ticket_range: string
           wallet_address?: string | null
         }
@@ -133,8 +139,11 @@ export type Database = {
           email?: string
           id?: string
           investor_type?: string
+          language?: string
           motivation?: string
+          pool_interest?: string
           source?: string | null
+          ticket_currency?: string
           ticket_range?: string
           wallet_address?: string | null
         }

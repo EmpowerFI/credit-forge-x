@@ -11,22 +11,28 @@ interface Props {
   email?: string
   country?: string
   investorType?: string
+  pool?: string
+  currency?: string
   ticketRange?: string
   motivation?: string
+  language?: string
   walletAddress?: string
 }
 
 /**
- * Sent to the founder when someone joins the investor waitlist on /investors.
- * The values arrive already humanised by the site — this template does no
- * mapping of its own.
+ * Sent to the founder when someone joins the investor waitlist on /investors or
+ * /pt/investidores. The values arrive already humanised by the site, in English
+ * whichever page the signup came from — this template does no mapping of its own.
  */
 const InvestorWaitlistForFounder = ({
   email,
   country,
   investorType,
+  pool,
+  currency,
   ticketRange,
   motivation,
+  language,
   walletAddress,
 }: Props) => (
   <Html lang="en" dir="ltr">
@@ -56,13 +62,26 @@ const InvestorWaitlistForFounder = ({
 
           <Hr style={divider} />
 
+          <Text style={label}>Pool</Text>
+          <Text style={value}>{pool || 'Not provided'}</Text>
+
+          <Hr style={divider} />
+
           <Text style={label}>Potential amount</Text>
-          <Text style={value}>{ticketRange || 'Not provided'}</Text>
+          <Text style={value}>
+            {ticketRange || 'Not provided'}
+            {currency ? ` (${currency})` : ''}
+          </Text>
 
           <Hr style={divider} />
 
           <Text style={label}>Primary motivation</Text>
           <Text style={value}>{motivation || 'Not provided'}</Text>
+
+          <Hr style={divider} />
+
+          <Text style={label}>Language</Text>
+          <Text style={value}>{language || 'Not provided'}</Text>
 
           <Hr style={divider} />
 
@@ -84,15 +103,20 @@ const InvestorWaitlistForFounder = ({
 export const template = {
   component: InvestorWaitlistForFounder,
   subject: (data: Record<string, unknown>) =>
-    `Investor waitlist signup${data?.country ? ` — ${String(data.country)}` : ''}`,
+    `Investor waitlist signup${data?.pool ? ` — ${String(data.pool)}` : ''}${
+      data?.country ? ` — ${String(data.country)}` : ''
+    }`,
   to: 'daniele@empowerfi.io',
   displayName: 'Investor waitlist signup (for the founder)',
   previewData: {
     email: 'investor@example.com',
     country: 'Germany',
     investorType: 'Individual',
+    pool: 'Global P2P (in USDC)',
+    currency: 'USD',
     ticketRange: '$500+',
     motivation: 'Both',
+    language: 'English',
     walletAddress: '7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU',
   },
 } satisfies TemplateEntry

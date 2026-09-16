@@ -5,9 +5,10 @@ import SectionHeading from "@/components/SectionHeading";
 
 // The 12-month pilot roadmap, written as intent rather than promise. Every
 // figure is planned scope, nothing past a gate happens unless the gate is met,
-// and the capital and the credit decision come from financial partners — the
-// copy must never read as EmpowerFI lending directly, or as a claim that the
-// pilot will prove a default rate.
+// and nothing here claims the pilot will prove a default rate. The pilot's
+// capital and credit decision come from a regulated financial partner; P2P
+// investors come in the phase after it. Keep the two phases apart in the copy,
+// and give the P2P phase no date.
 
 const journey = [
   "Community",
@@ -75,15 +76,15 @@ const roadmap: (Phase | Gate)[] = [
     period: "Months 4–5",
     months: [4, 5],
     title: "Origination and credit",
-    desc: "Identify prepared entrepreneurs, structure qualified opportunities and carry out the first operations through a financial partner.",
+    desc: "Identify prepared entrepreneurs, structure qualified opportunities and carry out the first operations with a regulated financial partner's capital.",
     goals: [
       "Identify participants with a real need for capital",
       "Assess eligibility and repayment capacity",
       "Generate qualified opportunities",
-      "Around 5–10 first operations, with capital provided by financial partners",
+      "Around 5–10 first operations, with capital from a regulated financial partner",
       "Start follow-up after credit",
     ],
-    note: "The financial partner makes the credit decision and provides the capital.",
+    note: "In the pilot, a regulated financial partner provides the capital and makes the credit decision.",
     gateAfter: "Gate 1",
     place: "xl:col-start-2 xl:row-start-1",
   },
@@ -107,7 +108,7 @@ const roadmap: (Phase | Gate)[] = [
       "Around 20–35 cumulative operations",
       "Evolution of the Credit Readiness Engine",
       "Less rework and manual effort",
-      "A first origination package for partners",
+      "Qualified opportunities documented for P2P funding",
       "Follow-up on repayment and productive use of capital",
     ],
     note: "Scale the process, not just the volume.",
@@ -118,7 +119,7 @@ const roadmap: (Phase | Gate)[] = [
     kind: "gate",
     label: "Gate 2 · after month 9",
     title: "Validate the economics",
-    text: "Review portfolio performance, Cost to Serve, conversion, decision time and the value generated for partners before the next stage.",
+    text: "Review portfolio performance, Cost to Serve, conversion, decision time and the value generated for entrepreneurs, communities and the funding partner before the next stage.",
     place: "xl:col-span-2 xl:col-start-3 xl:row-start-2",
   },
   {
@@ -134,9 +135,9 @@ const roadmap: (Phase | Gate)[] = [
       "A performance and lessons-learned report",
       "A Cost to Serve case",
       "A track record across readiness, credit, repayment and outcome",
-      "A commercial proposal for new partners",
-      "Design of the next capital layer",
-      "P2P and stablecoins: assessed as a future step, not offered today",
+      "A Community Intelligence proposal for programmes",
+      "The case for the P2P phase: two pools of investors, under the applicable regulated structure",
+      "P2P investment is not offered during the pilot",
     ],
     place: "xl:col-start-4 xl:row-start-1",
   },
@@ -148,7 +149,7 @@ const scope = [
     value: "20–30",
     label: "with enough data for a Credit Readiness assessment",
   },
-  { value: "5–10", label: "first operations, with financial partners" },
+  { value: "5–10", label: "first operations, with a regulated financial partner's capital" },
   {
     value: "30–50",
     label: "cumulative operations in 12 months, if the gates are met",
@@ -158,10 +159,10 @@ const scope = [
 const questions = [
   "Can we identify better-prepared entrepreneurs before they ask for credit?",
   "Can we reduce the operational effort needed to serve small tickets?",
-  "Do financial institutions value better-qualified credit opportunities?",
+  "Do qualified opportunities carry enough evidence for investors to fund them?",
   "What is the Cost to Serve at each stage of the journey?",
   "Was the capital used productively, and what results can we observe?",
-  "Does the data we generate justify moving to a capital platform of our own?",
+  "Does the evidence justify opening the P2P model to investors in both pools?",
 ];
 
 /** Twelve cells, one per month: earlier months muted, this phase in gold. */
@@ -284,8 +285,13 @@ const PilotSectionEn = () => (
             Over the next 12 months, EmpowerFI intends to validate a complete
             journey: preparing entrepreneurs, building a business track record,
             identifying who is ready to receive capital, originating the first
-            operations with financial partners and following the results after
-            credit.
+            operations and following the results after credit.
+          </p>
+          <p>
+            In the pilot, a regulated financial partner provides the capital and
+            makes the credit decision, under its licence and its credit policy.
+            P2P investors — in reais and in USDC — come in the next phase, once
+            the pilot has validated the model.
           </p>
           <p>
             The pilot will run in stages, and each decision to advance will be
@@ -379,16 +385,16 @@ const PilotSectionEn = () => (
 
       <div className="mx-auto max-w-3xl space-y-5 rounded-2xl p-10 text-center glass glow-border shadow-glow">
         <p className="text-xs font-medium uppercase tracking-widest text-accent">
-          Prepare before credit · Originate better · Service continuously ·
-          Measure outcomes
+          Prepare · Originate · Allocate · Fund · Service · Measure
         </p>
         <h3 className="font-heading text-2xl font-bold text-foreground md:text-3xl">
           Want to take part in the pilot?
         </h3>
         <p className="leading-relaxed text-muted-foreground">
-          We are looking for communities, impact programmes and financial
-          partners interested in building a more efficient way to prepare and
-          finance small businesses.
+          We are looking for communities, impact programmes, a regulated
+          financial partner for the pilot, and investors who want to talk about
+          the P2P phase — people interested in building a more efficient way to
+          prepare and finance small businesses.
         </p>
         <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-center">
           <Button
@@ -407,6 +413,14 @@ const PilotSectionEn = () => (
             className="border-primary/40 text-foreground hover:bg-primary/10"
           >
             <Link to="/about">Get to know EmpowerFI</Link>
+          </Button>
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="border-primary/40 text-foreground hover:bg-primary/10"
+          >
+            <Link to="/investors#waitlist">Investor Waitlist</Link>
           </Button>
         </div>
       </div>

@@ -22,7 +22,7 @@ const Sources = () => (
   <div className="min-h-screen bg-background">
     <Seo
       title="Sources — EmpowerFI"
-      description="Official sources behind every figure EmpowerFI publishes: market data, unit-economics benchmarks and the Brazilian regulation governing guided productive microcredit."
+      description="Official sources behind every figure EmpowerFI publishes: market data, unit-economics benchmarks, and the Brazilian regulation behind guided productive microcredit and the future regulated P2P architecture."
       path="/sources"
       lang="en"
       alternates={alternates}

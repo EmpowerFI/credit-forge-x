@@ -10,6 +10,7 @@ import AboutPt from "./pages/AboutPt.tsx";
 import Index from "./pages/Index.tsx";
 import IndexPt from "./pages/IndexPt.tsx";
 import Investors from "./pages/Investors.tsx";
+import InvestorsPt from "./pages/InvestorsPt.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Sources from "./pages/Sources";
 import Privacy from "./pages/Privacy.tsx";
@@ -46,6 +47,7 @@ const App = () => (
           {/* Portuguese: the entrepreneur-facing product communication. */}
           <Route path="/pt" element={<IndexPt />} />
           <Route path="/pt/sobre" element={<AboutPt />} />
+          <Route path="/pt/investidores" element={<InvestorsPt />} />
           {/* These two paths are referenced by the Play Store listing and from
               inside the app, so they keep their original URLs. */}
           <Route path="/privacidade" element={<PrivacyPt />} />

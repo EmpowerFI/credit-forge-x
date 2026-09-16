@@ -147,7 +147,8 @@ export interface AboutContent {
     eyebrow: string;
     titleLead: string;
     titleAccent: string;
-    items: { q: string; a: string }[];
+    /** An optional link shown under the answer; the answer text stands on its own for the FAQ JSON-LD. */
+    items: { q: string; a: string; link?: { href: string; label: string } }[];
   };
   contact: {
     eyebrow: string;
@@ -186,9 +187,9 @@ export interface AboutContent {
 
 export const aboutPt: AboutContent = {
   meta: {
-    title: "Sobre a EmpowerFI — Crédito produtivo para pequenos negócios",
+    title: "Sobre a EmpowerFI — Crédito produtivo P2P para mulheres empreendedoras no Brasil",
     description:
-      "Conheça a EmpowerFI: nossa missão, nossa história, o problema que resolvemos e o time por trás da infraestrutura de crédito produtivo que prepara pequenos negócios antes do crédito. Fundada por Daniele Rodrigues dos Santos em São Paulo, Brasil.",
+      "Conheça a EmpowerFI: crédito produtivo P2P para mulheres empreendedoras no Brasil, da prontidão ao capital, com cada etapa comprovada na Solana. Nossa história, o problema que resolvemos, a missão e o time. Fundada por Daniele Rodrigues dos Santos em São Paulo, Brasil.",
   },
   nav: {
     links: [
@@ -205,10 +206,10 @@ export const aboutPt: AboutContent = {
   },
   hero: {
     badge: "Sobre a empresa",
-    titleLead: "Construindo infraestrutura de crédito para ",
+    titleLead: "Construindo crédito produtivo P2P para ",
     titleAccent: "quem o sistema não enxerga",
     subtitle:
-      "A EmpowerFI transforma comunidades e programas de capacitação em pequenos negócios preparados para receber capital — começando por mulheres empreendedoras no Brasil.",
+      "A EmpowerFI leva pequenos negócios da prontidão ao capital: comunidades e programas de capacitação preparam as empreendedoras, a EmpowerFI qualifica os pedidos de crédito, e cada etapa fica comprovada na Solana — começando por mulheres empreendedoras no Brasil.",
     primaryCta: "Falar com a gente",
     secondaryCta: "Ver o aplicativo",
   },
@@ -217,13 +218,13 @@ export const aboutPt: AboutContent = {
     titleLead: "Começamos pelo que ",
     titleAccent: "ninguém estava enxergando",
     paragraphs: [
-      "A EmpowerFI nasceu de uma constatação simples e incômoda: no Brasil, mais de 7 milhões de mulheres empreendedoras sustentam suas famílias e movimentam a economia real — e continuam invisíveis para o sistema financeiro. Elas vendem, recebem, reinvestem e pagam suas contas em dia. Mas nada disso vira histórico. E, sem histórico, não existe crédito.",
+      "A EmpowerFI nasceu de uma constatação simples e incômoda: no Brasil, 9,96 milhões de empresas ativas são lideradas por mulheres, que sustentam suas famílias e movimentam a economia real — e continuam invisíveis para o sistema financeiro. Elas vendem, recebem, reinvestem e pagam suas contas em dia. Mas nada disso vira histórico. E, sem histórico, não existe crédito.",
       "Nossa fundadora passou mais de vinte anos construindo tecnologia e produtos digitais dentro de grandes empresas. Ao olhar de perto para esse mercado, encontrou um problema que não era de esforço nem de mérito: era de infraestrutura. Os modelos de risco dos bancos simplesmente não têm onde buscar dados sobre quem nunca teve conta empresarial, garantia formal ou balanço auditado. A empreendedora não é recusada porque é ruim pagadora — é recusada porque não existe para o modelo.",
-      "Por isso começamos pelo Marketplace, e não pelo crédito. Emprestar dinheiro para quem não tem histórico é aposta; construir o histórico primeiro é engenharia. O Marketplace conecta empreendedoras a novos clientes e umas às outras, gerando duas coisas ao mesmo tempo: renda de verdade hoje e o registro de atividade econômica que, amanhã, sustenta um score justo. O dado nasce como subproduto da venda, sem formulário, sem curso e sem atrito.",
-      "A partir dessa base, cada camada reforça a seguinte: ferramentas de gestão organizam o negócio, o score alternativo traduz o comportamento em confiança mensurável, e o crédito passa a ser consequência de um histórico real — não de uma garantia que ela nunca teve como oferecer.",
+      "Por isso começamos pelo Marketplace, e não pelo crédito. Emprestar dinheiro para quem não tem histórico é aposta; construir o histórico primeiro é engenharia. O Marketplace conecta empreendedoras a novos clientes e umas às outras, gerando renda de verdade hoje e o começo de um registro de atividade econômica. Um check-in mensal de poucos minutos e a formação das comunidades e programas que já acompanham essas mulheres completam o histórico que o banco nunca teve.",
+      "A partir dessa base, cada camada reforça a seguinte. Um motor de prontidão mostra a cada empreendedora o que já está pronto e o que ainda falta. Prontidão não é elegibilidade, e elegibilidade não é captação: estar pronta e não pedir crédito é um resultado completo. Quando ela decide pedir, a EmpowerFI qualifica o pedido, e ele vira uma oportunidade que o capital pode financiar — no piloto, com o capital de uma instituição financeira parceira regulada; depois, no modelo P2P, com investidores.",
     ],
     pullQuote:
-      "O app é a porta de entrada de algo maior: uma infraestrutura que prepara o negócio antes do crédito, origina oportunidades qualificadas para parceiros financeiros e acompanha a operação depois do desembolso.",
+      "O app é a porta de entrada de algo maior: uma plataforma de crédito produtivo P2P que prepara o negócio, qualifica o pedido, leva cada oportunidade ao capital e acompanha a operação depois do desembolso — com cada etapa comprovada na Solana.",
   },
   problem: {
     eyebrow: "O problema",
@@ -276,27 +277,27 @@ export const aboutPt: AboutContent = {
       },
       {
         icon: Wrench,
-        title: "Ferramentas de gestão",
-        status: "Próximo passo",
-        desc: "Controle de vendas, recebimentos e clientes no mesmo lugar em que ela já trabalha. Organizar o negócio deixa de ser planilha e vira parte natural do dia a dia.",
+        title: "Check-ins e formação",
+        status: "Protótipo na devnet",
+        desc: "Um check-in mensal de poucos minutos sobre vendas, custos e caixa, somado aos módulos de educação da comunidade que a acompanha. Juntos, viram o histórico que faltava — sem tirar a empreendedora do negócio.",
       },
       {
         icon: Gauge,
-        title: "Score alternativo",
-        status: "Em sequência",
-        desc: "Traduz comportamento real — vendas, recorrência, poupança, reputação — em confiança mensurável. Sem cursos, sem formulários: o histórico se forma sozinho, conforme ela empreende.",
+        title: "Motor de prontidão",
+        status: "Protótipo na devnet",
+        desc: "Mostra a cada empreendedora o que já está pronto e o que ainda falta, por escrito. Prontidão não é elegibilidade, e elegibilidade não é captação. Estar pronta e não pedir crédito é um resultado completo.",
       },
       {
         icon: Banknote,
-        title: "Crédito",
-        status: "Em sequência",
-        desc: "Com histórico próprio, o crédito deixa de depender de garantia e passa a refletir o negócio como ele é. Taxa justa, lastreada em dado — não em presunção de risco.",
+        title: "Crédito produtivo qualificado",
+        status: "Piloto em preparação",
+        desc: "Quando ela decide pedir, a EmpowerFI qualifica o pedido e acompanha os pagamentos. No piloto, uma instituição financeira parceira regulada fornece o capital e toma a decisão de crédito, sob a licença e a política de crédito dela.",
       },
       {
         icon: Layers,
-        title: "Infraestrutura de crédito",
-        status: "Visão de longo prazo",
-        desc: "A base que sustenta tudo isso vira infraestrutura: inteligência de crédito, originação, servicing e medição de impacto — com capital global chegando ao negócio por um trilho que torna viável o empréstimo pequeno.",
+        title: "Plataforma de capital P2P",
+        status: "Nossa estrela-guia · demonstrada na devnet",
+        desc: "Dois pools de capital P2P: investidores brasileiros em reais, e investidores internacionais e de impacto em USDC na Solana. Um Motor de Alocação de Capital escolhe o pool de cada oportunidade, e a mesa P2P da EmpowerFI formaliza cada empréstimo captado à taxa do motor e acompanha os pagamentos. Ela recebe e paga em reais, por Pix, seja qual for o pool. O modelo P2P vai operar sob a estrutura regulada aplicável; hoje a EmpowerFI não tem essa licença.",
       },
     ],
   },
@@ -307,7 +308,7 @@ export const aboutPt: AboutContent = {
     },
     vision: {
       eyebrow: "Visão",
-      text: "Ser a infraestrutura que transforma comunidades em negócios prontos para crédito, negócios prontos em operações financiáveis, e operações financiadas em evidência para alocar capital cada vez melhor.",
+      text: "Ser a plataforma de crédito produtivo P2P que transforma comunidades em negócios prontos para crédito, negócios prontos em oportunidades qualificadas que o capital pode financiar, e operações financiadas em evidência para alocar capital cada vez melhor.",
     },
   },
   values: {
@@ -460,11 +461,20 @@ export const aboutPt: AboutContent = {
       },
       {
         q: "Como funciona?",
-        a: "A empreendedora cria seu perfil e publica o que oferece; quem procura encontra pelo Marketplace e entra em contato. Cada venda gera renda hoje e, ao mesmo tempo, o registro de atividade econômica que forma seu histórico financeiro — a base do score alternativo e do acesso a crédito que estamos construindo.",
+        a: "A empreendedora cria seu perfil e publica o que oferece; quem procura encontra pelo Marketplace e entra em contato. Cada venda gera renda hoje e, ao mesmo tempo, o registro de atividade econômica que forma seu histórico financeiro — a base do preparo para o crédito produtivo que estamos construindo.",
       },
       {
         q: "O aplicativo já está disponível?",
         a: "Sim. O aplicativo EmpowerFI está publicado e disponível na Google Play para Android. A versão para iOS está em desenvolvimento.",
+      },
+      {
+        q: "Quem financia os empréstimos?",
+        a: "Depende da fase. Hoje, a plataforma de crédito é um protótipo na Solana devnet, com dinheiro simulado. No piloto, as primeiras operações são financiadas com o capital de uma instituição financeira parceira regulada, que decide o crédito sob a licença e a política de crédito dela. Depois que o piloto se validar, vem o modelo P2P: dois pools de capital — investidores brasileiros em reais, e investidores internacionais e de impacto em USDC na Solana — financiam oportunidades qualificadas, sob a estrutura regulada aplicável; hoje a EmpowerFI não tem essa licença. Em qualquer fase, a empreendedora recebe e paga em reais, por Pix.",
+      },
+      {
+        q: "Posso investir hoje?",
+        a: "Não. A EmpowerFI não aceita investimentos hoje, e nada neste site é oferta de valores mobiliários ou de produto financeiro. Quem tem interesse no futuro modelo P2P pode entrar na lista de espera para investidores, em /pt/investidores (ou /investors, em inglês): é uma manifestação de interesse, sem compromisso. O protótipo na Solana devnet mostra como o modelo funciona, mas lá investimentos, retornos, câmbio e Pix são simulados, e as transações usam ativos de teste.",
+        link: { href: "/pt/investidores", label: "Lista de espera para investidores" },
       },
     ],
   },
@@ -499,7 +509,7 @@ export const aboutPt: AboutContent = {
     },
   },
   footer: {
-    tagline: "Crédito produtivo para pequenos negócios — começando por mulheres empreendedoras no Brasil.",
+    tagline: "Crédito produtivo P2P para mulheres empreendedoras no Brasil, da prontidão ao capital, com cada etapa comprovada na Solana.",
     developedBy: "Produto desenvolvido por",
     cnpjLabel: "CNPJ",
     privacy: "Política de Privacidade",
@@ -512,9 +522,9 @@ export const aboutPt: AboutContent = {
 
 export const aboutEn: AboutContent = {
   meta: {
-    title: "About EmpowerFI — Credit infrastructure for underserved entrepreneurs",
+    title: "About EmpowerFI — P2P productive credit for women micro-entrepreneurs in Brazil",
     description:
-      "Meet EmpowerFI: our mission, our story, the problem we solve and the team behind the productive-credit infrastructure that prepares small businesses before credit. Founded by Daniele Rodrigues dos Santos in São Paulo, Brazil.",
+      "Meet EmpowerFI: P2P productive credit for women micro-entrepreneurs in Brazil, from readiness to capital, with every step proven on Solana. Our story, the problem we solve, our mission and the team. Founded by Daniele Rodrigues dos Santos in São Paulo, Brazil.",
   },
   nav: {
     links: [
@@ -531,10 +541,10 @@ export const aboutEn: AboutContent = {
   },
   hero: {
     badge: "About the company",
-    titleLead: "Building credit infrastructure for ",
-    titleAccent: "the next generation of entrepreneurs",
+    titleLead: "Building P2P productive credit for ",
+    titleAccent: "the entrepreneurs the system does not see",
     subtitle:
-      "EmpowerFI turns entrepreneur communities and education programmes into small businesses prepared to receive capital — starting with women entrepreneurs in Brazil.",
+      "EmpowerFI takes small businesses from readiness to capital: communities and education programmes prepare entrepreneurs, EmpowerFI qualifies their credit requests, and every step is proven on Solana — starting with women entrepreneurs in Brazil.",
     primaryCta: "Get in touch",
     secondaryCta: "See the app",
   },
@@ -543,13 +553,13 @@ export const aboutEn: AboutContent = {
     titleLead: "We started with what ",
     titleAccent: "no one else was seeing",
     paragraphs: [
-      "EmpowerFI began with a simple, uncomfortable observation: in Brazil, more than 7 million women entrepreneurs support their families and drive the real economy — and remain invisible to the financial system. They sell, get paid, reinvest and pay their bills on time. None of it becomes history. And without history, there is no credit.",
+      "EmpowerFI began with a simple, uncomfortable observation: in Brazil, 9.96 million active businesses are led by women, who support their families and drive the real economy — and remain invisible to the financial system. They sell, get paid, reinvest and pay their bills on time. None of it becomes history. And without history, there is no credit.",
       "Our founder spent more than twenty years building technology and digital products inside large companies. Looking closely at this market, she found a problem that was not about effort or merit: it was about infrastructure. Banks' risk models simply have nowhere to look for data on someone who never had a business account, formal collateral or audited financials. The entrepreneur is not declined because she is a bad payer — she is declined because she does not exist to the model.",
-      "That is why we started with the Marketplace rather than with credit. Lending to someone with no history is a bet; building the history first is engineering. The Marketplace connects entrepreneurs to new customers and to each other, generating two things at once: real income today, and the record of economic activity that tomorrow supports a fair score. The data is a by-product of the sale — no forms, no courses, no friction.",
-      "From that base, each layer reinforces the next: management tools organise the business, the alternative score turns behaviour into measurable trust, and credit becomes the consequence of a real track record — not of collateral she never had to offer.",
+      "That is why we started with the Marketplace rather than with credit. Lending to someone with no history is a bet; building the history first is engineering. The Marketplace connects entrepreneurs to new customers and to each other, generating real income today and the beginning of a record of economic activity. A monthly check-in of a few minutes, and the education of the communities and programmes that already support these women, complete the track record the bank never had.",
+      "From that base, each layer reinforces the next. A readiness engine shows each entrepreneur what is already in place and what is still missing. Readiness is not eligibility, and eligibility is not funding: being ready and not asking is a complete outcome. When she decides to ask, EmpowerFI qualifies the request, and it becomes an opportunity capital can fund — in the pilot, with a regulated financial partner's capital; later, in the P2P model, with investors.",
     ],
     pullQuote:
-      "The app is the front door to something larger: infrastructure that prepares a business before credit, originates qualified opportunities for financial partners, and follows the operation after disbursement.",
+      "The app is the front door to something larger: a P2P productive-credit platform that prepares the business, qualifies the request, brings each opportunity to capital and follows the operation after disbursement — with every step proven on Solana.",
   },
   problem: {
     eyebrow: "The problem",
@@ -602,27 +612,27 @@ export const aboutEn: AboutContent = {
       },
       {
         icon: Wrench,
-        title: "Management tools",
-        status: "Next step",
-        desc: "Sales, payments and customers in the same place she already works. Running the business stops being a spreadsheet and becomes a natural part of the day.",
+        title: "Check-ins and education",
+        status: "Prototype on devnet",
+        desc: "A monthly check-in of a few minutes on sales, costs and cash, together with the education modules of the community that supports her. Together, they become the track record that was missing — without taking the entrepreneur away from her business.",
       },
       {
         icon: Gauge,
-        title: "Alternative score",
-        status: "Then",
-        desc: "Turns real behaviour — sales, recurrence, savings, reputation — into measurable trust. No courses, no forms: the track record builds itself as she works.",
+        title: "Readiness engine",
+        status: "Prototype on devnet",
+        desc: "Shows each entrepreneur what is already in place and what is still missing, in writing. Readiness is not eligibility, and eligibility is not funding. Being ready and not asking is a complete outcome.",
       },
       {
         icon: Banknote,
-        title: "Credit",
-        status: "Then",
-        desc: "With a track record of her own, credit no longer depends on collateral and starts reflecting the business as it really is. A fair rate, backed by data rather than presumed risk.",
+        title: "Qualified productive credit",
+        status: "Pilot in preparation",
+        desc: "When she decides to ask, EmpowerFI qualifies the request and follows repayment. In the pilot, a regulated financial partner provides the capital and makes the credit decision, under its licence and its credit policy.",
       },
       {
         icon: Layers,
-        title: "Credit infrastructure",
-        status: "Long-term vision",
-        desc: "The base underneath it all becomes infrastructure: credit intelligence, origination, servicing and impact measurement — with global capital reaching the business over a stablecoin rail that makes small tickets viable.",
+        title: "P2P capital platform",
+        status: "Our North Star · demonstrated on devnet",
+        desc: "Two pools of P2P capital: Brazilian investors in reais, and international and impact investors in USDC on Solana. A Capital Allocation Engine chooses the pool for each opportunity, and EmpowerFI's P2P desk formalises each funded loan at the engine's rate and services it. She receives and repays in reais, by Pix, whichever pool funds her. The P2P model will operate under the applicable regulated structure; EmpowerFI holds no such licence today.",
       },
     ],
   },
@@ -633,7 +643,7 @@ export const aboutEn: AboutContent = {
     },
     vision: {
       eyebrow: "Vision",
-      text: "To become the infrastructure that turns communities into credit-ready businesses, credit-ready businesses into financeable operations, and financed operations into evidence for allocating capital better.",
+      text: "To become the P2P productive-credit platform that turns communities into credit-ready businesses, credit-ready businesses into qualified opportunities capital can fund, and financed operations into evidence for allocating capital better.",
     },
   },
   values: {
@@ -787,11 +797,20 @@ export const aboutEn: AboutContent = {
       },
       {
         q: "How does it work?",
-        a: "The entrepreneur creates her profile and publishes what she offers; customers find her through the Marketplace and get in touch. Every sale generates income today and, at the same time, the record of economic activity that forms her financial history — the basis of the alternative score and the credit access we are building.",
+        a: "The entrepreneur creates her profile and publishes what she offers; customers find her through the Marketplace and get in touch. Every sale generates income today and, at the same time, the record of economic activity that forms her financial history — the basis of the preparation for the productive credit we are building.",
       },
       {
         q: "Is the app already available?",
         a: "Yes. The EmpowerFI app is published and available on Google Play for Android. The iOS version is in development.",
+      },
+      {
+        q: "Who funds the loans?",
+        a: "It depends on the phase. Today, the credit platform is a prototype on Solana devnet, with simulated money. In the pilot, the first operations are funded with a regulated financial partner's capital, and the partner makes the credit decision under its licence and its credit policy. Once the pilot validates, the P2P model follows: two pools of capital — Brazilian investors in reais, and international and impact investors in USDC on Solana — fund qualified opportunities, under the applicable regulated structure; EmpowerFI holds no such licence today. In every phase, the entrepreneur receives and repays in reais, by Pix.",
+      },
+      {
+        q: "Can I invest today?",
+        a: "No. EmpowerFI does not accept investment today, and nothing on this site is an offer of securities or of a financial product. If you are interested in the future P2P model, you can join the investor waitlist at /investors (or /pt/investidores, in Portuguese): it is a non-binding expression of interest. The prototype on Solana devnet shows how the model works, but investments, returns, FX and Pix there are simulated, and transactions use test assets.",
+        link: { href: "/investors", label: "Investor waitlist" },
       },
     ],
   },
@@ -826,7 +845,7 @@ export const aboutEn: AboutContent = {
     },
   },
   footer: {
-    tagline: "Credit infrastructure for the next generation of entrepreneurs — starting in Brazil.",
+    tagline: "P2P productive credit for women micro-entrepreneurs in Brazil, from readiness to capital, with every step proven on Solana.",
     developedBy: "Product developed by",
     cnpjLabel: "Company tax ID (CNPJ)",
     privacy: "Privacy Policy",

@@ -56,24 +56,26 @@ const CreditoProdutivoSection = () => (
       </div>
 
       {/* O crédito ainda não existe como produto. A seção inteira lê como oferta
-          sem este bloco — e "depende do enquadramento regulatório aplicável" é
-          deliberadamente neutro: não afirma licença nem autorização alguma. */}
+          sem este bloco. Ele separa as fases: no piloto, o capital e a decisão são
+          da instituição financeira parceira; o modelo P2P vem depois, "sob a
+          estrutura regulada aplicável" — sem afirmar licença nem autorização alguma. */}
       <div className="mx-auto max-w-3xl space-y-4 rounded-2xl border border-border bg-card/60 p-8 md:p-10">
         <span className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium text-accent glow-border">
           <span className="h-1.5 w-1.5 animate-pulse-glow rounded-full bg-accent" />
           Em desenvolvimento
         </span>
         <p className="leading-relaxed text-foreground">
-          O crédito produtivo é a próxima etapa da EmpowerFI. Sua operação depende de
-          infraestrutura financeira, parcerias institucionais e do enquadramento
-          regulatório aplicável, e será lançada primeiro como piloto, com empreendedoras
-          e comunidades parceiras no Brasil.
+          O crédito produtivo é a próxima etapa da EmpowerFI e começa como piloto, com
+          empreendedoras e comunidades parceiras no Brasil. No piloto, uma instituição
+          financeira parceira regulada fornece o capital e aprova cada crédito, sob a licença e
+          a política de crédito dela. Depois que o piloto se validar, o caminho é o modelo P2P:
+          investidores financiam os pedidos qualificados, sob a estrutura regulada aplicável —
+          hoje a EmpowerFI não tem essa licença.
         </p>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          Organizar o negócio no aplicativo já fortalece o seu histórico desde agora. A
-          eventual concessão de crédito seguirá critérios de análise e será decidida pela
-          instituição financeira parceira: o uso do aplicativo não constitui oferta nem
-          garantia de crédito.
+          Organizar o negócio no aplicativo já fortalece o seu histórico desde agora. Em
+          qualquer fase, você recebe e paga em reais, por Pix. Estar preparada não garante
+          aprovação: o uso do aplicativo não constitui oferta nem garantia de crédito.
         </p>
       </div>
     </div>

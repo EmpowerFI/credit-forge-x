@@ -15,6 +15,20 @@ interface InstitutionalFooterProps {
   lang: "pt-BR" | "en";
 }
 
+// The prototype disclaimer and the not-an-offer notice, word for word from the
+// positioning brief. They live here rather than in the footer dictionaries
+// because the legal pages feed this footer from their own content too.
+const notices = {
+  "pt-BR": [
+    "Protótipo de uma futura arquitetura regulada de crédito produtivo P2P. Investimentos, retornos, câmbio e liquidação via Pix do hackathon são simulados; as transações em blockchain usam ativos de teste na Devnet.",
+    "Nada neste site é oferta de valores mobiliários ou de produto financeiro. Entrar na lista de espera é uma manifestação de interesse, sem compromisso.",
+  ],
+  en: [
+    "Prototype of a future regulated P2P productive-credit architecture. Hackathon investments, returns, FX and Pix settlement are simulated; blockchain transactions use test assets on Devnet.",
+    "Nothing on this site is an offer of securities or of a financial product. Joining a waitlist is a non-binding expression of interest.",
+  ],
+} as const;
+
 /**
  * Footer for the institutional routes. Unlike the home footer, this one names
  * the legal entity, its address and its tax ID — the questions an app-store
@@ -108,9 +122,14 @@ const InstitutionalFooter = ({ footer, homePath, lang }: InstitutionalFooterProp
         </nav>
       </div>
 
-      <p className="text-xs text-muted-foreground border-t border-border pt-6">
-        © {new Date().getFullYear()} EmpowerFI. {footer.rights}
-      </p>
+      <div className="space-y-2 border-t border-border pt-6 text-xs text-muted-foreground">
+        {notices[lang].map((notice) => (
+          <p key={notice}>{notice}</p>
+        ))}
+        <p>
+          © {new Date().getFullYear()} EmpowerFI. {footer.rights}
+        </p>
+      </div>
     </div>
   </footer>
   );

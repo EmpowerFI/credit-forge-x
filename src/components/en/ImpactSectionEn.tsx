@@ -24,7 +24,7 @@ const ImpactSectionEn = () => (
         eyebrow="Impact"
         title="Good credit is not only credit"
         accent="that gets repaid."
-        subtitle="Repayment tells you the operation worked for the lender. It tells you nothing about whether the business is better off. We intend to measure both."
+        subtitle="Repayment tells you the operation worked for whoever funded it. It tells you nothing about whether the business is better off. We intend to measure both."
       />
 
       <CapitalFlow
@@ -45,7 +45,7 @@ const ImpactSectionEn = () => (
         </ul>
         <p className="text-center text-xs text-muted-foreground">
           These metrics have no values yet. They will be reported once the first pilot
-          produces them.
+          produces them — and, in the P2P model, for each pool.
         </p>
       </div>
 

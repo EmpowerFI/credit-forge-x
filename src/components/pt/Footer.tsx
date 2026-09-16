@@ -8,7 +8,7 @@ const Footer = () => (
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-col items-center md:items-start gap-1">
           <span className="text-lg font-heading font-bold text-gradient">EmpowerFI</span>
-          <p className="text-xs text-muted-foreground">Crédito produtivo para pequenos negócios — começando por mulheres empreendedoras no Brasil.</p>
+          <p className="text-xs text-muted-foreground">Crédito produtivo P2P para mulheres empreendedoras no Brasil, da prontidão ao capital, com cada etapa comprovada na Solana.</p>
         </div>
 
         <div className="flex items-center gap-5">
@@ -33,13 +33,17 @@ const Footer = () => (
           <Link to="/termos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Termos</Link>
           <Link to="/privacidade" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacidade</Link>
           <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Contato</a>
-          <Link to="/investors" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Investidores</Link>
+          <Link to="/pt/investidores" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Investidores</Link>
           <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">English</Link>
         </div>
       </div>
       <p className="text-xs text-muted-foreground text-center md:text-left">
-        A demonstração da plataforma é um protótipo de uma futura arquitetura regulada de crédito produtivo P2P. Investimentos,
-        retornos, câmbio e liquidação via Pix do hackathon são simulados; as transações em blockchain usam ativos de teste na Devnet.
+        Protótipo de uma futura arquitetura regulada de crédito produtivo P2P. Investimentos, retornos, câmbio e
+        liquidação via Pix do hackathon são simulados; as transações em blockchain usam ativos de teste na Devnet.
+      </p>
+      <p className="text-xs text-muted-foreground text-center md:text-left">
+        Nada neste site é oferta de valores mobiliários ou de produto financeiro. Entrar na lista de espera é uma
+        manifestação de interesse, sem compromisso.
       </p>
       <p className="text-xs text-muted-foreground text-center md:text-left">© {new Date().getFullYear()} EmpowerFI. Todos os direitos reservados.</p>
     </div>

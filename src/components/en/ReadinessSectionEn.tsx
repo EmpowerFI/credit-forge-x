@@ -1,8 +1,9 @@
-import { Calculator, ClipboardList, Landmark } from "lucide-react";
+import { Calculator, ClipboardList, Scale } from "lucide-react";
 import SectionHeading from "@/components/SectionHeading";
 
-// Three judgements, three owners. Collapsing any two of them is the mistake the
-// whole model exists to avoid, so the site states them as separate columns.
+// Three judgements, asked at three different moments. Collapsing any two of them
+// is the mistake the whole model exists to avoid, so the site states them as
+// separate columns.
 const judgements = [
   {
     icon: ClipboardList,
@@ -19,11 +20,11 @@ const judgements = [
     desc: "Affordability against a cash-flow proxy, a suggested ticket range, a risk band, a confidence level and reason codes — evaluated for a specific requested amount, and only once the entrepreneur has asked.",
   },
   {
-    icon: Landmark,
-    owner: "The financial partner",
-    title: "Approval",
-    question: "Do we lend?",
-    desc: "The partner keeps its own credit policy, its own underwriting and its own capital. EmpowerFI does not make the lending decision, and the two records are stored separately.",
+    icon: Scale,
+    owner: "Capital Allocation Engine · P2P desk",
+    title: "Funding",
+    question: "Which pool, and at what rate?",
+    desc: "The engine checks which pool can take the opportunity — liquidity, risk appetite, ticket, mandate — then chooses the one that costs her less. EmpowerFI's P2P desk formalises the funded loan at the engine's rate. In the pilot, a regulated financial partner provides the capital and makes the credit decision.",
   },
 ];
 
@@ -42,8 +43,8 @@ const ReadinessSectionEn = () => (
       <SectionHeading
         eyebrow="Readiness"
         title="Readiness is not eligibility."
-        accent="Eligibility is not approval."
-        subtitle="Three different questions, asked at three different moments, answered by two different parties. Keeping them apart is what makes each one honest."
+        accent="Eligibility is not funding."
+        subtitle="Three different questions, asked at three different moments. Keeping them apart is what makes each one honest — and being ready and not asking is a complete outcome."
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -94,8 +95,9 @@ const ReadinessSectionEn = () => (
       <p className="mx-auto max-w-3xl text-center text-sm leading-relaxed text-muted-foreground">
         The readiness and eligibility engines are deterministic and versioned: the same inputs
         produce the same result, every decision carries the model version that produced it, and
-        every result can be recomputed and audited. No claim is made about default rates until
-        there is a pilot behind it.
+        every result can be recomputed and audited. The allocation engine is deterministic too,
+        and records the reason codes behind each choice of pool. No claim is made about default
+        rates until there is a pilot behind it.
       </p>
     </div>
   </section>

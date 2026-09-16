@@ -44,7 +44,8 @@ const HeroSection = () => (
 
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="h-1.5 w-1.5 animate-pulse-glow rounded-full bg-accent" />
-            Estamos preparando nosso primeiro piloto de microcrédito produtivo no Brasil.
+            Estamos preparando nosso primeiro piloto de crédito produtivo no Brasil, com capital
+            de uma instituição financeira parceira regulada.
           </p>
         </div>
       </div>

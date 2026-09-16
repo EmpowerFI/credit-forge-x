@@ -4,6 +4,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { AboutContent } from "@/content/about";
 
 const AboutFaq = ({ faq }: { faq: AboutContent["faq"] }) => (
@@ -25,6 +27,14 @@ const AboutFaq = ({ faq }: { faq: AboutContent["faq"] }) => (
             </AccordionTrigger>
             <AccordionContent className="text-muted-foreground leading-relaxed">
               {item.a}
+              {item.link && (
+                <Link
+                  to={item.link.href}
+                  className="mt-3 flex w-fit items-center gap-1 font-medium text-accent transition-colors hover:text-foreground"
+                >
+                  {item.link.label} <ArrowRight size={14} aria-hidden />
+                </Link>
+              )}
             </AccordionContent>
           </AccordionItem>
         ))}

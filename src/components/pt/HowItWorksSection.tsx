@@ -9,24 +9,26 @@ const steps = [
   },
   {
     icon: Gauge,
-    title: "Seu histórico se forma sozinho",
-    desc: "Sem curso, sem formulário, sem prova. O histórico nasce do que você já faz — o que vende, com que regularidade, como organiza o dinheiro que entra e sai.",
+    title: "Seu histórico ganha forma mês a mês",
+    desc: "O que você registra — o que vendeu, o que gastou, como ficou o caixa — vira, mês a mês, o histórico que o banco nunca teve. Se você participa de uma comunidade ou programa de empreendedorismo, a formação que ele oferece também ajuda.",
   },
   {
     icon: Sparkles,
     title: "A EmpowerFI mede o quanto o negócio está preparado",
-    desc: "Atividade, regularidade, organização do dinheiro, evolução. Dessa leitura sai o que já está pronto e o que ainda falta — e o que falta vem escrito, não fica subentendido.",
+    desc: "Atividade, regularidade, organização do dinheiro, evolução. Dessa leitura sai o que já está pronto e o que ainda falta — e o que falta vem escrito, não fica subentendido. Pedir crédito continua sendo escolha sua.",
   },
   {
     icon: Banknote,
     title: "O capital chega em reais, no Pix",
-    desc: "Quando o crédito produtivo estiver disponível, ele chega na sua conta em reais, como qualquer outro recebimento — e quem aprova é a instituição financeira parceira, não o aplicativo. Você não precisa saber nada de blockchain: essa parte é problema nosso.",
+    desc: "Se você pedir crédito e o pedido for qualificado, o dinheiro chega na sua conta em reais, por Pix, como qualquer outro recebimento — e você paga de volta também por Pix.",
   },
 ];
 
 /* A distinção que o modelo inteiro existe para preservar: preparo, elegibilidade
-   e aprovação são três coisas diferentes, e a última não é nossa. Sem esta nota a
-   seção lê como esteira automática para o crédito. */
+   e financiamento são três coisas diferentes. Quem fornece o capital e decide
+   depende da fase — no piloto, a instituição financeira parceira; no modelo P2P,
+   investidores financiam pedidos qualificados. Sem esta nota a seção lê como
+   esteira automática para o crédito. */
 const Nota = () => (
   <div className="mx-auto max-w-3xl space-y-4 rounded-2xl border border-border bg-card/60 p-8 text-center md:p-10">
     <p className="font-heading text-xl font-bold text-foreground">
@@ -39,6 +41,14 @@ const Nota = () => (
       resposta certa é esperar — e o aplicativo continua servindo para organizar o negócio
       do mesmo jeito.
     </p>
+    <p className="leading-relaxed text-muted-foreground">
+      De onde vem o capital depende da fase. No piloto, uma instituição financeira parceira
+      regulada fornece o capital e aprova o crédito. Depois, no modelo P2P, investidores
+      financiam os pedidos qualificados, e a EmpowerFI formaliza o empréstimo e acompanha os
+      pagamentos. Nos dois casos, você recebe e paga em reais, por Pix. Cada etapa fica
+      comprovada em blockchain, sem nenhum dado pessoal seu — é assim que a gente prova o que
+      foi feito, e você não precisa lidar com nada disso.
+    </p>
   </div>
 );
 
@@ -49,7 +59,7 @@ const HowItWorksSection = () => (
         eyebrow="Como funciona"
         title="Como funciona"
         accent="para você"
-        subtitle="Quatro passos, e nenhum deles exige que você pare de tocar o negócio para preencher alguma coisa."
+        subtitle="Quatro passos, pensados para caber na rotina de quem toca o negócio."
       />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -72,6 +82,5 @@ const HowItWorksSection = () => (
     </div>
   </section>
 );
-
 
 export default HowItWorksSection;

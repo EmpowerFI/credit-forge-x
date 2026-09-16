@@ -1,11 +1,23 @@
-import { Activity, BarChart3, GraduationCap, Radar, ShieldCheck, Users } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  FileCheck2,
+  FileSignature,
+  GraduationCap,
+  Radar,
+  Scale,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 import SectionHeading from "@/components/SectionHeading";
 
-// The four verbs are the approved product message, in order. They are also the
-// order of the funnel, which is why they read as a spine rather than a list.
+// The six verbs are the product message, in order. They are also the order of
+// the funnel, which is why they read as a spine rather than a list.
 const verbs = [
   { verb: "Prepare", desc: "before credit" },
-  { verb: "Originate", desc: "better" },
+  { verb: "Originate", desc: "qualified opportunities" },
+  { verb: "Allocate", desc: "to the right pool" },
+  { verb: "Fund", desc: "in reais, by Pix" },
   { verb: "Service", desc: "continuously" },
   { verb: "Measure", desc: "outcomes" },
 ];
@@ -32,6 +44,16 @@ const capabilities = [
     desc: "A deterministic, versioned assessment of whether the business is prepared, and what is still missing if it is not.",
   },
   {
+    icon: Scale,
+    title: "Capital Allocation Engine",
+    desc: "Chooses the pool for each qualified opportunity: first whether a pool can take it — liquidity, risk appetite, ticket, mandate — then which costs her less.",
+  },
+  {
+    icon: FileSignature,
+    title: "P2P desk",
+    desc: "EmpowerFI's P2P desk formalises each funded loan at the engine's rate. She receives and repays in reais, by Pix, whichever pool funds her.",
+  },
+  {
     icon: Radar,
     title: "Digital servicing",
     desc: "Monitoring after disbursement, not only before it: payments, use of capital, exceptions and interventions.",
@@ -41,6 +63,11 @@ const capabilities = [
     title: "Outcome measurement",
     desc: "Evidence of what the capital produced — repayment, productive use and business change — not just where it went.",
   },
+  {
+    icon: FileCheck2,
+    title: "Proof on Solana",
+    desc: "Every step is recorded in a database and proven on Solana, with no personal data on chain.",
+  },
 ];
 
 const SolutionSectionEn = () => (
@@ -49,11 +76,11 @@ const SolutionSectionEn = () => (
       <SectionHeading
         eyebrow="The solution"
         title="Prepare before credit."
-        accent="Then originate, service and measure."
-        subtitle="One system that turns entrepreneur programmes into measurable credit-readiness pipelines — and stays with the operation after the money moves."
+        accent="Then fund what is ready."
+        subtitle="One system from the community to the repayment: it prepares businesses, qualifies the requests that come, matches each one to a pool of capital — and stays with the operation after the money moves."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {verbs.map(({ verb, desc }, i) => (
           <div key={verb} className="rounded-xl p-6 glass glow-border">
             <span className="font-mono text-xs text-accent">0{i + 1}</span>
@@ -75,13 +102,19 @@ const SolutionSectionEn = () => (
         ))}
       </div>
 
+      <p className="mx-auto max-w-3xl text-center text-sm leading-relaxed text-muted-foreground">
+        The P2P model runs today as a working prototype on Solana devnet, with simulated money.
+        In the pilot, a regulated financial partner provides the capital and makes the credit
+        decision.
+      </p>
+
       <div className="mx-auto max-w-3xl space-y-5 rounded-2xl p-10 text-center glass glow-border shadow-glow">
         <p className="font-heading text-2xl font-bold text-foreground md:text-3xl">
           Every operation strengthens{" "}
           <span className="text-gradient">the same dataset.</span>
         </p>
         <p className="leading-relaxed text-muted-foreground">
-          Readiness, credit decision, repayment and productive outcome, connected for the same
+          Readiness, eligibility, funding, repayment and productive outcome, connected for the same
           business over time. That longitudinal record is the part competitors cannot buy —
           it only accumulates by being there before the credit request and staying after it.
         </p>

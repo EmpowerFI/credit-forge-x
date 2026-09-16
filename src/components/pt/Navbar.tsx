@@ -4,11 +4,11 @@ import LaunchAppButton from "@/components/LaunchAppButton";
 import { Link } from "react-router-dom";
 
 const navLinks = [
-  { label: "O problema", href: "#problema" },
-  { label: "Como funciona", href: "#como-funciona" },
-  { label: "Crédito produtivo", href: "#credito-produtivo" },
-  { label: "O app", href: "#app" },
-  { label: "Contato", href: "#contato" },
+  { label: "O problema", href: "/pt#problema" },
+  { label: "Como funciona", href: "/pt#como-funciona" },
+  { label: "Crédito produtivo", href: "/pt#credito-produtivo" },
+  { label: "O app", href: "/pt#app" },
+  { label: "Contato", href: "/pt#contato" },
 ];
 
 // Botão de menu em qualquer largura, por escolha da fundadora: o painel fica
@@ -42,14 +42,14 @@ const Navbar = () => {
         <div id="menu-site" className="border-t border-border glass">
           <div className="container mx-auto px-4 pb-4">
             {navLinks.map((l) => (
-              <a
+              <Link
                 key={l.href}
-                href={l.href}
+                to={l.href}
                 onClick={() => setOpen(false)}
                 className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 {l.label}
-              </a>
+              </Link>
             ))}
             <Link
               to="/pt/sobre"
@@ -57,6 +57,13 @@ const Navbar = () => {
               className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               Sobre
+            </Link>
+            <Link
+              to="/pt/investidores"
+              onClick={() => setOpen(false)}
+              className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Investidores
             </Link>
             <Link
               to="/"

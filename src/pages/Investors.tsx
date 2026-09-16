@@ -3,72 +3,44 @@ import FooterEn from "@/components/en/FooterEn";
 import NavbarEn from "@/components/en/NavbarEn";
 import InvestorHero from "@/components/investors/InvestorHero";
 import InvestorThesis from "@/components/investors/InvestorThesis";
-import InvestorWaitlistForm from "@/components/investors/InvestorWaitlistForm";
+import InvestorWaitlistSection from "@/components/investors/InvestorWaitlistSection";
 import PilotMetrics from "@/components/investors/PilotMetrics";
 import { organizationSchema } from "@/config/structuredData";
-import { INVESTOR_EMAIL } from "@/config/links";
 
 const alternates = [
   { hreflang: "en", path: "/investors" },
+  { hreflang: "pt-BR", path: "/pt/investidores" },
   { hreflang: "x-default", path: "/investors" },
 ];
 
 const jsonLd = [organizationSchema()];
 
 /**
- * Investor-facing page: thesis, waitlist, and the shell that becomes the Public
- * Investor Dashboard once a real pilot produces figures.
+ * Investor-facing page, in English: the two P2P pools (reais and USDC), the
+ * thesis and its phases, the waitlist, and the shell that becomes the Public
+ * Investor Dashboard once real P2P operations produce figures.
+ * /pt/investidores carries the same substance for Brazilian investors; the
+ * words of both live side by side in components/investors/copy.ts.
  *
  * Nothing on this page may read as an offer. The waitlist collects non-binding
- * interest, the disclosure sits above the fold in InvestorHero, and every metric
- * stays empty until it is backed by a real pilot.
+ * interest, the prototype disclaimer and the not-an-offer line sit above the
+ * fold in InvestorHero, and every metric stays empty until it is real.
  */
 const Investors = () => (
   <div className="min-h-screen bg-background">
     <Seo
-      title="Investors — EmpowerFI productive credit pilot"
-      description="Join the waitlist for EmpowerFI's first productive microcredit pilot: readiness-qualified businesses, originated for financial partners and serviced after disbursement. Non-binding interest only."
+      title="Investors — EmpowerFI P2P productive credit"
+      description="P2P productive credit for women-led businesses in Brazil, funded through two pools: Brazilian investors in reais, and international and impact investors in USDC. A working prototype on Solana devnet today. Join the non-binding waitlist."
       path="/investors"
       lang="en"
       alternates={alternates}
       jsonLd={jsonLd}
     />
     <NavbarEn />
-    <InvestorHero />
-
-    <section id="waitlist" className="section-padding">
-      <div className="container mx-auto space-y-10">
-        <div className="space-y-4 text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-accent">
-            Investor waitlist
-          </p>
-          <h2 className="section-title !text-3xl md:!text-4xl">
-            Be there when the <span className="text-gradient">first pilot opens.</span>
-          </h2>
-          <p className="section-subtitle">
-            Tell us how you'd want to participate. It takes a minute, and commits you to
-            nothing.
-          </p>
-        </div>
-
-        <InvestorWaitlistForm />
-
-        {/* Institutional investors usually want a person, not a form. */}
-        <p className="text-center text-sm text-muted-foreground">
-          Institutional enquiries can also go straight to{" "}
-          <a
-            href={`mailto:${INVESTOR_EMAIL}?subject=EmpowerFI%20productive%20credit%20pilot`}
-            className="font-medium text-accent transition-colors hover:text-foreground"
-          >
-            {INVESTOR_EMAIL}
-          </a>
-          .
-        </p>
-      </div>
-    </section>
-
-    <InvestorThesis />
-    <PilotMetrics />
+    <InvestorHero lang="en" path="/investors" />
+    <InvestorWaitlistSection lang="en" />
+    <InvestorThesis lang="en" />
+    <PilotMetrics lang="en" />
     <FooterEn />
   </div>
 );

@@ -10,6 +10,7 @@ const navLinks = [
   { label: "Home", to: "/" },
   { label: "How It Works", to: "/#how-it-works" },
   { label: "Readiness", to: "/#readiness" },
+  { label: "Capital", to: "/#capital-rail" },
   { label: "Pilot", to: "/#pilot" },
   { label: "For Entrepreneurs", to: "/#for-entrepreneurs" },
   { label: "For Partners", to: "/#for-partners" },

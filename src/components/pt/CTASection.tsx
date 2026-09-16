@@ -153,15 +153,15 @@ const CTASection = () => {
           </form>
         </div>
 
-        {/* A tese para investidor vive em /investors, em inglês. Aqui fica só a
-            porta de entrada, para não competir com a mensagem da página. */}
+        {/* Quem quer investir tem página própria, em português, em /pt/investidores.
+            Aqui fica só a porta de entrada, para não competir com a mensagem da página. */}
         <p className="text-center text-sm text-muted-foreground">
-          Investidor ou parceiro institucional?{" "}
+          Quer investir ou é um parceiro institucional?{" "}
           <Link
-            to="/investors"
+            to="/pt/investidores"
             className="inline-flex items-center gap-1 font-medium text-accent transition-colors hover:text-foreground"
           >
-            Veja a tese da EmpowerFI (em inglês) <ArrowRight size={14} />
+            Conheça a EmpowerFI para investidores <ArrowRight size={14} />
           </Link>
         </p>
       </div>

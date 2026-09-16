@@ -17,9 +17,9 @@ import TractionSectionEn from "@/components/en/TractionSectionEn";
 import ReadinessSectionEn from "@/components/en/ReadinessSectionEn";
 import { organizationSchema } from "@/config/structuredData";
 
-// index.html still carries the Portuguese meta it shipped with, so the English
-// home has to declare its own — otherwise it would advertise itself to crawlers
-// and link previews as pt-BR.
+// The English home declares its own meta, word for word what index.html
+// carries, so crawlers and link previews read the same page whether or not they
+// run JavaScript.
 const alternates = [
   { hreflang: "en", path: "/" },
   { hreflang: "pt-BR", path: "/pt" },
@@ -29,22 +29,24 @@ const alternates = [
 const jsonLd = [organizationSchema()];
 
 /**
- * The corporate site's front door, in English: EmpowerFI as productive-credit
- * infrastructure — preparation before credit, qualified origination, servicing
- * after disbursement. The entrepreneur-facing product lives on at /pt, in
- * Portuguese.
+ * The corporate site's front door, in English: EmpowerFI as P2P productive
+ * credit — preparation before credit, qualified opportunities, two pools of
+ * capital chosen by an allocation engine, servicing after disbursement, and
+ * every step proven on Solana. The entrepreneur-facing product lives on at /pt,
+ * in Portuguese.
  *
  * Section order follows the argument an investor reads in: what is broken, what
  * we built, how it works, why readiness is not eligibility, how it earns money,
  * how big the market is, where we start, what is already real — and only then
- * the capital rail, which is infrastructure inside the product rather than the
- * pitch.
+ * the two pools and the engine, which fund what the earlier sections qualify.
+ * The pilot comes after them: it runs on a regulated partner's capital, and the
+ * pools are where the model goes once it validates.
  */
 const Index = () => (
   <div className="min-h-screen bg-background">
     <Seo
-      title="EmpowerFI — Productive-credit infrastructure, from readiness to capital"
-      description="EmpowerFI is productive-credit infrastructure that turns entrepreneur communities and education programmes into qualified credit pipelines — preparing businesses before credit, originating better, servicing continuously and measuring outcomes."
+      title="EmpowerFI — P2P productive credit, from readiness to capital"
+      description="P2P productive credit for women micro-entrepreneurs in Brazil, from readiness to capital, with every step proven on Solana. Two pools of investors, in reais and in USDC; a working prototype on devnet."
       path="/"
       lang="en"
       alternates={alternates}

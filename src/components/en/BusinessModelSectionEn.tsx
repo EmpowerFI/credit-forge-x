@@ -11,29 +11,29 @@ const layers = [
     status: "In build",
     title: "Readiness & Community Intelligence",
     customer: "NGOs, communities, ESG and corporate social-impact programmes",
-    revenue: "B2B contract per programme or cohort, licence and reporting",
+    revenue: "Community Intelligence: a B2B contract per programme or cohort, licence and reporting",
     risk: "No capital risk",
     note: "This layer creates value even if not a single participant ever receives a loan. Programmes can already measure attendance and completion; what they cannot easily show is operational progress and readiness for capital.",
   },
   {
     icon: Network,
     phase: "Layer 2",
-    status: "Pilot",
-    title: "Origination Infrastructure",
-    customer: "Microcredit institutions, banks, fintech lenders",
-    revenue: "Origination, transaction and servicing fees",
-    risk: "Capital risk sits with the partner",
-    note: "The output is not a lead. It is a qualified credit opportunity carrying readiness, data quality, business history, affordability, purpose, suggested ticket range, risk band, confidence and reason codes — with the partner keeping its own policy, underwriting and final decision.",
+    status: "Pilot — with a regulated partner's capital",
+    title: "Qualification & Servicing",
+    customer: "Women micro-entrepreneurs, served with a regulated financial partner in the pilot",
+    revenue: "The cost to serve built into each loan's rate — originating, servicing and follow-up",
+    risk: "In the pilot, with the regulated financial partner that provides the capital",
+    note: "The output is not a lead. It is a qualified credit opportunity carrying readiness, data quality, business history, affordability, purpose, suggested ticket range, risk band, confidence and reason codes. In the pilot, the partner provides the capital and makes the credit decision; EmpowerFI prepares communities, qualifies requests, follows repayment and measures outcomes.",
   },
   {
     icon: Coins,
     phase: "Layer 3",
-    status: "Future — subject to regulatory structure",
-    title: "Capital Platform",
-    customer: "Investors and entrepreneurs",
-    revenue: "Fees, servicing and financial spread",
-    risk: "Depends on the structure adopted",
-    note: "Only after distribution, readiness, origination, servicing, repayment and unit economics have been validated. Guided P2P productive credit connecting national and international capital to businesses qualified by the same infrastructure.",
+    status: "North Star — demonstrated on devnet",
+    title: "P2P Capital Platform",
+    customer: "Brazilian investors in reais, international and impact investors in USDC, and the entrepreneurs they fund",
+    revenue: "The same cost to serve, built into each loan's rate",
+    risk: "Depends on the regulated structure adopted",
+    note: "Two pools of P2P capital fund qualified opportunities; a Capital Allocation Engine chooses the pool for each one, and EmpowerFI's P2P desk formalises and services the loan. It runs today as a prototype on devnet, with simulated money, and will operate under the applicable regulated structure once the pilot validates the model. EmpowerFI holds no such licence today.",
   },
 ];
 
@@ -85,9 +85,11 @@ const BusinessModelSectionEn = () => (
       </div>
 
       <p className="mx-auto max-w-3xl text-center font-heading text-lg font-semibold leading-relaxed text-foreground">
-        We start asset-light and evolve toward a capital platform connecting qualified
-        businesses to{" "}
-        <span className="text-gradient">the most efficient source of funding.</span>
+        EmpowerFI is paid by the cost to serve built into each loan's rate — preparing,
+        originating and servicing small tickets — and{" "}
+        <span className="text-gradient">
+          by Community Intelligence for programmes and communities.
+        </span>
       </p>
     </div>
   </section>

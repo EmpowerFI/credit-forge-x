@@ -8,9 +8,11 @@ import type { TemplateEntry } from './registry.ts'
 const SITE_NAME = 'EmpowerFI'
 
 /**
- * Confirmation sent to someone who joined the investor waitlist. It has to
- * restate the disclosure shown on the page: joining is non-binding interest,
- * and nothing is being offered or collected.
+ * Confirmation sent to someone who joined the investor waitlist on /investors.
+ * It has to restate the disclosure shown on the page: joining is non-binding
+ * interest, and nothing is being offered or collected. Signups from
+ * /pt/investidores get investor-waitlist-confirmation-pt, which says the same
+ * in Portuguese — change both together.
  */
 const InvestorWaitlistConfirmation = () => (
   <Html lang="en" dir="ltr">
@@ -20,17 +22,20 @@ const InvestorWaitlistConfirmation = () => (
       <Container style={container}>
         <Heading style={h1}>You're on the list.</Heading>
         <Text style={text}>
-          We'll keep you updated as we prepare the first {SITE_NAME} productive credit
-          pilot — small-ticket credit for women-led microbusinesses in Brazil, settled with
-          stablecoins.
+          We'll keep you updated as {SITE_NAME} builds P2P productive credit for
+          women-led businesses in Brazil, funded through two pools: Brazilian investors in
+          reais, and international and impact investors in USDC on Solana. Whichever pool
+          funds her, she receives and repays in reais, by Pix.
         </Text>
         <Text style={text}>
-          You'll hear from us when the pilot opens and when the first results are in.
+          You'll hear from us as the pilot runs — with a regulated financial partner's
+          capital — and when there is news about the P2P model.
         </Text>
         <Text style={disclosure}>
-          Joining the waitlist represents non-binding interest only. {SITE_NAME} is not
-          currently offering securities or investment products, and is not accepting
-          investor funds.
+          Nothing in this email is an offer of securities or of a financial product.
+          Joining the waitlist is a non-binding expression of interest, and {SITE_NAME} is
+          not accepting investor funds. The P2P model will operate under the applicable
+          regulated structure; {SITE_NAME} holds no such licence today.
         </Text>
         <Text style={footer}>— The {SITE_NAME} team</Text>
       </Container>

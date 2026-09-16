@@ -20,6 +20,10 @@ const ForEntrepreneursSectionEn = () => (
             EmpowerFI helps women entrepreneurs organize their businesses, build stronger
             financial histories and prepare for better access to productive capital.
           </p>
+          <p className="leading-relaxed text-muted-foreground">
+            When a business is ready and she chooses to ask, she receives and repays in reais,
+            by Pix. Being ready and not asking is a complete outcome too.
+          </p>
 
           <div className="space-y-5 pt-2">
             <Button

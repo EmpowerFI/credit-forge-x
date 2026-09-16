@@ -1,4 +1,4 @@
-import { Award, Building2, ExternalLink, Smartphone } from "lucide-react";
+import { Award, Blocks, Building2, ExternalLink, Smartphone } from "lucide-react";
 import { PLAY_STORE_URL, SEBRAE_LOGO_SRC } from "@/config/links";
 import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
@@ -25,6 +25,13 @@ const items: {
     linkLabel: "View on Google Play",
   },
   {
+    icon: Blocks,
+    title: "A working P2P prototype on Solana devnet",
+    desc: "The whole P2P model runs end to end: readiness, eligibility, the two pools, the Capital Allocation Engine, the P2P desk and proofs on Solana. Investments, returns, FX and Pix are simulated; blockchain transactions use test assets.",
+    href: "/app?lang=en",
+    linkLabel: "Open the devnet app",
+  },
+  {
     icon: Award,
     title: "Built and refined with Sebrae",
     desc: "Thesis validated in the field with Sebrae, one of Brazil's leading innovation references. EmpowerFI completed Ginga Prototipa, which produced the working prototype, and is now in PIER — a Sebrae programme for refining the business model with specialist consulting.",
@@ -47,7 +54,7 @@ const TractionSectionEn = () => (
         subtitle="No inflated numbers, no projections presented as results. Everything here can be checked today."
       />
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2">
         {items.map(({ icon: Icon, title, desc, href, linkLabel, logo }) => (
           <div key={title} className="flex flex-col rounded-2xl p-8 glass glow-border">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">

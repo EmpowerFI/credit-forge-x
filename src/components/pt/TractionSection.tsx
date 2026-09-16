@@ -1,4 +1,4 @@
-import { Award, Building2, ExternalLink, Smartphone } from "lucide-react";
+import { Award, Blocks, Building2, ExternalLink, Smartphone } from "lucide-react";
 import { PLAY_STORE_URL, SEBRAE_LOGO_SRC } from "@/config/links";
 import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
@@ -35,6 +35,13 @@ const items: {
     title: "Empresa brasileira, de verdade",
     desc: "Companhia constituída em São Paulo, com time, produto e operação no Brasil. Construímos para o contexto que conhecemos de perto.",
   },
+  {
+    icon: Blocks,
+    title: "Protótipo funcionando na Solana devnet",
+    desc: "A plataforma de crédito, do check-in mensal ao pagamento por Pix, roda como protótipo na rede de testes da Solana, com cada etapa comprovada. Ali, investimentos, retornos, câmbio e Pix são simulados, e as transações usam ativos de teste.",
+    href: "/app?lang=pt",
+    linkLabel: "Abrir o protótipo",
+  },
 ];
 
 const TractionSection = () => (
@@ -47,7 +54,7 @@ const TractionSection = () => (
         subtitle="Sem número inflado e sem promessa. O que está aqui pode ser conferido hoje."
       />
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2">
         {items.map(({ icon: Icon, title, desc, href, linkLabel, logo }) => (
           <div key={title} className="flex flex-col rounded-2xl p-8 glass glow-border">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
