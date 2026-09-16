@@ -14,6 +14,7 @@ import { REALITY, reaisAtRamp, type Reality } from "../../lib/settlement";
 import { usdc } from "../../lib/solana";
 import { useDesk } from "./context";
 import { FundingSummary, LoanActions, StagePill } from "./parts";
+import EvcLabel from "../../components/product/EvcLabel";
 
 function Step({ n, title, reality, children }: { n: number; title: string; reality: Reality; children: React.ReactNode }) {
   return (
@@ -253,7 +254,7 @@ export default function Loan() {
                 })}
               </p>
               <p className="text-muted-foreground">
-                EVC {money(loan.outcome.evc_cents)} · {CAPITAL_USE_LABEL[loan.outcome.capital_use]} · {tr({
+                <EvcLabel /> {money(loan.outcome.evc_cents)} · {CAPITAL_USE_LABEL[loan.outcome.capital_use]} · {tr({
                   en: `${level(loan.outcome.confidence)} confidence · measured ${shortDate(loan.outcome.measured_at)}`,
                   pt: `confiança ${level(loan.outcome.confidence, "f")} · medido em ${shortDate(loan.outcome.measured_at)}`,
                 })}

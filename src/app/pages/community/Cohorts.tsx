@@ -7,6 +7,7 @@ import type { CreditPurpose } from "../../lib/readiness";
 import { useCommunity } from "./context";
 import { useCohorts } from "./queries";
 import { localized, tr } from "../../i18n";
+import EvcLabel from "../../components/product/EvcLabel";
 
 const pct = (n: number, of: number) => (of > 0 ? Math.round((n / of) * 100) : 0);
 
@@ -198,7 +199,7 @@ export default function Cohorts() {
                   <th className="py-2 pr-3 text-right font-medium">{tr({ en: "Funded", pt: "Captadas" })}</th>
                   <th className="py-2 pr-3 text-right font-medium">{tr({ en: "Disbursed", pt: "Desembolsadas" })}</th>
                   <th className="py-2 pr-3 text-right font-medium">{tr({ en: "Sales up", pt: "Vendas em alta" })}</th>
-                  <th className="py-2 text-right font-medium">EVC</th>
+                  <th className="py-2 text-right font-medium"><EvcLabel /></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">

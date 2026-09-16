@@ -9,6 +9,7 @@ import { LIVE_LOAN, outstandingCents, rate, stageOf } from "../../lib/partner";
 import { money, PURPOSE_LABEL, sectorLabel } from "../../lib/readiness";
 import { useDesk } from "./context";
 import { StagePill } from "./parts";
+import EvcLabel from "../../components/product/EvcLabel";
 
 const BANDS: Grade[] = ["LOW", "MEDIUM", "HIGH"];
 
@@ -67,8 +68,8 @@ export default function Portfolio() {
 
         <Panel title={tr({ en: "What the capital did", pt: "O que o capital fez" })}
           description={tr({
-            en: "Measured from her own reported months before and after the loan: sales, and the value the credit created after its cost (EVC). Proven on Solana.",
-            pt: "Medido a partir dos meses que ela mesma reportou antes e depois do empréstimo: vendas e o valor que o crédito gerou depois do seu custo (EVC). Registrado na Solana.",
+            en: "Measured from her own reported months before and after the loan: sales, and the value the credit created after its cost (EVC, Economic Value Created). Proven on Solana.",
+            pt: "Medido a partir dos meses que ela mesma reportou antes e depois do empréstimo: vendas e o valor que o crédito gerou depois do seu custo (EVC, Valor Econômico Criado). Registrado na Solana.",
           })}>
           {outcomes.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -90,7 +91,7 @@ export default function Portfolio() {
                       })} · {CAPITAL_USE_LABEL[l.outcome!.capital_use]}
                     </span>
                   </span>
-                  <span className={`num text-sm font-semibold ${l.outcome!.evc_cents >= 0 ? "text-positive" : "text-alert"}`}>EVC {money(l.outcome!.evc_cents)}</span>
+                  <span className={`num text-sm font-semibold ${l.outcome!.evc_cents >= 0 ? "text-positive" : "text-alert"}`}><EvcLabel /> {money(l.outcome!.evc_cents)}</span>
                 </li>
               ))}
             </ul>

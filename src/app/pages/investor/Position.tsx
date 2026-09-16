@@ -21,6 +21,7 @@ import { useAuth } from "../../auth/useAuth";
 import ZecReturns from "./ZecReturns";
 import { type PayoutStatus, reaisAtRamp, REALITY, type Reality } from "../../lib/settlement";
 import { formatDate, formatNumber, tr } from "../../i18n";
+import EvcLabel from "../../components/product/EvcLabel";
 
 function RouteStep({ n, title, reality, children }: { n: number; title: string; reality: Reality | null; children: React.ReactNode }) {
   return (
@@ -431,7 +432,7 @@ export default function Position() {
           })}>
           <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
             <div><p className="text-xs text-muted-foreground">{tr({ en: "Monthly sales", pt: "Vendas mensais" })}</p><p className="num text-foreground">{money(outcome.avg_revenue_before_cents)} → {money(outcome.avg_revenue_after_cents)}</p></div>
-            <div><p className="text-xs text-muted-foreground">EVC</p><p className={`num ${outcome.evc_cents >= 0 ? "text-positive" : "text-alert"}`}>{money(outcome.evc_cents)}</p></div>
+            <div><p className="text-xs text-muted-foreground"><EvcLabel /></p><p className={`num ${outcome.evc_cents >= 0 ? "text-positive" : "text-alert"}`}>{money(outcome.evc_cents)}</p></div>
             <div><p className="text-xs text-muted-foreground">{tr({ en: "Use of capital", pt: "Uso do capital" })}</p><p className="text-foreground">{CAPITAL_USE_LABEL[outcome.capital_use]}</p></div>
             <div><p className="text-xs text-muted-foreground">{tr({ en: "Confidence", pt: "Confiança" })}</p><p className="text-foreground">{confidenceLabel(outcome.confidence)} · {date(outcome.measured_at)}</p></div>
           </div>

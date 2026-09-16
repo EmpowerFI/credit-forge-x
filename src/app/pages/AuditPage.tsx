@@ -235,7 +235,7 @@ async function audit(kind: AnchorKind, entityId: string) {
         ok: incremental === Number(p.incremental_profit_cents),
       });
       checks.push({
-        label: () => tr({ en: "EVC is the incremental profit less the cost of credit", pt: "O EVC é o lucro incremental menos o custo do crédito" }),
+        label: () => tr({ en: "EVC (Economic Value Created) is the incremental profit less the cost of credit", pt: "O EVC (Valor Econômico Criado) é o lucro incremental menos o custo do crédito" }),
         ok: Number(p.evc_cents) === Number(p.incremental_profit_cents) - Number(p.cost_of_credit_cents),
       });
     } else if (kind === "payment") {

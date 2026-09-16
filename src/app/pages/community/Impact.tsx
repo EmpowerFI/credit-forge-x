@@ -110,8 +110,8 @@ export default function Impact() {
         </div>
         <p className="text-xs text-muted-foreground">
           {tr({
-            en: "EVC is the incremental profit after the cost of credit. Negative values are shown as they are: good credit is not only credit that gets repaid, and not every loan creates value.",
-            pt: "O EVC é o lucro adicional depois do custo do crédito. Valores negativos aparecem como são: crédito bom não é só o que é pago, e nem todo empréstimo cria valor.",
+            en: "EVC (Economic Value Created) is the incremental profit after the cost of credit. Negative values are shown as they are: good credit is not only credit that gets repaid, and not every loan creates value.",
+            pt: "O EVC (Valor Econômico Criado) é o lucro adicional depois do custo do crédito. Valores negativos aparecem como são: crédito bom não é só o que é pago, e nem todo empréstimo cria valor.",
           })}
         </p>
         {o.withheld > 0 && (

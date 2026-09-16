@@ -13,6 +13,7 @@ import { type PortfolioRow, positionState, RISK, title } from "../../lib/investo
 import { money, PURPOSE_LABEL, type CreditPurpose } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
 import { usePortfolio } from "./queries";
+import EvcLabel from "../../components/product/EvcLabel";
 
 
 export default function Portfolio() {
@@ -117,7 +118,7 @@ export default function Portfolio() {
                 <th className="py-2 pr-4 text-right font-medium">{tr({ en: "Share", pt: "Participação" })}</th>
                 <th className="py-2 pr-4 font-medium">{tr({ en: "State", pt: "Situação" })}</th>
                 <th className="py-2 pr-4 text-right font-medium">{tr({ en: "Repaid", pt: "Pago" })}</th>
-                <th className="py-2 pr-4 text-right font-medium">EVC</th>
+                <th className="py-2 pr-4 text-right font-medium"><EvcLabel /></th>
                 <th className="py-2 font-medium"><span className="sr-only">{tr({ en: "Open", pt: "Abrir" })}</span></th>
               </tr>
             </thead>
