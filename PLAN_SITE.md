@@ -2,7 +2,7 @@
 
 **Why:** the app and docs moved to the P2P North Star on 16 Sep (PLAN_P2P.md). The site still tells the earlier story: a financial partner decides and lends, EmpowerFI "is not a peer-to-peer lender", P2P and stablecoins are a far-off step, and investors are pitched stablecoins alone. Decision D2 left the site for later; this is that rewrite.
 **Work:** on `hackathon`; `main`, the website database and its Edge Functions only after the founder approves.
-**Status, 16 Sep:** decisions S1–S4 taken; the rewrite is on `hackathon`, checked at 1440 and 390 px with no overflow and no console errors. Before `main`: the waitlist migration on the website database, then `send-transactional-email` redeployed, then the site.
+**Status, 16 Sep:** published. The waitlist migration is applied on the website database, `send-transactional-email` is redeployed with the Portuguese confirmation, and the site is merged to `main`. Open: new OG images from design; Terms and Privacy with counsel (`docs/LEGAL_REVIEW.md`).
 
 ## Decisions (founder, 16 Sep)
 
