@@ -154,8 +154,8 @@ const en: InvestorCopy = {
         desc: "Every step is recorded in a database and proven on Solana, with no personal data on chain. Solana is the proof layer for every loan, whichever pool funds it, and the capital rail only for the global pool.",
       },
       {
-        title: "Paid by the cost to serve",
-        desc: "EmpowerFI is paid by the cost to serve built into each loan's rate — preparing, originating and servicing small tickets — and by Community Intelligence for programmes and communities.",
+        title: "Paid for the service, not by investors",
+        desc: "In the pilot, EmpowerFI is paid by the partner for its service — preparing communities, qualifying requests, following repayment and measuring outcomes. In the P2P model, by the cost to serve built into each loan's rate. In both, by Community Intelligence for programmes and communities.",
       },
       {
         title: "Cost to serve is the number that matters",
@@ -291,8 +291,8 @@ const pt: InvestorCopy = {
         desc: "Cada etapa fica registrada em banco de dados e comprovada na Solana, sem nenhum dado pessoal na blockchain. A Solana é a camada de prova de todo empréstimo, seja qual for o pool, e o trilho de capital só do pool global.",
       },
       {
-        title: "Remunerada pelo custo de servir",
-        desc: "A EmpowerFI é remunerada pelo custo de servir embutido na taxa de cada empréstimo — preparar, originar e acompanhar tickets pequenos — e pela Inteligência Comunitária para programas e comunidades.",
+        title: "Remunerada pelo serviço, não pelo investidor",
+        desc: "No piloto, a EmpowerFI é remunerada pelo parceiro pelo serviço — preparar comunidades, qualificar pedidos, acompanhar pagamentos e medir resultados. No modelo P2P, pelo custo de servir embutido na taxa de cada empréstimo. Nas duas fases, pela Inteligência Comunitária para programas e comunidades.",
       },
       {
         title: "O custo de servir é o número que importa",

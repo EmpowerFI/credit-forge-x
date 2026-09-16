@@ -20,8 +20,8 @@ const layers = [
     phase: "Layer 2",
     status: "Pilot — with a regulated partner's capital",
     title: "Qualification & Servicing",
-    customer: "Women micro-entrepreneurs, served with a regulated financial partner in the pilot",
-    revenue: "The cost to serve built into each loan's rate — originating, servicing and follow-up",
+    customer: "The regulated financial partner in the pilot, and the women micro-entrepreneurs it lends to",
+    revenue: "Service fees paid by the partner — preparing communities, qualifying requests, following repayment and measuring outcomes",
     risk: "In the pilot, with the regulated financial partner that provides the capital",
     note: "The output is not a lead. It is a qualified credit opportunity carrying readiness, data quality, business history, affordability, purpose, suggested ticket range, risk band, confidence and reason codes. In the pilot, the partner provides the capital and makes the credit decision; EmpowerFI prepares communities, qualifies requests, follows repayment and measures outcomes.",
   },
@@ -31,7 +31,7 @@ const layers = [
     status: "North Star — demonstrated on devnet",
     title: "P2P Capital Platform",
     customer: "Brazilian investors in reais, international and impact investors in USDC, and the entrepreneurs they fund",
-    revenue: "The same cost to serve, built into each loan's rate",
+    revenue: "The cost to serve built into each loan's rate — originating, servicing and follow-up",
     risk: "Depends on the regulated structure adopted",
     note: "Two pools of P2P capital fund qualified opportunities; a Capital Allocation Engine chooses the pool for each one, and EmpowerFI's P2P desk formalises and services the loan. It runs today as a prototype on devnet, with simulated money, and will operate under the applicable regulated structure once the pilot validates the model. EmpowerFI holds no such licence today.",
   },
@@ -85,8 +85,8 @@ const BusinessModelSectionEn = () => (
       </div>
 
       <p className="mx-auto max-w-3xl text-center font-heading text-lg font-semibold leading-relaxed text-foreground">
-        EmpowerFI is paid by the cost to serve built into each loan's rate — preparing,
-        originating and servicing small tickets — and{" "}
+        In the pilot, EmpowerFI is paid by the partner for its service. In the P2P model, by the
+        cost to serve built into each loan's rate. In both,{" "}
         <span className="text-gradient">
           by Community Intelligence for programmes and communities.
         </span>
