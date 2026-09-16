@@ -69,12 +69,6 @@ const ProblemSectionEn = () => (
           </div>
         ))}
       </div>
-
-      <p className="mx-auto max-w-3xl text-center font-heading text-lg font-semibold leading-relaxed text-foreground">
-        The pilot does not need to prove the problem exists. It needs to measure how much
-        EmpowerFI compresses the cost to serve{" "}
-        <span className="text-gradient">without degrading credit quality.</span>
-      </p>
     </div>
   </section>
 );
