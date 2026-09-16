@@ -13,7 +13,7 @@ import { describeError } from "../lib/errors";
 import { platformConfigured, type Role } from "../lib/platform";
 import { shortAddress } from "../lib/solana";
 import ConnectWalletDialog from "../wallet/ConnectWallet";
-import { useWalletSignIn } from "../wallet/useWalletSignIn";
+import { supportsSolanaSignIn, useWalletSignInWithMessage, useWalletSignInWithSolana } from "../wallet/useWalletSignIn";
 import { prototypeNotice } from "../lib/capital";
 import { localized, tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
@@ -69,8 +69,21 @@ const PERSONAS: { email: string; role: Role; workspace: string; description: str
  * so the step can't be missed below the fold; if the wallet refuses or fails,
  * the reason and a retry stay in the same place.
  */
-function WalletSignIn({ account, onDone, onCancel }: { account: UiWalletAccount; onDone: () => void; onCancel: () => void }) {
-  const signIn = useWalletSignIn(account);
+type WalletSignInProps = { account: UiWalletAccount; onDone: () => void; onCancel: () => void };
+
+function WalletSignIn(props: WalletSignInProps) {
+  return supportsSolanaSignIn(props.account) ? <SignInWithSolana {...props} /> : <SignInWithMessage {...props} />;
+}
+
+function SignInWithSolana(props: WalletSignInProps) {
+  return <WalletSignInDialog {...props} signIn={useWalletSignInWithSolana(props.account)} />;
+}
+
+function SignInWithMessage(props: WalletSignInProps) {
+  return <WalletSignInDialog {...props} signIn={useWalletSignInWithMessage(props.account)} />;
+}
+
+function WalletSignInDialog({ account, onDone, onCancel, signIn }: WalletSignInProps & { signIn: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
