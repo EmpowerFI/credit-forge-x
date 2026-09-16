@@ -1,4 +1,5 @@
 import type { Database } from "./platform.types";
+import { formatDate } from "../i18n";
 
 export type ReadinessStatus = Database["public"]["Enums"]["readiness_status"];
 export type CreditPurpose = Database["public"]["Enums"]["credit_purpose"];
@@ -83,4 +84,4 @@ export const money = (cents: number | null | undefined) => (cents === null || ce
 
 /** "2026-09" → "Sep 2026". */
 export const monthLabel = (period: string) =>
-  new Date(`${period}-01T12:00:00Z`).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
+  formatDate(`${period}-01T12:00:00Z`, { month: "short", year: "numeric", timeZone: "UTC" });

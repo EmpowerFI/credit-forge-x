@@ -24,7 +24,7 @@ const Navbar = () => {
         </Link>
 
         <div className="flex items-center gap-3">
-          <LaunchAppButton />
+          <LaunchAppButton lang="pt" />
           <button
             className="text-foreground"
             onClick={() => setOpen(!open)}

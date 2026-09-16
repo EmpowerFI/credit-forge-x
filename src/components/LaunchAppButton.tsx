@@ -6,9 +6,10 @@ import { Link } from "react-router-dom";
  * workspaces. It runs on Solana devnet with simulated money, and says so; the
  * real product replaces it piece by piece.
  */
-const LaunchAppButton = ({ label = "App - Devnet" }: { label?: string }) => (
+const LaunchAppButton = ({ label = "App - Devnet", lang = "en" }: { label?: string; lang?: "en" | "pt" }) => (
   <Link
-    to="/app"
+    // The app opens in the language of the page it is launched from.
+    to={`/app?lang=${lang}`}
     className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
   >
     {label} <ArrowUpRight size={15} aria-hidden />

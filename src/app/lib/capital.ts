@@ -2,6 +2,7 @@ import type { AllocationReason, AllocationResult, PoolId } from "@empowerfi/capi
 import type { Tone } from "../components/product/StatusPill";
 import { platform } from "./platform";
 import type { Reality } from "./settlement";
+import { formatNumber, tr } from "../i18n";
 
 // P2P capital in two pools, and the engine that chooses between them for each
 // qualified opportunity. Domestic P2P is Brazilian investors' capital in
@@ -127,18 +128,20 @@ export type StoredAllocation = AllocationResult;
 export const poolOf = (p: string | null | undefined): PoolId | null => (p === "domestic" || p === "global" ? p : null);
 
 /** Basis points as a percentage with up to two decimals: 3800 → "38%", 1650 → "16.5%". */
-export const bpsPercent = (bps: number) => `${Number((bps / 100).toFixed(2)).toLocaleString("en-US")}%`;
+export const bpsPercent = (bps: number) => `${formatNumber(Number((bps / 100).toFixed(2)))}%`;
 
-/** Reais in thousands for hero tiles: 12630000 → "R$ 126.3k". */
+const thousands = () => tr({ en: "k", pt: " mil" });
+
+/** Reais in thousands for hero tiles: 12630000 → "R$ 126.3k", "R$ 126,3 mil". */
 export const reaisShort = (cents: number) => {
   const reais = cents / 100;
-  return reais >= 1000 ? `R$ ${(reais / 1000).toLocaleString("en-US", { maximumFractionDigits: 1 })}k` : `R$ ${Math.round(reais).toLocaleString("en-US")}`;
+  return reais >= 1000 ? `R$ ${formatNumber(reais / 1000, { maximumFractionDigits: 1 })}${thousands()}` : `R$ ${formatNumber(Math.round(reais))}`;
 };
 
-/** USDC in thousands for hero tiles: 18240000000 → "18.2k USDC". */
+/** USDC in thousands for hero tiles: 18240000000 → "18.2k USDC", "18,2 mil USDC". */
 export const usdcShort = (micro: number) => {
   const usdc = micro / 1e6;
-  return usdc >= 1000 ? `${(usdc / 1000).toLocaleString("en-US", { maximumFractionDigits: 1 })}k USDC` : `${Math.round(usdc).toLocaleString("en-US")} USDC`;
+  return usdc >= 1000 ? `${formatNumber(usdc / 1000, { maximumFractionDigits: 1 })}${thousands()} USDC` : `${formatNumber(Math.round(usdc))} USDC`;
 };
 
 /** A domestic position's reais: what was put in, or its USDC equivalent at the quote. */

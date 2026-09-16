@@ -3,6 +3,7 @@ import type { Database } from "./platform.types";
 import type { CreditPurpose, ReadinessStatus } from "./readiness";
 import type { EligibilityDecision, LoanStatus, OpportunityStatus } from "./credit";
 import type { ConsentRecord } from "./consent";
+import { formatDate } from "../i18n";
 
 // Community Intelligence, as the database computes it (community_overview,
 // community_participants, community_cohorts, community_participant). No
@@ -207,4 +208,4 @@ export interface Journey {
 export const scorePct = (v: number | null | undefined) => (v === null || v === undefined ? null : Math.round((v / 25) * 100));
 export const bpsPct = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${Math.round(v / 100)}%`);
 export const shortDate = (iso: string | null | undefined) =>
-  iso ? new Date(iso).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+  iso ? formatDate(iso, { day: "2-digit", month: "short", year: "numeric" }) : "—";

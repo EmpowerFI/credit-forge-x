@@ -1,6 +1,7 @@
 import type { Tone } from "../components/product/StatusPill";
 import type { Database } from "./platform.types";
 import { platform } from "./platform";
+import { formatNumber, getLocale } from "../i18n";
 
 // Investing with shielded ZEC (R5): the request an investor pays from any
 // Zcash wallet, and how its progress reads, from the payment on Zcash to the
@@ -73,7 +74,7 @@ export function paymentUri(r: Pick<ZcashRequest, "address" | "amount_zat" | "mem
 }
 
 export const usdPerZec = (cents: number) =>
-  `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${getLocale() === "pt" ? "US$ " : "$"}${formatNumber(cents / 100, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /** A shielded transaction on a Zcash explorer: that it exists and when — never amounts, memos or addresses. */
 export const zcashExplorerTx = (txid: string, network: "test" | "main" = "test") =>

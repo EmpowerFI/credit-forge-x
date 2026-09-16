@@ -6,6 +6,7 @@ import {
   type Signature,
 } from "@solana/kit";
 import { findAssociatedTokenPda, TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
+import { formatNumber } from "../i18n";
 
 // Devnet, where the whole platform runs: Circle's test USDC, the program's
 // vault, and the reads the investor console needs. Devnet tokens have no value.
@@ -96,9 +97,9 @@ export async function confirmSignature(signature: string, timeoutMs = 60_000): P
 export const usdc = (micro: number | bigint | null | undefined, digits = 2) =>
   micro === null || micro === undefined
     ? "—"
-    : `${(Number(micro) / 10 ** USDC_DECIMALS).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })} USDC`;
+    : `${formatNumber(Number(micro) / 10 ** USDC_DECIMALS, { minimumFractionDigits: digits, maximumFractionDigits: digits })} USDC`;
 
 export const sol = (lamports: bigint | number) =>
-  `${(Number(lamports) / 1e9).toLocaleString("en-US", { maximumFractionDigits: 3 })} SOL`;
+  `${formatNumber(Number(lamports) / 1e9, { maximumFractionDigits: 3 })} SOL`;
 
 export const shortAddress = (value: string) => `${value.slice(0, 4)}…${value.slice(-4)}`;

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { setCurrentLocale } from "../i18n";
 import { bpsPercent, poolOf, positionReais, PROTOTYPE_NOTICE, REASON, reaisShort, usdcShort } from "./capital";
 
 describe("capital", () => {
@@ -10,6 +11,15 @@ describe("capital", () => {
     expect(bpsPercent(3_800)).toBe("38%");
     expect(bpsPercent(9_650)).toBe("96.5%");
   });
+
+  it("reads them the Brazilian way in Portuguese", () => {
+    setCurrentLocale("pt");
+    expect(reaisShort(12_630_000)).toBe("R$ 126,3 mil");
+    expect(reaisShort(95_000)).toBe("R$ 950");
+    expect(usdcShort(18_240_000_000)).toBe("18,2 mil USDC");
+    expect(bpsPercent(9_652)).toBe("96,52%");
+  });
+  afterEach(() => setCurrentLocale("en"));
 
   it("keeps a domestic position's reais, or reads them at the quote", () => {
     expect(positionReais(150_000, 277_777_778, 5400)).toBe(150_000);

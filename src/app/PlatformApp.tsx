@@ -13,6 +13,8 @@ import MePage from "./pages/MePage";
 import NewCommunityPage from "./pages/NewCommunityPage";
 import type { Role } from "./lib/platform";
 import WalletProvider from "./wallet/WalletProvider";
+import { tr } from "./i18n";
+import { LocaleProvider, useLocale } from "./i18n/LocaleProvider";
 
 // The Solana client is heavy and only the audit screens need it in the browser.
 const AuditPage = lazy(() => import("./pages/AuditPage"));
@@ -55,12 +57,13 @@ const CommunityParticipant = lazy(() => import("./pages/community/Participant"))
 const CommunityReadiness = lazy(() => import("./pages/community/Readiness"));
 const CommunityPipeline = lazy(() => import("./pages/community/Pipeline"));
 const CommunityImpact = lazy(() => import("./pages/community/Impact"));
-const loading = <Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />;
+const Loading = () => <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Loading", pt: "Carregando" })} />;
+const loading = <Loading />;
 
 const INVESTOR_ROLES: Role[] = ["capital_provider", "admin", "auditor"];
 const investor = (page: React.ReactNode) => (
   <RequireAuth roles={INVESTOR_ROLES}>
-    <Suspense fallback={<Loader2 className="animate-spin text-muted-foreground" aria-label="Loading" />}>{page}</Suspense>
+    <Suspense fallback={loading}>{page}</Suspense>
   </RequireAuth>
 );
 
@@ -87,60 +90,70 @@ export default function PlatformApp() {
   }, []);
 
   return (
-    <AuthProvider>
-      <WalletProvider>
-      <Routes>
-        <Route path="login" element={<LoginPage />} />
-        <Route path="report/:token" element={<Suspense fallback={null}><ReportPage /></Suspense>} />
-        <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
-          <Route index element={<HomeRedirect />} />
-          <Route path="me" element={<MePage />} />
-          <Route path="check-in" element={<CheckinPage />} />
-          <Route path="consent" element={<Suspense fallback={loading}><ConsentPage /></Suspense>} />
-          <Route path="community" element={<CommunitiesPage />} />
-          <Route path="community/new"
-            element={<RequireAuth roles={["community_leader", "admin"]}><NewCommunityPage /></RequireAuth>} />
-          <Route path="community/:id" element={<Suspense fallback={loading}><CommunityLayout /></Suspense>}>
-            <Route index element={<Suspense fallback={loading}><CommunityOverview /></Suspense>} />
-            <Route path="cohorts" element={<Suspense fallback={loading}><CommunityCohorts /></Suspense>} />
-            <Route path="participants" element={<Suspense fallback={loading}><CommunityParticipants /></Suspense>} />
-            <Route path="participants/:entrepreneurId" element={<Suspense fallback={loading}><CommunityParticipant /></Suspense>} />
-            <Route path="readiness" element={<Suspense fallback={loading}><CommunityReadiness /></Suspense>} />
-            <Route path="pipeline" element={<Suspense fallback={loading}><CommunityPipeline /></Suspense>} />
-            <Route path="impact" element={<Suspense fallback={loading}><CommunityImpact /></Suspense>} />
-          </Route>
-          <Route path="audit" element={<RequireAuth roles={["auditor", "admin"]}><Suspense fallback={loading}><AuditLayout /></Suspense></RequireAuth>}>
-            <Route index element={<Suspense fallback={loading}><AuditAttestations /></Suspense>} />
-            <Route path="events" element={<Suspense fallback={loading}><AuditEvents /></Suspense>} />
-            <Route path="models" element={<Suspense fallback={loading}><AuditModels /></Suspense>} />
-            <Route path="consents" element={<Suspense fallback={loading}><AuditConsents /></Suspense>} />
-            <Route path="zcash" element={<Suspense fallback={loading}><AuditZcash /></Suspense>} />
-            <Route path="system" element={<Suspense fallback={loading}><AuditSystem /></Suspense>} />
-            <Route path="reports" element={<Suspense fallback={loading}><AuditReports /></Suspense>} />
-          </Route>
-          {/* Anyone signed in may open one; audit_record decides what they may see. */}
-          <Route path="audit/:kind/:entityId" element={<Suspense fallback={null}><AuditPage /></Suspense>} />
-          <Route path="partner" element={<RequireAuth roles={["partner", "admin", "auditor"]}><Suspense fallback={loading}><PartnerLayout /></Suspense></RequireAuth>}>
-            <Route index element={<Suspense fallback={loading}><PartnerPipeline /></Suspense>} />
-            <Route path="reviews" element={<Suspense fallback={loading}><PartnerReviews /></Suspense>} />
-            <Route path="decisions" element={<Suspense fallback={loading}><PartnerDecisions /></Suspense>} />
-            <Route path="portfolio" element={<Suspense fallback={loading}><PartnerPortfolio /></Suspense>} />
-            <Route path="servicing" element={<Suspense fallback={loading}><PartnerServicing /></Suspense>} />
-            <Route path="loans/:id" element={<Suspense fallback={loading}><PartnerLoan /></Suspense>} />
-          </Route>
-          <Route path="investor" element={investor(<InvestorOverview />)} />
-          <Route path="investor/opportunities" element={investor(<InvestorOpportunities />)} />
-          <Route path="investor/opportunities/:id" element={investor(<OpportunityDetail />)} />
-          <Route path="investor/portfolio" element={investor(<InvestorPortfolio />)} />
-          <Route path="investor/positions/:id" element={investor(<InvestorPosition />)} />
-          <Route path="investor/settlement" element={investor(<InvestorSettlement />)} />
-          <Route path="investor/audit" element={investor(<InvestorAuditTrail />)} />
-          <Route path="capital" element={<RequireAuth roles={["capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
-          <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />
-          <Route path="*" element={<Navigate to="/app" replace />} />
+    <LocaleProvider>
+      <AuthProvider>
+        <WalletProvider>
+          <Pages />
+        </WalletProvider>
+      </AuthProvider>
+    </LocaleProvider>
+  );
+}
+
+/** Keyed on the language, so switching it re-renders every page's text. */
+function Pages() {
+  const { locale } = useLocale();
+  return (
+    <Routes key={locale}>
+      <Route path="login" element={<LoginPage />} />
+      <Route path="report/:token" element={<Suspense fallback={null}><ReportPage /></Suspense>} />
+      <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
+        <Route index element={<HomeRedirect />} />
+        <Route path="me" element={<MePage />} />
+        <Route path="check-in" element={<CheckinPage />} />
+        <Route path="consent" element={<Suspense fallback={loading}><ConsentPage /></Suspense>} />
+        <Route path="community" element={<CommunitiesPage />} />
+        <Route path="community/new"
+          element={<RequireAuth roles={["community_leader", "admin"]}><NewCommunityPage /></RequireAuth>} />
+        <Route path="community/:id" element={<Suspense fallback={loading}><CommunityLayout /></Suspense>}>
+          <Route index element={<Suspense fallback={loading}><CommunityOverview /></Suspense>} />
+          <Route path="cohorts" element={<Suspense fallback={loading}><CommunityCohorts /></Suspense>} />
+          <Route path="participants" element={<Suspense fallback={loading}><CommunityParticipants /></Suspense>} />
+          <Route path="participants/:entrepreneurId" element={<Suspense fallback={loading}><CommunityParticipant /></Suspense>} />
+          <Route path="readiness" element={<Suspense fallback={loading}><CommunityReadiness /></Suspense>} />
+          <Route path="pipeline" element={<Suspense fallback={loading}><CommunityPipeline /></Suspense>} />
+          <Route path="impact" element={<Suspense fallback={loading}><CommunityImpact /></Suspense>} />
         </Route>
-      </Routes>
-      </WalletProvider>
-    </AuthProvider>
+        <Route path="audit" element={<RequireAuth roles={["auditor", "admin"]}><Suspense fallback={loading}><AuditLayout /></Suspense></RequireAuth>}>
+          <Route index element={<Suspense fallback={loading}><AuditAttestations /></Suspense>} />
+          <Route path="events" element={<Suspense fallback={loading}><AuditEvents /></Suspense>} />
+          <Route path="models" element={<Suspense fallback={loading}><AuditModels /></Suspense>} />
+          <Route path="consents" element={<Suspense fallback={loading}><AuditConsents /></Suspense>} />
+          <Route path="zcash" element={<Suspense fallback={loading}><AuditZcash /></Suspense>} />
+          <Route path="system" element={<Suspense fallback={loading}><AuditSystem /></Suspense>} />
+          <Route path="reports" element={<Suspense fallback={loading}><AuditReports /></Suspense>} />
+        </Route>
+        {/* Anyone signed in may open one; audit_record decides what they may see. */}
+        <Route path="audit/:kind/:entityId" element={<Suspense fallback={null}><AuditPage /></Suspense>} />
+        <Route path="partner" element={<RequireAuth roles={["partner", "admin", "auditor"]}><Suspense fallback={loading}><PartnerLayout /></Suspense></RequireAuth>}>
+          <Route index element={<Suspense fallback={loading}><PartnerPipeline /></Suspense>} />
+          <Route path="reviews" element={<Suspense fallback={loading}><PartnerReviews /></Suspense>} />
+          <Route path="decisions" element={<Suspense fallback={loading}><PartnerDecisions /></Suspense>} />
+          <Route path="portfolio" element={<Suspense fallback={loading}><PartnerPortfolio /></Suspense>} />
+          <Route path="servicing" element={<Suspense fallback={loading}><PartnerServicing /></Suspense>} />
+          <Route path="loans/:id" element={<Suspense fallback={loading}><PartnerLoan /></Suspense>} />
+        </Route>
+        <Route path="investor" element={investor(<InvestorOverview />)} />
+        <Route path="investor/opportunities" element={investor(<InvestorOpportunities />)} />
+        <Route path="investor/opportunities/:id" element={investor(<OpportunityDetail />)} />
+        <Route path="investor/portfolio" element={investor(<InvestorPortfolio />)} />
+        <Route path="investor/positions/:id" element={investor(<InvestorPosition />)} />
+        <Route path="investor/settlement" element={investor(<InvestorSettlement />)} />
+        <Route path="investor/audit" element={investor(<InvestorAuditTrail />)} />
+        <Route path="capital" element={<RequireAuth roles={["capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
+        <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />
+        <Route path="*" element={<Navigate to="/app" replace />} />
+      </Route>
+    </Routes>
   );
 }
