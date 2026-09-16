@@ -21,6 +21,8 @@ One story, end to end, on the hackathon environment (`www.empowerfi.io/app`, pas
 
 ## Before recording
 
+- Choose the language. Opened from the English site (or with the EN | PT switch), the whole app and every account read in English; from `empowerfi.io/pt`, in Portuguese. The demo data (names, businesses, communities) is the same in both.
+
 - Reseed the hackathon environment (`seed-demo-accounts.mts`, then `seed-demo.mts --yes`; about 1 devnet SOL). The seed prints the capital figures: demand, each pool's liquidity and coverage.
 - Maria's September check-in is left for the demo; so is one funded opportunity waiting on the desk.
 - A wallet on devnet with test SOL and USDC for step 7 (faucets on the invest panel).

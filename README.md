@@ -12,7 +12,7 @@ The marketplace app is live on Google Play; this repository is the Colosseum hac
 
 ## Try it
 
-The platform is live at **[www.empowerfi.io/app](https://www.empowerfi.io/app)** (or `http://localhost:8080/app` locally). Sign in with one of the demo accounts. The login page lists them, and all share the password **`EmpowerFI-demo-2026`** (public on purpose; every demo record is simulated).
+The platform is live at **[www.empowerfi.io/app](https://www.empowerfi.io/app)** (or `http://localhost:8080/app` locally), and the site's **App - Devnet** button opens it. It reads in English or Portuguese: the Portuguese pages open it in Portuguese, and the EN | PT switch changes it. Sign in with one of the demo accounts. The login page lists them, and all share the password **`EmpowerFI-demo-2026`** (public on purpose; every demo record is simulated).
 
 | Account | Role | What to look at |
 |---|---|---|
@@ -38,9 +38,13 @@ Program: [`4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR`](https://explorer.solan
 - **Dashboards by role** with row-level security. The P2P desk sees pseudonyms and rounded indicators; investors see a decision snapshot, never identity; community leaders see capital totals, never investors.
 - **Cost to serve**, counted from a community's first day at a pilot rate card, per participant, per ready participant, per opportunity, per loan and per R$ lent.
 - **Productive outcomes:** what changed in a business after its loan, from the months it reported. EVC = extra profit − interest paid; EVM = EVC ÷ capital. These are observed, not caused, and labelled that way.
+- **Investing, for real on devnet.** A global investor signs in with a Solana wallet and sends test USDC to the program's vault; the allocation is proven on chain. Shielded ZEC on Zcash testnet is a second way to pay, read by a viewing-key watcher and credited to the vault. A domestic investor makes a simulated allocation in reais.
+- **Settlement.** The vault releases global capital to the off-ramp when the desk disburses, and pays investors their share of each instalment, as real devnet transfers. The conversion to reais is simulated, with a live quote from MoneyGram Ramps' sandbox beside it, and Pix both ways is a labelled mock. A declined opportunity refunds its investors from the vault.
+- **Consent by use.** She chooses what her data may be used for: assessment, the P2P desk, investors, impact totals. Every screen and function checks it, and each consent record is proven on Solana.
+- **Shared audit reports.** An auditor freezes the console's view into a public page that anyone can open and re-check against Solana from their own browser.
 - **A Capital Allocation Engine** with two routes only: Domestic P2P (a simulated BRL pool, Pix) and Global P2P (test USDC on Solana, a simulated regulated off-ramp, Pix). Feasibility first — liquidity, risk appetite, ticket, mandate — then her all-in cost; deterministic reason codes, the pool persisted on each opportunity, and the same engine re-run in the browser. Global capital earns its place by the availability, mandate or economics it adds, not by being on a blockchain.
 
-Read more: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [platform/README.md](platform/README.md) (operations).
+Read more: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/DEMO.md](docs/DEMO.md) (the three-minute story) · [docs/I18N.md](docs/I18N.md) (English and Portuguese) · [platform/README.md](platform/README.md) (operations).
 
 ## Run it locally
 
@@ -64,7 +68,7 @@ npm run audit-client:generate                       # after changing the program
 
 | Command | What |
 |---|---|
-| `npm test` | Vitest: engines and their vectors, commitments and golden vectors, the on-chain privacy review of the IDL, capital routes, UI helpers |
+| `npm test` | Vitest: engines and their vectors, the Capital Allocation Engine's vectors, commitments and golden vectors, the on-chain privacy review of the IDL, settlement and ramp helpers, languages |
 | `npx supabase test db --workdir platform` | pgTAP: every role's access, the thesis, the anchoring and reconciliation queues, cost to serve, capital, outcomes, catalog-wide RBAC rules (add `--linked` to run against the remote, rolled back) |
 | `cargo test -p empowerfi-audit` | the program's rules in LiteSVM |
 | `deno test --allow-read platform/supabase/functions/_shared/` | the vendored engines and commitments, in the runtime that uses them |
@@ -75,16 +79,17 @@ npm run audit-client:generate                       # after changing the program
 ```
 src/app/                     the platform (/app): pages by role, audit screen
 src/                         the public site (EN at /, PT-BR at /pt)
-packages/                    readiness-engine · eligibility-engine · audit-commitments · audit-client · capital-route
+packages/                    readiness-engine · eligibility-engine · capital-allocation · audit-commitments · audit-client
 programs/empowerfi-audit     the Anchor program and its tests
 platform/supabase            migrations, pgTAP tests, Edge Functions
+services/zcash-watcher       Zcash viewing-key scanner (Rust → WebAssembly) for the zcash-watch function
 scripts/platform             demo accounts, demo scenario, zero-PII scan
-docs/                        architecture and privacy
+docs/                        architecture, privacy, demo script, languages
 ```
 
 ## The public site
 
-Vite + React 18 + TypeScript, Tailwind and shadcn/ui, bilingual: English at `/` (with `/investors`, `/about`, `/sources`), Portuguese at `/pt`. A change to a page in one language is mirrored in the other. The investor contact form uses the `send-transactional-email` Edge Function of the website's Supabase project (root `supabase/`, kept separate from `platform/`).
+Vite + React 18 + TypeScript, Tailwind and shadcn/ui, bilingual: English at `/` (with `/investors`, `/about`, `/sources`), Portuguese at `/pt`. A change to a page in one language is mirrored in the other. The header's **App - Devnet** button opens the platform in the page's language. The investor contact form uses the `send-transactional-email` Edge Function of the website's Supabase project (root `supabase/`, kept separate from `platform/`).
 
 Deployed on Vercel: [`vercel.json`](vercel.json) sets the Vite preset and a SPA rewrite so client-side routes (`/pt`, `/app/...`) resolve on direct load. Set the `VITE_*` variables above for Production and Preview.
 

@@ -27,9 +27,15 @@ flowchart LR
       EE[eligibility-evaluate]
       AS[anchor-submit]
       AR[anchor-reconcile]
+      IC[investment-confirm]
+      VS[vault-settle · vault-refund]
+      ZW[zcash-request · zcash-watch]
+      RQ[ramp-quote]
     end
   end
-  SOL[(Solana devnet<br/>empowerfi_audit)]
+  SOL[(Solana devnet<br/>empowerfi_audit + vault)]
+  ZEC[(Zcash testnet<br/>shielded treasury)]
+  MG[MoneyGram Ramps<br/>sandbox]
 
   UI -- session --> RPC --> PG
   UI -- session --> RE & EE
@@ -42,6 +48,13 @@ flowchart LR
   AR -- verified / missing / mismatch --> PG
   AUD -- audit_record --> PG
   AUD -- reads accounts directly --> SOL
+  UI -- wallet deposit --> SOL
+  UI -- session --> IC & RQ
+  IC -- checks the deposit --> SOL
+  CRON --> VS & ZW
+  VS -- releases, payouts, refunds --> SOL
+  ZW -- viewing key, read only --> ZEC
+  RQ -- quote --> MG
 ```
 
 ## The funnel spine
@@ -121,9 +134,11 @@ anchor-submit      →  claim → commitment from anchor_payload() → look befo
 | `OpportunityCommitment` | `opportunity`, borrower, n | eligibility, commitment |
 | `LoanAccount` | `loan`, opportunity | status, terms commitment, last transition commitment, transitions |
 | `PaymentCommitment` | `payment`, loan, instalment | commitment |
+| `AllocationCommitment` | `allocation`, random ref | commitment (which investment funds which opportunity stays in the database) |
 | `OutcomeCommitment` | `outcome`, loan, n | commitment |
+| `ConsentCommitment` | `consent`, borrower, n | commitment of the uses she allowed |
 
-It has 13 instructions, all signed by the operator key except `initialize_platform` and `set_operator`, which need the upgrade authority. `set_operator` means a leaked server key can be rotated without changing the program ID. The rules live on chain as well as in the database:
+It has 16 instructions, all signed by the operator key except `initialize_platform` and `set_operator`, which need the upgrade authority. `vault_transfer` is the only one that moves value: USDC out of the program's vault, for a refund, a release to the off-ramp or an investor's payout, with no borrower, opportunity or allocation account attached. `set_operator` means a leaked server key can be rotated without changing the program ID. The rules live on chain as well as in the database:
 
 - eligibility needs the same borrower's CreditReady attestation;
 - an opportunity needs a non-NotEligible eligibility;
@@ -132,7 +147,7 @@ It has 13 instructions, all signed by the operator key except `initialize_platfo
 - payments only on disbursed or active loans, one per instalment;
 - outcomes only on loans that reached the business.
 
-The program has 20 LiteSVM tests.
+The program has 26 LiteSVM tests.
 
 ## The audit screen
 
@@ -145,6 +160,18 @@ The program has 20 LiteSVM tests.
 5. Runs kind-specific checks: engine re-runs; the transition decoded from its transaction; a payment belonging to that loan; the outcome arithmetic redone.
 
 Editing the record in the database turns the verdict to MISMATCH. The page also shows the last background reconciliation result.
+
+## Money: investing, the vault and settlement
+
+[PRIVACY.md](PRIVACY.md#investor-capital) covers what each movement reveals; this is how they run.
+
+- **A global investment.** The investor signs in with a Solana wallet (Sign-In with Solana, through Supabase Auth) and sends test USDC to the program's vault with a plain token transfer. `investment-confirm` reads the transaction from devnet, checks the amount, the vault and the sender, and records the allocation, which is queued as an `AllocationCommitment`.
+- **With shielded ZEC.** `zcash-request` answers with a ZIP 321 payment request to EmpowerFI's shielded treasury on Zcash testnet, with a random memo reference. `zcash-watch` scans new blocks every minute with the treasury's viewing key (`services/zcash-watcher`, Rust compiled to WebAssembly) and, once a payment confirms, credits the vault with USDC for that allocation.
+- **A domestic allocation.** `allocate_domestic` records a simulated position in reais; nothing moves on chain but its proof.
+- **Settlement.** When the desk disburses, the database creates settlement legs; `vault-settle` sends the real ones (the release of global capital to the off-ramp's account, then each instalment's shares paid out to investors) and marks the rest as simulated: the conversion to reais at the demo quote, and Pix both ways. `ramp-quote` asks MoneyGram Ramps' sandbox what a USDC cash-out to Brazil would cost, to show beside the simulated conversion.
+- **Refunds.** If the desk declines a funded opportunity, or she withdraws consent before disbursement, `vault-refund` returns each wallet investor's USDC from the vault.
+
+Every cron-driven function is dispatched by `pg_cron` through `pg_net` only when work is due, with the shared secret from Vault.
 
 ## Cost to serve
 
@@ -170,6 +197,10 @@ It answers with the pool, her rate and instalment, the investors' expected retur
 
 The opportunity's commitment on chain covers the request, not the pool: the allocation is recorded with its model version and re-runs in the browser. The engine chooses capital; it is not a credit decision.
 
+## Languages
+
+The app reads in English or Brazilian Portuguese (`src/app/i18n`). Every text is written in both where it is used, labels in module constants read the language at the moment they are used, and numbers and dates follow the language. The site's Portuguese pages open the app in Portuguese. Records, codes, model versions and hashes do not change with the language, so a proof is the same in both. See [I18N.md](I18N.md).
+
 ## Demo data
 
 `scripts/platform/seed-demo.mts` rebuilds the scenario deterministically in about 30 seconds:
@@ -184,23 +215,24 @@ The first-cycle facts are recorded through the live functions and then dated to 
 
 | Suite | Count | Covers |
 |---|---|---|
-| pgTAP (`platform/supabase/tests`) | 191 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, cost to serve, capital, outcomes, and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
-| LiteSVM (`programs/empowerfi-audit/tests`) | 20 | every instruction's rules and state machine |
-| Vitest | 92 | engines, commitments, the IDL privacy review, capital routes, UI helpers |
-| Deno | 38 | the vendored engines and commitments, against the same vectors |
+| pgTAP (`platform/supabase/tests`) | 427 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement, Zcash, cost to serve, outcomes, and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
+| LiteSVM (`programs/empowerfi-audit/tests`) | 26 | every instruction's rules and state machine |
+| Vitest | 133 | engines, the allocation engine's vectors, commitments, the IDL privacy review, settlement and ramp helpers, languages, UI helpers |
+| Deno | 47 | the vendored engines and commitments against the same vectors, and the MoneyGram quote |
 | Devnet scan (`scripts/platform/scan-chain-pii.mts`) | every account | reviewed types only, and none of the database's names, e-mails or amounts |
 
 ## Repository map
 
 ```
-src/app/                     the platform (/app): pages by role, audit screen, components
+src/app/                     the platform (/app): pages by role, audit screen, components, languages (i18n)
 src/                         the public site (PT-BR / EN)
 packages/readiness-engine    readiness rules + vectors
 packages/eligibility-engine  eligibility rules + vectors
 packages/audit-commitments   canonical JSON, domains, commitments + golden vectors
 packages/audit-client        Codama-generated client for the program, IDL, privacy test
-packages/capital-route       capital route pricing
+packages/capital-allocation  the Capital Allocation Engine + vectors
 programs/empowerfi-audit     the Anchor program + LiteSVM tests
+services/zcash-watcher       Zcash viewing-key scanner, compiled to WebAssembly
 platform/supabase            migrations, pgTAP tests, Edge Functions (see platform/README.md)
 scripts/platform             demo accounts, demo scenario, zero-PII scan
 ```

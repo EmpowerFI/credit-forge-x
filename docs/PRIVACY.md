@@ -85,7 +85,7 @@ A participant decides what her data is used for, in four uses. Each builds on th
 | **Show my request to investors, without my name** | Purpose, sector, amount, term, community, grades | Investors in the console |
 | **Count my business in impact figures** | Whether sales changed after a loan, how the capital was used | Only totals |
 
-The wording is versioned (`consent-v2` since the P2P desk, in `src/app/lib/consent.ts`), and each record stores the version she saw.
+The wording is versioned (`consent-v2` since the P2P desk, in `src/app/lib/consent.ts`), and each record stores the version she saw. She reads it in English or Portuguese; the Portuguese is a translation of the same version, with the same meaning, so the version recorded doesn't depend on the language.
 
 **How consent is given.** She gives it herself in the app, or her community leader records it from the form she signed. The second is how most participants give it. Either way the record states which, and who recorded it.
 

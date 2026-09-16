@@ -13,6 +13,12 @@ platform/supabase/
    ├─ eligibility-evaluate/  runs the eligibility engine for her open request, records it
    ├─ anchor-submit/         writes queued commitments to the empowerfi_audit program
    ├─ anchor-reconcile/      re-checks confirmed proofs against the chain and the records
+   ├─ investment-confirm/    turns a wallet's devnet USDC deposit into an allocation
+   ├─ vault-settle/          releases to the off-ramp and instalment payouts, from the vault
+   ├─ vault-refund/          returns declined or withdrawn allocations from the vault
+   ├─ zcash-request/         a ZIP 321 request to fund an opportunity with shielded ZEC
+   ├─ zcash-watch/           reads the shielded treasury with its viewing key, credits the vault
+   ├─ ramp-quote/            MoneyGram Ramps sandbox quote for a USDC cash-out to Brazil
    └─ _shared/               vendored copies of packages/ (do not edit, see its README)
 ```
 
@@ -24,7 +30,7 @@ npx supabase db reset --workdir platform          # rebuild the local DB from mi
 npx supabase test db --workdir platform           # pgTAP, local
 npx supabase test db --linked --workdir platform  # pgTAP, remote, in a rolled-back transaction
 npx supabase db push --workdir platform           # apply new migrations to the remote
-npx supabase functions deploy <name> --workdir platform  # each of the four
+npx supabase functions deploy <name> --workdir platform  # each of the ten
 npm run platform:types                            # regenerate src/app/lib/platform.types.ts
 npm run platform:sync-shared                      # after changing packages/audit-*
 ```
@@ -36,7 +42,7 @@ Local ports are 553xx so this stack runs beside the mobile app's (543xx).
 ```sh
 # service key into a mode-600 file, never on a command line
 npx supabase projects api-keys --project-ref yuxrujoghizcfdmbkqfg --reveal -o json  # take the "secret" key
-PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo-accounts.mts        # accounts + partner
+PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo-accounts.mts        # accounts + the P2P desk
 PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo.mts --yes          # scenario
 ```
 
@@ -47,21 +53,26 @@ deterministically, in about 30 seconds:
   among them), education progress, six months of check-ins shaped by business
   profiles, a readiness assessment for everyone — same engine, same recording
   function as the live path;
+- the two pools of P2P capital, simulated and sized to the demand: domestic
+  capital alone covers about 38% of qualified demand, both pools about 96%;
 - requests from some of those who are ready, each through the eligibility
-  engine; the partner's decisions taken in the partner's session (three left
-  awaiting, so the desk is never empty); loans approved, disbursed, repaying;
-  one short-history request held for manual review;
-- a first cycle: six loans in the cooperative from July, repaid on time, paid
-  off early or late, with outcomes measured in September;
-- the demo investor's simulated R$ 50,000 commitment.
+  engine and allocated to a pool by the Capital Allocation Engine as it opens
+  to investors; investors' simulated positions, partly filling most
+  opportunities; the desk's formalisations and declines taken in the desk's
+  own session (one funded opportunity left ready to formalise); one
+  short-history request held for manual review;
+- a first cycle: six loans from July, repaid on time, paid off early or late,
+  with outcomes measured in September.
 
 It holds the anchor worker's lease while it runs: first-cycle facts are dated
-after the functions record them, and must not be anchored before. About 800
-proofs then confirm in some 11 minutes. It prints the personas: the ready
-participant kept without a request (Jaqueline Pereira) and the one awaiting
-review (Sônia Santos). Everything is `is_simulated`.
+after the functions record them, and must not be anchored before. About 1,000
+proofs then confirm over the next half hour or so. It prints the personas (the
+ready participant kept without a request, Jaqueline Pereira, and the one
+awaiting review, Sônia Santos), the desk's queue, and the capital figures:
+qualified demand, each pool's liquidity and coverage. Everything is
+`is_simulated`.
 
-Each run writes new devnet accounts (refs are random), about 0.8 SOL of rent
+Each run writes new devnet accounts (refs are random), about 1 SOL of rent
 from the operator. Check `solana balance <operator>` before re-seeding.
 
 Maria has July and August: her September check-in, done live, makes her ready.
@@ -94,6 +105,20 @@ on the first attempt. Through the public RPC it took 16.5 minutes and hundreds
 of rate-limited retries. The browser's audit screen keeps using the public RPC:
 a key in the site's bundle would be visible to every visitor.
 
+## Scheduled work
+
+`pg_cron` dispatches each job through `pg_net`, with the anchoring secret; most run only when something is due:
+
+| Job | Function | When |
+|---|---|---|
+| `dispatch-anchor-jobs` | `anchor-submit` | every 10 s, while commitments are queued |
+| `reconcile-anchors` | `anchor-reconcile` | every minute, while a proof is due its daily check |
+| `vault-settle` | `vault-settle` | checked every 15 s; runs when a settlement leg is due |
+| `vault-refunds` | `vault-refund` | checked every 15 s; runs when a wallet allocation is due a refund |
+| `zcash-watch` | `zcash-watch` | every minute, once a treasury is configured |
+
+How money moves through them is in [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md#money-investing-the-vault-and-settlement).
+
 ## Reconciliation
 
 `anchor-reconcile`, dispatched every minute by `private.dispatch_reconcile()`
@@ -123,6 +148,9 @@ Never committed. The operator key is the one in `~/empowerfi-hackathon-keys/`.
 | Function secrets (`supabase secrets set --env-file`) | `OPERATOR_KEYPAIR` | the operator keypair JSON array |
 | | `ANCHOR_CRON_SECRET` | random, 32 bytes hex |
 | | `SOLANA_RPC_URL` | Helius devnet URL, from `~/empowerfi-hackathon-keys/helius-devnet-rpc.url` (it carries the API key). Falls back to the public devnet RPC if unset |
+| | `MONEYGRAM_BASE_URL`, `MONEYGRAM_SECRET_KEY` | MoneyGram Ramps sandbox, from `~/empowerfi-hackathon-keys/moneygram/sandbox.env`; only `ramp-quote` reads them |
+| | `ZCASH_LIGHTWALLETD` | optional; defaults to a public Zcash testnet lightwalletd |
+| Database (`scripts/platform/zcash-treasury.mts`) | the treasury's address and unified viewing key | read by `zcash-watch` and by auditors; the spending key never leaves the wallet outside the repository |
 | Vault (`select vault.create_secret(value, name)`) | `anchor_submit_url` | `<functions url>/anchor-submit` |
 | | `anchor_cron_secret` | same value as `ANCHOR_CRON_SECRET` |
 
