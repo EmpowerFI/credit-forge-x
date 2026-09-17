@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { platform } from "../lib/platform";
@@ -8,19 +8,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
+  const signedInAs = useRef<string | null>(null);
 
   useEffect(() => {
     platform.auth.getSession().then(({ data }) => {
       setSession(data.session);
+      signedInAs.current = data.session?.user.id ?? null;
       setSessionLoaded(true);
     });
     const { data } = platform.auth.onAuthStateChange((event, next) => {
       setSession(next);
       // Another person may be signing in on this browser: drop cached data.
-      // Only on a real sign-out: a visitor with no session also gets events
-      // without one (INITIAL_SESSION), and clearing then would orphan the
-      // queries a page without an account — a shared report — is running.
-      if (event === "SIGNED_OUT") queryClient.clear();
+      // On a real sign-out, and whenever the account itself changes — a demo
+      // investor signing in with her own wallet does so without signing out,
+      // and nothing the demo account read may show under her address. A
+      // visitor with no session also gets events without one (INITIAL_SESSION),
+      // and clearing then would orphan the queries a page without an account —
+      // a shared report — is running.
+      const user = next?.user.id ?? null;
+      if (event === "SIGNED_OUT" || (user !== null && user !== signedInAs.current && signedInAs.current !== null)) {
+        queryClient.clear();
+      }
+      signedInAs.current = user;
     });
     return () => data.subscription.unsubscribe();
   }, [queryClient]);

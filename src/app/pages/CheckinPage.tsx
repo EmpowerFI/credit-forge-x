@@ -12,21 +12,12 @@ import { useAuth } from "../auth/useAuth";
 import { requestAssessment } from "../lib/assessments";
 import { describeError } from "../lib/errors";
 import { platform } from "../lib/platform";
-import { money, monthLabel, STATUS_LABEL } from "../lib/readiness";
+import { money, monthLabel, recentPeriods, STATUS_LABEL } from "../lib/readiness";
 import LoadError from "../components/LoadError";
 import { tr } from "../i18n";
 
 // The monthly check-in: a few numbers about the month, two to four minutes on
 // a phone. Sending it records the month, then asks for a fresh assessment.
-
-/** This month and the two before it, in São Paulo. */
-function recentPeriods(): string[] {
-  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
-  return [0, 1, 2].map((back) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-  });
-}
 
 const cents = (reais: string) => Math.round(Number(reais || 0) * 100);
 

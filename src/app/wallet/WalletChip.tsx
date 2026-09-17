@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Copy, ExternalLink, RefreshCw, Wallet } from "lucide-react";
 import { useSelectedWalletAccount } from "@solana/react";
 import { toast } from "sonner";
@@ -9,15 +8,17 @@ import { useAuth } from "../auth/useAuth";
 import { explorerAddress } from "../lib/platform";
 import { FAUCETS, shortAddress, sol, usdc } from "../lib/solana";
 import ConnectWalletDialog from "./ConnectWallet";
+import { useWalletEntry } from "./WalletSignIn";
 import { useBalances } from "./useBalances";
 import { tr } from "../i18n";
 
 /** The investor's wallet in the top bar: address, balances, faucets. */
 export default function WalletChip() {
-  const { profile, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { profile } = useAuth();
   const [account, setAccount] = useSelectedWalletAccount();
   const [connecting, setConnecting] = useState(false);
+  // Signing in with a wallet happens here, on whatever page she is reading.
+  const entry = useWalletEntry(() => toast.success(tr({ en: "Signed in with your wallet.", pt: "Você entrou com a sua carteira." })));
   const wallet = profile?.wallet_address ?? null;
   const connected = account && wallet && account.address === wallet;
   const balances = useBalances(connected ? wallet : null);
@@ -26,14 +27,16 @@ export default function WalletChip() {
 
   if (!wallet) {
     return (
-      <Button size="sm" variant="secondary" className="gap-2"
-        onClick={async () => { await signOut(); navigate("/app/login"); }}
-        title={tr({
-          en: "You are exploring as the demo investor. Sign in with your own wallet to invest.",
-          pt: "Você está explorando como o investidor de demonstração. Entre com a sua carteira para investir.",
-        })}>
-        <Wallet size={15} /> <span className="hidden sm:inline">{tr({ en: "Demo · use your wallet", pt: "Demo · use sua carteira" })}</span>
-      </Button>
+      <>
+        <Button size="sm" variant="secondary" className="gap-2" disabled={entry.busy} onClick={entry.start}
+          title={tr({
+            en: "You are exploring as the demo investor. Connect your own wallet to invest — you stay on this page.",
+            pt: "Você está explorando como o investidor de demonstração. Conecte a sua carteira para investir — você continua nesta página.",
+          })}>
+          <Wallet size={15} /> <span className="hidden sm:inline">{tr({ en: "Demo · connect your wallet", pt: "Demo · conectar carteira" })}</span>
+        </Button>
+        {entry.dialogs}
+      </>
     );
   }
 

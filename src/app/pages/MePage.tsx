@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircleCheck, CircleDashed, ClipboardPlus, Lightbulb, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight, CalendarClock, CircleCheck, CircleDashed, ClipboardPlus, Gauge, HandCoins, Lightbulb, Loader2,
+  RefreshCw, ShieldCheck, type LucideIcon,
+} from "lucide-react";
 import type { ReadinessFeatures } from "@empowerfi/readiness-engine";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import MemberEducation from "../components/MemberEducation";
+import PageHeader from "../components/product/PageHeader";
 import ProofStatus from "../components/ProofStatus";
 import { useAuth } from "../auth/useAuth";
 import { anchorsSettled } from "../lib/anchors";
@@ -25,6 +29,7 @@ import {
   monthLabel,
   PURPOSE_LABEL,
   REASON_LABEL,
+  recentPeriods,
   STATUS_LABEL,
   type CreditPurpose,
 } from "../lib/readiness";
@@ -130,6 +135,39 @@ function CreditProgress({ credit }: { credit: Credit }) {
         </li>
       )}
     </ol>
+  );
+}
+
+/**
+ * The one thing to do next. Everything below on the page explains where the
+ * business stands; this says what moves it, and there is always exactly one.
+ */
+type NextStep = { icon: LucideIcon; title: string; why: string; cta: string; to?: string; onClick?: () => void; busy?: boolean };
+
+function NextStepCard({ step }: { step: NextStep }) {
+  const Icon = step.icon;
+  return (
+    <section className="space-y-3 rounded-2xl p-5 glass glow-border" aria-labelledby="next-step">
+      <p className="text-xs font-medium uppercase tracking-widest text-accent">{tr({ en: "Your next step", pt: "Seu próximo passo" })}</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <Icon size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+          <div className="min-w-0 space-y-1">
+            <h2 id="next-step" className="font-heading text-lg font-bold text-foreground">{step.title}</h2>
+            {step.why && <p className="text-sm text-muted-foreground">{step.why}</p>}
+          </div>
+        </div>
+        {step.to ? (
+          <Button asChild className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+            <Link to={step.to}>{step.cta} <ArrowRight size={16} /></Link>
+          </Button>
+        ) : (
+          <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90" disabled={step.busy} onClick={step.onClick}>
+            {step.busy ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />} {step.cta}
+          </Button>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -283,6 +321,108 @@ export default function MePage() {
   const missing = (readiness?.missing_requirements ?? []) as { code: string; current: number | null; required: number }[];
   const intent = business.data?.intent;
 
+  // What she has not given permission for; nothing is assessed or shared without it.
+  const consent = business.data?.consent;
+  const consentGap = !consent
+    ? tr({
+        en: "You have not recorded your consent yet: nothing of yours is assessed or shared until you do.",
+        pt: "Você ainda não registrou seu consentimento: nada seu é avaliado ou compartilhado até você fazer isso.",
+      })
+    : !consent.assessment
+      ? tr({ en: "You have not allowed your business to be assessed.", pt: "Você não autorizou a avaliação do seu negócio." })
+      : !consent.partner
+        ? tr({
+            en: "You have not allowed EmpowerFI's P2P desk to see a request, so you cannot ask for credit here.",
+            pt: "Você não autorizou a mesa P2P da EmpowerFI a ver um pedido, então não pode pedir crédito aqui.",
+          })
+        : null;
+
+  // The last closed month: the one a check-in can already report in full.
+  const reported = new Set((business.data?.months ?? []).map((m) => m.period));
+  const monthDue = recentPeriods().slice(1).find((period) => !reported.has(period)) ?? null;
+  // Any month still open to report, the month in progress included: what actually
+  // moves a readiness requirement asking for more months.
+  const monthOpen = recentPeriods().find((period) => !reported.has(period)) ?? null;
+  const credit = business.data?.credit ?? null;
+  const opportunity = credit?.opportunity ?? null;
+  const loan = opportunity?.loans?.[0];
+  const raising = opportunity?.status === "referred" && opportunity.funding_status !== null;
+
+  const nextStep: NextStep = consentGap
+    ? { icon: ShieldCheck, title: tr({ en: "Record your consent", pt: "Registre seu consentimento" }), why: consentGap,
+        cta: tr({ en: "Review consent", pt: "Revisar consentimento" }), to: "/app/consent" }
+    : monthDue
+      ? { icon: ClipboardPlus,
+          title: tr({ en: `Send your check-in for ${monthLabel(monthDue)}`, pt: `Envie o check-in de ${monthLabel(monthDue)}` }),
+          why: tr({
+            en: "A few numbers about the month, two minutes on your phone. Each month reported is what your readiness is read from.",
+            pt: "Alguns números do mês, dois minutos no celular. Cada mês informado é o que a sua prontidão lê.",
+          }),
+          cta: tr({ en: "Do the check-in", pt: "Fazer o check-in" }), to: "/app/check-in" }
+      : !readiness
+        ? { icon: Gauge, title: tr({ en: "Ask for your first assessment", pt: "Peça a primeira avaliação" }),
+            why: tr({
+              en: "Your months are recorded. The assessment says whether the business is prepared for a credit conversation.",
+              pt: "Seus meses estão registrados. A avaliação diz se o negócio está preparado para uma conversa sobre crédito.",
+            }),
+            cta: tr({ en: "Assess my business", pt: "Avaliar meu negócio" }), onClick: () => assess.mutate(), busy: assess.isPending }
+        : loan
+          ? { icon: CalendarClock, title: tr({ en: "Your loan is running", pt: "Seu empréstimo está em andamento" }),
+              why: tr({
+                en: `${loan.payments.length} of ${loan.term_months} instalments of ${money(loan.instalment_cents)} paid, by Pix.`,
+                pt: `${loan.payments.length} de ${loan.term_months} parcelas de ${money(loan.instalment_cents)} pagas, por Pix.`,
+              }),
+              cta: tr({ en: "See the loan", pt: "Ver o empréstimo" }), to: "#capital" }
+          : raising
+            ? { icon: HandCoins, title: tr({ en: "Your request is raising with investors", pt: "Seu pedido está captando com investidores" }),
+                why: tr({
+                  en: `${money(fundedReais(opportunity!))} of ${money(opportunity!.amount_cents)} funded. You receive it in reais, by Pix.`,
+                  pt: `${money(fundedReais(opportunity!))} de ${money(opportunity!.amount_cents)} captados. Você recebe em reais, por Pix.`,
+                }),
+                cta: tr({ en: "Follow it", pt: "Acompanhar" }), to: "#capital" }
+            : intent && !credit?.eligibility
+              ? { icon: HandCoins, title: tr({ en: "Your request has not been assessed yet", pt: "Seu pedido ainda não foi avaliado" }),
+                  why: tr({
+                    en: "EmpowerFI checks whether the amount fits the business. It takes a moment.",
+                    pt: "A EmpowerFI verifica se o valor cabe no negócio. Leva um instante.",
+                  }),
+                  cta: tr({ en: "Assess my request", pt: "Avaliar meu pedido" }),
+                  onClick: () => checkEligibility.mutate(), busy: checkEligibility.isPending }
+              : intent
+                ? { icon: HandCoins, title: tr({ en: "Your request is on its way", pt: "Seu pedido está a caminho" }),
+                    why: tr({ en: "Follow each step below: assessment, investors, the desk, the loan.", pt: "Acompanhe cada passo abaixo: avaliação, investidores, a mesa, o empréstimo." }),
+                    cta: tr({ en: "See where it stands", pt: "Ver o andamento" }), to: "#capital" }
+                : readiness.status === "CREDIT_READY"
+                  ? { icon: HandCoins, title: tr({ en: "You can ask for capital when you need it", pt: "Você pode pedir capital quando precisar" }),
+                      why: tr({
+                        en: "Your business is ready for the conversation. Nothing happens unless you ask — being ready and not needing credit is a good place to be.",
+                        pt: "Seu negócio está pronto para essa conversa. Nada acontece se você não pedir — estar pronta e não precisar de crédito é uma ótima situação.",
+                      }),
+                      cta: tr({ en: "Ask for capital", pt: "Pedir capital" }), to: "#capital" }
+                  : missing.length > 0
+                    ? { icon: monthOpen ? ClipboardPlus : CircleDashed, title: describeRequirement(missing[0]),
+                        why: [
+                          monthOpen
+                            ? tr({
+                              en: `Sending ${monthLabel(monthOpen)} is what moves it — you can report a month while it is still running.`,
+                              pt: `Enviar ${monthLabel(monthOpen)} é o que avança isso — você pode informar o mês ainda em andamento.`,
+                            })
+                            : tr({ en: "It moves with your next monthly check-in.", pt: "Isso avança com o seu próximo check-in mensal." }),
+                          missing.length > 1
+                            ? tr({
+                              en: `${missing.length - 1} more after that.`,
+                              pt: missing.length === 2 ? "Depois disso, falta mais 1." : `Depois disso, faltam mais ${missing.length - 1}.`,
+                            })
+                            : "",
+                        ].filter(Boolean).join(" "),
+                        cta: monthOpen
+                          ? tr({ en: `Check in for ${monthLabel(monthOpen)}`, pt: `Fazer o check-in de ${monthLabel(monthOpen)}` })
+                          : tr({ en: "See what is missing", pt: "Ver o que falta" }),
+                        to: monthOpen ? "/app/check-in" : "#readiness" }
+                    : { icon: CircleCheck, title: tr({ en: "You are up to date", pt: "Está tudo em dia" }),
+                        why: tr({ en: "Keep sending the check-in each month: that is what builds the history.", pt: "Continue enviando o check-in todo mês: é isso que constrói o histórico." }),
+                        cta: tr({ en: "See your readiness", pt: "Ver sua prontidão" }), to: "#readiness" };
+
   const submitIntent = (e: FormEvent) => {
     e.preventDefault();
     if (!intentForm.purpose) return toast.error(tr({ en: "Choose what the capital is for.", pt: "Escolha para que é o capital." }));
@@ -291,48 +431,36 @@ export default function MePage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-1">
-          <p className="text-sm text-muted-foreground">{me.data.display_name}</p>
-          <h1 className="font-heading text-3xl font-bold text-foreground">{me.data.business_name ?? tr({ en: "My business", pt: "Meu negócio" })}</h1>
-        </div>
-        <Button asChild className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Link to="/app/check-in"><ClipboardPlus size={16} /> {tr({ en: "Monthly check-in", pt: "Check-in mensal" })}</Link>
-        </Button>
-      </div>
+      <PageHeader eyebrow={me.data.display_name}
+        title={me.data.business_name ?? tr({ en: "My business", pt: "Meu negócio" })}
+        description={tr({
+          en: "Where your business stands, what is missing, and what happened to your request.",
+          pt: "Onde seu negócio está, o que falta, e o que aconteceu com o seu pedido.",
+        })}
+        actions={
+          <Button asChild variant="secondary" className="gap-2">
+            <Link to="/app/check-in"><ClipboardPlus size={16} /> {tr({ en: "Monthly check-in", pt: "Check-in mensal" })}</Link>
+          </Button>
+        } />
 
-      {/* -------------------------------------------------------- consent */}
-      {(() => {
-        const c = business.data?.consent;
-        const message = !c
-          ? tr({
-              en: "You have not recorded your consent yet: nothing of yours is assessed or shared until you do.",
-              pt: "Você ainda não registrou seu consentimento: nada seu é avaliado ou compartilhado até você fazer isso.",
-            })
-          : !c.assessment
-            ? tr({ en: "You have not allowed your business to be assessed.", pt: "Você não autorizou a avaliação do seu negócio." })
-            : !c.partner
-              ? tr({
-                  en: "You have not allowed EmpowerFI's P2P desk to see a request, so you cannot ask for credit here.",
-                  pt: "Você não autorizou a mesa P2P da EmpowerFI a ver um pedido, então não pode pedir crédito aqui.",
-                })
-              : null;
-        return (
-          <Link to="/app/consent"
-            className={`flex items-start justify-between gap-3 rounded-2xl border p-4 text-sm transition-colors hover:bg-secondary/40 ${message ? "tone-caution" : "border-border"}`}>
-            <span className="flex items-start gap-2">
-              <ShieldCheck size={16} className={`mt-0.5 shrink-0 ${message ? "" : "text-positive"}`} />
-              <span className={message ? "" : "text-muted-foreground"}>
-                {message ?? tr({
-                  en: `Your consent is in force (record #${c!.consent_no}). You decide what your data is used for.`,
-                  pt: `Seu consentimento está em vigor (registro nº ${c!.consent_no}). Você decide para que seus dados são usados.`,
-                })}
-              </span>
+      <NextStepCard step={nextStep} />
+
+      {/* Consent, when it is in force: what is missing is said by the next step, with a button. */}
+      {!consentGap && consent && (
+        <Link to="/app/consent"
+          className="flex items-start justify-between gap-3 rounded-2xl border border-border p-4 text-sm transition-colors hover:bg-secondary/40">
+          <span className="flex items-start gap-2">
+            <ShieldCheck size={16} className="mt-0.5 shrink-0 text-positive" />
+            <span className="text-muted-foreground">
+              {tr({
+                en: `Your consent is in force (record #${consent.consent_no}). You decide what your data is used for.`,
+                pt: `Seu consentimento está em vigor (registro nº ${consent.consent_no}). Você decide para que seus dados são usados.`,
+              })}
             </span>
-            <span className="shrink-0 font-medium">{tr({ en: "Review", pt: "Revisar" })}</span>
-          </Link>
-        );
-      })()}
+          </span>
+          <span className="shrink-0 font-medium">{tr({ en: "Review", pt: "Revisar" })}</span>
+        </Link>
+      )}
 
       {/* ------------------------------------------------------ readiness */}
       <section id="readiness" className="scroll-mt-32 space-y-4">
@@ -414,7 +542,8 @@ export default function MePage() {
       </section>
 
       {/* --------------------------------------------------------- credit */}
-      {readiness?.status === "CREDIT_READY" && (
+      {/* A live request stays visible even if a later assessment drops below ready. */}
+      {(readiness?.status === "CREDIT_READY" || intent) && (
         <section id="capital" className="scroll-mt-32 space-y-4 rounded-2xl p-6 glass glow-border">
           <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Capital", pt: "Capital" })}</h2>
           {intent ? (

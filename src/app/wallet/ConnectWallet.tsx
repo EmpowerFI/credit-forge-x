@@ -3,6 +3,7 @@ import { ExternalLink, Loader2 } from "lucide-react";
 import { useSelectedWalletAccount } from "@solana/react";
 import { type UiWallet, type UiWalletAccount, useConnect } from "@wallet-standard/react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuth } from "../auth/useAuth";
 import { describeError } from "../lib/errors";
 import { CLUSTER } from "../lib/solana";
 import { tr } from "../i18n";
@@ -47,6 +48,7 @@ export default function ConnectWalletDialog({ open, onOpenChange, onConnected }:
 }) {
   const [, setSelected, wallets] = useSelectedWalletAccount();
   const [error, setError] = useState<string | null>(null);
+  const { session } = useAuth();
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setError(null); onOpenChange(o); }}>
@@ -86,10 +88,15 @@ export default function ConnectWalletDialog({ open, onOpenChange, onConnected }:
               ))}
             </ul>
             <p className="text-muted-foreground">
-              {tr({
-                en: "Or explore the console as the demo investor, without a wallet.",
-                pt: "Ou explore o console como o investidor de demonstração, sem carteira.",
-              })}
+              {session
+                ? tr({
+                  en: "Or close this and carry on as the demo investor: nothing changes until you connect.",
+                  pt: "Ou feche isto e siga como o investidor de demonstração: nada muda até você conectar.",
+                })
+                : tr({
+                  en: "Or explore the console as the demo investor, without a wallet.",
+                  pt: "Ou explore o console como o investidor de demonstração, sem carteira.",
+                })}
             </p>
           </div>
         )}

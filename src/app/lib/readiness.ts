@@ -130,5 +130,14 @@ const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" 
 export const money = (cents: number | null | undefined) => (cents === null || cents === undefined ? "—" : brl.format(cents / 100));
 
 /** "2026-09" → "Sep 2026", "set. de 2026". */
+/** This month and the two before it, in São Paulo: the months a check-in may cover. */
+export function recentPeriods(): string[] {
+  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  return [0, 1, 2].map((back) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+}
+
 export const monthLabel = (period: string) =>
   formatDate(`${period}-01T12:00:00Z`, { month: "short", year: "numeric", timeZone: "UTC" });

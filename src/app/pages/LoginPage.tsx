@@ -1,102 +1,20 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, Loader2, LogIn, PenLine, Wallet } from "lucide-react";
-import type { UiWalletAccount } from "@wallet-standard/react";
+import { ArrowRight, Loader2, LogIn, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import DataLegend from "../components/product/DataLegend";
 import NetworkBadge from "../components/product/NetworkBadge";
 import { useAuth } from "../auth/useAuth";
-import { describeError } from "../lib/errors";
 import { platformConfigured } from "../lib/platform";
 import { DEMO_PASSWORD, OPERATIONS, STORIES } from "../lib/stories";
 import { type Tool, toolPath, type View, viewById, VIEWS } from "../lib/views";
 import RoleLanding, { ViewChoice } from "../components/views/RoleLanding";
-import { shortAddress } from "../lib/solana";
-import ConnectWalletDialog from "../wallet/ConnectWallet";
-import { supportsSolanaSignIn, useWalletSignInWithMessage, useWalletSignInWithSolana } from "../wallet/useWalletSignIn";
+import { useWalletEntry } from "../wallet/WalletSignIn";
 import { prototypeNotice } from "../lib/capital";
 import { tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
-
-/**
- * After a wallet connects: one signature, and the investor is in. It opens as a
- * dialog in the middle of the screen and asks the wallet to sign straight away,
- * so the step can't be missed below the fold; if the wallet refuses or fails,
- * the reason and a retry stay in the same place.
- */
-type WalletSignInProps = { account: UiWalletAccount; onDone: () => void; onCancel: () => void };
-
-function WalletSignIn(props: WalletSignInProps) {
-  return supportsSolanaSignIn(props.account) ? <SignInWithSolana {...props} /> : <SignInWithMessage {...props} />;
-}
-
-function SignInWithSolana(props: WalletSignInProps) {
-  return <WalletSignInDialog {...props} signIn={useWalletSignInWithSolana(props.account)} />;
-}
-
-function SignInWithMessage(props: WalletSignInProps) {
-  return <WalletSignInDialog {...props} signIn={useWalletSignInWithMessage(props.account)} />;
-}
-
-function WalletSignInDialog({ account, onDone, onCancel, signIn }: WalletSignInProps & { signIn: () => Promise<void> }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const started = useRef(false);
-
-  const sign = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await signIn();
-      onDone();
-    } catch (err) {
-      setError(describeError(err));
-    } finally {
-      setBusy(false);
-    }
-  }, [signIn, onDone]);
-
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    void sign();
-  }, [sign]);
-
-  return (
-    <Dialog open onOpenChange={(open) => { if (!open && !busy) onCancel(); }}>
-      <DialogContent className="max-w-md border-border bg-card">
-        <DialogHeader>
-          <DialogTitle className="font-heading">
-            {tr({ en: `Sign in with ${shortAddress(account.address)}`, pt: `Entrar com ${shortAddress(account.address)}` })}
-          </DialogTitle>
-          <DialogDescription>
-            {tr({
-              en: "Your wallet asks you to sign a message proving you hold this address. No transaction, no fee.",
-              pt: "Sua carteira pede que você assine uma mensagem provando que controla este endereço. Sem transação, sem taxa.",
-            })}
-          </DialogDescription>
-        </DialogHeader>
-        {busy && (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
-            <Loader2 size={16} className="animate-spin" />
-            {tr({ en: "Waiting for your wallet… check its window to approve.", pt: "Aguardando sua carteira… confira a janela dela para aprovar." })}
-          </p>
-        )}
-        {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
-        <div className="flex flex-wrap gap-2">
-          <Button disabled={busy} className="gap-2" onClick={() => void sign()}>
-            {busy ? <Loader2 size={16} className="animate-spin" /> : <PenLine size={16} />}
-            {error ? tr({ en: "Try again", pt: "Tentar de novo" }) : tr({ en: "Sign the message", pt: "Assinar a mensagem" })}
-          </Button>
-          <Button variant="ghost" onClick={onCancel} disabled={busy}>{tr({ en: "Cancel", pt: "Cancelar" })}</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 export default function LoginPage() {
   const { session, signIn } = useAuth();
@@ -110,8 +28,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [busyTool, setBusyTool] = useState<Tool | null>(null);
-  const [connecting, setConnecting] = useState(false);
-  const [account, setAccount] = useState<UiWalletAccount | null>(null);
+  const entry = useWalletEntry(() => navigate(next === "/app" ? "/app/investor" : next, { replace: true }));
 
   if (session) return <Navigate to={next} replace />;
 
@@ -173,7 +90,7 @@ export default function LoginPage() {
             cta={
               <>
                 {investor && (
-                  <Button size="lg" onClick={() => setConnecting(true)} className="gap-2">
+                  <Button size="lg" onClick={entry.start} disabled={entry.busy} className="gap-2">
                     <Wallet size={16} /> {tr({ en: "Connect wallet", pt: "Conectar carteira" })}
                   </Button>
                 )}
@@ -192,10 +109,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {account && (
-          <WalletSignIn account={account} onCancel={() => setAccount(null)}
-            onDone={() => navigate(next === "/app" ? "/app/investor" : next, { replace: true })} />
-        )}
+        {entry.dialogs}
 
         <section className="space-y-4" aria-labelledby="stories-heading">
           <div className="space-y-1">
@@ -237,9 +151,6 @@ export default function LoginPage() {
             ))}
           </p>
         </section>
-
-        <ConnectWalletDialog open={connecting} onOpenChange={setConnecting}
-          onConnected={(a) => { setConnecting(false); setAccount(a); }} />
 
         <details className="panel max-w-xl p-5">
           <summary className="cursor-pointer text-sm font-medium text-foreground">{tr({ en: "Sign in with email", pt: "Entrar com e-mail" })}</summary>

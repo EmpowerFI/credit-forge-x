@@ -28,6 +28,7 @@ import { CLUSTER, confirmSignature, FAUCETS, rpc, usdc, USDC_DECIMALS, USDC_MINT
 import { LIVE } from "../../lib/zcash";
 import { useBalances } from "../../wallet/useBalances";
 import ConnectWalletDialog from "../../wallet/ConnectWallet";
+import { useWalletEntry } from "../../wallet/WalletSignIn";
 import ZecInvest from "./ZecInvest";
 
 type Step = "sign" | "confirm" | "record" | "done";
@@ -162,10 +163,11 @@ function useLiveZcashRequest(opportunityId: string, investorId: string | undefin
 
 /** Invest in one opportunity from the connected wallet or with shielded ZEC, or explain what is needed first. */
 export default function InvestPanel({ row }: { row: MarketRow }) {
-  const { profile, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { profile } = useAuth();
   const [account] = useSelectedWalletAccount();
   const [connecting, setConnecting] = useState(false);
+  // The demo investor becomes herself here, without losing the opportunity she is reading.
+  const entry = useWalletEntry();
   const wallet = profile?.wallet_address ?? null;
   const connected = Boolean(account && wallet && account.address === wallet);
   const balances = useBalances(connected ? wallet : null);
@@ -250,15 +252,16 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
             <ZecInvest row={row} micro={micro} problem={problem} requestId={null} onRequest={setZecRequest} />
           ) : !wallet ? (
             <div className="space-y-2">
-              <Button className="h-11 w-full" onClick={async () => { await signOut(); navigate("/app/login"); }}>
-                <Wallet size={18} /> {tr({ en: "Sign in with your wallet to invest", pt: "Entre com a sua carteira para investir" })}
+              <Button className="h-11 w-full" disabled={entry.busy} onClick={entry.start}>
+                <Wallet size={18} /> {tr({ en: "Connect your wallet to invest", pt: "Conectar minha carteira para investir" })}
               </Button>
               <p className="text-xs text-muted-foreground">
                 {tr({
-                  en: "You are exploring as the demo investor, whose seeded positions are simulated. Sign in with a Solana wallet, or pay with shielded ZEC.",
-                  pt: "Você está explorando como o investidor de demonstração, com posições simuladas. Entre com uma carteira Solana ou pague com ZEC blindado.",
+                  en: "You are exploring as the demo investor, whose seeded positions are simulated. Connect a Solana wallet — you stay on this opportunity — or pay with shielded ZEC.",
+                  pt: "Você está explorando como o investidor de demonstração, com posições simuladas. Conecte uma carteira Solana — você continua nesta oportunidade — ou pague com ZEC blindado.",
                 })}
               </p>
+              {entry.dialogs}
             </div>
           ) : !connected ? (
             <>

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useSelectedWalletAccount } from "@solana/react";
 import { Button } from "@/components/ui/button";
@@ -71,148 +71,40 @@ export default function Overview() {
     <div className="space-y-6">
       <PageHeader eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })} title={tr({ en: "Overview", pt: "Visão geral" })}
         description={tr({
-          en: "Your mandate, your capital and what is raising now.",
-          pt: "Seu mandato, seu capital e o que está captando agora.",
+          en: "What is raising now, and what your capital is doing.",
+          pt: "O que está captando agora, e o que o seu capital está fazendo.",
         })}
         about={tr({
           en: "Qualified productive-credit demand is funded by two pools of P2P capital: domestic investors in reais, and global investors in USDC on Solana. She receives and repays in reais, by Pix, either way, and EmpowerFI's P2P desk formalises and services the loan. Returns are simulated; nothing here is a promise of return.",
           pt: "A demanda qualificada de crédito produtivo é financiada por dois pools de capital P2P: investidores domésticos em reais e investidores globais em USDC na Solana. Nos dois casos ela recebe e paga em reais, por Pix, e a mesa P2P da EmpowerFI formaliza o empréstimo e acompanha os pagamentos. Os retornos são simulados; nada aqui é promessa de retorno.",
         })} />
 
-      {fits > 0 && (
-        <section className="panel flex flex-wrap items-center justify-between gap-3 p-5">
-          <p className="flex items-center gap-2.5 text-sm text-foreground">
-            <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-hidden />
-            {tr({
+      {/* The first line answers what to do next, including when the answer is "nothing". */}
+      <section className="panel flex flex-wrap items-center justify-between gap-3 p-5">
+        <p className="flex items-center gap-2.5 text-sm text-foreground">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${fits > 0 ? "bg-accent" : "bg-muted-foreground"}`} aria-hidden />
+          {fits > 0
+            ? tr({
               en: `${fits} ${fits === 1 ? "opportunity fits" : "opportunities fit"} your mandate and ${fits === 1 ? "is" : "are"} raising now`,
               pt: `${fits} ${fits === 1 ? "oportunidade cabe" : "oportunidades cabem"} no seu mandato e ${fits === 1 ? "está captando" : "estão captando"} agora`,
-            })}
-          </p>
+            })
+            : open.length > 0
+              ? tr({
+                en: `None of the ${open.length} raising now fit your mandate`,
+                pt: `Nenhuma das ${open.length} captando agora cabe no seu mandato`,
+              })
+              : tr({ en: "Nothing is raising right now", pt: "Nada está captando agora" })}
+        </p>
+        {fits > 0 ? (
           <Link to="/app/investor/opportunities" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-foreground">
             {tr({ en: "See them", pt: "Ver quais" })} <ArrowRight size={14} aria-hidden />
           </Link>
-        </section>
-      )}
-
-      <MandatePanel />
-
-      <CapitalPools />
-
-      <div className="flex flex-wrap items-baseline justify-between gap-2 pt-2">
-        <h2 className="font-heading text-lg font-semibold text-foreground">{tr({ en: "Your capital", pt: "Seu capital" })}</h2>
-        <p className="text-xs text-muted-foreground">
-          {wallet
-            ? tr({
-              en: "Global positions from your wallet on Solana devnet; domestic positions in reais, simulated.",
-              pt: "Posições globais da sua carteira na devnet da Solana; posições domésticas em reais, simuladas.",
-            })
-            : tr({
-              en: "Exploring as the demo investor: simulated positions, no wallet. Sign in with your own wallet to invest in USDC.",
-              pt: "Você está explorando como o investidor de demonstração: posições simuladas, sem carteira. Entre com a sua carteira para investir em USDC.",
-            })}
-        </p>
-      </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        {p ? (
-          <>
-            <StatTile label={tr({ en: "Invested", pt: "Investido" })} value={usdc(p.invested_micro_usdc)}
-              hint={tr({ en: `${p.positions} positions`, pt: `${p.positions} posições` })} />
-            <StatTile label={tr({ en: "Deployed to businesses", pt: "Aplicado nos negócios" })} value={usdc(p.deployed_micro_usdc)}
-              hint={p.invested_micro_usdc ? `${Math.round((p.deployed_micro_usdc / p.invested_micro_usdc) * 100)}%` : undefined} />
-            <StatTile label={tr({ en: "Available USDC", pt: "USDC disponível" })} value={connected && balances.data ? usdc(balances.data.microUsdc) : "—"}
-              hint={wallet
-                ? (connected ? tr({ en: "in your wallet", pt: "na sua carteira" }) : tr({ en: "reconnect wallet", pt: "reconecte a carteira" }))
-                : tr({ en: "demo mode", pt: "modo demonstração" })} />
-            <StatTile label={tr({ en: "Repaid to you", pt: "Pago a você" })} value={usdc(p.repaid_micro_usdc)} hintTone="positive"
-              hint={tr({ en: "your share of instalments", pt: "sua parte das parcelas" })} />
-            <StatTile label={tr({ en: "Expected back · simulated", pt: "Retorno esperado · simulado" })} value={usdc(p.expected_micro_usdc)} hintTone="positive"
-              hint={gain !== null ? tr({ en: `+${percent(gain)} on invested`, pt: `+${percent(gain)} sobre o investido` }) : undefined} />
-          </>
-        ) : [0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 rounded-2xl bg-card" />)}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        <Panel title={tr({ en: "Capital over time", pt: "Capital ao longo do tempo" })}
-          description={tr({ en: "Cumulative USDC invested and repaid to you.", pt: "USDC investido e pago a você, acumulado." })}>
-          {series.length > 1 ? (
-            <div className="h-56 w-full">
-              <ResponsiveContainer>
-                <AreaChart data={series} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="inv" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="at" tickFormatter={(v: string) => day(v)} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={false} tickLine={false} width={48}
-                    tickFormatter={(v: number) => formatNumber(v)} />
-                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
-                    labelStyle={{ color: "hsl(var(--foreground))" }} labelFormatter={(v: string) => day(v)} formatter={(v: number, k: string) => [
-                      `${formatNumber(v)} USDC`,
-                      k === "invested" ? tr({ en: "Invested", pt: "Investido" }) : tr({ en: "Repaid", pt: "Pago" }),
-                    ]} />
-                  <Area type="monotone" dataKey="invested" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#inv)" />
-                  <Area type="monotone" dataKey="repaid" stroke="hsl(var(--positive))" strokeWidth={2} fill="transparent" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">{tr({ en: "Your first investment starts the curve.", pt: "A curva começa com o seu primeiro investimento." })}</p>
-          )}
-        </Panel>
-
-        <Panel title={tr({ en: "Allocation by risk band", pt: "Alocação por faixa de risco" })}>
-          <ul className="space-y-4">
-            {byRisk.map(({ band, micro }) => (
-              <li key={band} className="space-y-1.5">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-foreground">{RISK[band].label}</span>
-                  <span className="num text-muted-foreground">{Math.round((micro / riskTotal) * 100)}% · {usdc(micro, 0)}</span>
-                </div>
-                <div className="h-2 rounded-full bg-secondary">
-                  <div className={`h-full rounded-full ${RISK[band].bar}`} style={{ width: `${(micro / riskTotal) * 100}%` }} />
-                </div>
-              </li>
-            ))}
-          </ul>
-          <p className="text-xs text-muted-foreground">
-            {tr({
-              en: "EmpowerFI's band at eligibility, which each pool's risk appetite is checked against.",
-              pt: "A faixa definida pela EmpowerFI na elegibilidade, comparada com o apetite a risco de cada pool.",
-            })}
-          </p>
-        </Panel>
-      </div>
-
-      <Panel title={tr({ en: "Recent activity", pt: "Atividade recente" })}
-        actions={<Link to="/app/investor/portfolio" className="text-sm text-info hover:underline">{tr({ en: "Portfolio →", pt: "Carteira →" })}</Link>}>
-        {activity.isPending && <Skeleton className="h-40 rounded-xl bg-secondary" />}
-        {activity.isError && <LoadError compact error={activity.error} onRetry={() => activity.refetch()} />}
-        {activity.data && activity.data.length === 0 && <p className="text-sm text-muted-foreground">{tr({ en: "No activity yet.", pt: "Nenhuma atividade ainda." })}</p>}
-        <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
-            <tbody className="divide-y divide-border">
-              {(activity.data ?? []).slice(0, 8).map((e) => (
-                <tr key={`${e.kind}-${e.entity_id ?? e.investment_id}-${e.at}`}>
-                  <td className="py-3 pr-4 font-medium text-foreground">{ACTIVITY_LABEL[e.kind] ?? e.kind}</td>
-                  <td className="py-3 pr-4 text-muted-foreground"><span className="font-mono">{e.code}</span> · {PURPOSE_LABEL[e.purpose]}</td>
-                  <td className="num py-3 pr-4 text-right text-foreground">
-                    {e.micro_usdc !== null ? `${e.kind === "repayment" ? "+" : ""}${usdc(e.micro_usdc)}` : "—"}
-                  </td>
-                  <td className="py-3 pr-4 text-xs text-muted-foreground">{day(e.at)}</td>
-                  <td className="py-3 text-right">
-                    {e.signature ? <ExplorerLink tx={e.signature} label={tr({ en: "Confirmed", pt: "Confirmada" })} /> : e.entity_kind && e.entity_id ? (
-                      <VerifyButton icon className="text-xs text-positive" proof={{ kind: e.entity_kind as AnchorKind, entity_id: e.entity_id, subject: e.code }} />
-                    ) : <StatusPill tone="caution">{tr({ en: "Due", pt: "Pendente" })}</StatusPill>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
+        ) : open.length > 0 ? (
+          <Link to="#mandate" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-foreground">
+            {tr({ en: "Widen your mandate", pt: "Ampliar o mandato" })} <ArrowRight size={14} aria-hidden />
+          </Link>
+        ) : null}
+      </section>
 
       <Panel title={tr({ en: "Raising now", pt: "Captando agora" })}
         actions={<Link to="/app/investor/opportunities" className="text-sm text-info hover:underline">{tr({ en: "All opportunities →", pt: "Todas as oportunidades →" })}</Link>}>
@@ -236,9 +128,143 @@ export default function Overview() {
               </Button>
             </li>
           ))}
+          {market.isPending && [0, 1, 2].map((i) => <li key={i}><Skeleton className="h-44 rounded-xl bg-secondary" /></li>)}
           {market.data && raising.length === 0 && <li className="text-sm text-muted-foreground">{tr({ en: "Nothing raising right now.", pt: "Nada captando agora." })}</li>}
         </ul>
       </Panel>
+
+      <div className="flex flex-wrap items-baseline justify-between gap-2 pt-2">
+        <h2 className="font-heading text-lg font-semibold text-foreground">{tr({ en: "Your capital", pt: "Seu capital" })}</h2>
+        <p className="text-xs text-muted-foreground">
+          {wallet
+            ? tr({
+              en: "Global positions from your wallet on Solana devnet; domestic positions in reais, simulated.",
+              pt: "Posições globais da sua carteira na devnet da Solana; posições domésticas em reais, simuladas.",
+            })
+            : tr({
+              en: "Exploring as the demo investor: simulated positions, no wallet. Connect your own wallet from the top bar to invest in USDC.",
+              pt: "Você está explorando como o investidor de demonstração: posições simuladas, sem carteira. Conecte a sua carteira na barra do topo para investir em USDC.",
+            })}
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        {p ? (
+          <>
+            <StatTile label={tr({ en: "Invested", pt: "Investido" })} value={usdc(p.invested_micro_usdc)}
+              hint={tr({ en: `${p.positions} positions`, pt: `${p.positions} posições` })} />
+            <StatTile label={tr({ en: "Deployed to businesses", pt: "Aplicado nos negócios" })} value={usdc(p.deployed_micro_usdc)}
+              hint={p.invested_micro_usdc ? `${Math.round((p.deployed_micro_usdc / p.invested_micro_usdc) * 100)}%` : undefined} />
+            <StatTile label={tr({ en: "Available USDC", pt: "USDC disponível" })} value={connected && balances.data ? usdc(balances.data.microUsdc) : "—"}
+              hint={wallet
+                ? (connected ? tr({ en: "in your wallet", pt: "na sua carteira" }) : tr({ en: "reconnect wallet", pt: "reconecte a carteira" }))
+                : tr({ en: "demo mode", pt: "modo demonstração" })} />
+            <StatTile label={tr({ en: "Repaid to you", pt: "Pago a você" })} value={usdc(p.repaid_micro_usdc)} hintTone="positive"
+              hint={tr({ en: "your share of instalments", pt: "sua parte das parcelas" })} />
+            <StatTile label={tr({ en: "Expected back · simulated", pt: "Retorno esperado · simulado" })} value={usdc(p.expected_micro_usdc)} hintTone="positive"
+              hint={gain !== null ? tr({ en: `+${percent(gain)} on invested`, pt: `+${percent(gain)} sobre o investido` }) : undefined} />
+          </>
+        ) : [0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 rounded-2xl bg-card" />)}
+      </div>
+
+      <Panel title={tr({ en: "Recent activity", pt: "Atividade recente" })}
+        actions={<Link to="/app/investor/portfolio" className="text-sm text-info hover:underline">{tr({ en: "Portfolio →", pt: "Carteira →" })}</Link>}>
+        {activity.isPending && <Skeleton className="h-40 rounded-xl bg-secondary" />}
+        {activity.isError && <LoadError compact error={activity.error} onRetry={() => activity.refetch()} />}
+        {activity.data && activity.data.length === 0 && <p className="text-sm text-muted-foreground">{tr({ en: "No activity yet.", pt: "Nenhuma atividade ainda." })}</p>}
+        <div className="relative overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <tbody className="divide-y divide-border">
+              {(activity.data ?? []).slice(0, 5).map((e) => (
+                <tr key={`${e.kind}-${e.entity_id ?? e.investment_id}-${e.at}`}>
+                  <td className="py-3 pr-4 font-medium text-foreground">{ACTIVITY_LABEL[e.kind] ?? e.kind}</td>
+                  <td className="py-3 pr-4 text-muted-foreground"><span className="font-mono">{e.code}</span> · {PURPOSE_LABEL[e.purpose]}</td>
+                  <td className="num py-3 pr-4 text-right text-foreground">
+                    {e.micro_usdc !== null ? `${e.kind === "repayment" ? "+" : ""}${usdc(e.micro_usdc)}` : "—"}
+                  </td>
+                  <td className="py-3 pr-4 text-xs text-muted-foreground">{day(e.at)}</td>
+                  <td className="py-3 text-right">
+                    {e.signature ? <ExplorerLink tx={e.signature} label={tr({ en: "Confirmed", pt: "Confirmada" })} /> : e.entity_kind && e.entity_id ? (
+                      <VerifyButton icon className="text-xs text-positive" proof={{ kind: e.entity_kind as AnchorKind, entity_id: e.entity_id, subject: e.code }} />
+                    ) : <StatusPill tone="caution">{tr({ en: "Due", pt: "Pendente" })}</StatusPill>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+
+      {/* Your mandate decides what fits; it is read here and changed here, not up front. */}
+      <div id="mandate" className="scroll-mt-32">
+        <MandatePanel />
+      </div>
+
+      {/* The charts answer follow-up questions, so they wait to be asked. */}
+      <details className="space-y-4 [&[open]>summary>svg]:rotate-90">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-sm font-medium text-accent hover:text-foreground">
+          <ChevronRight size={15} className="transition-transform" aria-hidden />
+          {tr({ en: "How your capital moved, and where the two pools stand", pt: "Como seu capital se moveu, e como estão os dois pools" })}
+        </summary>
+
+        <div className="space-y-6 pt-4">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+            <Panel title={tr({ en: "Capital over time", pt: "Capital ao longo do tempo" })}
+              description={tr({ en: "Cumulative USDC invested and repaid to you.", pt: "USDC investido e pago a você, acumulado." })}>
+              {series.length > 1 ? (
+                <div className="h-56 w-full">
+                  <ResponsiveContainer>
+                    <AreaChart data={series} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="inv" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis dataKey="at" tickFormatter={(v: string) => day(v)} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={false} tickLine={false} width={48}
+                        tickFormatter={(v: number) => formatNumber(v)} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, fontSize: 12 }}
+                        labelStyle={{ color: "hsl(var(--foreground))" }} labelFormatter={(v: string) => day(v)} formatter={(v: number, k: string) => [
+                          `${formatNumber(v)} USDC`,
+                          k === "invested" ? tr({ en: "Invested", pt: "Investido" }) : tr({ en: "Repaid", pt: "Pago" }),
+                        ]} />
+                      <Area type="monotone" dataKey="invested" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#inv)" />
+                      <Area type="monotone" dataKey="repaid" stroke="hsl(var(--positive))" strokeWidth={2} fill="transparent" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{tr({ en: "Your first investment starts the curve.", pt: "A curva começa com o seu primeiro investimento." })}</p>
+              )}
+            </Panel>
+
+            <Panel title={tr({ en: "Allocation by risk band", pt: "Alocação por faixa de risco" })}>
+              <ul className="space-y-4">
+                {byRisk.map(({ band, micro }) => (
+                  <li key={band} className="space-y-1.5">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium text-foreground">{RISK[band].label}</span>
+                      <span className="num text-muted-foreground">{Math.round((micro / riskTotal) * 100)}% · {usdc(micro, 0)}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-secondary">
+                      <div className={`h-full rounded-full ${RISK[band].bar}`} style={{ width: `${(micro / riskTotal) * 100}%` }} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-muted-foreground">
+                {tr({
+                  en: "EmpowerFI's band at eligibility, which each pool's risk appetite is checked against.",
+                  pt: "A faixa definida pela EmpowerFI na elegibilidade, comparada com o apetite a risco de cada pool.",
+                })}
+              </p>
+            </Panel>
+          </div>
+
+          <CapitalPools />
+        </div>
+      </details>
     </div>
   );
 }
