@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { allocate, type AllocationResult, type PoolPolicy } from "@empowerfi/capital-allocation";
-import { FastForward, Play, RotateCcw } from "lucide-react";
+import { ArrowDown, FastForward, Play, RotateCcw, Split } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
@@ -25,8 +26,9 @@ import { useEngineRun } from "./engine/useEngineRun";
 import VerifyDecision from "./engine/VerifyDecision";
 import { useEngineOpportunities } from "./queries";
 
-// The Credit Engine page: pick a qualified opportunity, run both engines, and
-// watch the decision form. Engine 1 shows the recorded readiness and
+// The Credit & Capital Engine page: pick a qualified opportunity, run the credit
+// engine, then capital allocation on what it qualified, and watch the decision
+// form. Engine 1 shows the recorded readiness and
 // eligibility; Engine 2 re-runs the allocation engine in this browser against
 // today's liquidity and the assumptions in the drawer. Nothing here writes: the
 // database allocates when an opportunity opens to investors.
@@ -36,6 +38,7 @@ const STATE_LABEL: Record<EngineState, string> = localized({
   OPPORTUNITY_SELECTED: { en: "Opportunity selected", pt: "Oportunidade selecionada" },
   RUNNING_CREDIT_ENGINE: { en: "Running the credit engine", pt: "Rodando o motor de crédito" },
   CREDIT_REJECTED: { en: "Not qualified", pt: "Não qualificada" },
+  QUALIFIED_OPPORTUNITY: { en: "Qualified credit opportunity", pt: "Oportunidade de crédito qualificada" },
   RUNNING_CAPITAL_ALLOCATION: { en: "Running capital allocation", pt: "Rodando a alocação de capital" },
   DOMESTIC_SELECTED: { en: "Domestic P2P selected", pt: "P2P Doméstico escolhido" },
   GLOBAL_SELECTED: { en: "Global P2P selected", pt: "P2P Global escolhido" },
@@ -44,7 +47,7 @@ const STATE_LABEL: Record<EngineState, string> = localized({
 });
 
 const STATE_TONE: Record<EngineState, "neutral" | "info" | "caution" | "positive" | "alert"> = {
-  IDLE: "neutral", OPPORTUNITY_SELECTED: "info", RUNNING_CREDIT_ENGINE: "info", CREDIT_REJECTED: "caution",
+  IDLE: "neutral", OPPORTUNITY_SELECTED: "info", RUNNING_CREDIT_ENGINE: "info", CREDIT_REJECTED: "caution", QUALIFIED_OPPORTUNITY: "positive",
   RUNNING_CAPITAL_ALLOCATION: "info", DOMESTIC_SELECTED: "positive", GLOBAL_SELECTED: "positive", WAITING_FOR_CAPITAL: "caution", ERROR: "alert",
 };
 
@@ -66,6 +69,8 @@ export default function AllocationEngine() {
   const [run, setRun] = useState<Run | null>(null);
   const clock = useEngineRun();
   const canvas = useRef<HTMLDivElement>(null);
+  const [params] = useSearchParams();
+  const requested = params.get("opportunity");
 
   const dbForms = useMemo(() => {
     const d = overview.data?.pools.find((p) => p.pool === "domestic");
@@ -78,6 +83,13 @@ export default function AllocationEngine() {
     setDomestic(dbForms.domestic);
     setGlobal(dbForms.global);
   }, [dbForms, domestic]);
+
+  // Opened from Impact Intelligence with an opportunity's code: it comes selected.
+  useEffect(() => {
+    if (!requested || selected || !opportunities.data) return;
+    const match = opportunities.data.find((o) => o.code === requested);
+    if (match) setSelected(match);
+  }, [requested, selected, opportunities.data]);
 
   if (overview.isError) return <LoadError error={overview.error} onRetry={() => overview.refetch()} />;
   if (opportunities.isError) return <LoadError error={opportunities.error} onRetry={() => opportunities.refetch()} />;
@@ -105,24 +117,30 @@ export default function AllocationEngine() {
       : null;
     const plan = runPlan(steps, result);
     setRun({ o: selected, steps, result, policies, globalMicroUsdc: Math.round(Number(global.available) * 1e6), plan });
-    clock.start(plan.total);
+    // The credit engine first; capital allocation runs on what it qualified, when asked.
+    clock.start(plan.total, plan.rejected ? null : plan.creditTicks + 1);
     if (window.innerWidth < 1024) window.setTimeout(() => canvas.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
-  const state: EngineState = !selected ? "IDLE" : !run ? "OPPORTUNITY_SELECTED" : stateAt(clock.tick, run.plan, run.result);
+  const state: EngineState = !selected ? "IDLE" : !run ? "OPPORTUNITY_SELECTED"
+    : clock.held ? "QUALIFIED_OPPORTUNITY" : stateAt(clock.tick, run.plan, run.result);
   const running = state === "RUNNING_CREDIT_ENGINE" || state === "RUNNING_CAPITAL_ALLOCATION";
-  const activeEngine: 0 | 1 | 2 = state === "RUNNING_CREDIT_ENGINE" || state === "CREDIT_REJECTED" ? 1
+  const activeEngine: 0 | 1 | 2 = state === "RUNNING_CREDIT_ENGINE" || state === "CREDIT_REJECTED" || state === "QUALIFIED_OPPORTUNITY" ? 1
     : state === "IDLE" || state === "OPPORTUNITY_SELECTED" ? 0 : 2;
   const poolBase = run ? run.plan.creditTicks + 1 : 0;
   const economicsBase = run ? poolBase + run.plan.poolTicks : 0;
-  const showAllocation = Boolean(run?.result && clock.tick >= run.plan.creditTicks);
+  const showAllocation = Boolean(run?.result && !clock.holding && clock.tick >= run.plan.creditTicks + 1);
+  const allocate_ = () => {
+    clock.resume();
+    if (window.innerWidth < 1024) window.setTimeout(() => canvas.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Two engines, one decision", pt: "Dois motores, uma decisão" })} title={tr({ en: "Credit Engine", pt: "Motor de Crédito" })}
+      <PageHeader eyebrow={tr({ en: "Two engines, one decision", pt: "Dois motores, uma decisão" })} title={tr({ en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" })}
         description={tr({
-          en: "EmpowerFI first decides whether a business is credit-ready, then which available pool of P2P capital can fund it sustainably. Pick a qualified opportunity and run both engines.",
-          pt: "A EmpowerFI primeiro decide se um negócio está pronto para crédito, depois qual pool de capital P2P disponível pode financiá-lo de forma sustentável. Escolha uma oportunidade qualificada e rode os dois motores.",
+          en: "EmpowerFI first decides whether a business is credit-ready, then which available pool of P2P capital can fund it sustainably. Pick an opportunity, run the credit engine, then run capital allocation on what it qualifies.",
+          pt: "A EmpowerFI primeiro decide se um negócio está pronto para crédito, depois qual pool de capital P2P disponível pode financiá-lo de forma sustentável. Escolha uma oportunidade, rode o motor de crédito e depois a alocação de capital sobre o que ele qualificar.",
         })} />
 
       <CapitalPools engineLink={false} tilesOnly />
@@ -137,11 +155,18 @@ export default function AllocationEngine() {
             <OpportunityPicker options={opportunities.data} value={selected} onChange={select} disabled={running} />
           )}
           {selected && <Snapshot o={selected} />}
-          <Button size="lg" onClick={start} disabled={!selected || !policies || running}
-            className="h-12 w-full gap-2 bg-accent text-base font-bold tracking-wide text-accent-foreground hover:bg-accent/90">
-            {run && !running ? <RotateCcw size={18} /> : <Play size={18} />}
-            {run && !running ? tr({ en: "Run again", pt: "Rodar de novo" }) : tr({ en: "RUN CREDIT ENGINE", pt: "RODAR O MOTOR DE CRÉDITO" })}
-          </Button>
+          {clock.held ? (
+            <Button size="lg" onClick={allocate_}
+              className="h-12 w-full gap-2 bg-accent text-base font-bold tracking-wide text-accent-foreground hover:bg-accent/90">
+              <Split size={18} /> {tr({ en: "RUN CAPITAL ALLOCATION", pt: "RODAR A ALOCAÇÃO DE CAPITAL" })}
+            </Button>
+          ) : (
+            <Button size="lg" onClick={start} disabled={!selected || !policies || running}
+              className="h-12 w-full gap-2 bg-accent text-base font-bold tracking-wide text-accent-foreground hover:bg-accent/90">
+              {run && !running ? <RotateCcw size={18} /> : <Play size={18} />}
+              {run && !running ? tr({ en: "Run again", pt: "Rodar de novo" }) : tr({ en: "RUN CREDIT ENGINE", pt: "RODAR O MOTOR DE CRÉDITO" })}
+            </Button>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <StatusPill tone={STATE_TONE[state]} dot={running}>{STATE_LABEL[state]}</StatusPill>
             {running && (
@@ -178,6 +203,19 @@ export default function AllocationEngine() {
           ) : (
             <>
               <CreditEngine o={run.o} steps={run.steps} tick={clock.tick} />
+
+              {clock.held && (
+                <div className="flex flex-col items-center gap-2 animate-in fade-in duration-300">
+                  <ArrowDown size={16} className="text-accent" aria-hidden />
+                  <Button size="lg" onClick={allocate_} className="gap-2 bg-accent font-bold tracking-wide text-accent-foreground hover:bg-accent/90">
+                    <Split size={18} /> {tr({ en: "RUN CAPITAL ALLOCATION", pt: "RODAR A ALOCAÇÃO DE CAPITAL" })}
+                  </Button>
+                  <p className="max-w-md text-center text-xs text-muted-foreground">{tr({
+                    en: "Qualified first. Now the Capital Allocation Engine checks liquidity, ticket, risk appetite and mandate in both pools, then compares economics among the ones that can fund it.",
+                    pt: "Primeiro a qualificação. Agora o Motor de Alocação de Capital confere liquidez, ticket, apetite a risco e mandato nos dois pools, e compara a economia entre os que podem financiar.",
+                  })}</p>
+                </div>
+              )}
 
               {showAllocation && run.result && (
                 <section className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300" aria-live="polite">

@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(19);
+select plan(20);
 
 -- ------------------------------------------------------------------ fixtures
 -- Helena's foundation sponsors a programme run by Lia's community: five food
@@ -151,6 +151,7 @@ select is(
 select pg_temp.act_as('00000000-0000-0000-0000-0000000009a5');
 select is((select array_agg(left(x ->> 'code', 2)) from jsonb_array_elements(engine_opportunities()) x), array['Q-'],
   'the sponsor opens the same one in the Credit & Capital Engine');
+select ok(jsonb_typeof(capital_overview() -> 'pools') = 'array', 'and reads the pools it would be routed to, as investors do');
 set local role postgres;
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000009a2');

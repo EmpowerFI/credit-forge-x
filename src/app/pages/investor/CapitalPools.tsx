@@ -52,7 +52,7 @@ export default function CapitalPools({ engineLink = true, tilesOnly = false }: {
           en: "How much qualified demand each pool can fund: the allocation engine replayed over every opportunity not yet lent, in the order they came.",
           pt: "Quanto da demanda qualificada cada pool consegue captar: o motor de alocação refeito sobre cada oportunidade ainda não emprestada, na ordem em que chegaram.",
         })}
-        actions={engineLink ? <Link to="/app/capital" className="text-sm text-info hover:underline">{tr({ en: "Capital Allocation Engine →", pt: "Motor de Alocação de Capital →" })}</Link> : undefined}>
+        actions={engineLink ? <Link to="/app/capital" className="text-sm text-info hover:underline">{tr({ en: "Credit & Capital Engine →", pt: "Motor de Crédito e Capital →" })}</Link> : undefined}>
         {!d ? <Skeleton className="h-16 w-full" /> : (
           <div className="space-y-3">
             {bar(d.coverage.domestic_coverage_bps, POOL.domestic.bar, tr({ en: "Domestic P2P", pt: "P2P Doméstico" }))}
