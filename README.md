@@ -14,7 +14,7 @@ The marketplace app is live on Google Play; this repository is the Colosseum hac
 
 The platform is live at **[www.empowerfi.io/app](https://www.empowerfi.io/app)** (or `http://localhost:8080/app` locally), and the site's **App - Devnet** button opens it. It reads in English or Portuguese: the Portuguese pages open it in Portuguese, and the EN | PT switch changes it. Sign in with one of the demo accounts. The login page lists them, and all share the password **`EmpowerFI-demo-2026`** (public on purpose; every demo record is simulated).
 
-The app tells one loop in three stories: **1 Impact Intelligence**, **2 Credit & Capital Engine**, **3 Investor Console**. Community operations, the P2P desk, the entrepreneur's own journey, admin and the audit console sit under **Operations**. A demo account moves between them in one click, as the right demo persona.
+The app tells one loop in three stories: **1 Impact Intelligence**, **2 Credit & Capital Engine**, **3 Investor Console**. Community operations, the P2P desk, the entrepreneur's own journey, admin and the audit console sit under **Operations**. A demo account moves between them in one click, as the right demo persona. **View platform as** picks one of five views (program sponsor, investor or impact fund, credit and capital operator, community operator, entrepreneur), each with its value and its own tools, without widening anyone's permissions.
 
 | Account | Role | What to look at |
 |---|---|---|
@@ -34,6 +34,7 @@ Program: [`4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR`](https://explorer.solan
 
 ## What is built
 
+- **Operating economics** (`operating_economics()`, `/app/capital/economics`): can productive credit become cheaper to operate without becoming weaker credit? Cost to serve beside eligibility discipline, time to decision beside affordability checks, scalability beside follow-up, capital access beside portfolio quality. A hypothesis the prototype measures and the pilot must test, priced by an assumed rate card.
 - **Impact Intelligence** for program sponsors (`impact_intelligence()`): funding deployed, reach, reporting, readiness, capital requested and mobilised, repayment and productive outcomes over the communities that run a program. Aggregates only, groups under five hidden, outcomes only with the impact consent, the evidence behind every figure on Solana, and a report to download or print.
 - **Investor mandates:** an impact fund sets target population, geography, purpose, sector, ticket, risk appetite and route; every opportunity is matched against it from what investors already see.
 - **The funnel, end to end:** community → verification → enrollment → education → monthly check-ins → readiness → request → eligibility → qualified opportunity → P2P funding → formalisation → disbursement → instalments → productive outcome. Each step is a checked database function, and each fact is anchored on Solana in order.

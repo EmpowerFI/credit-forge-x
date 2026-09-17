@@ -6,7 +6,7 @@
 - **PT homepage:** `/pt` tells the same seven-section story. The entrepreneur content moves to `/pt/empreendedoras`, linked from "Apoio empreendedoras".
 - **Demo switching:** for demo accounts only, the story bar signs in as that story's demo persona in one click.
 
-**Status, 17 Sep:** P0 built on `hackathon`, verified locally, not yet on the hackathon database or `main`.
+**Status, 17 Sep (morning):** P0 built, migrations `20260923000000`–`20260923000300` pushed to the hackathon database, hackathon reseeded and merged to `main` (6d2ecb2).
 - **Built:**
   - navigation in three stories plus Operations, with one-click demo switching;
   - the proof drawer;
@@ -20,12 +20,61 @@
   - No `record_capital_use` and no new anchor kind. The seed leaves one July loan unmeasured, and the desk runs the existing `measure_outcome` in step 12.
   - A fourth migration lets sponsors read `capital_overview()`.
 - **Checks:** pgTAP 452, Vitest 143, build, no new lint problems, and screenshots of every new screen at 1440 px and 390 px with no overflow or console errors.
-- **Waiting on the founder:** push migrations `20260923000000`–`20260923000300`, reseed hackathon, merge to `main`.
 
 **Rules kept:**
 - Do not rebuild from scratch, and do not hard-code engine decisions.
 - Label every simulated, test or devnet financial step.
 - Put nothing personal on chain.
+
+## Revision of 17 Sep: §2A and §3A
+
+The spec's second version adds §2A (cost to serve without weaker credit), §3A (View platform as) and, in §13, a route map per role. The rest is unchanged.
+
+**Status:** built on `hackathon` and verified locally. Checks: pgTAP 468, Vitest 149, build, no new lint problems, and screenshots at 1440 px and 390 px with no overflow or console errors. **Waiting on the founder:** push migration `20260924000000_operating_economics`, then merge. No reseed is needed.
+
+**§2A · Operating economics.** No new tables. The facts were already recorded: cost events per stage, timestamps on every step, and the engines' reason codes and loan states.
+- `operating_economics(program?)` is readable by the desk, auditors and admins over everything, and by a sponsor over its own program. It returns four pairs:
+  - cost to serve (all-in, and credit only, per R$ 100 lent) with eligibility discipline;
+  - time to decision with affordability checks;
+  - scalability with follow-up;
+  - capital access with portfolio quality.
+- `/app/capital/economics` is linked from the engine and from Impact Intelligence ("Cost to serve"). It is labelled a hypothesis: the rates are assumptions, the data is simulated, and the World Bank benchmark is a reference, not a comparison.
+- **Home page:** the Problem section is headed by the spec's question, followed by the four-row measurement table and "A hypothesis, not a result". The benchmark now reads "per US$100 of loans outstanding", as the source says, where before it said "lent".
+- **What the local data shows:** all-in R$ 26.75 per R$ 100 lent, but credit alone R$ 2.62. Preparation for 100 participants dominates, and in the model the sponsored program funds it. The page shows both figures side by side.
+
+**§3A · View platform as.** `lib/views.ts` defines five views, each with its value, its persona, and primary and secondary tools.
+- The public entry `/app/login?as=` and the signed-in landing `/app/start?as=` show the chosen view.
+- The header selector (beside the story bar, and in the mobile menu) leads to that landing.
+- RBAC is unchanged: tools are only routes the view's own role opens (tested), demo accounts switch persona, and other accounts see only their own view.
+- The desk now starts at the engine, its story.
+
+### Route map by role (P primary · S secondary · — hidden)
+
+| Route | Sponsor | Investor | Operator (desk) | Community | Entrepreneur | Admin / auditor |
+|---|---|---|---|---|---|---|
+| `/app/start` (view landing) | P | P | P | P | P | P |
+| `/app/impact` | P | — | — | — | — | S |
+| `/app/capital` (engine, replay, assumptions) | S | S | P | — | — | S |
+| `/app/capital/economics` | S (own program) | — | P | — | — | S |
+| `/app/investor` (overview, mandate) | — | P | — | — | — | S |
+| `/app/investor/opportunities`, `/:id` | — | P | — | — | — | S |
+| `/app/investor/portfolio`, `/positions/:id` | — | P | — | — | — | S |
+| `/app/investor/settlement` | — | P | — | — | — | S |
+| `/app/investor/audit` | — | P (proofs) | — | — | — | S |
+| `/app/partner` (pipeline), `/reviews` | — | — | S | — | — | S |
+| `/app/partner/decisions` | — | — | P (proofs) | — | — | S |
+| `/app/partner/portfolio`, `/servicing`, `/loans/:id` | — | — | S | — | — | S |
+| `/app/community/:id` (overview) | — | — | — | S | — | S |
+| `…/cohorts`, `…/participants`, `…/readiness` | — | — | — | P | — | S |
+| `…/participants/:id`, `…/pipeline`, `…/impact` | — | — | — | S | — | S |
+| `/app/community`, `/app/community/new` | — | — | — | S | — | S |
+| `/app/me`, `/app/check-in`, `/app/consent` | — | — | — | — | P | — |
+| `/app/admin` | — | — | — | — | — | P (admin) |
+| `/app/audit/*` | — | — | — | — | — | P (auditor) |
+| `/app/audit/:kind/:id` (deep link from the proof drawer) | S | S | S | S | S | S |
+| `/app/report/:token` (shared report, public) | S | S | S | S | S | S |
+
+Hidden means a route is not in that view's navigation. The route stays behind RBAC as before, and no route was removed.
 
 ## 1 · Current-state map
 

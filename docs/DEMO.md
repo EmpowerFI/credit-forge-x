@@ -2,13 +2,13 @@
 
 This script follows one story end to end: a sponsor's evidence, credit intelligence, a qualified opportunity, capital, repayment and outcome, then back to the sponsor. It runs on the hackathon environment at `www.empowerfi.io/app`, and every demo account uses the password `EmpowerFI-demo-2026`.
 
-The bar at the top of the app numbers the three stories: 1 Impact Intelligence, 2 Credit & Capital Engine, 3 Investor Console. Operations sit beside them. A demo account switches to the right demo persona in one click, so a judge never has to sign out.
+The bar at the top of the app numbers the three stories: 1 Impact Intelligence, 2 Credit & Capital Engine, 3 Investor Console. Operations sit beside them. On the right, **View platform as** switches between the five views (sponsor, investor or impact fund, operator, community, entrepreneur): each opens a page with that view's value and tools. A demo account switches to the right demo persona in one click, so a judge never has to sign out.
 
 > Prototype of a future regulated P2P productive-credit architecture. Hackathon investments, returns, FX and Pix settlement are simulated; blockchain transactions use test assets on Devnet.
 
 | # | Time | Story · account | Do | Say |
 |---|---|---|---|---|
-| 1 | 0:00 | 1 · `sponsor@demo.empowerfi.io` | On the login page, **Impact Intelligence → Enter as demo**. | "A foundation funds a program that four communities run. What did it buy, and can it verify it?" |
+| 1 | 0:00 | 1 · `sponsor@demo.empowerfi.io` | On the login page, **View platform as: Program Sponsor / ESG** → **Enter as demo · Helena Prado**. | "A foundation funds a program that four communities run. What did it buy, and can it verify it?" |
 | 2 | 0:15 | Sponsor | Read the header and hero: funding deployed, reached, reporting, credit ready, capital requested and mobilised, repayment, outcome coverage. Then the funnel from **Sponsored** to **Performing**, and **Segments** ("groups under 5 hidden"). | "Program execution becomes evidence, and the same data qualifies credit. Aggregates only: no name, no figure she reported." |
 | 3 | 0:40 | Sponsor | **Drill into an opportunity** → **Run the engine** on a code. | "Each business appears by a pseudonymous code, and only if she consented to be shown to investors." |
 | 4 | 0:50 | 2 · Sponsor | The opportunity comes selected → **RUN CREDIT ENGINE**: business data, preparation, readiness, affordability, risk, eligibility. | "Engine 1 asks whether this business should become a qualified credit opportunity." |
@@ -22,6 +22,8 @@ The bar at the top of the app numbers the three stories: 1 Impact Intelligence, 
 | 12 | 2:55 | Desk | *Portfolio* → **Ready to measure** → the loan → how she used the capital → **Measure productive outcome**. | "Sales before and after, from the months she reports anyway. An observation, not a claim that the loan caused it." |
 | 13 | 3:10 | 1 · Sponsor | **1 Impact Intelligence** in the bar. Outcome coverage goes up by one, and repayment and outcomes update. | "The outcome returns to the sponsor as evidence." |
 | 14 | 3:20 | Sponsor | **Evidence on Solana** → a proof → **Verify** opens the proof drawer → **Verify on Solana**. Or **Generate auditable report**. | "Every commitment is checked from this browser against Solana devnet. Evidence without financial surveillance." |
+
+**Optional, after step 7 (40 s):** **Operating economics** on the engine page. "Can productive credit become cheaper to operate without becoming weaker credit? We don't claim the answer. We measure it: cost to serve beside eligibility discipline, time to decision beside affordability checks, follow-up, and portfolio quality. The rates are pilot assumptions and the data is simulated."
 
 **Optional prelude:** `maria@demo.empowerfi.io` submits her September check-in and asks for capital, and it becomes a qualified opportunity (Operations → My business).
 

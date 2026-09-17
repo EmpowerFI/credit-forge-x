@@ -189,6 +189,14 @@ The app tells one loop in three stories (refactor specification, 16 Sep), number
   A sponsor also reads `capital_overview()` and its program's queue in `engine_opportunities()`, to drill into an opportunity.
 - **Mandates.** `investor_mandates` holds an investor's type (individual or impact fund) and mandate: impact mandate, states, purposes, sectors, ticket range, risk bands and route, each empty list meaning any. `set_mandate()` is the investor's own; `src/app/lib/mandate.ts` matches it, in the browser, against what every investor already sees of an opportunity.
 - **Outcomes during the demo.** The desk measures a loan's productive outcome from its loan page (`measure_outcome`, unchanged). The seed leaves one July loan unmeasured, with its months after, for that step.
+- **View platform as.** Five views (spec §3A, 17 Sep) in `src/app/lib/views.ts`: program sponsor, investor or impact fund, credit and capital operator, community operator, entrepreneur. Each has a value line, a demo persona, and primary and secondary tools. The public entry (`/app/login?as=…`) and the signed-in landing (`/app/start?as=…`, where the header selector leads) show the chosen view's value and tools. A view never widens access: a view's tools are only routes its own role opens (a Vitest test checks this against the areas' roles), a demo account switches to the view's persona, and any other account sees only the views its role opens.
+- **Operating economics.** `operating_economics(program?)` answers spec §2A's question, whether productive credit can become cheaper to operate without becoming weaker credit, from facts already recorded. It pairs what must improve with what must not be sacrificed:
+  - cost to serve (from `cost_events`, all-in and credit-only per R$ 100 lent) with eligibility discipline (decisions and reason codes);
+  - time to decision (median and p90 from intent, eligibility, opportunity, desk decision and disbursement timestamps) with affordability checks;
+  - operational scalability (steps that took no one's time, staff hours) with continuous follow-up (reporting, open follow-ups, instalments, outcomes);
+  - capital access (routes, waiting, allocation reasons) with portfolio quality (instalments on schedule, late, paid, defaulted).
+
+  The desk, auditors and admins read it over everything, and a sponsor over its own program. The page `/app/capital/economics` labels it a hypothesis: costs come from the pilot's assumed rate card and the demo data is simulated.
 - **Proofs beside events.** `VerifyButton` opens a proof drawer (`components/proof`) with the event, model version, commitment, devnet transaction and a check on Solana. When the viewer may read the record, it is recomputed in the browser by the same `lib/verify.ts` the audit page uses.
 
 ## Capital pools and the allocation engine
@@ -234,9 +242,9 @@ The first-cycle facts are recorded through the live functions and then dated to 
 
 | Suite | Count | Covers |
 |---|---|---|
-| pgTAP (`platform/supabase/tests`) | 452 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement, Zcash, cost to serve, outcomes, Impact Intelligence (sponsor scope, small groups hidden, consent, no private keys) and mandates, and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
+| pgTAP (`platform/supabase/tests`) | 468 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement, Zcash, cost to serve, outcomes, Impact Intelligence (sponsor scope, small groups hidden, consent, no private keys), mandates, operating economics (who reads it, program scope, no private keys), and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
 | LiteSVM (`programs/empowerfi-audit/tests`) | 26 | every instruction's rules and state machine |
-| Vitest | 143 | engines, the allocation engine's vectors and per-check trace, the engine page's run plan and demo cases, investor mandates, commitments, the IDL privacy review, settlement and ramp helpers, languages, UI helpers |
+| Vitest | 149 | engines, the allocation engine's vectors and per-check trace, the engine page's run plan and demo cases, investor mandates, the five views and their tools against RBAC, commitments, the IDL privacy review, settlement and ramp helpers, languages, UI helpers |
 | Deno | 47 | the vendored engines and commitments against the same vectors, and the MoneyGram quote |
 | Devnet scan (`scripts/platform/scan-chain-pii.mts`) | every account | reviewed types only, and none of the database's names, e-mails or amounts |
 
