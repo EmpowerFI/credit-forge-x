@@ -25,6 +25,8 @@ export default function Portfolio() {
   // Funded by investors: the whole principal, from the pool the allocation engine chose.
   const byPool = (pool: "domestic" | "global") => book.filter((l) => l.funding.pool === pool).reduce((n, l) => n + l.principal_cents, 0);
   const outcomes = book.filter((l) => l.outcome);
+  // Lent since at least three months ago and not yet measured: her months after it may be in.
+  const toMeasure = book.filter((l) => !l.outcome && l.disbursed_at && Date.now() - Date.parse(l.disbursed_at) > 60 * 86_400_000);
   const shareOfLent = (pool: "domestic" | "global") => {
     if (!lent) return undefined;
     const share = Math.round((byPool(pool) / lent) * 100);
@@ -71,6 +73,16 @@ export default function Portfolio() {
             en: "Measured from her own reported months before and after the loan: sales, and the value the credit created after its cost (EVC, Economic Value Created). Proven on Solana.",
             pt: "Medido a partir dos meses que ela mesma reportou antes e depois do empréstimo: vendas e o valor que o crédito gerou depois do seu custo (EVC, Valor Econômico Criado). Registrado na Solana.",
           })}>
+          {toMeasure.length > 0 && (
+            <ul className="space-y-1.5 rounded-xl border tone-info p-3 text-sm">
+              {toMeasure.map((l) => (
+                <li key={l.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span>{tr({ en: "Ready to measure: ", pt: "Pronto para medir: " })}<span className="font-mono">{l.participant}</span></span>
+                  <Link to={`../loans/${l.id}`} relative="path" className="text-xs font-medium hover:underline">{tr({ en: "Measure the outcome →", pt: "Medir o resultado →" })}</Link>
+                </li>
+              ))}
+            </ul>
+          )}
           {outcomes.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {tr({

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { localized, tr } from "../../i18n";
-import type { LoanStatus } from "../../lib/credit";
+import type { CapitalUse, LoanStatus } from "../../lib/credit";
 import { describeError } from "../../lib/errors";
 import type { PartnerDesk } from "../../lib/partner";
 import { platform } from "../../lib/platform";
@@ -112,6 +112,25 @@ export function useRecordPayment() {
       toast.success(tr({
         en: `Instalment ${n} recorded. Investors' shares go back to them.`,
         pt: `Parcela ${n} registrada. As partes dos investidores voltam para eles.`,
+      }));
+      refresh();
+    },
+    onError: (e) => toast.error(describeError(e)),
+  });
+}
+
+/** Measures what a loan did for the business, from her months before and after it; proven on Solana. */
+export function useMeasureOutcome() {
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: async ({ loanId, capitalUse }: { loanId: string; capitalUse: CapitalUse }) => {
+      const { error } = await platform.rpc("measure_outcome", { p_loan_id: loanId, p_capital_use: capitalUse });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success(tr({
+        en: "Outcome measured and queued to be proven on Solana. The sponsor's Impact Intelligence counts it now.",
+        pt: "Resultado medido e na fila para ser provado na Solana. A Inteligência de Impacto do patrocinador já conta com ele.",
       }));
       refresh();
     },

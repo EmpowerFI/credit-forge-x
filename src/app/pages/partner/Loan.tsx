@@ -15,6 +15,52 @@ import { usdc } from "../../lib/solana";
 import { useDesk } from "./context";
 import { FundingSummary, LoanActions, StagePill } from "./parts";
 import EvcLabel from "../../components/product/EvcLabel";
+import { useState } from "react";
+import { Loader2, Sprout } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { CapitalUse } from "../../lib/credit";
+import { useMeasureOutcome } from "./queries";
+
+/**
+ * The desk records what she did with the capital and measures the change in
+ * her business from the months she reported before and after the loan. It
+ * needs two reported months on each side; the result is proven on Solana and
+ * reaches the sponsor's Impact Intelligence straight away.
+ */
+function MeasureOutcome({ loanId, canMeasure }: { loanId: string; canMeasure: boolean }) {
+  const [use, setUse] = useState<CapitalUse>("as_declared");
+  const measure = useMeasureOutcome();
+  return (
+    <div className="space-y-3 text-sm">
+      <p className="text-muted-foreground">
+        {tr({
+          en: "Measured once there are two reported months on each side of the loan: sales before and after, and the value created after the credit's cost. An observation, not a claim that the loan caused it.",
+          pt: "Medido quando houver dois meses reportados de cada lado do empréstimo: vendas antes e depois, e o valor gerado depois do custo do crédito. Uma observação, não a afirmação de que o empréstimo causou a mudança.",
+        })}
+      </p>
+      {canMeasure && (
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="space-y-1">
+            <p className="text-xs text-muted-foreground">{tr({ en: "How she used the capital", pt: "Como ela usou o capital" })}</p>
+            <Select value={use} onValueChange={(v) => setUse(v as CapitalUse)}>
+              <SelectTrigger className="h-9 w-56"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(["as_declared", "partly_as_declared", "other_use", "not_reported"] as CapitalUse[]).map((u) => (
+                  <SelectItem key={u} value={u}>{CAPITAL_USE_LABEL[u]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button size="sm" className="gap-1.5" disabled={measure.isPending} onClick={() => measure.mutate({ loanId, capitalUse: use })}>
+            {measure.isPending ? <Loader2 size={14} className="animate-spin" /> : <Sprout size={14} />}
+            {tr({ en: "Measure productive outcome", pt: "Medir resultado produtivo" })}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Step({ n, title, reality, children }: { n: number; title: string; reality: Reality; children: React.ReactNode }) {
   return (
@@ -262,12 +308,7 @@ export default function Loan() {
               <div className="text-xs"><ProofLine proof={loan.outcome.proof} /></div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              {tr({
-                en: "Measured once there are two reported months on each side of the loan.",
-                pt: "Medido quando houver dois meses reportados de cada lado do empréstimo.",
-              })}
-            </p>
+            <MeasureOutcome loanId={loan.id} canMeasure={decides && Boolean(loan.disbursed_at)} />
           )}
         </Panel>
       </div>
