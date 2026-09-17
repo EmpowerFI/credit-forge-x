@@ -241,6 +241,24 @@ const communities = await must(
 );
 const byName = new Map(communities.map((c) => [c.name, c]));
 
+// ---------------------------------------------------------------- programme
+// The sponsor's programme the four communities run (refactor spec, 16 Sep):
+// its budget is what a sponsor would report, simulated here.
+const PROGRAM = {
+  name: "Crescer Juntas 2026 (demo)",
+  description: "Preparation, monthly business records and a route to productive credit for women-led businesses in four communities.",
+  period_start: "2026-06-01", period_end: "2027-05-31",
+  funding_committed_cents: 25_000_000, funding_deployed_cents: 17_500_000, is_simulated: true,
+};
+const sponsor = (await must("sponsor", db.from("sponsors").select("id, name").eq("name", "Instituto Ponte de Impacto (demo)").maybeSingle())) as
+  { id: string; name: string } | null;
+if (sponsor) {
+  const program = await must("programme", db.from("programs")
+    .upsert({ sponsor_id: sponsor.id, ...PROGRAM }, { onConflict: "sponsor_id,name" }).select("id").single());
+  await must("programme communities", db.from("program_communities")
+    .insert(communities.map((c) => ({ program_id: program.id, community_id: c.id }))));
+}
+
 // ------------------------------------------------------------ entrepreneurs
 
 const maria = await must(
@@ -598,6 +616,7 @@ const JULY = {
 const PAID_AT = ["2026-08-09T15:00:00-03:00", "2026-09-09T15:00:00-03:00"];
 const PAID_OFF_AT = "2026-09-10T09:00:00-03:00";
 let cycleLoans = 0;
+let leftToMeasure: string | null = null;
 for (const c of firstCycle) {
   const id = c.membership.entrepreneur_id;
   const { features, result } = assessReadiness({
@@ -664,7 +683,13 @@ for (const c of firstCycle) {
     .update({ created_at: JULY.disbursed, done_at: JULY.disbursed, pix_e2e: mockPixE2e(new Date(JULY.disbursed)) })
     .eq("loan_id", loan.id).eq("kind", "pix_payout"));
 
-  // September: what changed in the business since.
+  // September: what changed in the business since. One on-time loan is left
+  // for the desk to measure during the demo, which the sponsor then sees.
+  if (!leftToMeasure && c.plan === "on_time" && id !== noImpact) {
+    leftToMeasure = loan.id;
+    cycleLoans++;
+    continue;
+  }
   const outcomeId = await must("first-cycle outcome", db.rpc("measure_outcome", { p_loan_id: loan.id, p_capital_use: c.use }));
   await must("date outcome", db.from("productive_outcomes").update({ measured_at: "2026-09-12T16:00:00-03:00" }).eq("id", outcomeId as string));
   cycleLoans++;
@@ -880,7 +905,8 @@ console.log(`desk: ${formalised} formalised, ${ready} funded and ready to formal
 console.log(`capital: ${investor ? "R$ 50,000 committed by the demo investor (simulated)" : "no capital provider account"}`);
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
 console.log(`short history, awaiting manual review: ${inserted.find((e) => e.id === recent)?.display_name ?? "none"} (${COMMUNITIES[1].name})`);
-console.log(`first cycle: ${cycleLoans} loans since July, outcomes measured in September`);
+console.log(`first cycle: ${cycleLoans} loans since July, outcomes measured in September except one left for the demo (${leftToMeasure ?? "none"})`);
+console.log(`programme: ${PROGRAM.name}, ${communities.length} communities, sponsored by ${sponsor?.name ?? "no sponsor: run seed-demo-accounts.mts"}`);
 console.log(`consent: ${consentRows.length} recorded at enrollment, ${consentRows.filter((c) => !c.impact).length} outside impact figures, ${private_.length} requests kept from investors`);
 await must("release the anchor worker", db.rpc("finish_anchor_run"));
 const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");

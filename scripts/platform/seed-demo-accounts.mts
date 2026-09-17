@@ -35,7 +35,19 @@ const PARTNER = {
 };
 const FORMER_PARTNER_NAME = "Cooperativa Horizonte (demo)";
 
-type Role = "entrepreneur" | "community_leader" | "partner" | "capital_provider" | "auditor" | "admin";
+// The sponsor Impact Intelligence is sold to (refactor spec, 16 Sep): a
+// fictional foundation funding a programme the four demo communities run.
+const SPONSOR = { name: "Instituto Ponte de Impacto (demo)", kind: "foundation" as const, is_simulated: true };
+
+// The demo investor manages an impact fund: an investor with a mandate.
+const IRENE_MANDATE = {
+  kind: "impact_fund", label: "Fundo Ponte Produtiva (demo)", impact_mandate: true,
+  purposes: ["inventory", "equipment", "working_capital"], risk_bands: ["LOW", "MEDIUM"],
+  states: [] as string[], sectors: [] as string[], pools: [] as string[],
+  min_ticket_cents: 100_000, max_ticket_cents: 600_000, is_simulated: true,
+};
+
+type Role = "entrepreneur" | "community_leader" | "partner" | "capital_provider" | "auditor" | "admin" | "sponsor";
 
 const ACCOUNTS: { email: string; name: string; role: Role }[] = [
   { email: "admin@demo.empowerfi.io", name: "Ana Reis (EmpowerFI)", role: "admin" },
@@ -44,6 +56,7 @@ const ACCOUNTS: { email: string; name: string; role: Role }[] = [
   { email: "partner@demo.empowerfi.io", name: "Paulo Mendes", role: "partner" },
   { email: "investor@demo.empowerfi.io", name: "Irene Costa", role: "capital_provider" },
   { email: "auditor@demo.empowerfi.io", name: "Otávio Lima", role: "auditor" },
+  { email: "sponsor@demo.empowerfi.io", name: "Helena Prado", role: "sponsor" },
 ];
 
 async function must<T>(label: string, p: PromiseLike<{ data: T; error: { message: string } | null }>): Promise<T> {
@@ -62,6 +75,8 @@ const partnerId = (existingPartner as { id: string } | null)?.id
   : (await must("create partner", db.from("partners").insert(PARTNER).select("id").single())).id;
 // Opportunities are matched to the first active partner: only the desk is.
 await must("one desk", db.from("partners").update({ active: false }).neq("id", partnerId));
+
+const sponsorId = (await must("sponsor", db.from("sponsors").upsert(SPONSOR, { onConflict: "name" }).select("id").single())).id;
 
 const { data: list, error: listError } = await db.auth.admin.listUsers({ perPage: 1000 });
 if (listError) throw listError;
@@ -89,9 +104,16 @@ for (const account of ACCOUNTS) {
         role: account.role,
         display_name: account.name,
         partner_id: account.role === "partner" ? partnerId : null,
+        sponsor_id: account.role === "sponsor" ? sponsorId : null,
       })
       .eq("id", user.id),
   );
+
+  if (account.role === "capital_provider") {
+    await must(`mandate ${account.email}`, db.from("investor_mandates").upsert(
+      { investor_id: user.id, ...IRENE_MANDATE, updated_at: new Date().toISOString() }, { onConflict: "investor_id" },
+    ));
+  }
 
   // Maria is the entrepreneur the demo follows; she needs her own record.
   if (account.role === "entrepreneur") {
@@ -116,4 +138,5 @@ for (const account of ACCOUNTS) {
 }
 
 console.log(`\npartner: ${PARTNER.name} (${partnerId})`);
+console.log(`sponsor: ${SPONSOR.name} (${sponsorId})`);
 console.log(`password for all accounts: ${DEMO_PASSWORD}`);

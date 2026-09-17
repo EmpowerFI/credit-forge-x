@@ -940,6 +940,62 @@ export type Database = {
           },
         ]
       }
+      investor_mandates: {
+        Row: {
+          impact_mandate: boolean
+          investor_id: string
+          is_simulated: boolean
+          kind: Database["public"]["Enums"]["investor_kind"]
+          label: string | null
+          max_ticket_cents: number | null
+          min_ticket_cents: number | null
+          pools: Database["public"]["Enums"]["funding_pool"][]
+          purposes: Database["public"]["Enums"]["credit_purpose"][]
+          risk_bands: Database["public"]["Enums"]["grade"][]
+          sectors: string[]
+          states: string[]
+          updated_at: string
+        }
+        Insert: {
+          impact_mandate?: boolean
+          investor_id: string
+          is_simulated?: boolean
+          kind?: Database["public"]["Enums"]["investor_kind"]
+          label?: string | null
+          max_ticket_cents?: number | null
+          min_ticket_cents?: number | null
+          pools?: Database["public"]["Enums"]["funding_pool"][]
+          purposes?: Database["public"]["Enums"]["credit_purpose"][]
+          risk_bands?: Database["public"]["Enums"]["grade"][]
+          sectors?: string[]
+          states?: string[]
+          updated_at?: string
+        }
+        Update: {
+          impact_mandate?: boolean
+          investor_id?: string
+          is_simulated?: boolean
+          kind?: Database["public"]["Enums"]["investor_kind"]
+          label?: string | null
+          max_ticket_cents?: number | null
+          min_ticket_cents?: number | null
+          pools?: Database["public"]["Enums"]["funding_pool"][]
+          purposes?: Database["public"]["Enums"]["credit_purpose"][]
+          risk_bands?: Database["public"]["Enums"]["grade"][]
+          sectors?: string[]
+          states?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_mandates_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_events: {
         Row: {
           actor: string | null
@@ -1372,6 +1428,7 @@ export type Database = {
           id: string
           partner_id: string | null
           role: Database["public"]["Enums"]["app_role"]
+          sponsor_id: string | null
           wallet_address: string | null
         }
         Insert: {
@@ -1380,6 +1437,7 @@ export type Database = {
           id: string
           partner_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          sponsor_id?: string | null
           wallet_address?: string | null
         }
         Update: {
@@ -1388,6 +1446,7 @@ export type Database = {
           id?: string
           partner_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          sponsor_id?: string | null
           wallet_address?: string | null
         }
         Relationships: [
@@ -1396,6 +1455,90 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      program_communities: {
+        Row: {
+          community_id: string
+          program_id: string
+        }
+        Insert: {
+          community_id: string
+          program_id: string
+        }
+        Update: {
+          community_id?: string
+          program_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_communities_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_communities_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programs: {
+        Row: {
+          created_at: string
+          description: string | null
+          funding_committed_cents: number
+          funding_deployed_cents: number
+          id: string
+          is_simulated: boolean
+          name: string
+          period_end: string
+          period_start: string
+          sponsor_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          funding_committed_cents: number
+          funding_deployed_cents?: number
+          id?: string
+          is_simulated?: boolean
+          name: string
+          period_end: string
+          period_start: string
+          sponsor_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          funding_committed_cents?: number
+          funding_deployed_cents?: number
+          id?: string
+          is_simulated?: boolean
+          name?: string
+          period_end?: string
+          period_start?: string
+          sponsor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programs_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
         ]
@@ -1658,6 +1801,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sponsors: {
+        Row: {
+          created_at: string
+          id: string
+          is_simulated: boolean
+          kind: Database["public"]["Enums"]["sponsor_kind"]
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_simulated?: boolean
+          kind: Database["public"]["Enums"]["sponsor_kind"]
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_simulated?: boolean
+          kind?: Database["public"]["Enums"]["sponsor_kind"]
+          name?: string
+        }
+        Relationships: []
       }
       vault_transfers: {
         Row: {
@@ -2134,6 +2301,7 @@ export type Database = {
         Args: { p_note?: string; p_opportunity_id: string }
         Returns: string
       }
+      impact_intelligence: { Args: { p_program_id: string }; Returns: Json }
       investor_activity: {
         Args: { p_limit?: number }
         Returns: {
@@ -2364,6 +2532,41 @@ export type Database = {
       }
       reset_demo_data: { Args: { p_confirm: string }; Returns: Json }
       revoke_audit_report: { Args: { p_id: string }; Returns: undefined }
+      set_mandate: {
+        Args: {
+          p_impact_mandate?: boolean
+          p_kind: Database["public"]["Enums"]["investor_kind"]
+          p_label?: string
+          p_max_ticket_cents?: number
+          p_min_ticket_cents?: number
+          p_pools?: Database["public"]["Enums"]["funding_pool"][]
+          p_purposes?: Database["public"]["Enums"]["credit_purpose"][]
+          p_risk_bands?: Database["public"]["Enums"]["grade"][]
+          p_sectors?: string[]
+          p_states?: string[]
+        }
+        Returns: {
+          impact_mandate: boolean
+          investor_id: string
+          is_simulated: boolean
+          kind: Database["public"]["Enums"]["investor_kind"]
+          label: string | null
+          max_ticket_cents: number | null
+          min_ticket_cents: number | null
+          pools: Database["public"]["Enums"]["funding_pool"][]
+          purposes: Database["public"]["Enums"]["credit_purpose"][]
+          risk_bands: Database["public"]["Enums"]["grade"][]
+          sectors: string[]
+          states: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "investor_mandates"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_zcash_request_return_address: {
         Args: { p_address: string; p_request_id: string }
         Returns: Json
@@ -2523,6 +2726,7 @@ export type Database = {
         | "capital_provider"
         | "auditor"
         | "admin"
+        | "sponsor"
       capital_use:
         | "as_declared"
         | "partly_as_declared"
@@ -2577,6 +2781,7 @@ export type Database = {
       grade: "LOW" | "MEDIUM" | "HIGH"
       investment_mode: "wallet" | "cloak" | "simulated" | "zcash"
       investment_status: "allocated" | "refund_due" | "refunded"
+      investor_kind: "individual" | "impact_fund"
       loan_status:
         | "DRAFT"
         | "PARTNER_APPROVED"
@@ -2625,6 +2830,7 @@ export type Database = {
         | "done"
         | "failed"
         | "mock"
+      sponsor_kind: "company" | "foundation" | "impact_fund"
       vault_transfer_kind: "release" | "payout"
       vault_transfer_status: "pending" | "confirmed" | "failed"
       zcash_request_status:
@@ -2786,6 +2992,7 @@ export const Constants = {
         "capital_provider",
         "auditor",
         "admin",
+        "sponsor",
       ],
       capital_use: [
         "as_declared",
@@ -2847,6 +3054,7 @@ export const Constants = {
       grade: ["LOW", "MEDIUM", "HIGH"],
       investment_mode: ["wallet", "cloak", "simulated", "zcash"],
       investment_status: ["allocated", "refund_due", "refunded"],
+      investor_kind: ["individual", "impact_fund"],
       loan_status: [
         "DRAFT",
         "PARTNER_APPROVED",
@@ -2901,6 +3109,7 @@ export const Constants = {
         "failed",
         "mock",
       ],
+      sponsor_kind: ["company", "foundation", "impact_fund"],
       vault_transfer_kind: ["release", "payout"],
       vault_transfer_status: ["pending", "confirmed", "failed"],
       zcash_request_status: [
