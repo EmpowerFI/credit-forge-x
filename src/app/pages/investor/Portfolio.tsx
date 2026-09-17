@@ -33,7 +33,7 @@ export default function Portfolio() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "P2P capital console", pt: "Console de capital P2P" })} title={tr({ en: "Portfolio", pt: "Carteira" })}
+      <PageHeader eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })} title={tr({ en: "Portfolio", pt: "Carteira" })}
         description={tr({
           en: "Every position you hold, by funding route: what it funds, where the loan stands, what has come back to you, and the proof of each step. Returns are simulated.",
           pt: "Todas as suas posições, por rota de captação: o que cada uma financia, em que pé está o empréstimo, o que já voltou para você e a prova de cada etapa. Os retornos são simulados.",

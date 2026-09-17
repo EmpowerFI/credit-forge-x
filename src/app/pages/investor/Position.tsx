@@ -152,8 +152,10 @@ export default function Position() {
               pt: `${schedule.filter((s) => s.paid_at).length} de ${loan.term_months} parcelas`,
             })
             : tr({ en: "not disbursed", pt: "não desembolsado" })} />
-        <StatTile label={tr({ en: "Scheduled back", pt: "Retorno previsto" })} value={expected !== null ? amount(expected) : "—"}
-          hint={loan ? tr({ en: `at ${pct(loan.rate_bps / 100, 2)}/month · simulated`, pt: `a ${pct(loan.rate_bps / 100, 2)} ao mês · simulado` }) : undefined} />
+        <StatTile label={tr({ en: "Outstanding", pt: "A receber" })} value={expected !== null ? amount(Math.max(0, expected - repaid)) : "—"}
+          hint={expected !== null && loan
+            ? tr({ en: `of ${amount(expected)} scheduled at ${pct(loan.rate_bps / 100, 2)}/month · simulated`, pt: `de ${amount(expected)} previstos a ${pct(loan.rate_bps / 100, 2)} ao mês · simulado` })
+            : undefined} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

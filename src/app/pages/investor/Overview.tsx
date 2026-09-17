@@ -21,6 +21,7 @@ import { PURPOSE_LABEL } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
 import { useBalances } from "../../wallet/useBalances";
 import CapitalPools from "./CapitalPools";
+import MandatePanel from "./Mandate";
 import FundingBar from "./FundingBar";
 import { useActivity, useMarket, usePortfolio } from "./queries";
 import VerifyButton from "../../components/proof/VerifyButton";
@@ -63,11 +64,13 @@ export default function Overview() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "P2P capital console", pt: "Console de capital P2P" })} title={tr({ en: "Overview", pt: "Visão geral" })}
+      <PageHeader eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })} title={tr({ en: "Overview", pt: "Visão geral" })}
         description={tr({
           en: "Qualified productive-credit demand, and the two pools of P2P capital that fund it: domestic investors in reais, and global investors in USDC on Solana. She receives and repays in reais, by Pix, either way.",
           pt: "A demanda qualificada de crédito produtivo e os dois pools de capital P2P que a financiam: investidores domésticos em reais e investidores globais em USDC na Solana. Nos dois casos, ela recebe e paga em reais, por Pix.",
         })} />
+
+      <MandatePanel />
 
       <CapitalPools />
 

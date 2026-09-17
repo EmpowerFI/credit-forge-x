@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Portfolio } from "../../lib/investor";
 import { capitalOverviewKey, fetchCapitalOverview } from "../../lib/capital";
 import { platform } from "../../lib/platform";
+import { useAuth } from "../../auth/useAuth";
 
 // The investor console's reads. Every one is scoped by the database to the
 // caller: the market as an investor may see it, and the caller's own positions.
@@ -53,4 +54,18 @@ export function useProofs() {
 
 export function useCapitalOverview() {
   return useQuery({ queryKey: capitalOverviewKey, queryFn: fetchCapitalOverview, refetchInterval: 30_000 });
+}
+
+/** The investor's own mandate, if one is set. */
+export function useMandate() {
+  const { profile } = useAuth();
+  return useQuery({
+    queryKey: ["platform", "investor-mandate", profile?.id],
+    enabled: Boolean(profile?.id),
+    queryFn: async () => {
+      const { data, error } = await platform.from("investor_mandates").select("*").eq("investor_id", profile!.id).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, BadgeCheck, MapPin, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,10 +15,11 @@ import { FUNDING_LABEL, type MarketRow, RISK, title } from "../../lib/investor";
 import { money, PURPOSE_LABEL } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
 import FundingBar from "./FundingBar";
-import { useMarket } from "./queries";
+import { useMandate, useMarket } from "./queries";
+import { MANDATE_CHECK_LABEL, mandateChecks, matchesMandate } from "../../lib/mandate";
 
-type Filter = { route: string; risk: string; purpose: string; term: string; amount: string; status: string };
-const ALL: Filter = { route: "all", risk: "all", purpose: "all", term: "all", amount: "all", status: "raising" };
+type Filter = { mandate: string; route: string; risk: string; purpose: string; term: string; amount: string; status: string };
+const ALL: Filter = { mandate: "fit", route: "all", risk: "all", purpose: "all", term: "all", amount: "all", status: "raising" };
 
 const matches = (o: MarketRow, f: Filter) => {
   const reais = o.amount_cents / 100;
@@ -54,11 +55,16 @@ export default function Opportunities() {
   const market = useMarket();
   const [filter, setFilter] = useState<Filter>(ALL);
   const set = (k: keyof Filter) => (v: string) => setFilter((f) => ({ ...f, [k]: v }));
-  const rows = useMemo(() => (market.data ?? []).filter((o) => matches(o, filter)), [market.data, filter]);
+  const mandate = useMandate();
+  const m = mandate.data ?? null;
+  const rows = useMemo(
+    () => (market.data ?? []).filter((o) => matches(o, filter) && (filter.mandate === "all" || matchesMandate(m, o))),
+    [market.data, filter, m],
+  );
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "P2P capital console", pt: "Console de capital P2P" })}
+      <PageHeader eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })}
         title={tr({ en: "Qualified P2P opportunities", pt: "Oportunidades P2P qualificadas" })}
         description={tr({
           en: "Each one exists only after readiness, her own request for capital and EmpowerFI's eligibility check. The Capital Allocation Engine then assigns it a funding route: Domestic P2P in reais, or Global P2P in USDC. Returns are simulated; nothing here is a promise of return.",
@@ -66,6 +72,10 @@ export default function Opportunities() {
         })} />
 
       <div className="flex flex-wrap gap-2">
+        {m && (
+          <FilterSelect label={tr({ en: "Mandate", pt: "Mandato" })} value={filter.mandate} onChange={set("mandate")}
+            options={[["fit", tr({ en: `Fits ${m.label ?? "my mandate"}`, pt: `Cabe em ${m.label ?? "meu mandato"}` })], ["all", tr({ en: "All opportunities", pt: "Todas as oportunidades" })]]} />
+        )}
         <FilterSelect label={tr({ en: "Route", pt: "Rota" })} value={filter.route} onChange={set("route")}
           options={[["all", tr({ en: "Both", pt: "As duas" })], ["domestic", tr({ en: "Domestic / Pix", pt: "Doméstica / Pix" })], ["global", tr({ en: "Global / USDC", pt: "Global / USDC" })]]} />
         <FilterSelect label={tr({ en: "Status", pt: "Status" })} value={filter.status} onChange={set("status")}
@@ -85,7 +95,9 @@ export default function Opportunities() {
       )}
       {market.isError && <LoadError error={market.error} onRetry={() => market.refetch()} />}
       {market.data && rows.length === 0 && (
-        <p className="panel p-8 text-center text-sm text-muted-foreground">{tr({ en: "No opportunity matches these filters.", pt: "Nenhuma oportunidade corresponde a esses filtros." })}</p>
+        <p className="panel p-8 text-center text-sm text-muted-foreground">{filter.mandate === "fit" && m
+          ? tr({ en: "No opportunity raising now fits your mandate and these filters. Show all opportunities to see the rest.", pt: "Nenhuma oportunidade captando agora cabe no seu mandato e nesses filtros. Mostre todas para ver as demais." })
+          : tr({ en: "No opportunity matches these filters.", pt: "Nenhuma oportunidade corresponde a esses filtros." })}</p>
       )}
 
       <ul className="space-y-3">
@@ -93,6 +105,9 @@ export default function Opportunities() {
           const risk = RISK[o.risk_band];
           const pool = poolOf(o.funding_pool);
           const lead = (o.allocation_reason_codes ?? [])[0] as AllocationReason | undefined;
+          const outside = m ? mandateChecks(m, o).filter((c) => !c.passed) : [];
+          const proofs = (o.proofs as { status: string }[] | null) ?? [];
+          const proven = proofs.filter((p) => p.status === "confirmed").length;
           return (
             <li key={o.opportunity_id} className="panel grid gap-5 p-5 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,0.7fr))_auto] lg:items-center">
               <div className="min-w-0 space-y-1.5">
@@ -106,6 +121,17 @@ export default function Opportunities() {
                 <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <PoolPill pool={pool} />
                   {lead && <span>{REASON[lead].label}</span>}
+                </p>
+                <p className="flex flex-wrap items-center gap-2 text-xs">
+                  {m && (outside.length === 0
+                    ? <StatusPill tone="positive" dot={false}><Target size={11} className="mr-1 inline" aria-hidden />{tr({ en: "Fits your mandate", pt: "Cabe no seu mandato" })}</StatusPill>
+                    : <StatusPill tone="neutral" dot={false}>{tr({ en: "Outside mandate: ", pt: "Fora do mandato: " })}{outside.map((c) => MANDATE_CHECK_LABEL[c.id]).join(", ")}</StatusPill>)}
+                  {proofs.length > 0 && (
+                    <span className={`inline-flex items-center gap-1 ${proven === proofs.length ? "text-positive" : "text-muted-foreground"}`}>
+                      <BadgeCheck size={12} aria-hidden />
+                      {tr({ en: `${proven} of ${proofs.length} proofs on Solana`, pt: `${proven} de ${proofs.length} provas na Solana` })}
+                    </span>
+                  )}
                 </p>
                 <FundingBar funded={o.funded_micro_usdc} target={o.funding_target_micro_usdc} investors={o.investors}
                   pool={pool} fxMilli={o.fx_brl_per_usdc_milli} amountCents={o.amount_cents} />
@@ -123,6 +149,9 @@ export default function Opportunities() {
               <div>
                 <p className={`font-heading text-xl font-bold text-${risk.tone}`}>{tr({ en: "Risk", pt: "Risco" })} {risk.grade}</p>
                 <p className="text-xs text-muted-foreground">{tr({ en: "Readiness", pt: "Prontidão" })} {o.readiness_score ?? "—"}</p>
+                {o.affordability_bps !== null && (
+                  <p className="text-xs text-muted-foreground">{tr({ en: `Instalment ${percent(o.affordability_bps)} of result`, pt: `Parcela ${percent(o.affordability_bps)} do resultado` })}</p>
+                )}
               </div>
               <Button asChild className="gap-2 lg:justify-self-end">
                 <Link to={`/app/investor/opportunities/${o.opportunity_id}`}>{tr({ en: "View opportunity", pt: "Ver oportunidade" })} <ArrowRight size={16} /></Link>
