@@ -1,7 +1,7 @@
 import { CheckCircle2, ExternalLink, Loader2, ShieldAlert } from "lucide-react";
-import { Link } from "react-router-dom";
 import { tr } from "../i18n";
 import { explorerTx, type ChainAnchor } from "../lib/platform";
+import VerifyButton from "./proof/VerifyButton";
 
 /** Where one fact stands on its way to the chain, with the proof once it is there. */
 export default function ProofStatus({
@@ -35,9 +35,10 @@ export default function ProofStatus({
             className="inline-flex items-center gap-1 text-xs text-accent hover:text-foreground">
             Explorer <ExternalLink size={12} />
           </a>
-          <Link to={`/app/audit/${anchor.kind}/${anchor.entity_id}`} className="text-xs text-accent hover:text-foreground">
-            {tr({ en: "Audit", pt: "Auditoria" })}
-          </Link>
+          <VerifyButton className="text-xs text-accent hover:text-foreground" proof={{
+            kind: anchor.kind, entity_id: anchor.entity_id, status: anchor.status, signature: anchor.signature,
+            account: anchor.account_address, confirmed_at: anchor.confirmed_at,
+          }} />
         </span>
       ) : anchor.status === "failed" ? (
         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-destructive" title={anchor.last_error ?? ""}>

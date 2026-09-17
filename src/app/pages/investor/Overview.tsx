@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BadgeCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useSelectedWalletAccount } from "@solana/react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ import { useBalances } from "../../wallet/useBalances";
 import CapitalPools from "./CapitalPools";
 import FundingBar from "./FundingBar";
 import { useActivity, useMarket, usePortfolio } from "./queries";
+import VerifyButton from "../../components/proof/VerifyButton";
+import type { AnchorKind } from "../../lib/platform";
 
 const day = (iso: string) => formatDate(iso, { day: "2-digit", month: "short" });
 
@@ -175,9 +177,7 @@ export default function Overview() {
                   <td className="py-3 pr-4 text-xs text-muted-foreground">{day(e.at)}</td>
                   <td className="py-3 text-right">
                     {e.signature ? <ExplorerLink tx={e.signature} label={tr({ en: "Confirmed", pt: "Confirmada" })} /> : e.entity_kind && e.entity_id ? (
-                      <Link to={`/app/audit/${e.entity_kind}/${e.entity_id}`} className="inline-flex items-center gap-1 text-xs text-positive hover:underline">
-                        <BadgeCheck size={13} /> {tr({ en: "Verify", pt: "Verificar" })}
-                      </Link>
+                      <VerifyButton icon className="text-xs text-positive" proof={{ kind: e.entity_kind as AnchorKind, entity_id: e.entity_id, subject: e.code }} />
                     ) : <StatusPill tone="caution">{tr({ en: "Due", pt: "Pendente" })}</StatusPill>}
                   </td>
                 </tr>

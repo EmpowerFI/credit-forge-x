@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-import { BadgeCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime, tr } from "../../i18n";
 import LoadError from "../../components/LoadError";
@@ -11,6 +9,8 @@ import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
 import { PROOF_LABEL } from "../../lib/investor";
 import { useProofs } from "./queries";
+import VerifyButton from "../../components/proof/VerifyButton";
+import type { AnchorKind } from "../../lib/platform";
 
 // Every proof behind your positions, each one a click from being recomputed
 // in your browser against Solana.
@@ -74,9 +74,9 @@ export default function AuditTrail() {
                   <td className="py-2.5 pr-4">{r.signature ? <ExplorerLink tx={r.signature} /> : <span className="text-xs text-muted-foreground">—</span>}</td>
                   <td className="py-2.5 pr-4 text-xs text-muted-foreground">{when(r.confirmed_at)}</td>
                   <td className="py-2.5 text-right">
-                    <Link to={`/app/audit/${r.kind}/${r.entity_id}`} className="inline-flex items-center gap-1 text-xs text-positive hover:underline">
-                      <BadgeCheck size={13} /> {tr({ en: "Verify on Solana", pt: "Verificar na Solana" })}
-                    </Link>
+                    <VerifyButton icon className="text-xs text-positive" proof={{
+                      kind: r.kind as AnchorKind, entity_id: r.entity_id, status: r.status, signature: r.signature, confirmed_at: r.confirmed_at,
+                    }} />
                   </td>
                 </tr>
               ))}

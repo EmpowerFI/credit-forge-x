@@ -36,6 +36,7 @@ export const ROLE_LABEL: Record<Role, string> = localized({
   capital_provider: { en: "Capital provider", pt: "Provedor de capital" },
   auditor: { en: "Auditor", pt: "Auditor" },
   admin: { en: "EmpowerFI admin", pt: "Admin da EmpowerFI" },
+  sponsor: { en: "Programme sponsor", pt: "Patrocinador de programa" },
 });
 
 export const KIND_LABEL: Record<CommunityKind, string> = localized({

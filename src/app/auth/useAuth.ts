@@ -11,6 +11,8 @@ export interface AuthState {
   profileError: unknown;
   retryProfile: () => void;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  /** Signs in as another account in place, dropping what the previous one had loaded. */
+  switchAccount: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 

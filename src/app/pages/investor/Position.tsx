@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Check, Circle, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Circle, ExternalLink, Loader2 } from "lucide-react";
 import LoadError from "../../components/LoadError";
 import { DataTag } from "../../components/product/DataLegend";
 import ExplorerLink from "../../components/product/ExplorerLink";
@@ -22,6 +22,7 @@ import ZecReturns from "./ZecReturns";
 import { type PayoutStatus, reaisAtRamp, REALITY, type Reality } from "../../lib/settlement";
 import { formatDate, formatNumber, tr } from "../../i18n";
 import EvcLabel from "../../components/product/EvcLabel";
+import VerifyButton from "../../components/proof/VerifyButton";
 
 function RouteStep({ n, title, reality, children }: { n: number; title: string; reality: Reality | null; children: React.ReactNode }) {
   return (
@@ -236,9 +237,9 @@ export default function Position() {
                 })}
             </p>
             <div className="flex flex-wrap items-start gap-3">
-              <Link to={`/app/audit/allocation/${inv.id}`} className="inline-flex items-center gap-1 pt-1.5 text-sm text-positive hover:underline">
-                <BadgeCheck size={15} /> {tr({ en: "Open the record", pt: "Abrir o registro" })}
-              </Link>
+              <VerifyButton icon className="pt-1.5 text-sm text-positive" label={tr({ en: "Open the proof", pt: "Abrir a prova" })} proof={{
+                kind: "allocation", entity_id: inv.id, signature: proof?.signature, account: proof?.account, commitment: proof?.commitment,
+              }} />
               {proof?.signature && (
                 <VerifyOnSolana proofs={[{ kind: "allocation", signature: proof.signature, account: proof.account, commitment: proof.commitment }]} />
               )}
@@ -265,7 +266,7 @@ export default function Position() {
                     {e.note && <span className="text-muted-foreground"> · {e.note}</span>}
                     <span className="block text-xs text-muted-foreground">{date(e.at)}</span>
                   </span>
-                  <Link to={`/app/audit/loan_transition/${e.event_id}`} className="text-xs text-positive hover:underline">{tr({ en: "Verify", pt: "Verificar" })}</Link>
+                  <VerifyButton className="text-xs text-positive" proof={{ kind: "loan_transition", entity_id: e.event_id }} />
                 </li>
               ))}
             </ol>
@@ -411,7 +412,7 @@ export default function Position() {
                         ) : null}
                       </td>
                       <td className="py-2.5 text-right">
-                        {s.payment_id && <Link to={`/app/audit/payment/${s.payment_id}`} className="text-xs text-positive hover:underline">{tr({ en: "Verify", pt: "Verificar" })}</Link>}
+                        {s.payment_id && <VerifyButton className="text-xs text-positive" proof={{ kind: "payment", entity_id: s.payment_id }} />}
                       </td>
                     </tr>
                   );

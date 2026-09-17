@@ -3,13 +3,18 @@ import { Navigate, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import LoadError from "../components/LoadError";
 import { ROLE_LABEL, type Role } from "../lib/platform";
+import { Button } from "@/components/ui/button";
+import { areaOf } from "../lib/stories";
 import { useAuth } from "./useAuth";
+import { useOpenArea } from "./useOpenArea";
 import { tr } from "../i18n";
 
 /** Signed-in users only; with `roles`, only those roles. */
 export default function RequireAuth({ roles, children }: { roles?: Role[]; children: ReactNode }) {
   const { session, profile, loading, profileError, retryProfile } = useAuth();
   const location = useLocation();
+  const { open, switching, demo } = useOpenArea();
+  const area = areaOf(location.pathname);
 
   if (loading) {
     return (
@@ -40,6 +45,12 @@ export default function RequireAuth({ roles, children }: { roles?: Role[]; child
             pt: `Esta página é para: ${roles.map((r) => ROLE_LABEL[r]).join(", ")}.`,
           })}
         </p>
+        {demo && area && (
+          <Button className="mt-4" disabled={switching !== null} onClick={() => void open(area, location.pathname + location.search)}>
+            {switching ? <Loader2 size={16} className="animate-spin" /> : null}
+            {tr({ en: `Enter as the demo ${area.persona.name}`, pt: `Entrar como ${area.persona.name}, conta demo` })}
+          </Button>
+        )}
       </div>
     );
   }

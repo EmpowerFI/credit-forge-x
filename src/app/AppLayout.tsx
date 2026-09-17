@@ -1,182 +1,178 @@
 import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
-import {
-  Activity,
-  ArrowLeftRight,
-  ArrowUpRight,
-  Cpu,
-  FileCheck2,
-  History,
-  ScanSearch,
-  KeyRound,
-  ServerCog,
-  Share2,
-  ShieldCheck,
-  Gauge,
-  Layers,
-  Route as RouteIcon,
-  Sprout,
-  BadgeCheck,
-  Coins,
-  LayoutDashboard,
-  PieChart,
-  Briefcase,
-  CalendarCheck,
-  CalendarClock,
-  Gavel,
-  ClipboardCheck,
-  LogOut,
-  Menu,
-  Store,
-  Split,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Activity, ArrowUpRight, ChevronDown, ChevronRight, Gauge, Layers, Loader2, LogOut, Menu, Route as RouteIcon, Sprout, Users, Wrench, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import DataLegend from "./components/product/DataLegend";
+import ProofDrawerProvider from "./components/proof/ProofDrawer";
 import NetworkBadge from "./components/product/NetworkBadge";
 import WalletChip from "./wallet/WalletChip";
 import { useAuth } from "./auth/useAuth";
-import { ROLE_LABEL, type Role } from "./lib/platform";
+import { useOpenArea } from "./auth/useOpenArea";
+import { ROLE_LABEL } from "./lib/platform";
 import { prototypeNotice } from "./lib/capital";
 import { COMMUNITY_TABS } from "./lib/community";
+import { type Area, areaOf, canOpen, type NavItem, OPERATIONS, STORIES, SUBNAV } from "./lib/stories";
 import { useLedCommunity } from "./pages/community/queries";
-import { localized, tr } from "./i18n";
+import { tr } from "./i18n";
 import LanguageSwitch from "./i18n/LanguageSwitch";
 
-// One workspace per persona: the same brand as the corporate site, in the
-// product's dark financial theme. Each role sees its own navigation.
+// Three stories carry the loop, in order: the sponsor's evidence, the engine
+// that qualifies and routes capital, and the investor who funds it. Operations
+// sit behind them. Each area keeps its own views in the sidebar.
 
-interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean }
-
-// Each constant is localized on its own: wrapping one that is already
-// localized would copy its texts in the language of the moment.
-const COMMUNITIES: NavItem = localized({ to: "/app/community", label: { en: "Communities", pt: "Comunidades" }, icon: Users });
-const PIPELINE: NavItem = localized({ to: "/app/partner", label: { en: "P2P desk", pt: "Mesa P2P" }, icon: Briefcase });
-const ENGINE: NavItem = localized({ to: "/app/capital", label: { en: "Credit engine", pt: "Motor de crédito" }, icon: Split });
-
-const AUDIT: NavItem[] = localized([
-  { to: "/app/audit", label: { en: "Attestations", pt: "Atestados" }, icon: FileCheck2, end: true },
-  { to: "/app/audit/events", label: { en: "Events", pt: "Eventos" }, icon: History },
-  { to: "/app/audit/models", label: { en: "Models", pt: "Modelos" }, icon: Cpu },
-  { to: "/app/audit/consents", label: { en: "Consents", pt: "Consentimentos" }, icon: ShieldCheck },
-  { to: "/app/audit/zcash", label: { en: "Zcash treasury", pt: "Tesouraria Zcash" }, icon: KeyRound },
-  { to: "/app/audit/system", label: { en: "System", pt: "Sistema" }, icon: ServerCog },
-  { to: "/app/audit/reports", label: { en: "Reports", pt: "Relatórios" }, icon: Share2 },
-]);
-
-const NAV: Record<Role, NavItem[]> = {
-  entrepreneur: localized([
-    { to: "/app/me", label: { en: "My business", pt: "Meu negócio" }, icon: Store },
-    { to: "/app/check-in", label: { en: "Monthly check-in", pt: "Check-in mensal" }, icon: CalendarCheck },
-    { to: "/app/consent", label: { en: "Consent", pt: "Consentimento" }, icon: ShieldCheck },
-  ]),
-  community_leader: [COMMUNITIES],
-  partner: [
-    ...localized([
-      { to: "/app/partner", label: { en: "Pipeline", pt: "Pipeline" }, icon: RouteIcon, end: true },
-      { to: "/app/partner/reviews", label: { en: "Opportunities", pt: "Oportunidades" }, icon: ClipboardCheck },
-      { to: "/app/partner/decisions", label: { en: "Decisions", pt: "Decisões" }, icon: Gavel },
-      { to: "/app/partner/portfolio", label: { en: "Portfolio", pt: "Carteira" }, icon: PieChart },
-      { to: "/app/partner/servicing", label: { en: "Servicing", pt: "Acompanhamento de pagamentos" }, icon: CalendarClock },
-    ]),
-    ENGINE,
-  ],
-  capital_provider: [
-    ...localized([
-      { to: "/app/investor", label: { en: "Overview", pt: "Visão geral" }, icon: LayoutDashboard, end: true },
-      { to: "/app/investor/opportunities", label: { en: "Opportunities", pt: "Oportunidades" }, icon: Coins },
-    ]),
-    ENGINE,
-    ...localized([
-      { to: "/app/investor/portfolio", label: { en: "Portfolio", pt: "Carteira" }, icon: PieChart },
-      { to: "/app/investor/settlement", label: { en: "Settlement", pt: "Liquidação" }, icon: ArrowLeftRight },
-      { to: "/app/investor/audit", label: { en: "Audit trail", pt: "Trilha de auditoria" }, icon: BadgeCheck },
-    ]),
-  ],
-  auditor: [...AUDIT, COMMUNITIES, PIPELINE, ENGINE],
-  admin: [
-    ...localized([
-      { to: "/app/admin", label: { en: "Review queue", pt: "Fila de revisão" }, icon: ClipboardCheck },
-      { to: "/app/audit", label: { en: "Audit console", pt: "Console de auditoria" }, icon: ScanSearch },
-    ]),
-    COMMUNITIES, PIPELINE, ENGINE,
-  ],
+// Keyed on the route, which does not change with the language.
+const TAB_ICON: Record<string, LucideIcon> = {
+  "": Activity, cohorts: Layers, participants: Users, readiness: Gauge, pipeline: RouteIcon, impact: Sprout,
 };
 
-const WORKSPACE: Record<Role, string> = localized({
-  entrepreneur: { en: "My business", pt: "Meu negócio" },
-  community_leader: { en: "Community Intelligence", pt: "Inteligência Comunitária" },
-  partner: { en: "EmpowerFI P2P desk", pt: "Mesa P2P da EmpowerFI" },
-  capital_provider: { en: "P2P Capital Console", pt: "Console de Capital P2P" },
-  auditor: { en: "Audit", pt: "Auditoria" },
-  admin: { en: "EmpowerFI Admin", pt: "Admin da EmpowerFI" },
-});
-
-function Sidebar({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {
+function SubNav({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {
   return (
-    <div className="flex h-full flex-col justify-between gap-8 p-4">
-      <nav className="space-y-1" aria-label={tr({ en: "Workspace", pt: "Área de trabalho" })}>
-        {items.map(({ to, label, icon: Icon, end }) => (
-          <NavLink key={to} to={to} end={end} onClick={onNavigate}
-            className={({ isActive }) =>
-              `relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                isActive
-                  ? "bg-secondary font-semibold text-foreground before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full before:bg-primary"
-                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
-              }`}>
-            <Icon size={17} aria-hidden /> {label}
-          </NavLink>
-        ))}
-      </nav>
-      <div className="space-y-4 border-t border-border pt-4">
-        <DataLegend compact />
-        <p className="text-xs leading-relaxed text-muted-foreground">{prototypeNotice()}</p>
-        <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-          empowerfi.io <ArrowUpRight size={12} aria-hidden />
-        </Link>
-      </div>
+    <nav className="space-y-1" aria-label={tr({ en: "Views", pt: "Telas" })}>
+      {items.map(({ to, label, icon: Icon, end }) => (
+        <NavLink key={to} to={to} end={end} onClick={onNavigate}
+          className={({ isActive }) =>
+            `relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+              isActive
+                ? "bg-secondary font-semibold text-foreground before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full before:bg-primary"
+                : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+            }`}>
+          <Icon size={17} aria-hidden /> {label}
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
+function Footnote() {
+  return (
+    <div className="space-y-4 border-t border-border pt-4">
+      <DataLegend compact />
+      <p className="text-xs leading-relaxed text-muted-foreground">{prototypeNotice()}</p>
+      <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+        empowerfi.io <ArrowUpRight size={12} aria-hidden />
+      </Link>
     </div>
   );
 }
 
-// Keyed on the route, which does not change with the language.
-const TAB_ICON: Record<string, LucideIcon> = {
-  "": LayoutDashboard, cohorts: Layers, participants: Users, readiness: Gauge, pipeline: RouteIcon, impact: Sprout,
-};
+/** The three stories as numbered steps of one loop, and Operations beside them. */
+function StoryBar({ current, onNavigate, vertical = false }: { current?: Area; onNavigate?: () => void; vertical?: boolean }) {
+  const { profile } = useAuth();
+  const { open, switching, visible } = useOpenArea();
+  const stories = STORIES.filter(visible);
+  const operations = OPERATIONS.filter(visible);
+  const go = (area: Area) => { onNavigate?.(); void open(area); };
+  const switchHint = (area: Area) => canOpen(area, profile?.role) ? undefined
+    : tr({ en: `Opens as the demo ${area.persona.name}`, pt: `Abre como ${area.persona.name}, conta demo` });
+
+  return (
+    <nav aria-label={tr({ en: "Stories", pt: "Histórias" })}
+      className={cn(vertical ? "space-y-1" : "flex items-center gap-1 overflow-x-auto")}>
+      {stories.map((area, i) => {
+        const active = current?.id === area.id;
+        const Icon = area.icon;
+        return (
+          <div key={area.id} className={cn(!vertical && "flex items-center gap-1")}>
+            {!vertical && i > 0 && <ChevronRight size={14} className="shrink-0 text-muted-foreground/60" aria-hidden />}
+            <button type="button" onClick={() => go(area)} title={switchHint(area) ?? area.audience} aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors",
+                vertical && "w-full",
+                active ? "bg-secondary font-semibold text-foreground" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+              )}>
+              <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
+                active ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground")}>{i + 1}</span>
+              {switching === area.id ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <Icon size={15} aria-hidden />}
+              {area.label}
+            </button>
+          </div>
+        );
+      })}
+      {operations.length > 0 && (vertical ? (
+        <div className="space-y-1 pt-3">
+          <p className="px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{tr({ en: "Operations", pt: "Operações" })}</p>
+          {operations.map((area) => {
+            const Icon = area.icon;
+            return (
+              <button key={area.id} type="button" onClick={() => go(area)} title={switchHint(area)}
+                className={cn("flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm",
+                  current?.id === area.id ? "bg-secondary font-semibold text-foreground" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground")}>
+                {switching === area.id ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <Icon size={15} aria-hidden />} {area.label}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className={cn("ml-2 flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-border px-3 py-2 text-sm",
+              current && OPERATIONS.includes(current) ? "bg-secondary font-semibold text-foreground" : "text-muted-foreground hover:text-foreground")}>
+              <Wrench size={15} aria-hidden /> {current && OPERATIONS.includes(current) ? current.label : tr({ en: "Operations", pt: "Operações" })}
+              {switching && operations.some((a) => a.id === switching) ? <Loader2 size={14} className="animate-spin" aria-hidden /> : <ChevronDown size={14} aria-hidden />}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-80">
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+              {tr({ en: "Execution tooling behind the three stories", pt: "As ferramentas de execução por trás das três histórias" })}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {operations.map((area) => {
+              const Icon = area.icon;
+              return (
+                <DropdownMenuItem key={area.id} onSelect={() => go(area)} className="items-start gap-3 py-2">
+                  <Icon size={16} className="mt-0.5 shrink-0" aria-hidden />
+                  <span className="space-y-0.5">
+                    <span className="block text-sm font-medium">{area.label}</span>
+                    <span className="block text-xs text-muted-foreground">{switchHint(area) ?? area.audience}</span>
+                  </span>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ))}
+    </nav>
+  );
+}
 
 export default function AppLayout() {
   const { profile, signOut } = useAuth();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const led = useLedCommunity();
-  // A leader works inside her community: its six views are her navigation.
-  const items = !profile ? []
-    : profile.role === "community_leader" && led.data
+  const current = areaOf(pathname);
+
+  // A leader works inside her community: its six views are her sidebar.
+  const subnav: NavItem[] = !current ? []
+    : current.id === "community" && profile?.role === "community_leader" && led.data
       ? COMMUNITY_TABS.map((t) => ({
           to: `/app/community/${led.data!.id}${t.to ? `/${t.to}` : ""}`, label: t.label, icon: TAB_ICON[t.to] ?? Activity, end: "end" in t,
         }))
-      : NAV[profile.role];
+      : SUBNAV[current.id] ?? [];
   const initials = profile?.display_name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (
+    <ProofDrawerProvider>
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
         <div className="flex h-16 items-center justify-between gap-3 px-4 lg:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            {items.length > 0 && (
+            {profile && (
               <button className="rounded-md p-1.5 text-muted-foreground hover:text-foreground lg:hidden" onClick={() => setOpen(true)}
                 aria-label={tr({ en: "Open navigation", pt: "Abrir navegação" })}>
                 <Menu size={22} />
               </button>
             )}
             <Link to="/app" className="font-heading text-xl font-bold text-gradient">EmpowerFI</Link>
-            {profile && (
+            {current && (
               <>
                 <span className="hidden h-5 w-px bg-border sm:block" aria-hidden />
-                <span className="hidden truncate font-heading text-base font-semibold text-foreground sm:block">
-                  {WORKSPACE[profile.role]}
-                </span>
+                <span className="hidden truncate font-heading text-base font-semibold text-foreground sm:block">{current.label}</span>
               </>
             )}
           </div>
@@ -187,7 +183,7 @@ export default function AppLayout() {
             <NetworkBadge />
             <WalletChip />
             {/* On smaller screens the switch sits in the navigation sheet, where the header has no room. */}
-            <LanguageSwitch className={items.length > 0 ? "hidden lg:inline-flex" : undefined} />
+            <LanguageSwitch className={profile ? "hidden lg:inline-flex" : undefined} />
             {profile && (
               <>
                 <div className="hidden items-center gap-2.5 sm:flex">
@@ -207,19 +203,36 @@ export default function AppLayout() {
             )}
           </div>
         </div>
+        {profile && (
+          <div className="hidden border-t border-border/60 px-4 py-1.5 lg:block lg:px-6">
+            <StoryBar current={current} />
+          </div>
+        )}
       </header>
 
       <div className="flex">
-        {items.length > 0 && (
-          <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-60 shrink-0 border-r border-border bg-sidebar lg:block">
-            <Sidebar items={items} />
+        {subnav.length > 0 && (
+          <aside className="sticky top-[6.75rem] hidden h-[calc(100vh-6.75rem)] w-60 shrink-0 border-r border-border bg-sidebar lg:block">
+            <div className="flex h-full flex-col justify-between gap-8 overflow-y-auto p-4">
+              <SubNav items={subnav} />
+              <Footnote />
+            </div>
           </aside>
         )}
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent side="left" className="w-72 border-border bg-sidebar p-0">
-            <SheetTitle className="px-7 pt-6 font-heading text-lg text-foreground">{profile ? WORKSPACE[profile.role] : "EmpowerFI"}</SheetTitle>
+          <SheetContent side="left" className="w-80 overflow-y-auto border-border bg-sidebar p-0">
+            <SheetTitle className="px-7 pt-6 font-heading text-lg text-foreground">{current?.label ?? "EmpowerFI"}</SheetTitle>
             <LanguageSwitch className="px-7 pt-3" />
-            <Sidebar items={items} onNavigate={() => setOpen(false)} />
+            <div className="space-y-6 p-4">
+              <StoryBar current={current} vertical onNavigate={() => setOpen(false)} />
+              {subnav.length > 0 && (
+                <div className="space-y-1 border-t border-border pt-4">
+                  <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{current?.label}</p>
+                  <SubNav items={subnav} onNavigate={() => setOpen(false)} />
+                </div>
+              )}
+              <Footnote />
+            </div>
           </SheetContent>
         </Sheet>
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
@@ -229,5 +242,6 @@ export default function AppLayout() {
         </main>
       </div>
     </div>
+    </ProofDrawerProvider>
   );
 }

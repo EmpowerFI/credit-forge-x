@@ -46,6 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await platform.auth.signInWithPassword({ email, password });
       return { error: error ? error.message : null };
     },
+    switchAccount: async (email, password) => {
+      const { error } = await platform.auth.signInWithPassword({ email, password });
+      // Nothing the previous account read may show under the next one.
+      if (!error) queryClient.clear();
+      return { error: error ? error.message : null };
+    },
     signOut: async () => {
       await platform.auth.signOut();
       queryClient.clear();

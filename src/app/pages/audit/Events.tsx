@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
@@ -8,6 +8,8 @@ import Panel from "../../components/product/Panel";
 import { formatDateTime, tr } from "../../i18n";
 import { ACTOR_LABEL, EVENT_LABEL } from "../../lib/audit";
 import { useEvents } from "./queries";
+import VerifyButton from "../../components/proof/VerifyButton";
+import type { AnchorKind } from "../../lib/platform";
 
 const ALL = "all";
 // Enum values read as words; codes and versions stay as they are.
@@ -81,7 +83,7 @@ export default function Events() {
                         <span className="flex flex-wrap items-center gap-2">
                           <DataTag kind="proven" />
                           {e.proof.signature && <ExplorerLink tx={e.proof.signature} />}
-                          <Link to={`/app/audit/${e.proof.kind}/${e.proof.entity_id}`} className="text-info hover:underline">{tr({ en: "Verify", pt: "Verificar" })}</Link>
+                          <VerifyButton proof={{ kind: e.proof.kind as AnchorKind, entity_id: e.proof.entity_id, status: e.proof.status, signature: e.proof.signature }} />
                         </span>
                       )}
                   </td>

@@ -58,6 +58,7 @@ const CommunityParticipant = lazy(() => import("./pages/community/Participant"))
 const CommunityReadiness = lazy(() => import("./pages/community/Readiness"));
 const CommunityPipeline = lazy(() => import("./pages/community/Pipeline"));
 const CommunityImpact = lazy(() => import("./pages/community/Impact"));
+const ImpactIntelligence = lazy(() => import("./pages/impact/ImpactIntelligence"));
 const Loading = () => <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Loading", pt: "Carregando" })} />;
 const loading = <Loading />;
 
@@ -153,7 +154,8 @@ function Pages() {
         <Route path="investor/positions/:id" element={investor(<InvestorPosition />)} />
         <Route path="investor/settlement" element={investor(<InvestorSettlement />)} />
         <Route path="investor/audit" element={investor(<InvestorAuditTrail />)} />
-        <Route path="capital" element={<RequireAuth roles={["capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
+        <Route path="impact" element={<RequireAuth roles={["sponsor", "admin", "auditor"]}><Suspense fallback={loading}><ImpactIntelligence /></Suspense></RequireAuth>} />
+        <Route path="capital" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
         <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>

@@ -1,4 +1,4 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +12,7 @@ import { formatDateTime, localized, tr } from "../../i18n";
 import { PROOF_KIND_LABEL } from "../../lib/audit";
 import type { AnchorKind } from "../../lib/platform";
 import { type Attestation, type AttestationState, useAttestations } from "./queries";
+import VerifyButton from "../../components/proof/VerifyButton";
 
 const ALL = "all";
 const SIZE = 25;
@@ -131,7 +132,10 @@ export default function Attestations() {
                     <td className="py-2.5 pr-4 text-xs text-muted-foreground">{when(a.confirmed_at ?? a.created_at)}</td>
                     <td className="py-2.5 text-right">
                       {a.status === "confirmed" && (
-                        <Link to={`/app/audit/${a.kind}/${a.entity_id}`} className="text-xs font-medium text-info hover:underline">{tr({ en: "Verify", pt: "Verificar" })}</Link>
+                        <VerifyButton className="text-xs font-medium" proof={{
+                          kind: a.kind as AnchorKind, entity_id: a.entity_id, status: a.status, signature: a.signature,
+                          commitment: a.commitment, confirmed_at: a.confirmed_at, model_version: a.model_version,
+                        }} />
                       )}
                     </td>
                   </tr>

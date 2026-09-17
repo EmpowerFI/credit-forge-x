@@ -1,8 +1,9 @@
-import { Link } from "react-router-dom";
 import { localized, tr } from "../../i18n";
 import { DataTag } from "./DataLegend";
 import ExplorerLink from "./ExplorerLink";
 import StatusPill from "./StatusPill";
+import VerifyButton from "../proof/VerifyButton";
+import type { AnchorKind } from "../../lib/platform";
 
 /** A proof on its way to the chain; the status itself is the database's value. */
 const PROOF_STATUS: Record<string, string> = localized({
@@ -21,7 +22,7 @@ export default function ProofLine({ proof, empty = tr({ en: "Not queued", pt: "F
     <span className="inline-flex flex-wrap items-center gap-2">
       <DataTag kind="proven" withLabel />
       {proof.signature && <ExplorerLink tx={proof.signature} />}
-      <Link to={`/app/audit/${proof.kind}/${proof.entity_id}`} className="text-info hover:underline">{tr({ en: "Verify", pt: "Verificar" })}</Link>
+      <VerifyButton proof={{ kind: proof.kind as AnchorKind, entity_id: proof.entity_id, status: proof.status, signature: proof.signature }} />
     </span>
   );
 }

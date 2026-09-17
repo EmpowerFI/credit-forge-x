@@ -28,6 +28,8 @@ import ConsentDialog from "./ConsentDialog";
 import OutreachDialog from "./OutreachDialog";
 import { useJourney } from "./queries";
 import { localized, tr } from "../../i18n";
+import VerifyButton from "../../components/proof/VerifyButton";
+import type { AnchorKind } from "../../lib/platform";
 
 const KIND_ICON: Record<JourneyEvent["kind"], LucideIcon> = {
   joined: UserPlus, consent: ShieldCheck, education: BookOpen, checkin: CalendarCheck, readiness: Gauge, intent: HandCoins,
@@ -315,7 +317,7 @@ export default function Participant() {
                       <>
                         <DataTag kind="proven" withLabel />
                         {e.proof.signature && <ExplorerLink tx={e.proof.signature} />}
-                        <Link to={`/app/audit/${e.proof.kind}/${e.proof.entity_id}`} className="text-info hover:underline">{tr({ en: "Verify", pt: "Verificar" })}</Link>
+                        <VerifyButton proof={{ kind: e.proof.kind as AnchorKind, entity_id: e.proof.entity_id, status: e.proof.status, signature: e.proof.signature }} />
                       </>
                     ) : (
                       <span className="text-muted-foreground">{tr({ en: "Proof", pt: "Prova" })} {PROOF_STATUS[e.proof.status] ?? e.proof.status}</span>
