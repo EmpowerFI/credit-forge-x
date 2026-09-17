@@ -11,7 +11,7 @@ export const HomeProblem = ({ lang }: { lang: Lang }) => {
   return (
     <section id="problem" className="section-padding">
       <div className="container mx-auto space-y-12">
-        <SectionHeading eyebrow={t.eyebrow} title={t.title} accent={t.accent} />
+        <SectionHeading eyebrow={t.eyebrow} title={t.title} accent={t.accent} subtitle={t.subtitle} />
         <div className="grid gap-6 md:grid-cols-3">
           {t.cards.map((c, i) => {
             const Icon = PROBLEM_ICONS[i];
@@ -27,6 +27,24 @@ export const HomeProblem = ({ lang }: { lang: Lang }) => {
               </div>
             );
           })}
+        </div>
+        <div className="mx-auto max-w-4xl space-y-3">
+          <h3 className="text-center font-heading text-lg font-bold text-foreground">{t.measure.title}</h3>
+          <div className="overflow-hidden rounded-2xl glow-border">
+            <div className="hidden grid-cols-3 gap-4 bg-secondary/60 px-5 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid">
+              {t.measure.headers.map((h) => <span key={h}>{h}</span>)}
+            </div>
+            <ul className="divide-y divide-border bg-background/70">
+              {t.measure.rows.map(([improve, keep, how]) => (
+                <li key={improve} className="grid gap-1 px-5 py-3 text-sm sm:grid-cols-3 sm:gap-4">
+                  <span className="font-semibold text-foreground"><span className="text-xs font-normal text-muted-foreground sm:hidden">{t.measure.headers[0]}: </span>{improve}</span>
+                  <span className="text-foreground"><span className="text-xs text-muted-foreground sm:hidden">{t.measure.headers[1]}: </span>{keep}</span>
+                  <span className="text-muted-foreground"><span className="text-xs sm:hidden">{t.measure.headers[2]}: </span>{how}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <p className="text-center text-sm text-muted-foreground">{t.measure.note}</p>
         </div>
         <p className="text-center">
           <Link to={PATHS[lang].sources} className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-foreground">

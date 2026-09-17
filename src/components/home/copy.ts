@@ -38,8 +38,10 @@ const en = {
   },
   problem: {
     eyebrow: "The problem",
-    title: "Three sides of",
-    accent: "the same gap.",
+    title: "Can productive credit become cheaper to operate",
+    accent: "without becoming weaker credit?",
+    subtitle:
+      "Small-ticket credit is expensive to operate — not because of the borrower, but because of the operating model. EmpowerFI tests a data-driven operating model designed to compress cost to serve while preserving credit discipline, continuous servicing and auditable outcomes.",
     cards: [
       {
         who: "Sponsors",
@@ -49,8 +51,8 @@ const en = {
       {
         who: "Small businesses",
         title: "Small tickets cost too much to evaluate and serve.",
-        desc: "The fixed cost of origination, guidance, servicing and collection weighs most on small loans: historically, as much as US$14 for every US$100 lent in microcredit.",
-        note: "World Bank WPS 8252 — historical and international, not EmpowerFI's cost.",
+        desc: "The fixed cost of origination, guidance, servicing and collection weighs most on small loans: a median of about US$14 in operating expense for every US$100 of microfinance loans outstanding.",
+        note: "World Bank WPS 8252, 2005–2009 — a historical, international benchmark, not EmpowerFI's cost.",
       },
       {
         who: "Investors",
@@ -58,6 +60,17 @@ const en = {
         desc: "Capital with an impact mandate exists. What is missing are opportunities that arrive qualified, with a longitudinal record of how the business actually runs.",
       },
     ],
+    measure: {
+      title: "What the pilot must show",
+      note: "A hypothesis, not a result: the prototype measures these variables, and the pilot must show cost falling without weaker credit.",
+      headers: ["Must improve", "Must not be sacrificed", "How the platform measures it"],
+      rows: [
+        ["Cost to serve", "Eligibility discipline", "Cost events by stage and opportunity"],
+        ["Time to decision", "Affordability checks", "Engine timestamps and reason codes"],
+        ["Operational scalability", "Continuous follow-up", "Digital check-ins and servicing events"],
+        ["Capital access", "Portfolio quality", "Repayment, delinquency and outcome states"],
+      ],
+    },
     sources: "Every number, with its source",
   },
   how: {
@@ -217,8 +230,10 @@ const pt: typeof en = {
   },
   problem: {
     eyebrow: "O problema",
-    title: "Três lados da",
-    accent: "mesma lacuna.",
+    title: "O crédito produtivo pode ficar mais barato de operar",
+    accent: "sem virar um crédito pior?",
+    subtitle:
+      "Crédito de ticket pequeno custa caro para operar — não por causa de quem toma, mas do modelo de operação. A EmpowerFI testa um modelo operacional baseado em dados, desenhado para reduzir o custo de servir preservando a disciplina de crédito, o acompanhamento contínuo e resultados auditáveis.",
     cards: [
       {
         who: "Patrocinadores",
@@ -228,8 +243,8 @@ const pt: typeof en = {
       {
         who: "Pequenos negócios",
         title: "Tickets pequenos custam caro para avaliar e atender.",
-        desc: "O custo fixo de originação, orientação, acompanhamento e cobrança pesa mais nos empréstimos pequenos: historicamente, até US$ 14 a cada US$ 100 emprestados em microcrédito.",
-        note: "Banco Mundial WPS 8252 — dado histórico e internacional, não é o custo da EmpowerFI.",
+        desc: "O custo fixo de originação, orientação, acompanhamento e cobrança pesa mais nos empréstimos pequenos: uma mediana de cerca de US$ 14 de despesa operacional a cada US$ 100 de carteira em microfinanças.",
+        note: "Banco Mundial WPS 8252, 2005–2009 — referência histórica e internacional, não é o custo da EmpowerFI.",
       },
       {
         who: "Investidores",
@@ -237,6 +252,17 @@ const pt: typeof en = {
         desc: "Existe capital com mandato de impacto. O que falta são oportunidades que cheguem qualificadas, com um histórico longitudinal de como o negócio realmente funciona.",
       },
     ],
+    measure: {
+      title: "O que o piloto precisa mostrar",
+      note: "Uma hipótese, não um resultado: o protótipo mede estas variáveis, e o piloto precisa mostrar o custo caindo sem piorar o crédito.",
+      headers: ["Precisa melhorar", "Não pode ser sacrificado", "Como a plataforma mede"],
+      rows: [
+        ["Custo de servir", "Disciplina de elegibilidade", "Eventos de custo por etapa e oportunidade"],
+        ["Tempo até a decisão", "Checagem de capacidade de pagamento", "Horários dos motores e códigos de motivo"],
+        ["Escalabilidade operacional", "Acompanhamento contínuo", "Check-ins digitais e eventos de acompanhamento"],
+        ["Acesso a capital", "Qualidade da carteira", "Estados de pagamento, atraso e resultado"],
+      ],
+    },
     sources: "Cada número, com a sua fonte",
   },
   how: {
