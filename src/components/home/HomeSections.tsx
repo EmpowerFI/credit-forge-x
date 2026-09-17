@@ -1,6 +1,7 @@
 import { ArrowRight, Building2, Coins, Eye, Fingerprint, Lock, Sprout, Store, TrendingUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import CapitalFlow from "@/components/CapitalFlow";
+import EconomicLoop from "./EconomicLoop";
 import SectionHeading from "@/components/SectionHeading";
 import { HOME, type Lang, PATHS } from "./copy";
 
@@ -62,7 +63,7 @@ export const HomeHowItWorks = ({ lang }: { lang: Lang }) => {
     <section id="how-it-works" className="section-padding gradient-subtle">
       <div className="container mx-auto space-y-12">
         <SectionHeading eyebrow={t.eyebrow} title={t.title} accent={t.accent} subtitle={t.subtitle} />
-        <CapitalFlow steps={t.steps} loopLabel={t.loop} caption={t.caption} />
+        <EconomicLoop lang={lang} />
         <div className="mx-auto max-w-3xl space-y-3">
           <div className="grid gap-3 sm:grid-cols-3">
             {t.judgements.map((j) => (
