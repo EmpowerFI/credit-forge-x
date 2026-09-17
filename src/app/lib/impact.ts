@@ -6,7 +6,7 @@ import type { CapitalTotals } from "./community";
 import type { PoolId } from "./capital";
 
 // Impact Intelligence, as the database computes it (impact_intelligence): one
-// sponsor's programme over the communities that run it. Aggregates only, groups
+// sponsor's program over the communities that run it. Aggregates only, groups
 // under five hidden, outcomes counted only with the impact consent.
 
 export const FUNNEL = ["sponsored", "engaged", "reporting", "prepared", "credit_ready", "requested_capital", "funded", "performing"] as const;
@@ -90,7 +90,7 @@ export async function fetchImpactIntelligence(programId: string): Promise<Impact
 export const FUNNEL_LABEL: Record<FunnelStage, { label: string; hint: string }> = localized({
   sponsored: {
     label: { en: "Sponsored", pt: "Patrocinadas" },
-    hint: { en: "Enrolled in a community that runs the programme.", pt: "Inscritas numa comunidade que conduz o programa." },
+    hint: { en: "Enrolled in a community that runs the program.", pt: "Inscritas numa comunidade que conduz o programa." },
   },
   engaged: {
     label: { en: "Engaged", pt: "Engajadas" },

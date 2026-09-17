@@ -4,11 +4,13 @@ import LaunchAppButton from "@/components/LaunchAppButton";
 import { Link } from "react-router-dom";
 
 const navLinks = [
-  { label: "O problema", href: "/pt#problema" },
-  { label: "Como funciona", href: "/pt#como-funciona" },
-  { label: "Crédito produtivo", href: "/pt#credito-produtivo" },
-  { label: "O app", href: "/pt#app" },
-  { label: "Contato", href: "/pt#contato" },
+  { label: "O problema", href: "/pt#problem" },
+  { label: "Como funciona", href: "/pt#how-it-works" },
+  { label: "Modelo de negócio", href: "/pt#business-model" },
+  { label: "Capital", href: "/pt#capital" },
+  { label: "Auditabilidade", href: "/pt#auditability" },
+  { label: "Para empreendedoras", href: "/pt/empreendedoras" },
+  { label: "Contato", href: "/pt#contact" },
 ];
 
 // Botão de menu em qualquer largura, por escolha da fundadora: o painel fica

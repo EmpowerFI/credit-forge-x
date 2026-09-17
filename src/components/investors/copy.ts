@@ -155,7 +155,7 @@ const en: InvestorCopy = {
       },
       {
         title: "Paid for the service, not by investors",
-        desc: "In the pilot, EmpowerFI is paid by the partner for its service — preparing communities, qualifying requests, following repayment and measuring outcomes. In the P2P model, by the cost to serve built into each loan's rate. In both, by Community Intelligence for programmes and communities.",
+        desc: "In the pilot, EmpowerFI is paid by the partner for its service — preparing communities, qualifying requests, following repayment and measuring outcomes. In the P2P model, by the cost to serve built into each loan's rate. In both, by Impact Intelligence: sponsors of ESG, impact and entrepreneurship programs pay for auditable evidence of what their programs did.",
       },
       {
         title: "Cost to serve is the number that matters",
@@ -292,7 +292,7 @@ const pt: InvestorCopy = {
       },
       {
         title: "Remunerada pelo serviço, não pelo investidor",
-        desc: "No piloto, a EmpowerFI é remunerada pelo parceiro pelo serviço — preparar comunidades, qualificar pedidos, acompanhar pagamentos e medir resultados. No modelo P2P, pelo custo de servir embutido na taxa de cada empréstimo. Nas duas fases, pela Inteligência Comunitária para programas e comunidades.",
+        desc: "No piloto, a EmpowerFI é remunerada pelo parceiro pelo serviço — preparar comunidades, qualificar pedidos, acompanhar pagamentos e medir resultados. No modelo P2P, pelo custo de servir embutido na taxa de cada empréstimo. Nas duas fases, pela Inteligência de Impacto: patrocinadores de programas ESG, de impacto e de empreendedorismo pagam por evidência auditável do que os programas fizeram.",
       },
       {
         title: "O custo de servir é o número que importa",

@@ -18,13 +18,13 @@ import { Evidence, Funnel, Mobilisation, Opportunities, Operators, Outcomes, Seg
 const pct = (part: number, whole: number) => (whole > 0 ? `${formatNumber(Math.round((part / whole) * 100))}%` : "—");
 
 const SPONSOR_KIND: Record<Data["sponsor"]["kind"], () => string> = {
-  company: () => tr({ en: "Company ESG programme", pt: "Programa ESG de empresa" }),
+  company: () => tr({ en: "Company ESG program", pt: "Programa ESG de empresa" }),
   foundation: () => tr({ en: "Foundation", pt: "Fundação" }),
   impact_fund: () => tr({ en: "Impact fund", pt: "Fundo de impacto" }),
 };
 
 /**
- * An auditable report of the programme, from the same live read: the figures,
+ * An auditable report of the program, from the same live read: the figures,
  * the proofs a reader can check on Solana devnet without EmpowerFI, and how
  * they were computed. JSON to keep, or the page printed to PDF.
  */
@@ -37,7 +37,7 @@ function downloadReport(data: Data) {
       privacy: "aggregates only; groups under five hidden; outcomes only where the business consented to impact reporting",
       outcomes: "observed association before and after each loan, not causal impact",
       verification: "each proof's commitment can be checked on Solana devnet against the EmpowerFI audit program",
-      simulated: data.program.is_simulated || data.sponsor.is_simulated ? "demo programme: sponsor, budget and businesses are simulated" : null,
+      simulated: data.program.is_simulated || data.sponsor.is_simulated ? "demo program: sponsor, budget and businesses are simulated" : null,
     },
     ...data,
   };
@@ -89,7 +89,7 @@ function Hero({ data }: { data: Data }) {
   const p = data.program;
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatTile label={tr({ en: "Programme funding deployed", pt: "Recursos do programa aplicados" })} value={money(p.funding_deployed_cents)}
+      <StatTile label={tr({ en: "Program funding deployed", pt: "Recursos do programa aplicados" })} value={money(p.funding_deployed_cents)}
         hint={tr({ en: `${pct(p.funding_deployed_cents, p.funding_committed_cents)} of ${money(p.funding_committed_cents)}`, pt: `${pct(p.funding_deployed_cents, p.funding_committed_cents)} de ${money(p.funding_committed_cents)}` })} />
       <StatTile label={tr({ en: "Entrepreneurs reached", pt: "Empreendedoras alcançadas" })} value={formatNumber(h.reached)}
         hint={tr({ en: `${data.communities.length} communities`, pt: `${data.communities.length} comunidades` })} />
@@ -127,7 +127,7 @@ export default function ImpactIntelligence() {
   if (programs.data && programs.data.length === 0) {
     return (
       <div className="mx-auto max-w-lg py-16 text-center text-muted-foreground">
-        {tr({ en: "No programme to show yet.", pt: "Ainda não há programa para mostrar." })}
+        {tr({ en: "No program to show yet.", pt: "Ainda não há programa para mostrar." })}
       </div>
     );
   }
@@ -141,7 +141,7 @@ export default function ImpactIntelligence() {
         title={data?.program.name ?? <Skeleton className="h-9 w-72" />}
         meta={data?.program.is_simulated ? <StatusPill tone="caution" dot={false}>{tr({ en: "Simulated", pt: "Simulado" })}</StatusPill> : undefined}
         description={tr({
-          en: "From programme funding to business outcomes: measurable, traceable and auditable.",
+          en: "From program funding to business outcomes: measurable, traceable and auditable.",
           pt: "Do investimento no programa aos resultados dos negócios: mensurável, rastreável e auditável.",
         })}
         actions={

@@ -3,6 +3,7 @@ import Seo from "@/components/Seo";
 import FooterEn from "@/components/en/FooterEn";
 import NavbarEn from "@/components/en/NavbarEn";
 import SectionHeading from "@/components/SectionHeading";
+import MarketEvidenceSectionEn from "@/components/en/MarketEvidenceSectionEn";
 import { sourceGroups } from "@/content/sources";
 
 const alternates = [
@@ -21,15 +22,16 @@ const alternates = [
 const Sources = () => (
   <div className="min-h-screen bg-background">
     <Seo
-      title="Sources — EmpowerFI"
+      title="Evidence & sources — EmpowerFI"
       description="Official sources behind every figure EmpowerFI publishes: market data, unit-economics benchmarks, and the Brazilian regulation behind guided productive microcredit and the future regulated P2P architecture."
       path="/sources"
       lang="en"
       alternates={alternates}
     />
     <NavbarEn />
+    <div className="pt-16"><MarketEvidenceSectionEn sourcesLink={false} /></div>
 
-    <main className="section-padding pt-28">
+    <main className="section-padding">
       <div className="container mx-auto space-y-14">
         <SectionHeading
           eyebrow="References"

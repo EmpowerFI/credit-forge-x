@@ -146,10 +146,10 @@ export default function LoginPage() {
       <main className="mx-auto max-w-6xl space-y-10 px-4 py-10 md:py-14">
         <div className="max-w-3xl space-y-3">
           <p className="text-xs font-medium uppercase tracking-widest text-accent">{tr({ en: "EmpowerFI platform", pt: "Plataforma EmpowerFI" })}</p>
-          <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">{tr({ en: "Turn impact programmes into investable businesses", pt: "Transforme programas de impacto em negócios investíveis" })}</h1>
+          <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">{tr({ en: "Turn impact programs into investable businesses", pt: "Transforme programas de impacto em negócios investíveis" })}</h1>
           <p className="text-muted-foreground">
             {tr({
-              en: "A sponsor funds a programme, communities run it, the evidence qualifies credit, capital is routed and repaid, and the outcome returns to the sponsor, with every step proven on Solana and nothing personal on chain.",
+              en: "A sponsor funds a program, communities run it, the evidence qualifies credit, capital is routed and repaid, and the outcome returns to the sponsor, with every step proven on Solana and nothing personal on chain.",
               pt: "Um patrocinador financia um programa, as comunidades o conduzem, a evidência qualifica o crédito, o capital é roteado e pago, e o resultado volta ao patrocinador, com cada etapa provada na Solana e nada pessoal on-chain.",
             })}
           </p>
@@ -220,7 +220,7 @@ export default function LoginPage() {
           <div className="space-y-1">
             <h2 id="operations-heading" className="font-heading text-lg font-bold text-foreground">{tr({ en: "Operations", pt: "Operações" })}</h2>
             <p className="text-sm text-muted-foreground">{tr({
-              en: "The execution tooling behind the stories: communities run the programme, the desk formalises and services, the entrepreneur reports.",
+              en: "The execution tooling behind the stories: communities run the program, the desk formalises and services, the entrepreneur reports.",
               pt: "As ferramentas de execução por trás das histórias: as comunidades conduzem o programa, a mesa formaliza e acompanha, a empreendedora reporta.",
             })}</p>
           </div>

@@ -1,0 +1,373 @@
+// The home page's words, in both languages, side by side (refactor spec §8–9,
+// 16 Sep). One story in seven sections: sponsor evidence → credit intelligence →
+// qualified opportunity → capital → repayment → outcome. Each language is
+// written whole, not translated word by word.
+
+export type Lang = "en" | "pt";
+
+const en = {
+  seo: {
+    title: "EmpowerFI — Turn impact programs into investable businesses",
+    description:
+      "EmpowerFI turns program execution into auditable evidence, credit intelligence and qualified opportunities for productive capital. Built in Brazil, proven on Solana, a working prototype on devnet.",
+  },
+  hero: {
+    badge: "Productive-credit and impact intelligence infrastructure · Brazil first",
+    title: "Turn impact programs into",
+    accent: "investable businesses.",
+    body:
+      "EmpowerFI turns program execution into auditable evidence, credit intelligence and qualified opportunities for productive capital.",
+    explore: "Explore the platform",
+    partner: "Partner with us",
+    status: [
+      "The platform runs today as a working prototype on Solana devnet: the money is simulated, the proofs are real test transactions.",
+      "Our first pilot is being prepared in Brazil, with a regulated financial partner's capital.",
+    ],
+    loop: {
+      title: "One economic loop",
+      steps: [
+        { who: "Sponsor", what: "funds a cohort" },
+        { who: "Community", what: "runs the program" },
+        { who: "EmpowerFI", what: "captures the evidence" },
+        { who: "Credit Engine", what: "qualifies" },
+        { who: "Capital Engine", what: "routes domestic or global capital" },
+        { who: "Business", what: "receives by Pix, repays, grows" },
+      ],
+      back: "Auditable evidence returns to the sponsor and the investor",
+    },
+  },
+  problem: {
+    eyebrow: "The problem",
+    title: "Three sides of",
+    accent: "the same gap.",
+    cards: [
+      {
+        who: "Sponsors",
+        title: "Programs struggle to prove business outcomes.",
+        desc: "Companies, foundations and impact funds pay for entrepreneurship programs and get attendance lists and testimonials back — not evidence that a business got organised, more resilient or ready for capital.",
+      },
+      {
+        who: "Small businesses",
+        title: "Small tickets cost too much to evaluate and serve.",
+        desc: "The fixed cost of origination, guidance, servicing and collection weighs most on small loans: historically, as much as US$14 for every US$100 lent in microcredit.",
+        note: "World Bank WPS 8252 — historical and international, not EmpowerFI's cost.",
+      },
+      {
+        who: "Investors",
+        title: "Qualified opportunities with evidence are scarce.",
+        desc: "Capital with an impact mandate exists. What is missing are opportunities that arrive qualified, with a longitudinal record of how the business actually runs.",
+      },
+    ],
+    sources: "Every number, with its source",
+  },
+  how: {
+    eyebrow: "How it works",
+    title: "One loop,",
+    accent: "from program to proof.",
+    subtitle:
+      "The data a program produces to prove it worked is the same data that qualifies credit. EmpowerFI connects the two.",
+    steps: [
+      { label: "Sponsor", sub: "funds a cohort" },
+      { label: "Program · community", sub: "educates and engages" },
+      { label: "Evidence layer", sub: "participation, business data", emphasis: true },
+      { label: "Credit Engine", sub: "readiness → eligibility", emphasis: true },
+      { label: "Qualified opportunity" },
+      { label: "Domestic or global capital", sub: "reais · USDC" },
+      { label: "Pix", sub: "to the business" },
+      { label: "Repayment + outcome" },
+      { label: "Evidence", sub: "for sponsor and investor", emphasis: true },
+    ],
+    loop: "The evidence returns to the sponsor and the investor, and qualifies the next cycle.",
+    caption:
+      "A sponsor funds a cohort, a community runs the program, EmpowerFI captures the evidence, the Credit Engine qualifies an opportunity, domestic or global capital funds it, the business receives by Pix and repays, and the outcome becomes evidence again.",
+    judgements: [
+      { q: "Is the business ready?", a: "Readiness" },
+      { q: "For this amount?", a: "Eligibility" },
+      { q: "From which pool?", a: "Allocation" },
+    ],
+    judgementsNote: "Three separate judgements: being ready is not being eligible, and being eligible is not being funded.",
+    more: "The full explanation, for investors",
+  },
+  revenue: {
+    eyebrow: "Business model",
+    title: "Two revenue engines.",
+    accent: "One dataset.",
+    engines: [
+      {
+        name: "Impact Intelligence",
+        customer: "Sponsors of ESG, impact and entrepreneurship programs: companies, foundations and impact funds.",
+        pays: "Measurement, auditability, reporting and integration, per program or cohort.",
+        status: "Demonstrated in the devnet prototype.",
+      },
+      {
+        name: "Credit Infrastructure",
+        customer: "In the pilot, the regulated financial partner. In the P2P model, the funded loans.",
+        pays: "In the pilot, service fees paid by the partner for qualification, servicing and outcome measurement. In P2P, origination, transaction and servicing economics under the applicable regulated structure.",
+        status: "EmpowerFI holds no lending or P2P licence today.",
+      },
+    ],
+    labels: { customer: "Who pays", pays: "For what", status: "Where it stands" },
+    keyLine: "The same data that proves impact helps qualify capital.",
+    communities:
+      "Communities are distribution, education and execution partners: they run the programs, and they are not the paying customer.",
+  },
+  capital: {
+    eyebrow: "Capital",
+    title: "Two routes to capital,",
+    accent: "chosen per opportunity.",
+    routes: [
+      {
+        name: "Domestic",
+        steps: [{ label: "Brazilian investors" }, { label: "BRL pool", sub: "in reais" }, { label: "Pix" }, { label: "Business", emphasis: true }],
+        caption: "Domestic capital: Brazilian investors fund a pool in reais that reaches the business by Pix.",
+      },
+      {
+        name: "Global / impact",
+        steps: [{ label: "Global and impact investors" }, { label: "USDC", sub: "on Solana" }, { label: "Regulated off-ramp" }, { label: "Pix" }, { label: "Business", emphasis: true }],
+        caption: "Global capital: international and impact investors fund in USDC on Solana, converted by a regulated off-ramp and paid to the business by Pix.",
+      },
+    ],
+    callout:
+      "Global capital competes on availability, mandate, risk appetite and economics. Blockchain is not cheaper by default: the Capital Allocation Engine picks the route that can fund each opportunity sustainably.",
+    herSide: "Either way, she receives and repays in reais, by Pix.",
+    solana: "Solana is the global capital rail and the proof layer. Her financial life stays off-chain.",
+  },
+  audit: {
+    eyebrow: "Auditability",
+    title: "Evidence without",
+    accent: "financial surveillance.",
+    layers: [
+      { name: "Private business data", desc: "Identity, documents, Pix details, revenue, costs and check-ins. Never leaves the private layer." },
+      { name: "Derived intelligence", desc: "Readiness, risk, affordability, data quality and outcomes, computed by versioned engines." },
+      { name: "Cryptographic proof", desc: "Hash commitments and lifecycle states on Solana. Anyone can verify; no one can read her life." },
+    ],
+  },
+  traction: {
+    eyebrow: "Traction",
+    title: "What is real",
+    accent: "today.",
+    items: [
+      { title: "The app is live in Brazil", desc: "Published on Google Play: where the entrepreneur runs her business and the evidence begins.", link: "View on Google Play" },
+      { title: "The platform runs end to end on devnet", desc: "Impact Intelligence, the Credit & Capital Engine and the Investor Console. Investments, returns, FX and Pix are simulated; blockchain transactions use test assets.", link: "Open App - Devnet" },
+      { title: "Built and refined with Sebrae", desc: "Ginga Prototipa produced the working prototype; PIER refines the business model with specialist consulting." },
+      { title: "An operating company in Brazil", desc: "Incorporated in São Paulo, with its team, product and first market in Brazil." },
+    ],
+    pilot:
+      "Pilot status: in preparation in Brazil, with a regulated financial partner's capital. No pilot results exist yet, and none are shown here.",
+    fit: "Where do you fit?",
+    ctas: [
+      { id: "sponsor", label: "I fund impact programs", desc: "Turn your program into auditable evidence and measurable business progress." },
+      { id: "capital", label: "I deploy capital", desc: "Qualified opportunities matched to your mandate and risk appetite." },
+      { id: "community", label: "I support entrepreneurs", desc: "Run programs with the tools that turn execution into evidence." },
+    ],
+    entrepreneur: "Running a business yourself? The app is free on Google Play.",
+  },
+  contact: {
+    title: "Partner with",
+    accent: "EmpowerFI.",
+    subtitle: "Tell us about your program, your capital or the entrepreneurs you support. We answer every message.",
+    interest: "I am writing as",
+    interests: { sponsor: "A program sponsor", capital: "An investor", community: "A community or program operator", other: "Something else" },
+    name: "Name",
+    namePlaceholder: "Your name",
+    email: "Email",
+    emailPlaceholder: "you@organization.com",
+    message: "Message",
+    messagePlaceholder: "What would you like to build with us?",
+    send: "Send message",
+    sending: "Sending…",
+    orWrite: "or write to",
+    sent: { title: "Message sent!", desc: "We'll reply shortly." },
+    failed: { title: "Could not send", desc: "Please try again in a moment." },
+    invalid: "Check the fields",
+    errors: { name: "Enter your name", email: "Invalid email", short: "Message too short", long: "Max 2000 characters" },
+  },
+};
+
+const pt: typeof en = {
+  seo: {
+    title: "EmpowerFI — Transforme programas de impacto em negócios investíveis",
+    description:
+      "A EmpowerFI transforma a execução de programas em evidência auditável, inteligência de crédito e oportunidades qualificadas para capital produtivo. Feita no Brasil, comprovada na Solana, com protótipo funcionando na devnet.",
+  },
+  hero: {
+    badge: "Infraestrutura de crédito produtivo e inteligência de impacto · Brasil primeiro",
+    title: "Transforme programas de impacto em",
+    accent: "negócios investíveis.",
+    body:
+      "A EmpowerFI transforma a execução de programas em evidência auditável, inteligência de crédito e oportunidades qualificadas para capital produtivo.",
+    explore: "Explore a plataforma",
+    partner: "Seja parceiro",
+    status: [
+      "A plataforma roda hoje como protótipo na devnet da Solana: o dinheiro é simulado, e as provas são transações de teste reais.",
+      "Nosso primeiro piloto está em preparação no Brasil, com capital de uma instituição financeira parceira regulada.",
+    ],
+    loop: {
+      title: "Um ciclo econômico",
+      steps: [
+        { who: "Patrocinador", what: "financia uma turma" },
+        { who: "Comunidade", what: "conduz o programa" },
+        { who: "EmpowerFI", what: "captura a evidência" },
+        { who: "Motor de Crédito", what: "qualifica" },
+        { who: "Motor de Capital", what: "direciona capital doméstico ou global" },
+        { who: "Negócio", what: "recebe por Pix, paga, cresce" },
+      ],
+      back: "A evidência auditável volta ao patrocinador e ao investidor",
+    },
+  },
+  problem: {
+    eyebrow: "O problema",
+    title: "Três lados da",
+    accent: "mesma lacuna.",
+    cards: [
+      {
+        who: "Patrocinadores",
+        title: "Programas têm dificuldade de provar resultados nos negócios.",
+        desc: "Empresas, fundações e fundos de impacto pagam por programas de empreendedorismo e recebem listas de presença e depoimentos — não a evidência de que um negócio se organizou, ficou mais resiliente ou pronto para capital.",
+      },
+      {
+        who: "Pequenos negócios",
+        title: "Tickets pequenos custam caro para avaliar e atender.",
+        desc: "O custo fixo de originação, orientação, acompanhamento e cobrança pesa mais nos empréstimos pequenos: historicamente, até US$ 14 a cada US$ 100 emprestados em microcrédito.",
+        note: "Banco Mundial WPS 8252 — dado histórico e internacional, não é o custo da EmpowerFI.",
+      },
+      {
+        who: "Investidores",
+        title: "Faltam oportunidades qualificadas com evidência.",
+        desc: "Existe capital com mandato de impacto. O que falta são oportunidades que cheguem qualificadas, com um histórico longitudinal de como o negócio realmente funciona.",
+      },
+    ],
+    sources: "Cada número, com a sua fonte",
+  },
+  how: {
+    eyebrow: "Como funciona",
+    title: "Um ciclo,",
+    accent: "do programa à prova.",
+    subtitle:
+      "Os dados que um programa produz para provar que funcionou são os mesmos que qualificam o crédito. A EmpowerFI conecta os dois.",
+    steps: [
+      { label: "Patrocinador", sub: "financia uma turma" },
+      { label: "Programa · comunidade", sub: "forma e engaja" },
+      { label: "Camada de evidência", sub: "participação, dados do negócio", emphasis: true },
+      { label: "Motor de Crédito", sub: "prontidão → elegibilidade", emphasis: true },
+      { label: "Oportunidade qualificada" },
+      { label: "Capital doméstico ou global", sub: "reais · USDC" },
+      { label: "Pix", sub: "para o negócio" },
+      { label: "Pagamento + resultado" },
+      { label: "Evidência", sub: "para patrocinador e investidor", emphasis: true },
+    ],
+    loop: "A evidência volta ao patrocinador e ao investidor, e qualifica o próximo ciclo.",
+    caption:
+      "Um patrocinador financia uma turma, uma comunidade conduz o programa, a EmpowerFI captura a evidência, o Motor de Crédito qualifica uma oportunidade, capital doméstico ou global a financia, o negócio recebe por Pix e paga, e o resultado vira evidência de novo.",
+    judgements: [
+      { q: "O negócio está pronto?", a: "Prontidão" },
+      { q: "Para este valor?", a: "Elegibilidade" },
+      { q: "De qual pool?", a: "Alocação" },
+    ],
+    judgementsNote: "Três avaliações separadas: estar pronta não é ser elegível, e ser elegível não é ser financiada.",
+    more: "A explicação completa, para investidores",
+  },
+  revenue: {
+    eyebrow: "Modelo de negócio",
+    title: "Duas fontes de receita.",
+    accent: "Uma só base de dados.",
+    engines: [
+      {
+        name: "Inteligência de Impacto",
+        customer: "Patrocinadores de programas ESG, de impacto e de empreendedorismo: empresas, fundações e fundos de impacto.",
+        pays: "Medição, auditabilidade, relatórios e integração, por programa ou turma.",
+        status: "Demonstrada no protótipo na devnet.",
+      },
+      {
+        name: "Infraestrutura de Crédito",
+        customer: "No piloto, a instituição financeira parceira regulada. No modelo P2P, os empréstimos financiados.",
+        pays: "No piloto, taxas de serviço pagas pelo parceiro pela qualificação, pelo acompanhamento e pela medição de resultados. No P2P, a economia de originação, transação e acompanhamento, sob a estrutura regulada aplicável.",
+        status: "Hoje a EmpowerFI não tem licença de crédito nem de P2P.",
+      },
+    ],
+    labels: { customer: "Quem paga", pays: "Pelo quê", status: "Em que pé está" },
+    keyLine: "Os mesmos dados que provam o impacto ajudam a qualificar o capital.",
+    communities:
+      "As comunidades são parceiras de distribuição, formação e execução: elas conduzem os programas e não são o cliente pagante.",
+  },
+  capital: {
+    eyebrow: "Capital",
+    title: "Duas rotas de capital,",
+    accent: "escolhidas por oportunidade.",
+    routes: [
+      {
+        name: "Doméstica",
+        steps: [{ label: "Investidores brasileiros" }, { label: "Pool em reais", sub: "BRL" }, { label: "Pix" }, { label: "Negócio", emphasis: true }],
+        caption: "Capital doméstico: investidores brasileiros financiam um pool em reais que chega ao negócio por Pix.",
+      },
+      {
+        name: "Global / impacto",
+        steps: [{ label: "Investidores globais e de impacto" }, { label: "USDC", sub: "na Solana" }, { label: "Off-ramp regulado" }, { label: "Pix" }, { label: "Negócio", emphasis: true }],
+        caption: "Capital global: investidores internacionais e de impacto financiam em USDC na Solana, convertido por um off-ramp regulado e pago ao negócio por Pix.",
+      },
+    ],
+    callout:
+      "O capital global compete por disponibilidade, mandato, apetite a risco e economia. Blockchain não é mais barata por definição: o Motor de Alocação de Capital escolhe a rota que consegue financiar cada oportunidade de forma sustentável.",
+    herSide: "Nas duas rotas, ela recebe e paga em reais, por Pix.",
+    solana: "A Solana é o trilho do capital global e a camada de prova. A vida financeira dela fica fora da blockchain.",
+  },
+  audit: {
+    eyebrow: "Auditabilidade",
+    title: "Evidência sem",
+    accent: "vigilância financeira.",
+    layers: [
+      { name: "Dados privados do negócio", desc: "Identidade, documentos, dados de Pix, faturamento, custos e check-ins. Nunca saem da camada privada." },
+      { name: "Inteligência derivada", desc: "Prontidão, risco, capacidade de pagamento, qualidade dos dados e resultados, calculados por motores versionados." },
+      { name: "Prova criptográfica", desc: "Compromissos em hash e estados do ciclo de vida na Solana. Qualquer pessoa verifica; ninguém lê a vida dela." },
+    ],
+  },
+  traction: {
+    eyebrow: "Tração",
+    title: "O que já é",
+    accent: "real hoje.",
+    items: [
+      { title: "O app está no ar no Brasil", desc: "Publicado no Google Play: onde a empreendedora organiza o negócio e a evidência começa.", link: "Ver no Google Play" },
+      { title: "A plataforma roda de ponta a ponta na devnet", desc: "Inteligência de Impacto, Motor de Crédito e Capital e Console do Investidor. Investimentos, retornos, câmbio e Pix são simulados; as transações em blockchain usam ativos de teste.", link: "Abrir App - Devnet" },
+      { title: "Construída e refinada com o Sebrae", desc: "O Ginga Prototipa gerou o protótipo funcional; o PIER refina o modelo de negócio com consultoria especializada." },
+      { title: "Uma empresa brasileira em operação", desc: "Constituída em São Paulo, com equipe, produto e primeiro mercado no Brasil." },
+    ],
+    pilot:
+      "Situação do piloto: em preparação no Brasil, com capital de uma instituição financeira parceira regulada. Ainda não há resultados de piloto, e nenhum é mostrado aqui.",
+    fit: "Onde você se encaixa?",
+    ctas: [
+      { id: "sponsor", label: "Financio programas de impacto", desc: "Transforme seu programa em evidência auditável e progresso mensurável dos negócios." },
+      { id: "capital", label: "Invisto capital", desc: "Oportunidades qualificadas, compatíveis com seu mandato e apetite a risco." },
+      { id: "community", label: "Apoio empreendedoras", desc: "Conduza programas com ferramentas que transformam execução em evidência." },
+    ],
+    entrepreneur: "Você tem um negócio? Conheça o app da EmpowerFI para empreendedoras.",
+  },
+  contact: {
+    title: "Seja parceiro da",
+    accent: "EmpowerFI.",
+    subtitle: "Conte sobre o seu programa, o seu capital ou as empreendedoras que você apoia. Respondemos todas as mensagens.",
+    interest: "Escrevo como",
+    interests: { sponsor: "Patrocinador de programa", capital: "Investidor", community: "Comunidade ou operador de programa", other: "Outro assunto" },
+    name: "Nome",
+    namePlaceholder: "Seu nome",
+    email: "E-mail",
+    emailPlaceholder: "voce@organizacao.com",
+    message: "Mensagem",
+    messagePlaceholder: "O que você gostaria de construir com a gente?",
+    send: "Enviar mensagem",
+    sending: "Enviando…",
+    orWrite: "ou escreva para",
+    sent: { title: "Mensagem enviada!", desc: "Respondemos em breve." },
+    failed: { title: "Não foi possível enviar", desc: "Tente de novo em instantes." },
+    invalid: "Verifique os campos",
+    errors: { name: "Informe seu nome", email: "E-mail inválido", short: "Mensagem muito curta", long: "Máximo de 2000 caracteres" },
+  },
+};
+
+export const HOME = { en, pt };
+export type HomeCopy = typeof en;
+
+/** Paths that differ by language. */
+export const PATHS = {
+  en: { home: "/", investors: "/investors", sources: "/sources", entrepreneurs: "/pt/empreendedoras", readiness: "/investors#readiness" },
+  pt: { home: "/pt", investors: "/pt/investidores", sources: "/sources", entrepreneurs: "/pt/empreendedoras", readiness: "/pt/investidores#thesis" },
+} as const;

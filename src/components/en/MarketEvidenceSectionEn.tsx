@@ -53,7 +53,7 @@ const readings = [
   },
 ];
 
-const MarketEvidenceSectionEn = () => (
+const MarketEvidenceSectionEn = ({ sourcesLink = true }: { sourcesLink?: boolean }) => (
   <section id="market" className="section-padding">
     <div className="container mx-auto space-y-12">
       <SectionHeading
@@ -89,6 +89,7 @@ const MarketEvidenceSectionEn = () => (
         </div>
       </div>
 
+      {sourcesLink && (
       <p className="text-center">
         <Link
           to="/sources"
@@ -97,6 +98,7 @@ const MarketEvidenceSectionEn = () => (
           Every source, with its year and scope <ArrowRight size={14} />
         </Link>
       </p>
+      )}
     </div>
   </section>
 );

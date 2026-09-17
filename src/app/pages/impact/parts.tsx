@@ -27,7 +27,7 @@ export function Funnel({ data }: { data: ImpactIntelligence }) {
   return (
     <Panel className="lg:col-span-3" title={tr({ en: "From sponsored to performing", pt: "De patrocinadas a em dia" })}
       description={tr({
-        en: "Businesses that reached at least each stage, from the programme's first day to a loan repaying on schedule.",
+        en: "Businesses that reached at least each stage, from the program's first day to a loan repaying on schedule.",
         pt: "Negócios que chegaram pelo menos a cada etapa, do primeiro dia do programa a um empréstimo pago em dia.",
       })}>
       <ol className="space-y-2.5">
@@ -51,14 +51,14 @@ export function Funnel({ data }: { data: ImpactIntelligence }) {
         })}
       </ol>
       <p className="text-xs text-muted-foreground">{tr({
-        en: "Gold: the credit stages, qualified by the Credit Engine. Blue: the programme's execution, run by the communities.",
+        en: "Gold: the credit stages, qualified by the Credit Engine. Blue: the program's execution, run by the communities.",
         pt: "Dourado: as etapas de crédito, qualificadas pelo Motor de Crédito. Azul: a execução do programa, conduzida pelas comunidades.",
       })}</p>
     </Panel>
   );
 }
 
-/** The capital the programme's evidence mobilised: domestic, global, and what is still missing. */
+/** The capital the program's evidence mobilised: domestic, global, and what is still missing. */
 export function Mobilisation({ data }: { data: ImpactIntelligence }) {
   const k = data.capital;
   const total = Math.max(1, k.eligible_cents);
@@ -66,7 +66,7 @@ export function Mobilisation({ data }: { data: ImpactIntelligence }) {
   return (
     <Panel className="lg:col-span-2" title={tr({ en: "Capital mobilised", pt: "Capital mobilizado" })}
       description={tr({
-        en: "Qualified demand from the programme's businesses, and who funded it. Totals only, never an investor.",
+        en: "Qualified demand from the program's businesses, and who funded it. Totals only, never an investor.",
         pt: "A demanda qualificada dos negócios do programa, e quem a financiou. Só totais, nunca um investidor.",
       })}>
       <div className="space-y-1">
@@ -150,7 +150,7 @@ export function Segments({ data }: { data: ImpactIntelligence }) {
     <Panel title={tr({ en: "Segments", pt: "Segmentos" })}
       actions={<StatusPill tone="neutral" dot={false}><EyeOff size={12} className="mr-1 inline" aria-hidden />{tr({ en: "Groups under 5 hidden", pt: "Grupos com menos de 5 ocultos" })}</StatusPill>}
       description={tr({
-        en: "Where the programme's businesses stand. Geography is the community's city, never an address.",
+        en: "Where the program's businesses stand. Geography is the community's city, never an address.",
         pt: "Onde estão os negócios do programa. O território é a cidade da comunidade, nunca um endereço.",
       })}>
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -180,7 +180,7 @@ export function Segments({ data }: { data: ImpactIntelligence }) {
   );
 }
 
-/** Qualified opportunities from the programme, by pseudonymous code, each one a step from the engine. */
+/** Qualified opportunities from the program, by pseudonymous code, each one a step from the engine. */
 export function Opportunities({ data }: { data: ImpactIntelligence }) {
   const [all, setAll] = useState(false);
   if (data.opportunities.length === 0) return null;
@@ -190,7 +190,7 @@ export function Opportunities({ data }: { data: ImpactIntelligence }) {
   return (
     <Panel title={tr({ en: "Drill into an opportunity", pt: "Abra uma oportunidade" })}
       description={tr({
-        en: "Qualified credit opportunities from the programme's businesses, shown by code where she consented to be shown to investors. Open one in the Credit & Capital Engine to see how it qualified and which pool can fund it.",
+        en: "Qualified credit opportunities from the program's businesses, shown by code where she consented to be shown to investors. Open one in the Credit & Capital Engine to see how it qualified and which pool can fund it.",
         pt: "Oportunidades de crédito qualificadas dos negócios do programa, mostradas por código quando ela consentiu em aparecer para investidores. Abra uma no Motor de Crédito e Capital para ver como se qualificou e qual pool pode financiá-la.",
       })}>
       <div className="overflow-x-auto">
@@ -243,7 +243,7 @@ export function Opportunities({ data }: { data: ImpactIntelligence }) {
   );
 }
 
-/** The proofs behind the programme on Solana, by stage of the lifecycle, and the latest to verify. */
+/** The proofs behind the program on Solana, by stage of the lifecycle, and the latest to verify. */
 export function Evidence({ data }: { data: ImpactIntelligence }) {
   const e = data.evidence;
   const byKind = new Map(e.by_kind.map((k) => [k.kind, k]));
@@ -301,12 +301,12 @@ export function Evidence({ data }: { data: ImpactIntelligence }) {
   );
 }
 
-/** The communities that run the programme: execution partners, not customers. */
+/** The communities that run the program: execution partners, not customers. */
 export function Operators({ data }: { data: ImpactIntelligence }) {
   return (
     <Panel title={tr({ en: "Executed by", pt: "Executado por" })}
       description={tr({
-        en: "The communities that run the programme: education, engagement and monthly check-ins. They are EmpowerFI's distribution and execution partners.",
+        en: "The communities that run the program: education, engagement and monthly check-ins. They are EmpowerFI's distribution and execution partners.",
         pt: "As comunidades que conduzem o programa: formação, engajamento e check-ins mensais. Elas são parceiras de distribuição e execução da EmpowerFI.",
       })}>
       <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -331,7 +331,7 @@ export function SimulatedNote({ data }: { data: ImpactIntelligence }) {
     <p className="flex items-start gap-2 rounded-xl border tone-caution px-4 py-3 text-xs">
       <FlaskConical size={14} className="mt-0.5 shrink-0" aria-hidden />
       {tr({
-        en: "Demo programme: the sponsor, its budget and the businesses are simulated. The figures are computed live from the platform's records, and the proofs are real transactions on Solana devnet.",
+        en: "Demo program: the sponsor, its budget and the businesses are simulated. The figures are computed live from the platform's records, and the proofs are real transactions on Solana devnet.",
         pt: "Programa de demonstração: o patrocinador, o orçamento e os negócios são simulados. Os números são calculados ao vivo a partir dos registros da plataforma, e as provas são transações reais na devnet da Solana.",
       })}
     </p>

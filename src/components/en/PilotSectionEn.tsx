@@ -135,7 +135,7 @@ const roadmap: (Phase | Gate)[] = [
       "A performance and lessons-learned report",
       "A Cost to Serve case",
       "A track record across readiness, credit, repayment and outcome",
-      "A Community Intelligence proposal for programmes",
+      "An Impact Intelligence proposal for program sponsors",
       "The case for the P2P phase: two pools of investors, under the applicable regulated structure",
       "P2P investment is not offered during the pilot",
     ],
@@ -391,7 +391,7 @@ const PilotSectionEn = () => (
           Want to take part in the pilot?
         </h3>
         <p className="leading-relaxed text-muted-foreground">
-          We are looking for communities, impact programmes, a regulated
+          We are looking for program sponsors, communities that run programs, a regulated
           financial partner for the pilot, and investors who want to talk about
           the P2P phase — people interested in building a more efficient way to
           prepare and finance small businesses.
@@ -402,9 +402,9 @@ const PilotSectionEn = () => (
             size="lg"
             className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            <a href="#for-partners">
+            <Link to="/#contact">
               Talk to EmpowerFI <ArrowRight size={18} />
-            </a>
+            </Link>
           </Button>
           <Button
             asChild

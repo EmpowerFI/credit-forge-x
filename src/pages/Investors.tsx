@@ -5,6 +5,8 @@ import InvestorHero from "@/components/investors/InvestorHero";
 import InvestorThesis from "@/components/investors/InvestorThesis";
 import InvestorWaitlistSection from "@/components/investors/InvestorWaitlistSection";
 import PilotMetrics from "@/components/investors/PilotMetrics";
+import PilotSectionEn from "@/components/en/PilotSectionEn";
+import ReadinessSectionEn from "@/components/en/ReadinessSectionEn";
 import { organizationSchema } from "@/config/structuredData";
 
 const alternates = [
@@ -40,6 +42,8 @@ const Investors = () => (
     <InvestorHero lang="en" path="/investors" />
     <InvestorWaitlistSection lang="en" />
     <InvestorThesis lang="en" />
+    <ReadinessSectionEn />
+    <PilotSectionEn />
     <PilotMetrics lang="en" />
     <FooterEn />
   </div>

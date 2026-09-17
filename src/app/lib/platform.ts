@@ -36,11 +36,11 @@ export const ROLE_LABEL: Record<Role, string> = localized({
   capital_provider: { en: "Capital provider", pt: "Provedor de capital" },
   auditor: { en: "Auditor", pt: "Auditor" },
   admin: { en: "EmpowerFI admin", pt: "Admin da EmpowerFI" },
-  sponsor: { en: "Programme sponsor", pt: "Patrocinador de programa" },
+  sponsor: { en: "Program sponsor", pt: "Patrocinador de programa" },
 });
 
 export const KIND_LABEL: Record<CommunityKind, string> = localized({
-  education_programme: { en: "Education programme", pt: "Programa de formação" },
+  education_programme: { en: "Education program", pt: "Programa de formação" },
   association: { en: "Association", pt: "Associação" },
   cooperative: { en: "Cooperative", pt: "Cooperativa" },
   collective: { en: "Collective", pt: "Coletivo" },

@@ -4,18 +4,17 @@ import { CONTACT_EMAIL, INSTAGRAM_URL, LINKEDIN_URL, X_URL } from "@/config/link
 
 const siteLinks = [
   { label: "How It Works", to: "/#how-it-works" },
-  { label: "Readiness", to: "/#readiness" },
   { label: "Business Model", to: "/#business-model" },
-  { label: "Capital", to: "/#capital-rail" },
-  { label: "Impact", to: "/#impact" },
-  { label: "For Entrepreneurs", to: "/#for-entrepreneurs" },
-  { label: "For Partners", to: "/#for-partners" },
+  { label: "Capital", to: "/#capital" },
+  { label: "Auditability", to: "/#auditability" },
   { label: "Investors", to: "/investors" },
+  { label: "Pilot Roadmap", to: "/investors#pilot" },
+  { label: "Contact", to: "/#contact" },
 ];
 
 const companyLinks = [
   { label: "About", to: "/about" },
-  { label: "Sources", to: "/sources" },
+  { label: "Evidence & Sources", to: "/sources" },
   { label: "Terms", to: "/terms" },
   { label: "Privacy", to: "/privacy" },
   { label: "Português", to: "/pt" },
@@ -30,8 +29,7 @@ const FooterEn = () => (
             EmpowerFI
           </Link>
           <p className="max-w-sm text-sm text-muted-foreground">
-            P2P productive credit for women micro-entrepreneurs in Brazil, from readiness to
-            capital, with every step proven on Solana.
+            Productive-credit and impact intelligence infrastructure: from program execution to auditable evidence and productive capital.
           </p>
 
           <div className="flex items-center gap-5 pt-1">

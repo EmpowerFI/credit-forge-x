@@ -8,7 +8,7 @@ const Footer = () => (
       <div className="flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-col items-center md:items-start gap-1">
           <span className="text-lg font-heading font-bold text-gradient">EmpowerFI</span>
-          <p className="text-xs text-muted-foreground">Crédito produtivo P2P para mulheres empreendedoras no Brasil, da prontidão ao capital, com cada etapa comprovada na Solana.</p>
+          <p className="text-xs text-muted-foreground">Infraestrutura de crédito produtivo e inteligência de impacto: da execução de programas à evidência auditável e ao capital produtivo.</p>
         </div>
 
         <div className="flex items-center gap-5">
@@ -29,6 +29,7 @@ const Footer = () => (
         </div>
 
         <div className="flex flex-wrap justify-center gap-6">
+          <Link to="/pt/empreendedoras" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Para empreendedoras</Link>
           <Link to="/pt/sobre" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Sobre</Link>
           <Link to="/termos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Termos</Link>
           <Link to="/privacidade" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacidade</Link>

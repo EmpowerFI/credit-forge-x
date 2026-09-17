@@ -7,7 +7,7 @@ import { localized } from "../i18n";
 import type { Role } from "./platform";
 
 // The platform tells one economic loop (refactor spec, 16 Sep): a sponsor funds
-// a programme, communities run it, the evidence qualifies credit, capital is
+// a program, communities run it, the evidence qualifies credit, capital is
 // routed and repaid, and the outcome returns to the sponsor. Three stories carry
 // it: Impact Intelligence, the Credit & Capital Engine and the Investor Console.
 // Everything else is operations: the entrepreneur's own journey, community
@@ -48,7 +48,7 @@ export const STORIES: Area[] = localized([
   {
     id: "impact", to: "/app/impact", prefix: ["/app/impact"], icon: Sprout,
     label: { en: "Impact Intelligence", pt: "Inteligência de Impacto" },
-    audience: { en: "For programme sponsors: what happened to the cohort, and can I verify it?", pt: "Para quem patrocina programas: o que aconteceu com a turma, e como eu verifico?" },
+    audience: { en: "For program sponsors: what happened to the cohort, and can I verify it?", pt: "Para quem patrocina programas: o que aconteceu com a turma, e como eu verifico?" },
     roles: ["sponsor", "admin", "auditor"], persona: SPONSOR,
   },
   {
