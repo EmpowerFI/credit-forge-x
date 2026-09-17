@@ -1,50 +1,16 @@
-import { ArrowRight, ArrowUpRight, BadgeCheck, ClipboardCheck, Gauge, HandCoins, RotateCcw, Split, Store, Users } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { HOME, type Lang } from "./copy";
 
-const LOOP_ICONS = [HandCoins, Users, ClipboardCheck, Gauge, Split, Store];
-
-/** The loop in one card: who does what, with EmpowerFI's three steps in the middle. */
-function LoopCard({ lang }: { lang: Lang }) {
-  const t = HOME[lang].hero.loop;
-  return (
-    <div className="rounded-3xl p-6 glass glow-border shadow-glow">
-      <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-accent">{t.title}</p>
-      <ol className="space-y-2">
-        {t.steps.map((s, i) => {
-          const Icon = LOOP_ICONS[i];
-          const ours = i >= 2 && i <= 4;
-          return (
-            <li key={s.who} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${ours ? "gradient-primary shadow-glow" : "bg-background/60"}`}>
-              <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${ours ? "bg-primary-foreground/15" : "bg-secondary"}`}>
-                <Icon size={16} className={ours ? "text-primary-foreground" : "text-accent"} aria-hidden />
-              </span>
-              <span className={`text-sm ${ours ? "text-primary-foreground" : "text-foreground"}`}>
-                <span className="font-heading font-semibold">{s.who}</span>{" "}
-                <span className={ours ? "text-primary-foreground/85" : "text-muted-foreground"}>{s.what}</span>
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-      <p className="mt-4 flex items-center gap-2 border-t border-border pt-4 text-sm font-medium text-foreground">
-        <RotateCcw size={15} className="shrink-0 text-accent" aria-hidden />
-        <BadgeCheck size={15} className="shrink-0 text-accent" aria-hidden />
-        {t.back}
-      </p>
-    </div>
-  );
-}
-
 const HomeHero = ({ lang }: { lang: Lang }) => {
   const t = HOME[lang].hero;
   return (
-    <section className="relative flex min-h-screen items-center overflow-hidden gradient-subtle">
+    <section className="relative flex min-h-[88vh] items-center overflow-hidden gradient-subtle">
       <div className="absolute -right-24 -top-32 h-[30rem] w-[30rem] rounded-full bg-accent/10 blur-3xl" />
       <div className="absolute -bottom-24 left-1/4 h-[24rem] w-[24rem] rounded-full bg-primary/5 blur-3xl" />
       <div className="container relative mx-auto px-4 pb-16 pt-28">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)] lg:gap-16">
+        <div className="mx-auto max-w-4xl">
           <div className="space-y-7">
             <div className="inline-flex animate-fade-in items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-accent opacity-0 glow-border">
               <span className="h-2 w-2 animate-pulse-glow rounded-full bg-accent" />
@@ -72,9 +38,6 @@ const HomeHero = ({ lang }: { lang: Lang }) => {
                 ))}
               </div>
             </div>
-          </div>
-          <div className="opacity-0 animate-fade-in-delay-3">
-            <LoopCard lang={lang} />
           </div>
         </div>
       </div>

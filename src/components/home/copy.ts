@@ -23,18 +23,6 @@ const en = {
       "The platform runs today as a working prototype on Solana devnet: the money is simulated, the proofs are real test transactions.",
       "Our first pilot is being prepared in Brazil, with a regulated financial partner's capital.",
     ],
-    loop: {
-      title: "One economic loop",
-      steps: [
-        { who: "Sponsor", what: "funds a cohort" },
-        { who: "Community", what: "runs the program" },
-        { who: "EmpowerFI", what: "captures the evidence" },
-        { who: "Credit Engine", what: "qualifies" },
-        { who: "Capital Engine", what: "routes domestic or global capital" },
-        { who: "Business", what: "receives by Pix, repays, grows" },
-      ],
-      back: "Auditable evidence returns to the sponsor and the investor",
-    },
   },
   problem: {
     eyebrow: "The problem",
@@ -79,79 +67,12 @@ const en = {
     accent: "from program to proof.",
     subtitle:
       "The same data that demonstrates impact qualifies credit, mobilizes capital and returns to the sponsor and the investor — with every step recorded on Solana.",
-    kicker: "Greater efficiency. Same credit quality.",
-    layers: "Private × Derived × Proven on Solana",
-    centre: {
-      name: "Solana",
-      role: "Infrastructure for trust and scale",
-      traits: ["Immutable proofs", "Privacy by design", "Real-time transparency", "Programmable capital"],
-    },
-    steps: [
-      {
-        label: "Sponsor",
-        sub: "Funds a cohort",
-        body: "Companies, foundations and impact funds finance entrepreneurship programs.",
-        proof: "",
-        hands: "Resources and mandate",
-      },
-      {
-        label: "Community",
-        sub: "Runs the program",
-        body: "Local organizations deliver education, engagement and ongoing support.",
-        proof: "",
-        hands: "Participation and business data",
-      },
-      {
-        label: "Evidence layer",
-        sub: "Captures and verifies data",
-        body: "Check-ins, business data, education progress and operational signals.",
-        proof: "Data commitments on Solana",
-        hands: "Validated data",
-      },
-      {
-        label: "Credit Engine",
-        sub: "Readiness → eligibility",
-        body: "A deterministic, explainable assessment of whether the business is ready and eligible.",
-        proof: "Decision attestation on Solana",
-        hands: "Qualified opportunity",
-      },
-      {
-        label: "Capital Engine",
-        sub: "Routes to the right pool",
-        body: "Chooses domestic (BRL) or global (USDC) capital on availability, mandate, risk appetite and economics.",
-        proof: "Allocation recorded on Solana",
-        hands: "Capital disbursement",
-      },
-      {
-        label: "Business",
-        sub: "Receives, repays, grows",
-        body: "The entrepreneur receives in reais, by Pix, uses the capital productively and repays over time.",
-        proof: "Disbursement on Solana (simulated on devnet)",
-        hands: "Repayment and productive use",
-      },
-      {
-        label: "Repayment & outcomes",
-        sub: "Evidence of real impact",
-        body: "Repayment, productive use and business growth are tracked and proven on Solana.",
-        proof: "Repayments and outcomes on Solana",
-        hands: "Impact reports and verified outcomes, back to the sponsor",
-      },
-    ],
-    pools: {
-      title: "Where the capital comes from",
-      domestic: { name: "Domestic pool", body: "BRL capital from Brazilian investors." },
-      global: { name: "Global / impact pool", body: "USDC capital from international and impact investors." },
-    },
-    results: {
-      title: "The result",
-      items: [
-        "More efficient capital for real businesses",
-        "Stronger, more resilient communities",
-        "Measurable impact for a more inclusive economy",
-        "Built on Solana for people, not for surveillance",
-      ],
-      note: "Financial lives stay off-chain. Only the evidence goes on-chain.",
-    },
+    figureAlt:
+      "One economic loop: a sponsor funds a cohort, the community runs the program, the evidence layer captures and proves the data, the Credit Engine judges readiness and eligibility, the Capital Engine routes the opportunity to the domestic pool in reais or the global impact pool in USDC, the business receives by Pix and repays, and repayment and outcomes return to the sponsor as verified evidence. Solana sits in the middle — immutable proofs, privacy by design, real-time transparency and programmable capital — and each step names the proof it leaves on chain.",
+    figureCaption: "From program to proof: every step, the proof it leaves, and where the capital comes from.",
+    figureNote: "",
+    figureSwipe: "Drag the figure sideways, or open it full size.",
+    figureOpen: "Open the full figure",
     caption:
       "A sponsor funds a cohort, a community runs the program, the evidence layer captures and proves the data, the Credit Engine qualifies an opportunity, the Capital Engine routes it to the domestic or the global pool, the business receives by Pix and repays, and repayment and outcomes return to the sponsor as evidence. Solana sits in the middle: immutable proofs, privacy by design, real-time transparency and programmable capital.",
     judgements: [
@@ -276,18 +197,6 @@ const pt: typeof en = {
       "A plataforma roda hoje como protótipo na devnet da Solana: o dinheiro é simulado, e as provas são transações de teste reais.",
       "Nosso primeiro piloto está em preparação no Brasil, com capital de uma instituição financeira parceira regulada.",
     ],
-    loop: {
-      title: "Um ciclo econômico",
-      steps: [
-        { who: "Patrocinador", what: "financia uma turma" },
-        { who: "Comunidade", what: "conduz o programa" },
-        { who: "EmpowerFI", what: "captura a evidência" },
-        { who: "Motor de Crédito", what: "qualifica" },
-        { who: "Motor de Capital", what: "direciona capital doméstico ou global" },
-        { who: "Negócio", what: "recebe por Pix, paga, cresce" },
-      ],
-      back: "A evidência auditável volta ao patrocinador e ao investidor",
-    },
   },
   problem: {
     eyebrow: "O problema",
@@ -332,79 +241,12 @@ const pt: typeof en = {
     accent: "do programa à prova.",
     subtitle:
       "Os mesmos dados que demonstram impacto qualificam o crédito, mobilizam capital e voltam ao patrocinador e ao investidor — com cada etapa registrada na Solana.",
-    kicker: "Mais eficiência. A mesma qualidade de crédito.",
-    layers: "Privado × Derivado × Provado na Solana",
-    centre: {
-      name: "Solana",
-      role: "Infraestrutura de confiança e escala",
-      traits: ["Provas imutáveis", "Privacidade por desenho", "Transparência em tempo real", "Capital programável"],
-    },
-    steps: [
-      {
-        label: "Patrocinador",
-        sub: "Financia uma turma",
-        body: "Empresas, fundações e fundos de impacto financiam programas de empreendedorismo.",
-        proof: "",
-        hands: "Recursos e mandato",
-      },
-      {
-        label: "Comunidade",
-        sub: "Conduz o programa",
-        body: "Organizações locais entregam formação, engajamento e apoio contínuo.",
-        proof: "",
-        hands: "Participação e dados do negócio",
-      },
-      {
-        label: "Camada de evidência",
-        sub: "Captura e verifica os dados",
-        body: "Check-ins, dados do negócio, progresso na formação e sinais operacionais.",
-        proof: "Compromissos de dados na Solana",
-        hands: "Dados validados",
-      },
-      {
-        label: "Motor de Crédito",
-        sub: "Prontidão → elegibilidade",
-        body: "Uma avaliação determinística e explicável de se o negócio está pronto e elegível.",
-        proof: "Atestado da decisão na Solana",
-        hands: "Oportunidade qualificada",
-      },
-      {
-        label: "Motor de Capital",
-        sub: "Encaminha ao pool certo",
-        body: "Escolhe capital doméstico (BRL) ou global (USDC) por disponibilidade, mandato, apetite a risco e economia.",
-        proof: "Alocação registrada na Solana",
-        hands: "Desembolso do capital",
-      },
-      {
-        label: "Negócio",
-        sub: "Recebe, paga, cresce",
-        body: "A empreendedora recebe em reais, por Pix, usa o capital produtivamente e paga ao longo do tempo.",
-        proof: "Desembolso na Solana (simulado na devnet)",
-        hands: "Pagamento e uso produtivo",
-      },
-      {
-        label: "Pagamento e resultados",
-        sub: "Evidência de impacto real",
-        body: "Pagamento, uso produtivo e crescimento do negócio são acompanhados e provados na Solana.",
-        proof: "Pagamentos e resultados na Solana",
-        hands: "Relatórios de impacto e resultados verificados, de volta ao patrocinador",
-      },
-    ],
-    pools: {
-      title: "De onde vem o capital",
-      domestic: { name: "Pool doméstico", body: "Capital em reais de investidores brasileiros." },
-      global: { name: "Pool global / de impacto", body: "Capital em USDC de investidores internacionais e de impacto." },
-    },
-    results: {
-      title: "O resultado",
-      items: [
-        "Capital mais eficiente para negócios reais",
-        "Comunidades mais fortes e resilientes",
-        "Impacto mensurável para uma economia mais inclusiva",
-        "Construído na Solana para as pessoas, não para vigiá-las",
-      ],
-      note: "A vida financeira fica fora da blockchain. Só a evidência vai para ela.",
-    },
+    figureAlt:
+      "Um ciclo econômico: um patrocinador financia uma turma, a comunidade conduz o programa, a camada de evidência captura e prova os dados, o Motor de Crédito julga prontidão e elegibilidade, o Motor de Capital encaminha a oportunidade ao pool doméstico em reais ou ao pool global de impacto em USDC, o negócio recebe por Pix e paga, e pagamento e resultados voltam ao patrocinador como evidência verificada. A Solana está no centro — provas imutáveis, privacidade por desenho, transparência em tempo real e capital programável — e cada etapa nomeia a prova que deixa na blockchain.",
+    figureCaption: "Do programa à prova: cada etapa, a prova que ela deixa e de onde vem o capital.",
+    figureNote: "A figura está em inglês.",
+    figureSwipe: "Arraste a figura para o lado, ou abra em tamanho cheio.",
+    figureOpen: "Abrir a figura inteira",
     caption:
       "Um patrocinador financia uma turma, uma comunidade conduz o programa, a camada de evidência captura e prova os dados, o Motor de Crédito qualifica uma oportunidade, o Motor de Capital a encaminha ao pool doméstico ou global, o negócio recebe por Pix e paga, e pagamento e resultados voltam ao patrocinador como evidência. A Solana está no centro: provas imutáveis, privacidade por desenho, transparência em tempo real e capital programável.",
     judgements: [
