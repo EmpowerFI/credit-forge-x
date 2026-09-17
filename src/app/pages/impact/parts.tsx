@@ -25,7 +25,7 @@ const pct = (part: number, whole: number) => (whole > 0 ? `${formatNumber(Math.r
 export function Funnel({ data }: { data: ImpactIntelligence }) {
   const top = Math.max(1, data.funnel[0]?.n ?? 1);
   return (
-    <Panel className="lg:col-span-3" title={tr({ en: "From sponsored to performing", pt: "De patrocinadas a em dia" })}
+    <Panel id="funnel" className="lg:col-span-3" title={tr({ en: "From sponsored to performing", pt: "De patrocinadas a em dia" })}
       description={tr({
         en: "Businesses that reached at least each stage, from the program's first day to a loan repaying on schedule.",
         pt: "Negócios que chegaram pelo menos a cada etapa, do primeiro dia do programa a um empréstimo pago em dia.",
@@ -64,7 +64,7 @@ export function Mobilisation({ data }: { data: ImpactIntelligence }) {
   const total = Math.max(1, k.eligible_cents);
   const seg = (cents: number) => `${(cents / total) * 100}%`;
   return (
-    <Panel className="lg:col-span-2" title={tr({ en: "Capital mobilised", pt: "Capital mobilizado" })}
+    <Panel id="capital" className="lg:col-span-2" title={tr({ en: "Capital mobilised", pt: "Capital mobilizado" })}
       description={tr({
         en: "Qualified demand from the program's businesses, and who funded it. Totals only, never an investor.",
         pt: "A demanda qualificada dos negócios do programa, e quem a financiou. Só totais, nunca um investidor.",
@@ -106,7 +106,7 @@ export function Outcomes({ data }: { data: ImpactIntelligence }) {
   const o = data.outcomes;
   const p = data.portfolio;
   return (
-    <Panel title={tr({ en: "Repayment and productive outcomes", pt: "Pagamentos e resultados produtivos" })}
+    <Panel id="outcomes" title={tr({ en: "Repayment and productive outcomes", pt: "Pagamentos e resultados produtivos" })}
       actions={<StatusPill tone="info" dot={false}>{tr({ en: "Observed association, not causal impact", pt: "Associação observada, não impacto causal" })}</StatusPill>}
       description={tr({
         en: "Sales before and after each loan, from the months the business reports anyway. A business can grow for reasons that have nothing to do with the loan; counted only where she consented to impact reporting.",
@@ -188,7 +188,7 @@ export function Opportunities({ data }: { data: ImpactIntelligence }) {
   const sorted = [...data.opportunities].sort((a, b) => Number(b.in_engine) - Number(a.in_engine) || b.amount_cents - a.amount_cents);
   const shown = all ? sorted : sorted.slice(0, 8);
   return (
-    <Panel title={tr({ en: "Drill into an opportunity", pt: "Abra uma oportunidade" })}
+    <Panel id="opportunities" title={tr({ en: "Drill into an opportunity", pt: "Abra uma oportunidade" })}
       description={tr({
         en: "Qualified credit opportunities from the program's businesses, shown by code where she consented to be shown to investors. Open one in the Credit & Capital Engine to see how it qualified and which pool can fund it.",
         pt: "Oportunidades de crédito qualificadas dos negócios do programa, mostradas por código quando ela consentiu em aparecer para investidores. Abra uma no Motor de Crédito e Capital para ver como se qualificou e qual pool pode financiá-la.",
@@ -250,7 +250,7 @@ export function Evidence({ data }: { data: ImpactIntelligence }) {
   const checkable = e.latest.filter((p) => p.signature && p.commitment)
     .map((p) => ({ kind: p.kind, signature: p.signature!, account: p.account, commitment: p.commitment }));
   return (
-    <Panel title={tr({ en: "Evidence on Solana", pt: "Evidência na Solana" })}
+    <Panel id="evidence" title={tr({ en: "Evidence on Solana", pt: "Evidência na Solana" })}
       actions={checkable.length > 0 ? <VerifyOnSolana proofs={checkable} /> : undefined}
       description={tr({
         en: "Every fact behind these figures is committed to Solana devnet as a hash: participation, attestations, funding, repayments and outcomes. Names, documents, Pix details and reported figures stay off-chain.",

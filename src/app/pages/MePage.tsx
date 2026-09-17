@@ -335,7 +335,7 @@ export default function MePage() {
       })()}
 
       {/* ------------------------------------------------------ readiness */}
-      <section className="space-y-4">
+      <section id="readiness" className="scroll-mt-32 space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Readiness", pt: "Prontidão" })}</h2>
           <Button variant="outline" size="sm" disabled={assess.isPending} onClick={() => assess.mutate()} className="gap-2">
@@ -415,7 +415,7 @@ export default function MePage() {
 
       {/* --------------------------------------------------------- credit */}
       {readiness?.status === "CREDIT_READY" && (
-        <section className="space-y-4 rounded-2xl p-6 glass glow-border">
+        <section id="capital" className="scroll-mt-32 space-y-4 rounded-2xl p-6 glass glow-border">
           <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Capital", pt: "Capital" })}</h2>
           {intent ? (
             <div className="space-y-4">

@@ -112,7 +112,7 @@ export const canOpen = (area: Area, role: Role | undefined) => Boolean(role && a
 export const HOME: Record<Role, AreaId> = {
   sponsor: "impact",
   capital_provider: "investor",
-  partner: "desk",
+  partner: "engine",
   community_leader: "community",
   entrepreneur: "business",
   auditor: "audit",

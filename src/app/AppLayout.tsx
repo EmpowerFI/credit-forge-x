@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Activity, ArrowUpRight, ChevronDown, ChevronRight, Gauge, Layers, Loader2, LogOut, Menu, Route as RouteIcon, Sprout, Users, Wrench, type LucideIcon } from "lucide-react";
+import { Activity, ArrowUpRight, Check, ChevronDown, ChevronRight, Eye, Gauge, Layers, Loader2, LogOut, Menu, Route as RouteIcon, Sprout, Users, Wrench, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -17,6 +17,7 @@ import { ROLE_LABEL } from "./lib/platform";
 import { prototypeNotice } from "./lib/capital";
 import { COMMUNITY_TABS } from "./lib/community";
 import { type Area, areaOf, canOpen, type NavItem, OPERATIONS, STORIES, SUBNAV } from "./lib/stories";
+import { opensView, viewById, viewOf, VIEWS } from "./lib/views";
 import { useLedCommunity } from "./pages/community/queries";
 import { tr } from "./i18n";
 import LanguageSwitch from "./i18n/LanguageSwitch";
@@ -58,6 +59,92 @@ function Footnote() {
       </Link>
     </div>
   );
+}
+
+/**
+ * "View platform as": the five views. Choosing one lands on its page, which
+ * says what the view is for and surfaces its tools. It never widens access: a
+ * demo account switches to the view's demo persona, any other account only
+ * sees the views its role opens.
+ */
+function ViewSelector({ onNavigate, block = false }: { onNavigate?: () => void; block?: boolean }) {
+  const { profile } = useAuth();
+  const { pathname, search } = useLocation();
+  const { openView, switching, viewVisible } = useOpenArea();
+  const onStart = pathname === "/app/start";
+  const current = (onStart ? viewById(new URLSearchParams(search).get("as")) : undefined) ?? viewOf(profile?.role);
+  const views = VIEWS.filter(viewVisible);
+  if (!profile || views.length === 0) return null;
+  const busy = switching?.startsWith("view:");
+
+  return (
+    <div className={cn("flex items-center gap-2", block && "flex-col items-stretch gap-1.5")}>
+      <span className={cn("whitespace-nowrap text-xs text-muted-foreground", block && "px-3 text-[11px] font-semibold uppercase tracking-wide")}>
+        {tr({ en: "View platform as", pt: "Ver plataforma como" })}{block ? "" : ":"}
+      </span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" className={cn("flex items-center justify-between gap-2 whitespace-nowrap rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent/20",
+            block && "w-full py-2")}>
+            <span className="flex items-center gap-2">
+              {busy ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <Eye size={15} className="text-accent" aria-hidden />}
+              {current?.label ?? ROLE_LABEL[profile.role]}
+            </span>
+            <ChevronDown size={14} aria-hidden />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-96">
+          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+            {tr({ en: "Each view shows its value and the tools for that role. Permissions stay with the account.", pt: "Cada visão mostra seu valor e as ferramentas daquele papel. As permissões continuam com a conta." })}
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {views.map((v) => {
+            const Icon = v.icon;
+            const switches = !opensView(v, profile.role);
+            return (
+              <DropdownMenuItem key={v.id} className="items-start gap-3 py-2"
+                onSelect={() => { onNavigate?.(); void openView(v, `/app/start?as=${v.id}`); }}>
+                <Icon size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+                <span className="min-w-0 flex-1 space-y-0.5">
+                  <span className="block text-sm font-medium">{v.label}</span>
+                  <span className="block text-xs text-muted-foreground">{v.value}</span>
+                  {switches && <span className="block text-[11px] text-muted-foreground">{tr({ en: `Opens as the demo ${v.persona.name}`, pt: `Abre como ${v.persona.name}, conta demo` })}</span>}
+                </span>
+                {current?.id === v.id && <Check size={15} className="mt-0.5 shrink-0" aria-hidden />}
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+/** Links with a #section scroll to it once the section has loaded. */
+function useScrollToHash() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    const id = decodeURIComponent(hash.slice(1));
+    // Below the sticky header, and again once late sections have settled the layout.
+    const scroll = (el: HTMLElement) => {
+      const header = document.querySelector("header")?.getBoundingClientRect().height ?? 0;
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - header - 16 });
+    };
+    let tries = 0;
+    let settle = 0;
+    const timer = window.setInterval(() => {
+      const el = document.getElementById(id);
+      if (el || ++tries > 40) {
+        window.clearInterval(timer);
+        if (el) {
+          scroll(el);
+          settle = window.setTimeout(() => scroll(el), 600);
+        }
+      }
+    }, 100);
+    return () => { window.clearInterval(timer); window.clearTimeout(settle); };
+  }, [pathname, hash]);
 }
 
 /** The three stories as numbered steps of one loop, and Operations beside them. */
@@ -146,6 +233,7 @@ export default function AppLayout() {
   const [open, setOpen] = useState(false);
   const led = useLedCommunity();
   const current = areaOf(pathname);
+  useScrollToHash();
 
   // A leader works inside her community: its six views are her sidebar.
   const subnav: NavItem[] = !current ? []
@@ -168,7 +256,7 @@ export default function AppLayout() {
                 <Menu size={22} />
               </button>
             )}
-            <Link to="/app" className="font-heading text-xl font-bold text-gradient">EmpowerFI</Link>
+            <Link to={profile ? "/app/start" : "/app"} className="font-heading text-xl font-bold text-gradient">EmpowerFI</Link>
             {current && (
               <>
                 <span className="hidden h-5 w-px bg-border sm:block" aria-hidden />
@@ -204,8 +292,9 @@ export default function AppLayout() {
           </div>
         </div>
         {profile && (
-          <div className="hidden border-t border-border/60 px-4 py-1.5 lg:block lg:px-6">
+          <div className="hidden items-center justify-between gap-4 border-t border-border/60 px-4 py-1.5 lg:flex lg:px-6">
             <StoryBar current={current} />
+            <ViewSelector />
           </div>
         )}
       </header>
@@ -224,6 +313,7 @@ export default function AppLayout() {
             <SheetTitle className="px-7 pt-6 font-heading text-lg text-foreground">{current?.label ?? "EmpowerFI"}</SheetTitle>
             <LanguageSwitch className="px-7 pt-3" />
             <div className="space-y-6 p-4">
+              <ViewSelector block onNavigate={() => setOpen(false)} />
               <StoryBar current={current} vertical onNavigate={() => setOpen(false)} />
               {subnav.length > 0 && (
                 <div className="space-y-1 border-t border-border pt-4">

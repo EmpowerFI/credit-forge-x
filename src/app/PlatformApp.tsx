@@ -59,6 +59,8 @@ const CommunityReadiness = lazy(() => import("./pages/community/Readiness"));
 const CommunityPipeline = lazy(() => import("./pages/community/Pipeline"));
 const CommunityImpact = lazy(() => import("./pages/community/Impact"));
 const ImpactIntelligence = lazy(() => import("./pages/impact/ImpactIntelligence"));
+const OperatingEconomics = lazy(() => import("./pages/capital/OperatingEconomics"));
+const StartPage = lazy(() => import("./pages/StartPage"));
 const Loading = () => <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Loading", pt: "Carregando" })} />;
 const loading = <Loading />;
 
@@ -113,6 +115,7 @@ function Pages() {
       <Route path="report/:token" element={<Suspense fallback={null}><ReportPage /></Suspense>} />
       <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<HomeRedirect />} />
+        <Route path="start" element={<Suspense fallback={loading}><StartPage /></Suspense>} />
         <Route path="me" element={<MePage />} />
         <Route path="check-in" element={<CheckinPage />} />
         <Route path="consent" element={<Suspense fallback={loading}><ConsentPage /></Suspense>} />
@@ -156,6 +159,7 @@ function Pages() {
         <Route path="investor/audit" element={investor(<InvestorAuditTrail />)} />
         <Route path="impact" element={<RequireAuth roles={["sponsor", "admin", "auditor"]}><Suspense fallback={loading}><ImpactIntelligence /></Suspense></RequireAuth>} />
         <Route path="capital" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
+        <Route path="capital/economics" element={<RequireAuth roles={["sponsor", "partner", "admin", "auditor"]}><Suspense fallback={loading}><OperatingEconomics /></Suspense></RequireAuth>} />
         <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Route>

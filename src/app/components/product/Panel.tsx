@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 
 /** A titled section of a workspace: title, optional context and actions, then content. */
-export default function Panel({ title, description, actions, children, className = "" }: {
+export default function Panel({ id, title, description, actions, children, className = "" }: {
+  id?: string;
   title?: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
@@ -9,7 +10,7 @@ export default function Panel({ title, description, actions, children, className
   className?: string;
 }) {
   return (
-    <section className={`panel min-w-0 space-y-4 p-5 sm:p-6 ${className}`}>
+    <section id={id} className={`panel min-w-0 scroll-mt-32 space-y-4 p-5 sm:p-6 ${className}`}>
       {(title || actions) && (
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">

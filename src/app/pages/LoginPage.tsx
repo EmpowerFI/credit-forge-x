@@ -11,15 +11,15 @@ import NetworkBadge from "../components/product/NetworkBadge";
 import { useAuth } from "../auth/useAuth";
 import { describeError } from "../lib/errors";
 import { platformConfigured } from "../lib/platform";
-import { type Area, DEMO_PASSWORD, OPERATIONS, STORIES } from "../lib/stories";
+import { DEMO_PASSWORD, OPERATIONS, STORIES } from "../lib/stories";
+import { type Tool, toolPath, type View, viewById, VIEWS } from "../lib/views";
+import RoleLanding, { ViewChoice } from "../components/views/RoleLanding";
 import { shortAddress } from "../lib/solana";
 import ConnectWalletDialog from "../wallet/ConnectWallet";
 import { supportsSolanaSignIn, useWalletSignInWithMessage, useWalletSignInWithSolana } from "../wallet/useWalletSignIn";
 import { prototypeNotice } from "../lib/capital";
 import { tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
-
-
 
 /**
  * After a wallet connects: one signature, and the investor is in. It opens as a
@@ -101,13 +101,15 @@ function WalletSignInDialog({ account, onDone, onCancel, signIn }: WalletSignInP
 export default function LoginPage() {
   const { session, signIn } = useAuth();
   const navigate = useNavigate();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const next = params.get("next")?.startsWith("/app") ? params.get("next")! : "/app";
+  const view = viewById(params.get("as")) ?? VIEWS[0];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [busyTool, setBusyTool] = useState<Tool | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [account, setAccount] = useState<UiWalletAccount | null>(null);
 
@@ -121,12 +123,23 @@ export default function LoginPage() {
     if (error) setError(error === "Invalid login credentials" ? tr({ en: "Wrong email or password.", pt: "E-mail ou senha incorretos." }) : error);
     else navigate(to, { replace: true });
   };
-  // A story opens where it starts, unless the visitor was sent here from a page.
-  const target = (area: Area) => (next === "/app" ? area.to : next);
+  // A view opens at the tool chosen, unless the visitor was sent here from a page.
+  const openTool = async (tool: Tool) => {
+    setBusyTool(tool);
+    await enter(view.persona.email, DEMO_PASSWORD, next === "/app" ? toolPath(tool, null) : next);
+    setBusyTool(null);
+  };
+  const choose = (id: View["id"]) => {
+    const p = new URLSearchParams(params);
+    p.set("as", id);
+    setParams(p, { replace: true });
+  };
   const submit = (e: FormEvent) => {
     e.preventDefault();
     void enter(email, password);
   };
+  const investor = view.id === "investor";
+  const oversight = OPERATIONS.filter((a) => a.id === "admin" || a.id === "audit");
 
   return (
     <div className="min-h-screen bg-background">
@@ -143,20 +156,7 @@ export default function LoginPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-10 px-4 py-10 md:py-14">
-        <div className="max-w-3xl space-y-3">
-          <p className="text-xs font-medium uppercase tracking-widest text-accent">{tr({ en: "EmpowerFI platform", pt: "Plataforma EmpowerFI" })}</p>
-          <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">{tr({ en: "Turn impact programs into investable businesses", pt: "Transforme programas de impacto em negócios investíveis" })}</h1>
-          <p className="text-muted-foreground">
-            {tr({
-              en: "A sponsor funds a program, communities run it, the evidence qualifies credit, capital is routed and repaid, and the outcome returns to the sponsor, with every step proven on Solana and nothing personal on chain.",
-              pt: "Um patrocinador financia um programa, as comunidades o conduzem, a evidência qualifica o crédito, o capital é roteado e pago, e o resultado volta ao patrocinador, com cada etapa provada na Solana e nada pessoal on-chain.",
-            })}
-          </p>
-          <p className="rounded-xl border tone-caution px-4 py-3 text-sm">{prototypeNotice()}</p>
-          <DataLegend />
-        </div>
-
+      <main className="mx-auto max-w-6xl space-y-12 px-4 py-10 md:py-14">
         {!platformConfigured && (
           <p className="rounded-lg border tone-alert p-3 text-sm">
             {tr({
@@ -165,7 +165,32 @@ export default function LoginPage() {
             })}
           </p>
         )}
-        {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
+
+        <div className="space-y-8">
+          <ViewChoice value={view.id} onChange={choose} />
+          {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
+          <RoleLanding view={view} onTool={(tool) => void openTool(tool)} busy={busyTool}
+            cta={
+              <>
+                {investor && (
+                  <Button size="lg" onClick={() => setConnecting(true)} className="gap-2">
+                    <Wallet size={16} /> {tr({ en: "Connect wallet", pt: "Conectar carteira" })}
+                  </Button>
+                )}
+                <Button size="lg" variant={investor ? "secondary" : "default"} className="gap-2" disabled={busy !== null}
+                  onClick={() => void openTool(view.home)}>
+                  {investor
+                    ? tr({ en: "Explore without a wallet", pt: "Explorar sem carteira" })
+                    : tr({ en: `Enter as demo · ${view.persona.name}`, pt: `Entrar como demo · ${view.persona.name}` })}
+                  {busyTool === view.home ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
+                </Button>
+              </>
+            } />
+          <div className="max-w-3xl space-y-3">
+            <p className="rounded-xl border tone-caution px-4 py-3 text-sm">{prototypeNotice()}</p>
+            <DataLegend />
+          </div>
+        </div>
 
         {account && (
           <WalletSignIn account={account} onCancel={() => setAccount(null)}
@@ -176,72 +201,41 @@ export default function LoginPage() {
           <div className="space-y-1">
             <h2 id="stories-heading" className="font-heading text-xl font-bold text-foreground">{tr({ en: "One loop, three stories", pt: "Um ciclo, três histórias" })}</h2>
             <p className="text-sm text-muted-foreground">{tr({
-              en: "Sponsor evidence → credit intelligence → qualified opportunity → capital → repayment → outcome. Start with the first and move along the loop: the bar at the top switches demo accounts in one click.",
-              pt: "Evidência do patrocinador → inteligência de crédito → oportunidade qualificada → capital → pagamento → resultado. Comece pela primeira e siga o ciclo: a barra no topo troca de conta demo em um clique.",
+              en: "The demo follows one opportunity: sponsor evidence → credit intelligence → qualified opportunity → capital → repayment → outcome. The bar at the top of the platform switches demo accounts in one click.",
+              pt: "A demonstração segue uma oportunidade: evidência do patrocinador → inteligência de crédito → oportunidade qualificada → capital → pagamento → resultado. A barra no topo da plataforma troca de conta demo em um clique.",
             })}</p>
           </div>
-          <ol className="grid gap-4 lg:grid-cols-3">
+          <ol className="grid gap-3 md:grid-cols-3">
             {STORIES.map((area, i) => {
-              const Icon = area.icon;
-              const investor = area.id === "investor";
-              return (
-                <li key={area.id} className="panel flex flex-col justify-between gap-5 p-5">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground">{i + 1}</span>
-                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-accent"><Icon size={20} aria-hidden /></span>
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="font-heading text-lg font-bold text-foreground">{area.label}</h3>
-                      <p className="text-sm text-muted-foreground">{area.audience}</p>
-                      <p className="text-xs text-muted-foreground">{tr({ en: `Demo account: ${area.persona.name}`, pt: `Conta demo: ${area.persona.name}` })}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {investor && (
-                      <Button onClick={() => setConnecting(true)} className="w-full justify-between">
-                        <span>{tr({ en: "Connect wallet", pt: "Conectar carteira" })}</span> <Wallet size={16} />
-                      </Button>
-                    )}
-                    <Button onClick={() => enter(area.persona.email, DEMO_PASSWORD, target(area))} disabled={busy !== null}
-                      variant={investor ? "secondary" : "default"} className="w-full justify-between"
-                      aria-label={tr({ en: `Enter ${area.label}`, pt: `Entrar em ${area.label}` })}>
-                      <span>{investor ? tr({ en: "Explore without a wallet", pt: "Explorar sem carteira" }) : tr({ en: "Enter as demo", pt: "Entrar como demo" })}</span>
-                      {busy === area.persona.email + target(area) ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
-                    </Button>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-
-        <section className="space-y-3" aria-labelledby="operations-heading">
-          <div className="space-y-1">
-            <h2 id="operations-heading" className="font-heading text-lg font-bold text-foreground">{tr({ en: "Operations", pt: "Operações" })}</h2>
-            <p className="text-sm text-muted-foreground">{tr({
-              en: "The execution tooling behind the stories: communities run the program, the desk formalises and services, the entrepreneur reports.",
-              pt: "As ferramentas de execução por trás das histórias: as comunidades conduzem o programa, a mesa formaliza e acompanha, a empreendedora reporta.",
-            })}</p>
-          </div>
-          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {OPERATIONS.map((area) => {
               const Icon = area.icon;
               return (
                 <li key={area.id}>
-                  <button type="button" onClick={() => enter(area.persona.email, DEMO_PASSWORD, next === "/app" ? "/app" : next)} disabled={busy !== null}
-                    className="panel flex h-full w-full flex-col items-start gap-2 p-4 text-left transition-colors hover:border-accent/50 disabled:opacity-60">
-                    <span className="flex w-full items-center justify-between gap-2 text-sm font-semibold text-foreground">
-                      <span className="flex items-center gap-2"><Icon size={16} className="text-accent" aria-hidden /> {area.label}</span>
-                      {busy?.startsWith(area.persona.email) ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} className="text-muted-foreground" />}
+                  <button type="button" onClick={() => enter(area.persona.email, DEMO_PASSWORD, next === "/app" ? area.to : next)} disabled={busy !== null}
+                    aria-label={tr({ en: `Enter ${area.label}`, pt: `Entrar em ${area.label}` })}
+                    className="panel flex h-full w-full items-start gap-3 p-4 text-left transition-colors hover:border-accent/50 disabled:opacity-60">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground">{i + 1}</span>
+                    <span className="min-w-0 flex-1 space-y-0.5">
+                      <span className="flex items-center justify-between gap-2 text-sm font-semibold text-foreground">
+                        <span className="flex items-center gap-2"><Icon size={15} className="text-accent" aria-hidden /> {area.label}</span>
+                        {busy?.startsWith(area.persona.email) ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} className="text-muted-foreground" />}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">{area.audience}</span>
+                      <span className="block text-[11px] text-muted-foreground">{tr({ en: `Demo account: ${area.persona.name}`, pt: `Conta demo: ${area.persona.name}` })}</span>
                     </span>
-                    <span className="text-xs text-muted-foreground">{area.audience}</span>
-                    <span className="text-[11px] text-muted-foreground">{area.persona.name}</span>
                   </button>
                 </li>
               );
             })}
-          </ul>
+          </ol>
+          <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+            <span>{tr({ en: "Oversight:", pt: "Supervisão:" })}</span>
+            {oversight.map((area) => (
+              <button key={area.id} type="button" onClick={() => enter(area.persona.email, DEMO_PASSWORD, next === "/app" ? area.to : next)} disabled={busy !== null}
+                title={area.audience} className="inline-flex items-center gap-1.5 font-medium text-foreground underline-offset-4 hover:underline disabled:opacity-60">
+                <area.icon size={14} className="text-accent" aria-hidden /> {area.label}
+              </button>
+            ))}
+          </p>
         </section>
 
         <ConnectWalletDialog open={connecting} onOpenChange={setConnecting}

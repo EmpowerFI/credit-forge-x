@@ -2,36 +2,47 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { tr } from "../i18n";
+import type { Role } from "../lib/platform";
 import { type Area, canOpen, DEMO_PASSWORD, isDemoAccount } from "../lib/stories";
+import { opensView, type View } from "../lib/views";
 import { useAuth } from "./useAuth";
 
 /**
- * Opens an area. If the account's role cannot, a demo account enters as that
- * area's demo persona first, in one click, keeping the language; any other
- * account is only ever shown the areas its role opens.
+ * Opens an area or a view. If the account's role cannot, a demo account enters
+ * as its demo persona first, in one click, keeping the language; any other
+ * account is only ever shown what its role opens.
  */
 export function useOpenArea() {
   const { profile, session, switchAccount } = useAuth();
   const navigate = useNavigate();
-  const [switching, setSwitching] = useState<Area["id"] | null>(null);
+  const [switching, setSwitching] = useState<string | null>(null);
   const demo = isDemoAccount(session?.user.email);
 
-  const open = async (area: Area, to: string = area.to) => {
-    if (canOpen(area, profile?.role)) {
+  const enterAs = async (key: string, persona: { email: string; name: string }, allowed: boolean, to: string) => {
+    if (allowed) {
       navigate(to);
       return;
     }
     if (!demo) return;
-    setSwitching(area.id);
-    const { error } = await switchAccount(area.persona.email, DEMO_PASSWORD);
+    setSwitching(key);
+    const { error } = await switchAccount(persona.email, DEMO_PASSWORD);
     setSwitching(null);
     if (error) {
-      toast.error(tr({ en: `Could not enter as ${area.persona.name}: ${error}`, pt: `Não foi possível entrar como ${area.persona.name}: ${error}` }));
+      toast.error(tr({ en: `Could not enter as ${persona.name}: ${error}`, pt: `Não foi possível entrar como ${persona.name}: ${error}` }));
       return;
     }
-    // A leader's community opens from her home, which knows which one she leads.
-    navigate(area.id === "community" ? "/app" : to);
+    navigate(to);
   };
 
-  return { open, switching, demo, visible: (area: Area) => demo || canOpen(area, profile?.role) };
+  // A leader's community opens from her home, which knows which one she leads.
+  const open = (area: Area, to: string = area.to) =>
+    enterAs(area.id, area.persona, canOpen(area, profile?.role), !canOpen(area, profile?.role) && area.id === "community" ? "/app" : to);
+
+  const openView = (view: View, to: string) => enterAs(`view:${view.id}`, view.persona, opensView(view, profile?.role as Role | undefined), to);
+
+  return {
+    open, openView, switching, demo,
+    visible: (area: Area) => demo || canOpen(area, profile?.role),
+    viewVisible: (view: View) => demo || opensView(view, profile?.role),
+  };
 }
