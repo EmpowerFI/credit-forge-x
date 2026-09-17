@@ -177,6 +177,20 @@ Every cron-driven function is dispatched by `pg_cron` through `pg_net` only when
 
 Small tickets fail on operating cost, so cost is counted from a community's first day rather than from disbursement. Triggers write one `cost_events` row per fact at a pilot rate card (`cost_rates`: staff minutes at R$30/h plus fixed costs, and who bears them). Because triggers write the rows, no code path can forget to count. `cts_summary()` gives cost per participant, per ready participant, per opportunity, per loan and per R$100 lent. The capital view reports per loan and per R$1,000.
 
+## Stories, sponsors and mandates
+
+The app tells one loop in three stories (refactor specification, 16 Sep), numbered in the bar at the top of every page: **Impact Intelligence** (`/app/impact`), the **Credit & Capital Engine** (`/app/capital`) and the **Investor Console** (`/app/investor`). Operations sit beside them: the entrepreneur's journey, community operations, the P2P desk, admin and the audit console. `src/app/lib/stories.ts` maps each area to its routes, roles and demo persona; a demo account opens an area its role cannot by signing in as that persona, and drops everything the previous account had loaded.
+
+- **Sponsors and programs.** `sponsors`, `programs` (period, funding committed and deployed) and `program_communities`; a `sponsor` role acts for one sponsor. `impact_intelligence(program)` reads the program over its communities from the same per-member state the community workspace reads (`private.community_state`):
+  - hero figures and a cumulative funnel from sponsored to performing;
+  - segments by readiness, data quality, credit intent, purpose, sector and geography, each group under five hidden;
+  - capital mobilised by pool, repayment, and outcomes counted only with the impact consent;
+  - the proofs behind the program by kind, and qualified opportunities by Q- code when she consented to be shown to investors.
+  A sponsor also reads `capital_overview()` and its program's queue in `engine_opportunities()`, to drill into an opportunity.
+- **Mandates.** `investor_mandates` holds an investor's type (individual or impact fund) and mandate: impact mandate, states, purposes, sectors, ticket range, risk bands and route, each empty list meaning any. `set_mandate()` is the investor's own; `src/app/lib/mandate.ts` matches it, in the browser, against what every investor already sees of an opportunity.
+- **Outcomes during the demo.** The desk measures a loan's productive outcome from its loan page (`measure_outcome`, unchanged). The seed leaves one July loan unmeasured, with its months after, for that step.
+- **Proofs beside events.** `VerifyButton` opens a proof drawer (`components/proof`) with the event, model version, commitment, devnet transaction and a check on Solana. When the viewer may read the record, it is recomputed in the browser by the same `lib/verify.ts` the audit page uses.
+
 ## Capital pools and the allocation engine
 
 There are two routes, and only two (founder specification, 16 Sep):
@@ -193,11 +207,11 @@ There are two routes, and only two (founder specification, 16 Sep):
 2. Is global capital?
 3. Among the pools that can take it, which costs her less a year — required return, expected loss, cost to serve, hedge and ramp? A tie goes domestic.
 
-It answers with the pool, her rate and instalment, the investors' expected return, and reason codes (`DOMESTIC_LOWEST_COST`, `DOMESTIC_POOL_EXHAUSTED`, `GLOBAL_EXPANDS_CAPACITY`, `GLOBAL_IMPACT_MANDATE_MATCH`, `GLOBAL_FX_COST_DOMINATES`, `RISK_BAND_NOT_ELIGIBLE`, `TICKET_OUTSIDE_POOL_POLICY`, …). The pool is kept on the opportunity and never changes while investors hold positions in it. `capital_overview()` replays the engine over every opportunity not yet lent, to show qualified demand and how much of it domestic capital alone, and both pools together, can cover. The Credit Engine page (`/app/capital`) takes one qualified opportunity at a time through both engines:
+It answers with the pool, her rate and instalment, the investors' expected return, and reason codes (`DOMESTIC_LOWEST_COST`, `DOMESTIC_POOL_EXHAUSTED`, `GLOBAL_EXPANDS_CAPACITY`, `GLOBAL_IMPACT_MANDATE_MATCH`, `GLOBAL_FX_COST_DOMINATES`, `RISK_BAND_NOT_ELIGIBLE`, `TICKET_OUTSIDE_POOL_POLICY`, …). The pool is kept on the opportunity and never changes while investors hold positions in it. `capital_overview()` replays the engine over every opportunity not yet lent, to show qualified demand and how much of it domestic capital alone, and both pools together, can cover. The Credit & Capital Engine page (`/app/capital`) takes one opportunity at a time through both engines, in two runs: **Run credit engine** stops at the qualified opportunity, and **Run capital allocation** continues from there. A sponsor opens it on an opportunity's code (`?opportunity=Q-…`).
 - **Engine 1, credit:** its recorded readiness and eligibility, step by step. It stops at a step that did not pass, and no pool is asked.
 - **Engine 2, allocation:** both pools' checks, in turn, from the engine's own per-check trace (`poolChecks`), then the economics of the feasible pools, then the route or waiting for capital.
 
-It selects from `engine_opportunities()`: the same queue, pseudonymous, bound by consent (Q- codes for investors, P- codes for the desk), with the credit snapshot and its proofs. A run is analysis only, against today's liquidity and the assumptions in its drawer, and writes nothing. The page's replay runs the whole queue in order and checks itself against the database's.
+It selects from `engine_opportunities()`: the same queue, pseudonymous, bound by consent (Q- codes for investors and sponsors, P- codes for the desk), with the credit snapshot and its proofs. A run is analysis only, against today's liquidity and the assumptions in its drawer, and writes nothing. The page's replay runs the whole queue in order and checks itself against the database's.
 
 The opportunity's commitment on chain covers the request, not the pool: the allocation is recorded with its model version and re-runs in the browser. The engine chooses capital; it is not a credit decision.
 
@@ -211,7 +225,8 @@ The app reads in English or Brazilian Portuguese (`src/app/i18n`). Every text is
 
 - 4 verified communities and 100 participants, with education and 6–7 months of check-ins shaped by business profiles;
 - readiness for everyone, requests from some of those who are ready, eligibility, allocation to a pool, P2P funding, and formalisations and declines taken through the desk's own session;
-- a July cycle of six loans with repayment and outcomes.
+- a July cycle of six loans with repayment and outcomes, one left unmeasured for the demo;
+- a fictional sponsor funding a program run by the four communities, and the demo investor managing an impact fund with a mandate.
 
 The first-cycle facts are recorded through the live functions and then dated to when they happened. The seed holds the anchor worker's lease meanwhile, so their proofs carry those dates. Everything is marked `is_simulated`.
 
@@ -219,9 +234,9 @@ The first-cycle facts are recorded through the live functions and then dated to 
 
 | Suite | Count | Covers |
 |---|---|---|
-| pgTAP (`platform/supabase/tests`) | 432 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement, Zcash, cost to serve, outcomes, and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
+| pgTAP (`platform/supabase/tests`) | 452 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement, Zcash, cost to serve, outcomes, Impact Intelligence (sponsor scope, small groups hidden, consent, no private keys) and mandates, and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
 | LiteSVM (`programs/empowerfi-audit/tests`) | 26 | every instruction's rules and state machine |
-| Vitest | 140 | engines, the allocation engine's vectors and per-check trace, the engine page's run plan and demo cases, commitments, the IDL privacy review, settlement and ramp helpers, languages, UI helpers |
+| Vitest | 143 | engines, the allocation engine's vectors and per-check trace, the engine page's run plan and demo cases, investor mandates, commitments, the IDL privacy review, settlement and ramp helpers, languages, UI helpers |
 | Deno | 47 | the vendored engines and commitments against the same vectors, and the MoneyGram quote |
 | Devnet scan (`scripts/platform/scan-chain-pii.mts`) | every account | reviewed types only, and none of the database's names, e-mails or amounts |
 

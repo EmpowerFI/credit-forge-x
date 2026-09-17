@@ -6,6 +6,22 @@
 - **PT homepage:** `/pt` tells the same seven-section story. The entrepreneur content moves to `/pt/empreendedoras`, linked from "Apoio empreendedoras".
 - **Demo switching:** for demo accounts only, the story bar signs in as that story's demo persona in one click.
 
+**Status, 17 Sep:** P0 built on `hackathon`, verified locally, not yet on the hackathon database or `main`.
+- **Built:**
+  - navigation in three stories plus Operations, with one-click demo switching;
+  - the proof drawer;
+  - Impact Intelligence (sponsor role, programs, `impact_intelligence()`, report export);
+  - the Credit & Capital Engine in two runs, with a deep link from the sponsor;
+  - the Investor Console (mandates, fit filter, affordability and proof status, outstanding);
+  - outcome measurement by the desk;
+  - the seven-section home in EN and PT, with `/pt/empreendedoras`; pilot roadmap and readiness moved to `/investors`, market evidence to `/sources`;
+  - docs (DEMO.md in 14 steps, ARCHITECTURE, README, PRIVACY, I18N).
+- **Changed from the plan:**
+  - No `record_capital_use` and no new anchor kind. The seed leaves one July loan unmeasured, and the desk runs the existing `measure_outcome` in step 12.
+  - A fourth migration lets sponsors read `capital_overview()`.
+- **Checks:** pgTAP 452, Vitest 143, build, no new lint problems, and screenshots of every new screen at 1440 px and 390 px with no overflow or console errors.
+- **Waiting on the founder:** push migrations `20260923000000`–`20260923000300`, reseed hackathon, merge to `main`.
+
 **Rules kept:**
 - Do not rebuild from scratch, and do not hard-code engine decisions.
 - Label every simulated, test or devnet financial step.

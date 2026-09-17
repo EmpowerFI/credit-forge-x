@@ -1,10 +1,10 @@
 # EmpowerFI
 
-**P2P productive credit for women micro-entrepreneurs in Brazil, from readiness to capital, with every step proven on Solana.**
+**Productive-credit and impact intelligence infrastructure: turn impact programs into investable businesses, with every step proven on Solana.**
 
 > Prototype of a future regulated P2P productive-credit architecture. Hackathon investments, returns, FX and Pix settlement are simulated; blockchain transactions use test assets on Devnet.
 
-Small loans fail on unit economics: preparing, originating and serving a R$3,000 loan costs nearly as much as a large one, so lenders don't make them. EmpowerFI takes on the part lenders can't afford. Communities prepare their members, members report their months, and a readiness engine tells each of them what is missing, in words she can act on. When a participant who is ready *chooses* to ask for capital, EmpowerFI qualifies the request and a Capital Allocation Engine chooses which pool of P2P capital funds it: Brazilian investors in reais, or international investors in USDC on Solana. She receives and repays in reais, by Pix, either way. EmpowerFI's P2P desk formalises and services the loan. Every fact along the way is recorded in a database and committed to Solana: auditable by anyone, with no personal data on chain.
+Sponsors of ESG, impact and entrepreneurship programs pay for cohorts and struggle to prove what changed in the businesses they reached. Small loans fail on unit economics: preparing, originating and serving a R$3,000 loan costs nearly as much as a large one, so lenders don't make them. EmpowerFI takes on the part lenders can't afford. Communities prepare their members, members report their months, and a readiness engine tells each of them what is missing, in words she can act on. When a participant who is ready *chooses* to ask for capital, EmpowerFI qualifies the request and a Capital Allocation Engine chooses which pool of P2P capital funds it: Brazilian investors in reais, or international investors in USDC on Solana. She receives and repays in reais, by Pix, either way. EmpowerFI's P2P desk formalises and services the loan. Every fact along the way is recorded in a database and committed to Solana: auditable by anyone, with no personal data on chain. The same longitudinal evidence goes back to the sponsor as Impact Intelligence: what the program did, down to repayment and productive outcomes.
 
 Being ready and not asking is a complete outcome. Nothing in the product pushes anyone into debt.
 
@@ -14,23 +14,28 @@ The marketplace app is live on Google Play; this repository is the Colosseum hac
 
 The platform is live at **[www.empowerfi.io/app](https://www.empowerfi.io/app)** (or `http://localhost:8080/app` locally), and the site's **App - Devnet** button opens it. It reads in English or Portuguese: the Portuguese pages open it in Portuguese, and the EN | PT switch changes it. Sign in with one of the demo accounts. The login page lists them, and all share the password **`EmpowerFI-demo-2026`** (public on purpose; every demo record is simulated).
 
+The app tells one loop in three stories: **1 Impact Intelligence**, **2 Credit & Capital Engine**, **3 Investor Console**. Community operations, the P2P desk, the entrepreneur's own journey, admin and the audit console sit under **Operations**. A demo account moves between them in one click, as the right demo persona.
+
 | Account | Role | What to look at |
 |---|---|---|
+| `sponsor@demo.empowerfi.io` | Program sponsor | *Impact Intelligence*: a foundation's program run by four communities, from funding deployed to outcomes; the funnel from sponsored to performing; segments with small groups hidden; evidence on Solana; drill into an opportunity and run the engine; an auditable report. |
 | `maria@demo.empowerfi.io` | Entrepreneur | *My business*: readiness, what is missing, the monthly check-in. Her September check-in makes her ready; then she may ask, or not. |
 | `leader@demo.empowerfi.io` | Community leader | Grajaú: the funnel from members to funded P2P opportunities, qualified capital demand, funding gap, cost to serve. Jaqueline Pereira is ready and hasn't asked, and nothing moves her. |
 | `partner@demo.empowerfi.io` | EmpowerFI P2P desk | Funded opportunities to formalise at the allocation engine's rate, loans to disburse and service. |
-| `investor@demo.empowerfi.io` | Capital provider | *P2P capital console*: qualified demand, domestic and global liquidity, funding coverage, opportunities by route, a wallet investment in test USDC or a simulated BRL allocation, and the Capital Allocation Engine. |
+| `investor@demo.empowerfi.io` | Capital provider (impact fund) | *Investor Console*: the fund's mandate, opportunities that fit it with affordability and proof status, domestic and global liquidity, a wallet investment in test USDC or a simulated BRL allocation, positions with what is outstanding. |
 | `auditor@demo.empowerfi.io` | Auditor | Any record → *Verify*: the browser recomputes the proof and reads it from devnet. |
 | `admin@demo.empowerfi.io` | EmpowerFI admin | Review queue: verify communities, clear opportunities held for manual review. |
 
 ### Check a proof yourself
 
-Open any record's proof (`/app/audit/<kind>/<id>`). Your browser rebuilds the record's commitment, `SHA-256(domain ‖ 0x00 ‖ canonical JSON)`, and reads the account straight from Solana devnet. It then checks that the two match, that the program owns the account, and that its address is the one derived independently. For assessments it re-runs the engine on the stored inputs, and for outcomes it redoes the arithmetic. Change the record in the database and the verdict turns to MISMATCH. A background job re-checks every proof daily as well.
+Click **Verify** beside any proven event: a drawer shows the proof (event, model version, commitment, devnet transaction) and checks it on Solana. With access to the record, or at `/app/audit/<kind>/<id>`, Your browser rebuilds the record's commitment, `SHA-256(domain ‖ 0x00 ‖ canonical JSON)`, and reads the account straight from Solana devnet. It then checks that the two match, that the program owns the account, and that its address is the one derived independently. For assessments it re-runs the engine on the stored inputs, and for outcomes it redoes the arithmetic. Change the record in the database and the verdict turns to MISMATCH. A background job re-checks every proof daily as well.
 
 Program: [`4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR`](https://explorer.solana.com/address/4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR?cluster=devnet) (devnet).
 
 ## What is built
 
+- **Impact Intelligence** for program sponsors (`impact_intelligence()`): funding deployed, reach, reporting, readiness, capital requested and mobilised, repayment and productive outcomes over the communities that run a program. Aggregates only, groups under five hidden, outcomes only with the impact consent, the evidence behind every figure on Solana, and a report to download or print.
+- **Investor mandates:** an impact fund sets target population, geography, purpose, sector, ticket, risk appetite and route; every opportunity is matched against it from what investors already see.
 - **The funnel, end to end:** community → verification → enrollment → education → monthly check-ins → readiness → request → eligibility → qualified opportunity → P2P funding → formalisation → disbursement → instalments → productive outcome. Each step is a checked database function, and each fact is anchored on Solana in order.
 - **Two engines**, readiness and eligibility. They are pure, versioned and integer-only, pinned by hand-reasoned scenario vectors, and run the same way on the server and in the auditor's browser.
 - **The Anchor program** `empowerfi_audit`: 10 account types and 13 instructions. The rules live on chain too: eligibility needs the same borrower's CreditReady attestation, loans follow a state machine, and payments and outcomes are only possible after disbursement.
@@ -44,7 +49,7 @@ Program: [`4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR`](https://explorer.solan
 - **Shared audit reports.** An auditor freezes the console's view into a public page that anyone can open and re-check against Solana from their own browser.
 - **A Capital Allocation Engine** with two routes only: Domestic P2P (a simulated BRL pool, Pix) and Global P2P (test USDC on Solana, a simulated regulated off-ramp, Pix). Feasibility first — liquidity, risk appetite, ticket, mandate — then her all-in cost; deterministic reason codes, the pool persisted on each opportunity, and the same engine re-run in the browser. Global capital earns its place by the availability, mandate or economics it adds, not by being on a blockchain.
 
-Read more: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/DEMO.md](docs/DEMO.md) (the three-minute story) · [docs/I18N.md](docs/I18N.md) (English and Portuguese) · [platform/README.md](platform/README.md) (operations).
+Read more: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/DEMO.md](docs/DEMO.md) (the loop, in fourteen steps) · [docs/I18N.md](docs/I18N.md) (English and Portuguese) · [platform/README.md](platform/README.md) (operations).
 
 ## Run it locally
 
@@ -89,7 +94,7 @@ docs/                        architecture, privacy, demo script, languages
 
 ## The public site
 
-Vite + React 18 + TypeScript, Tailwind and shadcn/ui, bilingual: English at `/` (with `/investors`, `/about`, `/sources`), Portuguese at `/pt`. A change to a page in one language is mirrored in the other. The header's **App - Devnet** button opens the platform in the page's language. The investor contact form uses the `send-transactional-email` Edge Function of the website's Supabase project (root `supabase/`, kept separate from `platform/`).
+Vite + React 18 + TypeScript, Tailwind and shadcn/ui, bilingual: English at `/` (with `/investors`, `/about`, `/sources`), Portuguese at `/pt` (with `/pt/investidores`, `/pt/sobre` and `/pt/empreendedoras`, the page for the entrepreneur). The home page tells the same loop in seven sections in both languages: hero, problem, how it works, two revenue engines, capital, auditability, traction and where you fit. The pilot roadmap and readiness in depth live on `/investors`; market evidence and its caveats on `/sources`. A change to a page in one language is mirrored in the other. The header's **App - Devnet** button opens the platform in the page's language. The investor contact form uses the `send-transactional-email` Edge Function of the website's Supabase project (root `supabase/`, kept separate from `platform/`).
 
 Deployed on Vercel: [`vercel.json`](vercel.json) sets the Vite preset and a SPA rewrite so client-side routes (`/pt`, `/app/...`) resolve on direct load. Set the `VITE_*` variables above for Production and Preview.
 

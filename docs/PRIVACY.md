@@ -114,6 +114,10 @@ An auditor can freeze what the audit console shows into a report and share it by
 - **Checks, twice.** The auditor's browser re-runs the latest decisions, reads the vault on chain and looks up every proof and transfer in the report; those results are stored beside it, labelled as the auditor's. The reader's browser can run the chain checks again, straight against Solana.
 - **The link is the credential:** 24 random bytes. Revoking a report closes it. Resetting the demo deletes every report.
 
+## Evidence without financial surveillance
+
+The sponsor's view follows the same three layers. Private data never leaves the private layer. Impact Intelligence reads derived intelligence only, in aggregate, and hides any group of fewer than five businesses in a breakdown (sector, geography, purpose, readiness, data quality, credit intent), so a small group cannot single a business out. Its proofs are the commitments already on Solana. The proof drawer beside every event shows a commitment and its transaction to anyone who can see the event, and recomputes the record only for those allowed to read it.
+
 ## Who sees what
 
 Row-level security enforces all of this, and pgTAP tests check it for every role.
@@ -121,6 +125,7 @@ Row-level security enforces all of this, and pgTAP tests check it for every role
 | Role | Sees | Doesn't see |
 |---|---|---|
 | **Entrepreneur** | Her own profile, business, check-ins, assessments, requests, loans, payments, outcome and cost; can audit her own proofs; records and changes her consent | Anyone else's |
+| **Program sponsor** | Its own programs, in aggregate over the communities that run them: counts, shares, capital totals, repayment, outcomes of businesses that consented to impact reporting (the rest counted as withheld), proof counts, and qualified opportunities by Q- code where she consented to be shown to investors. Can verify commitments on Solana | Any name, business, person id or reported figure; any group under five in a breakdown; the record behind a proof; any investor |
 | **Community leader** | Members of the communities she leads: their records, funnel, cost to serve, and capital totals — qualified demand, funded, funding gap, domestic and global coverage; records their consent from the signed form | Other communities' members; any investor, wallet or position; opportunities, decisions and loans read directly from their tables; reported amounts in Community Intelligence |
 | **EmpowerFI P2P desk** (the `partner` role) | Qualified opportunities on its desk, pseudonymous: `P-XXXXXX`, sector, verified community, indicators rounded to R$100, EmpowerFI's assessment and reasons. How much investors have funded each, from how many, and how much of it is real devnet USDC. Its own loans, schedules, payments, settlement legs and outcomes | Names, business names, check-ins, readiness detail, who the investors are, anything not referred to it |
 | **Capital provider** | Opportunities she allowed to be shown, as a decision snapshot: purpose, amount, community, readiness and risk bands, affordability, eligibility and allocation reason codes, the pool — under "What you can see / What stays private" on screen. Its own positions. Can verify every commitment on Solana from the browser, without the record behind it | Names, business names, revenue and expenses, Pix and bank data, raw check-ins, consent records |
