@@ -2,7 +2,7 @@
 
 **Source:** founder's redesign brief, 16 Sep 2026 ("redesign and refactor the existing EmpowerFI Credit Engine / Capital Allocation Engine page").
 **Work:** on `hackathon`; `main`, the hackathon database and a reseed only after the founder approves.
-**Status, 16 Sep:** built on `hackathon` and verified locally. Before `main`: the founder's approval to push the migration to the hackathon environment and reseed it (case C changes the coverage figures).
+**Status, 16 Sep:** live. Migration pushed and the hackathon environment reseeded with the founder's approval; merged to `main`. On the hackathon data the cases are Q-E6E089 (A), Q-61FCC2 (B) and Q-3BDC81 (C); codes change with every reseed.
 
 > - **Built:**
 >   - the engine's per-check trace (`poolChecks`);
