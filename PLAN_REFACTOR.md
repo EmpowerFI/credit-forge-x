@@ -30,7 +30,7 @@
 
 The spec's second version adds §2A (cost to serve without weaker credit), §3A (View platform as) and, in §13, a route map per role. The rest is unchanged.
 
-**Status:** built on `hackathon` and verified locally. Checks: pgTAP 468, Vitest 149, build, no new lint problems, and screenshots at 1440 px and 390 px with no overflow or console errors. **Waiting on the founder:** push migration `20260924000000_operating_economics`, then merge. No reseed is needed.
+**Status, 17 Sep:** live. Migration `20260924000000_operating_economics` is pushed to the hackathon database, where its pgTAP file passes, and merged to `main` with the founder's approval; no reseed was needed. Checks: pgTAP 468, Vitest 149, build, no new lint problems, and screenshots at 1440 px and 390 px with no overflow or console errors.
 
 **§2A · Operating economics.** No new tables. The facts were already recorded: cost events per stage, timestamps on every step, and the engines' reason codes and loan states.
 - `operating_economics(program?)` is readable by the desk, auditors and admins over everything, and by a sponsor over its own program. It returns four pairs:
