@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
-import { BadgeCheck, BarChart3, CalendarRange, Download, FileText, Printer, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ArrowRight, BadgeCheck, BarChart3, CalendarRange, ChevronRight, Download, FileText, Printer, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,11 +10,11 @@ import LoadError from "../../components/LoadError";
 import PageHeader from "../../components/product/PageHeader";
 import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
-import { formatDate, formatDateTime, formatNumber, tr } from "../../i18n";
+import { formatDate, formatDateTime, formatNumber, localized, tr } from "../../i18n";
 import { bpsPercent } from "../../lib/capital";
 import { fetchImpactIntelligence, fetchPrograms, type ImpactIntelligence as Data } from "../../lib/impact";
 import { money, monthLabel } from "../../lib/readiness";
-import { Evidence, Funnel, Mobilisation, Opportunities, Operators, Outcomes, Segments, SimulatedNote } from "./parts";
+import { Evidence, Funnel, Mobilisation, Opportunities, Operators, Outcomes, Segments } from "./parts";
 
 const pct = (part: number, whole: number) => (whole > 0 ? `${formatNumber(Math.round((part / whole) * 100))}%` : "—");
 
@@ -71,12 +72,16 @@ function Header({ data }: { data: Data }) {
       </div>
       <div className="space-y-1">
         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"><BadgeCheck size={12} aria-hidden />{tr({ en: "Proof status", pt: "Situação das provas" })}</p>
-        <p className="num font-semibold text-foreground">{tr({ en: `${formatNumber(e.confirmed)} of ${formatNumber(e.total)} on Solana`, pt: `${formatNumber(e.confirmed)} de ${formatNumber(e.total)} na Solana` })}</p>
+        <p className="num font-semibold text-foreground">
+          {e.confirmed > 0
+            ? tr({ en: `${formatNumber(e.confirmed)} confirmed on Solana`, pt: `${formatNumber(e.confirmed)} confirmadas na Solana` })
+            : tr({ en: `${formatNumber(e.total)} proofs recorded`, pt: `${formatNumber(e.total)} provas registradas` })}
+        </p>
         <p className="text-xs text-muted-foreground">
           {e.mismatches > 0
             ? <span className="text-alert">{tr({ en: `${e.mismatches} not matching their proof`, pt: `${e.mismatches} sem bater com a prova` })}</span>
             : e.pending > 0
-              ? tr({ en: `${formatNumber(e.pending)} queued for devnet`, pt: `${formatNumber(e.pending)} na fila da devnet` })
+              ? tr({ en: `${formatNumber(e.pending)} confirming on devnet`, pt: `${formatNumber(e.pending)} confirmando na devnet` })
               : e.last_confirmed_at ? tr({ en: `Last anchored ${formatDateTime(e.last_confirmed_at)}`, pt: `Última registrada em ${formatDateTime(e.last_confirmed_at)}` }) : null}
         </p>
       </div>
@@ -84,31 +89,141 @@ function Header({ data }: { data: Data }) {
   );
 }
 
-function Hero({ data }: { data: Data }) {
+/** What waits on the sponsor, if anything does. Each line is a place to go. */
+function NextActions({ data }: { data: Data }) {
+  const toMeasure = data.hero.loans_disbursed - data.hero.outcomes_measured;
+  const items = [
+    data.capital.waiting_for_capital > 0 && {
+      key: "waiting", to: "/app/capital", tone: "caution" as const,
+      text: tr({
+        en: `${data.capital.waiting_for_capital} qualified ${data.capital.waiting_for_capital === 1 ? "opportunity waits" : "opportunities wait"} for a pool that can fund them`,
+        pt: `${data.capital.waiting_for_capital} ${data.capital.waiting_for_capital === 1 ? "oportunidade qualificada aguarda" : "oportunidades qualificadas aguardam"} um pool que possa financiá-las`,
+      }),
+      action: tr({ en: "Run the engine", pt: "Rodar o motor" }),
+    },
+    toMeasure > 0 && {
+      key: "outcomes", to: "#outcomes", tone: "info" as const,
+      text: tr({
+        en: `${toMeasure} of ${data.hero.loans_disbursed} loans have no measured outcome yet`,
+        pt: `${toMeasure} de ${data.hero.loans_disbursed} empréstimos ainda sem resultado medido`,
+      }),
+      action: tr({ en: "See outcomes", pt: "Ver resultados" }),
+    },
+    data.evidence.mismatches > 0 ? {
+      key: "mismatch", to: "#evidence", tone: "alert" as const,
+      text: tr({ en: `${data.evidence.mismatches} records do not match their proof`, pt: `${data.evidence.mismatches} registros não batem com a prova` }),
+      action: tr({ en: "Check the evidence", pt: "Conferir a evidência" }),
+    } : data.evidence.pending > 0 && {
+      key: "pending", to: "#evidence", tone: "info" as const,
+      text: tr({ en: `${formatNumber(data.evidence.pending)} proofs are confirming on devnet`, pt: `${formatNumber(data.evidence.pending)} provas estão confirmando na devnet` }),
+      action: tr({ en: "See the evidence", pt: "Ver a evidência" }),
+    },
+  ].filter(Boolean) as { key: string; to: string; tone: "caution" | "info" | "alert"; text: string; action: string }[];
+
+  if (items.length === 0) return null;
+  return (
+    <section className="panel space-y-3 p-5" aria-labelledby="next-actions">
+      <h2 id="next-actions" className="font-heading text-base font-bold text-foreground">{tr({ en: "What waits on you", pt: "O que espera por você" })}</h2>
+      <ul className="divide-y divide-border/60">
+        {items.map((item) => (
+          <li key={item.key} className="flex flex-wrap items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+            <span className="flex items-center gap-2.5 text-sm text-foreground">
+              <span className={cn("h-2 w-2 shrink-0 rounded-full",
+                item.tone === "alert" ? "bg-alert" : item.tone === "caution" ? "bg-caution" : "bg-info")} aria-hidden />
+              {item.text}
+            </span>
+            <Link to={item.to} className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-foreground">
+              {item.action} <ArrowRight size={14} aria-hidden />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** One figure the sponsor came for, three that frame it, and the rest on request. */
+function Headline({ data }: { data: Data }) {
   const h = data.hero;
   const p = data.program;
+  const coverage = data.capital.domestic_coverage_bps + data.capital.global_coverage_bps;
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatTile label={tr({ en: "Program funding deployed", pt: "Recursos do programa aplicados" })} value={money(p.funding_deployed_cents)}
-        hint={tr({ en: `${pct(p.funding_deployed_cents, p.funding_committed_cents)} of ${money(p.funding_committed_cents)}`, pt: `${pct(p.funding_deployed_cents, p.funding_committed_cents)} de ${money(p.funding_committed_cents)}` })} />
-      <StatTile label={tr({ en: "Entrepreneurs reached", pt: "Empreendedoras alcançadas" })} value={formatNumber(h.reached)}
-        hint={tr({ en: `${data.communities.length} communities`, pt: `${data.communities.length} comunidades` })} />
-      <StatTile label={tr({ en: "Active and reporting", pt: "Ativas e reportando" })} value={formatNumber(h.reporting)}
-        hint={tr({ en: `${pct(h.reporting, h.reached)} reported the latest month`, pt: `${pct(h.reporting, h.reached)} informaram o último mês` })} hintTone="positive" />
-      <StatTile label={tr({ en: "Credit ready", pt: "Prontas para crédito" })} value={formatNumber(h.credit_ready)}
-        hint={tr({ en: `${pct(h.credit_ready, h.reached)} of those reached`, pt: `${pct(h.credit_ready, h.reached)} das alcançadas` })} hintTone="info" />
-      <StatTile label={tr({ en: "Capital requested", pt: "Capital pedido" })} value={money(h.capital_requested_cents)}
-        hint={tr({ en: `${h.requested} requests`, pt: `${h.requested} pedidos` })} />
-      <StatTile label={tr({ en: "Capital mobilised", pt: "Capital mobilizado" })} value={money(h.capital_mobilized_cents)}
-        hint={tr({ en: `${bpsPercent(data.capital.domestic_coverage_bps + data.capital.global_coverage_bps)} of qualified demand`, pt: `${bpsPercent(data.capital.domestic_coverage_bps + data.capital.global_coverage_bps)} da demanda qualificada` })} hintTone="positive" />
-      <StatTile label={tr({ en: "Repayment", pt: "Pagamentos" })} value={money(data.portfolio.repaid_cents)}
-        hint={tr({
-          en: `${data.portfolio.loans_repaying + data.portfolio.loans_paid} performing · ${data.portfolio.loans_late + data.portfolio.loans_defaulted} late`,
-          pt: `${data.portfolio.loans_repaying + data.portfolio.loans_paid} em dia · ${data.portfolio.loans_late + data.portfolio.loans_defaulted} em atraso`,
-        })} hintTone={data.portfolio.loans_late + data.portfolio.loans_defaulted ? "caution" : "positive"} />
-      <StatTile label={tr({ en: "Outcome coverage", pt: "Cobertura de resultados" })} value={`${h.outcomes_measured} / ${h.loans_disbursed}`}
-        hint={tr({ en: "loans with a measured outcome", pt: "empréstimos com resultado medido" })} />
-    </div>
+    <section className="space-y-3">
+      <div className="panel grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] lg:items-center">
+        <div className="space-y-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{tr({ en: "Capital mobilised for the businesses", pt: "Capital mobilizado para os negócios" })}</p>
+          <p className="num font-heading text-4xl font-bold text-foreground sm:text-5xl">{money(h.capital_mobilized_cents)}</p>
+          <div className="h-2 overflow-hidden rounded-full bg-secondary" role="img"
+            aria-label={tr({ en: `${bpsPercent(coverage)} of qualified demand`, pt: `${bpsPercent(coverage)} da demanda qualificada` })}>
+            <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, coverage / 100)}%` }} />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {tr({
+              en: <><span className="font-semibold text-foreground">{bpsPercent(coverage)}</span> of {money(data.capital.eligible_cents)} in qualified demand, from {h.requested} requests.</>,
+              pt: <><span className="font-semibold text-foreground">{bpsPercent(coverage)}</span> de {money(data.capital.eligible_cents)} de demanda qualificada, a partir de {h.requested} pedidos.</>,
+            })}
+          </p>
+          <p className="border-t border-border pt-3 text-sm text-muted-foreground">
+            {tr({
+              en: <>Program funding: <span className="font-semibold text-foreground">{money(p.funding_deployed_cents)}</span> deployed of {money(p.funding_committed_cents)} committed.</>,
+              pt: <>Recursos do programa: <span className="font-semibold text-foreground">{money(p.funding_deployed_cents)}</span> aplicados de {money(p.funding_committed_cents)} comprometidos.</>,
+            })}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatTile label={tr({ en: "Entrepreneurs reached", pt: "Empreendedoras alcançadas" })} value={formatNumber(h.reached)}
+            hint={tr({ en: `${pct(h.reporting, h.reached)} reported the latest month`, pt: `${pct(h.reporting, h.reached)} informaram o último mês` })} hintTone="positive" />
+          <StatTile label={tr({ en: "Credit ready", pt: "Prontas para crédito" })} value={formatNumber(h.credit_ready)}
+            hint={tr({ en: `${pct(h.credit_ready, h.reached)} of those reached`, pt: `${pct(h.credit_ready, h.reached)} das alcançadas` })} hintTone="info" />
+          <StatTile label={tr({ en: "Outcomes measured", pt: "Resultados medidos" })} value={`${h.outcomes_measured} / ${h.loans_disbursed}`}
+            hint={tr({ en: "of the loans lent", pt: "dos empréstimos concedidos" })} />
+        </div>
+      </div>
+
+      <details className="panel px-5 py-3 [&[open]>summary>svg]:rotate-90">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-foreground">
+          <ChevronRight size={14} className="text-accent transition-transform" aria-hidden />
+          {tr({ en: "All the indicators", pt: "Todos os indicadores" })}
+        </summary>
+        <div className="grid grid-cols-2 gap-3 pt-4 lg:grid-cols-4">
+          <StatTile label={tr({ en: "Program funding deployed", pt: "Recursos do programa aplicados" })} value={money(p.funding_deployed_cents)}
+            hint={tr({ en: `${pct(p.funding_deployed_cents, p.funding_committed_cents)} of ${money(p.funding_committed_cents)}`, pt: `${pct(p.funding_deployed_cents, p.funding_committed_cents)} de ${money(p.funding_committed_cents)}` })} />
+          <StatTile label={tr({ en: "Active and reporting", pt: "Ativas e reportando" })} value={formatNumber(h.reporting)}
+            hint={tr({ en: `of ${h.reached} reached`, pt: `de ${h.reached} alcançadas` })} />
+          <StatTile label={tr({ en: "Capital requested", pt: "Capital pedido" })} value={money(h.capital_requested_cents)}
+            hint={tr({ en: `${h.requested} requests`, pt: `${h.requested} pedidos` })} />
+          <StatTile label={tr({ en: "Repayment received", pt: "Pagamentos recebidos" })} value={money(data.portfolio.repaid_cents)}
+            hint={tr({
+              en: `${data.portfolio.loans_repaying + data.portfolio.loans_paid} performing · ${data.portfolio.loans_late + data.portfolio.loans_defaulted} late`,
+              pt: `${data.portfolio.loans_repaying + data.portfolio.loans_paid} em dia · ${data.portfolio.loans_late + data.portfolio.loans_defaulted} em atraso`,
+            })} hintTone={data.portfolio.loans_late + data.portfolio.loans_defaulted ? "caution" : "positive"} />
+        </div>
+      </details>
+    </section>
+  );
+}
+
+/** A long page needs a map: the sections, one click away. */
+const SECTIONS: { id: string; label: string }[] = localized([
+  { id: "funnel", label: { en: "Funnel", pt: "Funil" } },
+  { id: "capital", label: { en: "Capital", pt: "Capital" } },
+  { id: "outcomes", label: { en: "Outcomes", pt: "Resultados" } },
+  { id: "opportunities", label: { en: "Opportunities", pt: "Oportunidades" } },
+  { id: "evidence", label: { en: "Evidence", pt: "Evidência" } },
+  { id: "segments", label: { en: "Segments", pt: "Segmentos" } },
+]);
+
+function SectionIndex() {
+  return (
+    <nav aria-label={tr({ en: "Sections", pt: "Seções" })}
+      className="sticky top-[6.9rem] z-30 -mx-1 flex gap-2 overflow-x-auto rounded-xl bg-background/90 px-1 py-2 backdrop-blur">
+      {SECTIONS.map((s) => (
+        <a key={s.id} href={`#${s.id}`}
+          className="whitespace-nowrap rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-accent/50 hover:text-foreground">
+          {s.label}
+        </a>
+      ))}
+    </nav>
   );
 }
 
@@ -141,8 +256,26 @@ export default function ImpactIntelligence() {
         title={data?.program.name ?? <Skeleton className="h-9 w-72" />}
         meta={data?.program.is_simulated ? <StatusPill tone="caution" dot={false}>{tr({ en: "Simulated", pt: "Simulado" })}</StatusPill> : undefined}
         description={tr({
-          en: "From program funding to business outcomes: measurable, traceable and auditable.",
-          pt: "Do investimento no programa aos resultados dos negócios: mensurável, rastreável e auditável.",
+          en: "What the program bought, and how to check it.",
+          pt: "O que o programa comprou, e como conferir.",
+        })}
+        about={tr({
+          en: (
+            <>
+              <p>Every figure is computed live from the platform's records, over the communities that run this program, and is an aggregate: no name, no business and no figure a participant reported appears here. Groups under five are hidden so nobody can be singled out.</p>
+              <p>Outcomes count only the businesses that consented to impact reporting; the rest are reported as withheld. Opportunities are listed by code, and only when she agreed to be shown to investors.</p>
+              <p>Proofs are real transactions on Solana devnet, and "Verify" recomputes the record in your browser before checking it on chain.</p>
+              <p>This is a demo program: the sponsor, its budget and the businesses are simulated.</p>
+            </>
+          ),
+          pt: (
+            <>
+              <p>Cada número é calculado ao vivo a partir dos registros da plataforma, sobre as comunidades que conduzem este programa, e é um agregado: nenhum nome, nenhum negócio e nenhum valor informado por uma participante aparece aqui. Grupos com menos de cinco ficam ocultos para que ninguém seja identificado.</p>
+              <p>Os resultados contam apenas os negócios que consentiram com o uso para impacto; os demais são reportados como retidos. As oportunidades aparecem por código, e só quando ela concordou em ser mostrada a investidores.</p>
+              <p>As provas são transações reais na devnet da Solana, e "Verificar" recalcula o registro no seu navegador antes de conferir na blockchain.</p>
+              <p>Este é um programa de demonstração: o patrocinador, o orçamento e os negócios são simulados.</p>
+            </>
+          ),
         })}
         actions={
           <>
@@ -187,8 +320,9 @@ export default function ImpactIntelligence() {
       ) : (
         <>
           <Header data={data} />
-          <SimulatedNote data={data} />
-          <Hero data={data} />
+          <NextActions data={data} />
+          <Headline data={data} />
+          <SectionIndex />
           <div className="grid gap-6 lg:grid-cols-5">
             <Funnel data={data} />
             <Mobilisation data={data} />

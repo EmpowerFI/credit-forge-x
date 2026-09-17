@@ -49,7 +49,7 @@ export default function ProofStatus({
           <Loader2 size={14} className="animate-spin" />
           {anchor.attempts > 1
             ? tr({ en: `Retrying on devnet (attempt ${anchor.attempts})`, pt: `Tentando de novo na devnet (tentativa ${anchor.attempts})` })
-            : tr({ en: "Queued for devnet", pt: "Na fila para a devnet" })}
+            : tr({ en: "Confirming on devnet", pt: "Confirmando na devnet" })}
         </span>
       )}
     </div>

@@ -35,7 +35,7 @@ import { useEngineOpportunities } from "./queries";
 // database allocates when an opportunity opens to investors.
 
 const STATE_LABEL: Record<EngineState, string> = localized({
-  IDLE: { en: "Idle", pt: "Parado" },
+  IDLE: { en: "Ready to run", pt: "Pronto para rodar" },
   OPPORTUNITY_SELECTED: { en: "Opportunity selected", pt: "Oportunidade selecionada" },
   RUNNING_CREDIT_ENGINE: { en: "Running the credit engine", pt: "Rodando o motor de crédito" },
   CREDIT_REJECTED: { en: "Not qualified", pt: "Não qualificada" },
@@ -141,18 +141,28 @@ export default function AllocationEngine() {
     <div className="space-y-6">
       <PageHeader eyebrow={tr({ en: "Two engines, one decision", pt: "Dois motores, uma decisão" })} title={tr({ en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" })}
         description={tr({
-          en: "EmpowerFI first decides whether a business is credit-ready, then which available pool of P2P capital can fund it sustainably. Pick an opportunity, run the credit engine, then run capital allocation on what it qualifies.",
-          pt: "A EmpowerFI primeiro decide se um negócio está pronto para crédito, depois qual pool de capital P2P disponível pode financiá-lo de forma sustentável. Escolha uma oportunidade, rode o motor de crédito e depois a alocação de capital sobre o que ele qualificar.",
+          en: "Pick an opportunity, run the credit engine, then run capital allocation on what it qualifies.",
+          pt: "Escolha uma oportunidade, rode o motor de crédito e depois a alocação de capital sobre o que ele qualificar.",
+        })}
+        about={tr({
+          en: (
+            <>
+              <p>Engine 1 asks whether a business should become a qualified credit opportunity, from its readiness, its history, affordability and risk. Engine 2 asks which available pool can fund that opportunity sustainably, on liquidity, ticket, risk appetite, mandate and economics — and answers domestic, global, or waiting for capital.</p>
+              <p>Both run here in your browser against today's liquidity and the assumptions in the drawer, with the same code the database runs. Nothing on this page writes: the database allocates when an opportunity opens to investors.</p>
+            </>
+          ),
+          pt: (
+            <>
+              <p>O Motor 1 pergunta se um negócio deve virar uma oportunidade de crédito qualificada, a partir da prontidão, do histórico, da capacidade de pagamento e do risco. O Motor 2 pergunta qual pool disponível pode financiá-la de forma sustentável, por liquidez, ticket, apetite a risco, mandato e economia — e responde doméstico, global ou aguardando capital.</p>
+              <p>Os dois rodam aqui no seu navegador, com a liquidez de hoje e as premissas da gaveta, usando o mesmo código que roda no banco. Nada nesta página escreve: o banco aloca quando uma oportunidade abre para investidores.</p>
+            </>
+          ),
         })}
         actions={profile && ["sponsor", "partner", "admin", "auditor"].includes(profile.role) ? (
           <Button asChild variant="outline" className="gap-2">
             <Link to="/app/capital/economics"><BarChart3 size={16} /> {tr({ en: "Operating economics", pt: "Economia operacional" })}</Link>
           </Button>
         ) : undefined} />
-
-      <CapitalPools engineLink={false} tilesOnly />
-
-      <TwoEngines active={activeEngine} />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         {/* Controls */}
@@ -253,6 +263,10 @@ export default function AllocationEngine() {
           )}
         </div>
       </div>
+
+      <TwoEngines active={activeEngine} />
+
+      <CapitalPools engineLink={false} tilesOnly />
 
       {overview.data && policies && (
         <div id="replay" className="scroll-mt-32"><Replay demand={overview.data.demand} policies={policies} coverage={overview.data.coverage} assumptionsChanged={changed} /></div>

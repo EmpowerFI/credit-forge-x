@@ -45,6 +45,44 @@ export default function CommunityOverview() {
         })}
       </p>
 
+      <Panel title={tr({ en: "Action queue", pt: "Fila de ações" })}
+        description={tr({
+          en: "Who needs the community's attention now. Log each contact after you make it: it moves the queue and counts in cost to serve.",
+          pt: "Quem precisa da atenção da comunidade agora. Registre cada contato depois de fazê-lo: a fila anda e o contato entra no custo de servir.",
+        })}
+        actions={<Link to="participants" className="inline-flex items-center gap-1 text-sm text-info hover:underline">{tr({ en: "All participants", pt: "Todas as participantes" })} <ArrowRight size={14} /></Link>}>
+        {!o ? <Skeleton className="h-40 w-full" /> : queue.length === 0 ? (
+          <p className="flex items-center gap-2 text-sm text-positive"><Check size={16} /> {tr({ en: "Nobody is waiting on the community right now.", pt: "Ninguém está esperando pela comunidade agora." })}</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {queue.map((q) => (
+              <li key={q.action} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <div className="min-w-0 space-y-1">
+                  <p className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-semibold text-foreground">
+                      {tr({ en: `${q.pending} participant${q.pending === 1 ? "" : "s"}`, pt: `${q.pending} participante${q.pending === 1 ? "" : "s"}` })}
+                    </span>
+                    <span className="text-muted-foreground">{ACTION[q.action].queue}</span>
+                    {q.contacted > 0 && <StatusPill tone="neutral">{tr({ en: `${q.contacted} contacted this week`, pt: `${q.contacted} contatadas esta semana` })}</StatusPill>}
+                  </p>
+                  {q.participants.length > 0 && (
+                    <p className="truncate text-xs text-muted-foreground">
+                      {q.participants.slice(0, 5).map((p) => p.display_name).join(", ")}
+                      {q.participants.length > 5 && tr({ en: ` and ${q.participants.length - 5} more`, pt: ` e mais ${q.participants.length - 5}` })}
+                    </p>
+                  )}
+                </div>
+                {leads && q.pending > 0 && (
+                  <Button variant="secondary" size="sm" className="gap-2" onClick={() => setDialog(q.action)}>
+                    <MessageCircle size={14} /> {ACTION[q.action].button}
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {!o ? Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-[92px] rounded-xl" />) : (
           <>
@@ -145,43 +183,6 @@ export default function CommunityOverview() {
         </Panel>
       </div>
 
-      <Panel title={tr({ en: "Action queue", pt: "Fila de ações" })}
-        description={tr({
-          en: "Who needs the community's attention now. Log each contact after you make it: it moves the queue and counts in cost to serve.",
-          pt: "Quem precisa da atenção da comunidade agora. Registre cada contato depois de fazê-lo: a fila anda e o contato entra no custo de servir.",
-        })}
-        actions={<Link to="participants" className="inline-flex items-center gap-1 text-sm text-info hover:underline">{tr({ en: "All participants", pt: "Todas as participantes" })} <ArrowRight size={14} /></Link>}>
-        {!o ? <Skeleton className="h-40 w-full" /> : queue.length === 0 ? (
-          <p className="flex items-center gap-2 text-sm text-positive"><Check size={16} /> {tr({ en: "Nobody is waiting on the community right now.", pt: "Ninguém está esperando pela comunidade agora." })}</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {queue.map((q) => (
-              <li key={q.action} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                <div className="min-w-0 space-y-1">
-                  <p className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-semibold text-foreground">
-                      {tr({ en: `${q.pending} participant${q.pending === 1 ? "" : "s"}`, pt: `${q.pending} participante${q.pending === 1 ? "" : "s"}` })}
-                    </span>
-                    <span className="text-muted-foreground">{ACTION[q.action].queue}</span>
-                    {q.contacted > 0 && <StatusPill tone="neutral">{tr({ en: `${q.contacted} contacted this week`, pt: `${q.contacted} contatadas esta semana` })}</StatusPill>}
-                  </p>
-                  {q.participants.length > 0 && (
-                    <p className="truncate text-xs text-muted-foreground">
-                      {q.participants.slice(0, 5).map((p) => p.display_name).join(", ")}
-                      {q.participants.length > 5 && tr({ en: ` and ${q.participants.length - 5} more`, pt: ` e mais ${q.participants.length - 5}` })}
-                    </p>
-                  )}
-                </div>
-                {leads && q.pending > 0 && (
-                  <Button variant="secondary" size="sm" className="gap-2" onClick={() => setDialog(q.action)}>
-                    <MessageCircle size={14} /> {ACTION[q.action].button}
-                  </Button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
 
       {dialog && open && (
         <OutreachDialog communityId={community.id} action={dialog} people={open.participants}

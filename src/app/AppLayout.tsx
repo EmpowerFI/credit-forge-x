@@ -62,61 +62,65 @@ function Footnote() {
 }
 
 /**
- * "View platform as": the five views. Choosing one lands on its page, which
- * says what the view is for and surfaces its tools. It never widens access: a
- * demo account switches to the view's demo persona, any other account only
- * sees the views its role opens.
+ * "View platform as": the five views, offered where the account lives, because
+ * choosing one is choosing who you are looking as — not where you are going.
+ * It never widens access: a demo account switches to the view's demo persona,
+ * any other account only sees the views its role opens.
  */
-function ViewSelector({ onNavigate, block = false }: { onNavigate?: () => void; block?: boolean }) {
+function ViewMenuItems({ onNavigate }: { onNavigate?: () => void }) {
   const { profile } = useAuth();
+  const { openView, viewVisible } = useOpenArea();
   const { pathname, search } = useLocation();
-  const { openView, switching, viewVisible } = useOpenArea();
   const onStart = pathname === "/app/start";
   const current = (onStart ? viewById(new URLSearchParams(search).get("as")) : undefined) ?? viewOf(profile?.role);
   const views = VIEWS.filter(viewVisible);
   if (!profile || views.length === 0) return null;
-  const busy = switching?.startsWith("view:");
-
   return (
-    <div className={cn("flex items-center gap-2", block && "flex-col items-stretch gap-1.5")}>
-      <span className={cn("whitespace-nowrap text-xs text-muted-foreground", block && "px-3 text-[11px] font-semibold uppercase tracking-wide")}>
-        {tr({ en: "View platform as", pt: "Ver plataforma como" })}{block ? "" : ":"}
-      </span>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button type="button" className={cn("flex items-center justify-between gap-2 whitespace-nowrap rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent/20",
-            block && "w-full py-2")}>
-            <span className="flex items-center gap-2">
-              {busy ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <Eye size={15} className="text-accent" aria-hidden />}
-              {current?.label ?? ROLE_LABEL[profile.role]}
+    <>
+      <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+        {tr({ en: "View platform as", pt: "Ver plataforma como" })}
+      </DropdownMenuLabel>
+      {views.map((v) => {
+        const Icon = v.icon;
+        const switches = !opensView(v, profile.role);
+        return (
+          <DropdownMenuItem key={v.id} className="items-start gap-3 py-2"
+            onSelect={() => { onNavigate?.(); void openView(v, `/app/start?as=${v.id}`); }}>
+            <Icon size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+            <span className="min-w-0 flex-1 space-y-0.5">
+              <span className="block text-sm font-medium">{v.label}</span>
+              {switches && <span className="block text-xs text-muted-foreground">{tr({ en: `As the demo ${v.persona.name}`, pt: `Como ${v.persona.name}, conta demo` })}</span>}
             </span>
-            <ChevronDown size={14} aria-hidden />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-96">
-          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-            {tr({ en: "Each view shows its value and the tools for that role. Permissions stay with the account.", pt: "Cada visão mostra seu valor e as ferramentas daquele papel. As permissões continuam com a conta." })}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {views.map((v) => {
-            const Icon = v.icon;
-            const switches = !opensView(v, profile.role);
-            return (
-              <DropdownMenuItem key={v.id} className="items-start gap-3 py-2"
-                onSelect={() => { onNavigate?.(); void openView(v, `/app/start?as=${v.id}`); }}>
-                <Icon size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
-                <span className="min-w-0 flex-1 space-y-0.5">
-                  <span className="block text-sm font-medium">{v.label}</span>
-                  <span className="block text-xs text-muted-foreground">{v.value}</span>
-                  {switches && <span className="block text-[11px] text-muted-foreground">{tr({ en: `Opens as the demo ${v.persona.name}`, pt: `Abre como ${v.persona.name}, conta demo` })}</span>}
-                </span>
-                {current?.id === v.id && <Check size={15} className="mt-0.5 shrink-0" aria-hidden />}
-              </DropdownMenuItem>
-            );
-          })}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+            {current?.id === v.id && <Check size={15} className="mt-0.5 shrink-0" aria-hidden />}
+          </DropdownMenuItem>
+        );
+      })}
+    </>
+  );
+}
+
+/** The same choice on a phone, inside the navigation sheet. */
+function ViewSelector({ onNavigate }: { onNavigate?: () => void }) {
+  const { profile } = useAuth();
+  const { switching, viewVisible } = useOpenArea();
+  const views = VIEWS.filter(viewVisible);
+  if (!profile || views.length === 0) return null;
+  const current = viewOf(profile.role);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" className="flex w-full items-center justify-between gap-2 rounded-lg border border-accent/40 bg-accent/10 px-3 py-2 text-sm font-semibold text-foreground">
+          <span className="flex items-center gap-2">
+            {switching?.startsWith("view:") ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <Eye size={15} className="text-accent" aria-hidden />}
+            {current?.label ?? ROLE_LABEL[profile.role]}
+          </span>
+          <ChevronDown size={14} aria-hidden />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-80">
+        <ViewMenuItems onNavigate={onNavigate} />
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -273,28 +277,34 @@ export default function AppLayout() {
             {/* On smaller screens the switch sits in the navigation sheet, where the header has no room. */}
             <LanguageSwitch className={profile ? "hidden lg:inline-flex" : undefined} />
             {profile && (
-              <>
-                <div className="hidden items-center gap-2.5 sm:flex">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-foreground" aria-hidden>
-                    {initials}
-                  </span>
-                  <div className="leading-tight">
-                    <p className="max-w-[10rem] truncate text-sm font-medium text-foreground">{profile.display_name}</p>
-                    <p className="text-xs text-muted-foreground">{ROLE_LABEL[profile.role]}</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon" onClick={signOut}
-                  aria-label={tr({ en: "Sign out", pt: "Sair" })} title={tr({ en: "Sign out", pt: "Sair" })}>
-                  <LogOut size={17} />
-                </Button>
-              </>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button type="button" className="flex items-center gap-2.5 rounded-lg px-1.5 py-1.5 hover:bg-secondary/60"
+                    aria-label={tr({ en: "Your account and the view", pt: "Sua conta e a visão" })}>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-foreground" aria-hidden>
+                      {initials}
+                    </span>
+                    <span className="hidden text-left leading-tight sm:block">
+                      <span className="block max-w-[10rem] truncate text-sm font-medium text-foreground">{profile.display_name}</span>
+                      <span className="block text-xs text-muted-foreground">{viewOf(profile.role)?.label ?? ROLE_LABEL[profile.role]}</span>
+                    </span>
+                    <ChevronDown size={14} className="text-muted-foreground" aria-hidden />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80">
+                  <ViewMenuItems />
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => void signOut()} className="gap-3 py-2">
+                    <LogOut size={16} aria-hidden /> <span className="text-sm">{tr({ en: "Sign out", pt: "Sair" })}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </div>
         {profile && (
-          <div className="hidden items-center justify-between gap-4 border-t border-border/60 px-4 py-1.5 lg:flex lg:px-6">
+          <div className="hidden border-t border-border/60 px-4 py-1.5 lg:block lg:px-6">
             <StoryBar current={current} />
-            <ViewSelector />
           </div>
         )}
       </header>
@@ -313,7 +323,7 @@ export default function AppLayout() {
             <SheetTitle className="px-7 pt-6 font-heading text-lg text-foreground">{current?.label ?? "EmpowerFI"}</SheetTitle>
             <LanguageSwitch className="px-7 pt-3" />
             <div className="space-y-6 p-4">
-              <ViewSelector block onNavigate={() => setOpen(false)} />
+              <ViewSelector onNavigate={() => setOpen(false)} />
               <StoryBar current={current} vertical onNavigate={() => setOpen(false)} />
               {subnav.length > 0 && (
                 <div className="space-y-1 border-t border-border pt-4">

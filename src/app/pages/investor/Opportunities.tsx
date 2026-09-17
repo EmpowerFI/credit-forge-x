@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BadgeCheck, MapPin, Target } from "lucide-react";
+import { ArrowRight, BadgeCheck, MapPin, SlidersHorizontal, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,6 +54,9 @@ function FilterSelect({ label, value, onChange, options }: {
 export default function Opportunities() {
   const market = useMarket();
   const [filter, setFilter] = useState<Filter>(ALL);
+  const [moreFilters, setMoreFilters] = useState(false);
+  // What the button has to answer: how many of the folded filters are on.
+  const narrowed = (["route", "risk", "purpose", "term", "amount"] as const).filter((k) => filter[k] !== ALL[k]).length;
   const set = (k: keyof Filter) => (v: string) => setFilter((f) => ({ ...f, [k]: v }));
   const mandate = useMandate();
   const m = mandate.data ?? null;
@@ -65,29 +68,63 @@ export default function Opportunities() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })}
-        title={tr({ en: "Qualified P2P opportunities", pt: "Oportunidades P2P qualificadas" })}
+        title={tr({ en: "Opportunities", pt: "Oportunidades" })}
         description={tr({
-          en: "Each one exists only after readiness, her own request for capital and EmpowerFI's eligibility check. The Capital Allocation Engine then assigns it a funding route: Domestic P2P in reais, or Global P2P in USDC. Returns are simulated; nothing here is a promise of return.",
-          pt: "Cada uma só existe depois da prontidão, do pedido de crédito feito por ela e da verificação de elegibilidade da EmpowerFI. Depois, o Motor de Alocação de Capital define a rota de captação: P2P Doméstico em reais ou P2P Global em USDC. Os retornos são simulados; nada aqui é promessa de retorno.",
+          en: "Qualified requests raising capital now. Returns are simulated; nothing here is a promise of return.",
+          pt: "Pedidos qualificados captando agora. Os retornos são simulados; nada aqui é promessa de retorno.",
+        })}
+        about={tr({
+          en: (
+            <>
+              <p>Each opportunity exists only after readiness, her own request for capital and EmpowerFI's eligibility check. The Capital Allocation Engine then assigns it a route: domestic P2P in reais, or global P2P in USDC, by cost, availability, mandate and risk appetite.</p>
+              <p>Either way she receives and repays in reais, by Pix, and EmpowerFI's P2P desk formalises and services the loan. Businesses appear by code, and only when she agreed to be shown to investors.</p>
+            </>
+          ),
+          pt: (
+            <>
+              <p>Cada oportunidade só existe depois da prontidão, do pedido de crédito feito por ela e da verificação de elegibilidade da EmpowerFI. O Motor de Alocação de Capital define então a rota: P2P doméstico em reais ou P2P global em USDC, por custo, disponibilidade, mandato e apetite a risco.</p>
+              <p>Nos dois casos ela recebe e paga em reais, por Pix, e a mesa P2P da EmpowerFI formaliza o empréstimo e acompanha os pagamentos. Os negócios aparecem por código, e só quando ela concordou em ser mostrada a investidores.</p>
+            </>
+          ),
         })} />
 
-      <div className="flex flex-wrap gap-2">
-        {m && (
-          <FilterSelect label={tr({ en: "Mandate", pt: "Mandato" })} value={filter.mandate} onChange={set("mandate")}
-            options={[["fit", tr({ en: `Fits ${m.label ?? "my mandate"}`, pt: `Cabe em ${m.label ?? "meu mandato"}` })], ["all", tr({ en: "All opportunities", pt: "Todas as oportunidades" })]]} />
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {m && (
+            <FilterSelect label={tr({ en: "Mandate", pt: "Mandato" })} value={filter.mandate} onChange={set("mandate")}
+              options={[["fit", tr({ en: `Fits ${m.label ?? "my mandate"}`, pt: `Cabe em ${m.label ?? "meu mandato"}` })], ["all", tr({ en: "All opportunities", pt: "Todas as oportunidades" })]]} />
+          )}
+          <FilterSelect label={tr({ en: "Status", pt: "Status" })} value={filter.status} onChange={set("status")}
+            options={[["raising", tr({ en: "Raising", pt: "Captando" })], ["funded", tr({ en: "Funded", pt: "Captadas" })], ["all", tr({ en: "All", pt: "Todas" })]]} />
+          <Button variant={narrowed > 0 ? "secondary" : "outline"} className="h-9 gap-2" aria-expanded={moreFilters}
+            onClick={() => setMoreFilters((v) => !v)}>
+            <SlidersHorizontal size={15} aria-hidden />
+            {narrowed > 0 ? tr({ en: `Filters · ${narrowed}`, pt: `Filtros · ${narrowed}` }) : tr({ en: "Filters", pt: "Filtros" })}
+          </Button>
+          {narrowed > 0 && (
+            <button type="button" onClick={() => setFilter((f) => ({ ...ALL, mandate: f.mandate, status: f.status }))}
+              className="text-xs font-medium text-accent hover:text-foreground">{tr({ en: "Clear", pt: "Limpar" })}</button>
+          )}
+          {market.data && (
+            <p className="ml-auto text-sm text-muted-foreground">
+              {tr({ en: `${rows.length} of ${market.data.length} opportunities`, pt: `${rows.length} de ${market.data.length} oportunidades` })}
+            </p>
+          )}
+        </div>
+        {moreFilters && (
+          <div className="flex flex-wrap gap-2 rounded-xl border border-border p-3">
+            <FilterSelect label={tr({ en: "Route", pt: "Rota" })} value={filter.route} onChange={set("route")}
+              options={[["all", tr({ en: "Both", pt: "As duas" })], ["domestic", tr({ en: "Domestic / Pix", pt: "Doméstica / Pix" })], ["global", tr({ en: "Global / USDC", pt: "Global / USDC" })]]} />
+            <FilterSelect label={tr({ en: "Risk", pt: "Risco" })} value={filter.risk} onChange={set("risk")}
+              options={[["all", tr({ en: "All", pt: "Todos" })], ["LOW", tr({ en: "A · lower", pt: "A · menor" })], ["MEDIUM", tr({ en: "B · moderate", pt: "B · moderado" })], ["HIGH", tr({ en: "C · higher", pt: "C · maior" })]]} />
+            <FilterSelect label={tr({ en: "Purpose", pt: "Finalidade" })} value={filter.purpose} onChange={set("purpose")}
+              options={[["all", tr({ en: "All", pt: "Todas" })], ...Object.entries(PURPOSE_LABEL)] as [string, string][]} />
+            <FilterSelect label={tr({ en: "Term", pt: "Prazo" })} value={filter.term} onChange={set("term")}
+              options={[["all", tr({ en: "All", pt: "Todos" })], ["short", tr({ en: "Up to 6 months", pt: "Até 6 meses" })], ["mid", tr({ en: "7–12 months", pt: "7 a 12 meses" })], ["long", tr({ en: "Over 12 months", pt: "Mais de 12 meses" })]]} />
+            <FilterSelect label={tr({ en: "Amount", pt: "Valor" })} value={filter.amount} onChange={set("amount")}
+              options={[["all", tr({ en: "All", pt: "Todos" })], ["small", tr({ en: "Under R$ 2,500", pt: "Abaixo de R$ 2.500" })], ["mid", tr({ en: "R$ 2,500–5,000", pt: "R$ 2.500 a 5.000" })], ["large", tr({ en: "R$ 5,000 and up", pt: "R$ 5.000 ou mais" })]]} />
+          </div>
         )}
-        <FilterSelect label={tr({ en: "Route", pt: "Rota" })} value={filter.route} onChange={set("route")}
-          options={[["all", tr({ en: "Both", pt: "As duas" })], ["domestic", tr({ en: "Domestic / Pix", pt: "Doméstica / Pix" })], ["global", tr({ en: "Global / USDC", pt: "Global / USDC" })]]} />
-        <FilterSelect label={tr({ en: "Status", pt: "Status" })} value={filter.status} onChange={set("status")}
-          options={[["raising", tr({ en: "Raising", pt: "Captando" })], ["funded", tr({ en: "Funded", pt: "Captadas" })], ["all", tr({ en: "All", pt: "Todas" })]]} />
-        <FilterSelect label={tr({ en: "Risk", pt: "Risco" })} value={filter.risk} onChange={set("risk")}
-          options={[["all", tr({ en: "All", pt: "Todos" })], ["LOW", tr({ en: "A · lower", pt: "A · menor" })], ["MEDIUM", tr({ en: "B · moderate", pt: "B · moderado" })], ["HIGH", tr({ en: "C · higher", pt: "C · maior" })]]} />
-        <FilterSelect label={tr({ en: "Purpose", pt: "Finalidade" })} value={filter.purpose} onChange={set("purpose")}
-          options={[["all", tr({ en: "All", pt: "Todas" })], ...Object.entries(PURPOSE_LABEL)] as [string, string][]} />
-        <FilterSelect label={tr({ en: "Term", pt: "Prazo" })} value={filter.term} onChange={set("term")}
-          options={[["all", tr({ en: "All", pt: "Todos" })], ["short", tr({ en: "Up to 6 months", pt: "Até 6 meses" })], ["mid", tr({ en: "7–12 months", pt: "7 a 12 meses" })], ["long", tr({ en: "Over 12 months", pt: "Mais de 12 meses" })]]} />
-        <FilterSelect label={tr({ en: "Amount", pt: "Valor" })} value={filter.amount} onChange={set("amount")}
-          options={[["all", tr({ en: "All", pt: "Todos" })], ["small", tr({ en: "Under R$ 2,500", pt: "Abaixo de R$ 2.500" })], ["mid", tr({ en: "R$ 2,500–5,000", pt: "R$ 2.500 a 5.000" })], ["large", tr({ en: "R$ 5,000 and up", pt: "R$ 5.000 ou mais" })]]} />
       </div>
 
       {market.isPending && (
@@ -112,11 +149,12 @@ export default function Opportunities() {
             <li key={o.opportunity_id} className="panel grid gap-5 p-5 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,0.7fr))_auto] lg:items-center">
               <div className="min-w-0 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-heading text-lg font-bold text-foreground">{title(o.purpose, o.business_sector)}</h2>
+                  <h2 className="font-heading font-mono text-lg font-bold text-foreground">{o.code}</h2>
                   <StatusPill tone={FUNDING_LABEL[o.funding_status].tone}>{FUNDING_LABEL[o.funding_status].label}</StatusPill>
                 </div>
-                <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                  <span className="font-mono">{o.code}</span> · <MapPin size={12} /> {o.community_name}
+                <p className="flex flex-wrap items-center gap-x-2 text-sm text-foreground">
+                  {title(o.purpose, o.business_sector)}
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground"><MapPin size={12} aria-hidden /> {o.community_name}</span>
                 </p>
                 <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <PoolPill pool={pool} />
@@ -129,7 +167,11 @@ export default function Opportunities() {
                   {proofs.length > 0 && (
                     <span className={`inline-flex items-center gap-1 ${proven === proofs.length ? "text-positive" : "text-muted-foreground"}`}>
                       <BadgeCheck size={12} aria-hidden />
-                      {tr({ en: `${proven} of ${proofs.length} proofs on Solana`, pt: `${proven} de ${proofs.length} provas na Solana` })}
+                      {proven === 0
+                        ? tr({ en: `${proofs.length} proofs recorded · confirming`, pt: `${proofs.length} provas registradas · confirmando` })
+                        : proven === proofs.length
+                          ? tr({ en: `${proven} proofs confirmed on Solana`, pt: `${proven} provas confirmadas na Solana` })
+                          : tr({ en: `${proven} of ${proofs.length} proofs confirmed`, pt: `${proven} de ${proofs.length} provas confirmadas` })}
                     </span>
                   )}
                 </p>
@@ -161,20 +203,6 @@ export default function Opportunities() {
         })}
       </ul>
 
-      <p className="panel px-5 py-3 text-xs text-muted-foreground">
-        {tr({
-          en: <>
-            <span className="font-semibold text-foreground">Routing principle:</span> each opportunity goes to domestic P2P or global USDC by cost,
-            availability, mandate and risk appetite. Either way she receives and repays in reais, by Pix, and EmpowerFI's P2P desk
-            formalises and services the loan.
-          </>,
-          pt: <>
-            <span className="font-semibold text-foreground">Princípio de roteamento:</span> cada oportunidade vai para o P2P doméstico ou para o
-            USDC global por custo, disponibilidade, mandato e apetite a risco. Nos dois casos, ela recebe e paga em reais, por Pix, e a mesa P2P
-            da EmpowerFI formaliza o empréstimo e acompanha os pagamentos.
-          </>,
-        })}
-      </p>
     </div>
   );
 }

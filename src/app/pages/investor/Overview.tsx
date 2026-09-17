@@ -23,7 +23,8 @@ import { useBalances } from "../../wallet/useBalances";
 import CapitalPools from "./CapitalPools";
 import MandatePanel from "./Mandate";
 import FundingBar from "./FundingBar";
-import { useActivity, useMarket, usePortfolio } from "./queries";
+import { useActivity, useMandate, useMarket, usePortfolio } from "./queries";
+import { matchesMandate } from "../../lib/mandate";
 import VerifyButton from "../../components/proof/VerifyButton";
 import type { AnchorKind } from "../../lib/platform";
 
@@ -38,6 +39,7 @@ export default function Overview() {
   const portfolio = usePortfolio();
   const activity = useActivity(200);
   const market = useMarket();
+  const mandate = useMandate();
 
   // Capital invested and repaid, cumulative, day by day.
   const series = useMemo(() => {
@@ -60,15 +62,37 @@ export default function Overview() {
   const gain = p && p.invested_micro_usdc > 0 ? Math.round(((p.expected_micro_usdc - p.invested_micro_usdc) / p.invested_micro_usdc) * 10000) : null;
   const byRisk = (["LOW", "MEDIUM", "HIGH"] as Grade[]).map((b) => ({ band: b, micro: Number(p?.by_risk[b] ?? 0) }));
   const riskTotal = Math.max(1, byRisk.reduce((s, r) => s + r.micro, 0));
-  const raising = (market.data ?? []).filter((o) => o.funding_status === "open" || o.funding_status === "partially_funded").slice(0, 3);
+  const open = (market.data ?? []).filter((o) => o.funding_status === "open" || o.funding_status === "partially_funded");
+  const raising = open.slice(0, 3);
+  // What the investor came to know first: what is raising and fits the mandate.
+  const fits = open.filter((o) => matchesMandate(mandate.data ?? null, o)).length;
 
   return (
     <div className="space-y-6">
       <PageHeader eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })} title={tr({ en: "Overview", pt: "Visão geral" })}
         description={tr({
-          en: "Qualified productive-credit demand, and the two pools of P2P capital that fund it: domestic investors in reais, and global investors in USDC on Solana. She receives and repays in reais, by Pix, either way.",
-          pt: "A demanda qualificada de crédito produtivo e os dois pools de capital P2P que a financiam: investidores domésticos em reais e investidores globais em USDC na Solana. Nos dois casos, ela recebe e paga em reais, por Pix.",
+          en: "Your mandate, your capital and what is raising now.",
+          pt: "Seu mandato, seu capital e o que está captando agora.",
+        })}
+        about={tr({
+          en: "Qualified productive-credit demand is funded by two pools of P2P capital: domestic investors in reais, and global investors in USDC on Solana. She receives and repays in reais, by Pix, either way, and EmpowerFI's P2P desk formalises and services the loan. Returns are simulated; nothing here is a promise of return.",
+          pt: "A demanda qualificada de crédito produtivo é financiada por dois pools de capital P2P: investidores domésticos em reais e investidores globais em USDC na Solana. Nos dois casos ela recebe e paga em reais, por Pix, e a mesa P2P da EmpowerFI formaliza o empréstimo e acompanha os pagamentos. Os retornos são simulados; nada aqui é promessa de retorno.",
         })} />
+
+      {fits > 0 && (
+        <section className="panel flex flex-wrap items-center justify-between gap-3 p-5">
+          <p className="flex items-center gap-2.5 text-sm text-foreground">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-hidden />
+            {tr({
+              en: `${fits} ${fits === 1 ? "opportunity fits" : "opportunities fit"} your mandate and ${fits === 1 ? "is" : "are"} raising now`,
+              pt: `${fits} ${fits === 1 ? "oportunidade cabe" : "oportunidades cabem"} no seu mandato e ${fits === 1 ? "está captando" : "estão captando"} agora`,
+            })}
+          </p>
+          <Link to="/app/investor/opportunities" className="inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-foreground">
+            {tr({ en: "See them", pt: "Ver quais" })} <ArrowRight size={14} aria-hidden />
+          </Link>
+        </section>
+      )}
 
       <MandatePanel />
 

@@ -345,8 +345,12 @@ export default function OperatingEconomics() {
       <PageHeader eyebrow={tr({ en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" })}
         title={tr({ en: "Operating economics", pt: "Economia operacional" })}
         description={tr({
-          en: "Can productive credit become cheaper to operate without becoming weaker credit? EmpowerFI tests a data-driven operating model designed to compress cost to serve while preserving credit discipline, continuous servicing and auditable outcomes.",
-          pt: "O crédito produtivo pode ficar mais barato de operar sem virar um crédito pior? A EmpowerFI testa um modelo operacional baseado em dados, desenhado para reduzir o custo de servir preservando a disciplina de crédito, o acompanhamento contínuo e resultados auditáveis.",
+          en: "Can productive credit become cheaper to operate without becoming weaker credit?",
+          pt: "O crédito produtivo pode ficar mais barato de operar sem virar um crédito pior?",
+        })}
+        about={tr({
+          en: "EmpowerFI tests a data-driven operating model designed to compress cost to serve while preserving credit discipline, continuous servicing and auditable outcomes. Costs come from the events each stage records, priced by the pilot's rate card; times from the timestamps of the request, the engine runs, the desk's decision and the disbursement; discipline and routing from the engines' own reason codes.",
+          pt: "A EmpowerFI testa um modelo operacional baseado em dados, desenhado para reduzir o custo de servir preservando a disciplina de crédito, o acompanhamento contínuo e resultados auditáveis. Os custos vêm dos eventos que cada etapa registra, precificados pela tabela do piloto; os tempos, das datas do pedido, das rodadas dos motores, da decisão da mesa e do desembolso; a disciplina e o roteamento, dos códigos de motivo dos próprios motores.",
         })}
         actions={
           <>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, BadgeCheck, EyeOff, FlaskConical, Hourglass } from "lucide-react";
+import { ArrowRight, BadgeCheck, EyeOff, Hourglass } from "lucide-react";
 import { cn } from "@/lib/utils";
 import EvcLabel from "../../components/product/EvcLabel";
 import Panel from "../../components/product/Panel";
@@ -147,7 +147,7 @@ function segmentKey(id: SegmentId, key: string) {
 export function Segments({ data }: { data: ImpactIntelligence }) {
   const ids: SegmentId[] = ["readiness", "data_quality", "credit_intent", "purpose", "sector", "geography"];
   return (
-    <Panel title={tr({ en: "Segments", pt: "Segmentos" })}
+    <Panel id="segments" title={tr({ en: "Segments", pt: "Segmentos" })}
       actions={<StatusPill tone="neutral" dot={false}><EyeOff size={12} className="mr-1 inline" aria-hidden />{tr({ en: "Groups under 5 hidden", pt: "Grupos com menos de 5 ocultos" })}</StatusPill>}
       description={tr({
         en: "Where the program's businesses stand. Geography is the community's city, never an address.",
@@ -279,7 +279,7 @@ export function Evidence({ data }: { data: ImpactIntelligence }) {
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{tr({ en: "Latest proofs", pt: "Provas mais recentes" })}</p>
           {e.latest.length === 0 ? (
             <p className="text-sm text-muted-foreground">{tr({
-              en: `${formatNumber(e.pending)} proofs are queued for devnet; they confirm within minutes.`,
+              en: `${formatNumber(e.pending)} proofs are confirming on devnet; they land within minutes.`,
               pt: `${formatNumber(e.pending)} provas estão na fila da devnet; elas confirmam em minutos.`,
             })}</p>
           ) : (
@@ -325,15 +325,3 @@ export function Operators({ data }: { data: ImpactIntelligence }) {
   );
 }
 
-export function SimulatedNote({ data }: { data: ImpactIntelligence }) {
-  if (!data.program.is_simulated && !data.sponsor.is_simulated) return null;
-  return (
-    <p className="flex items-start gap-2 rounded-xl border tone-caution px-4 py-3 text-xs">
-      <FlaskConical size={14} className="mt-0.5 shrink-0" aria-hidden />
-      {tr({
-        en: "Demo program: the sponsor, its budget and the businesses are simulated. The figures are computed live from the platform's records, and the proofs are real transactions on Solana devnet.",
-        pt: "Programa de demonstração: o patrocinador, o orçamento e os negócios são simulados. Os números são calculados ao vivo a partir dos registros da plataforma, e as provas são transações reais na devnet da Solana.",
-      })}
-    </p>
-  );
-}
