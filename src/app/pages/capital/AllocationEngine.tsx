@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { allocate, type AllocationResult, type PoolPolicy } from "@empowerfi/capital-allocation";
-import { ArrowDown, FastForward, Play, RotateCcw, Split } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { ArrowDown, BarChart3, FastForward, Play, RotateCcw, Split } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "../../auth/useAuth";
 import LoadError from "../../components/LoadError";
 import PageHeader from "../../components/product/PageHeader";
 import StatusPill from "../../components/product/StatusPill";
@@ -61,6 +62,7 @@ interface Run {
 }
 
 export default function AllocationEngine() {
+  const { profile } = useAuth();
   const overview = useCapitalOverview();
   const opportunities = useEngineOpportunities();
   const [domestic, setDomestic] = useState<PoolForm | null>(null);
@@ -141,7 +143,12 @@ export default function AllocationEngine() {
         description={tr({
           en: "EmpowerFI first decides whether a business is credit-ready, then which available pool of P2P capital can fund it sustainably. Pick an opportunity, run the credit engine, then run capital allocation on what it qualifies.",
           pt: "A EmpowerFI primeiro decide se um negócio está pronto para crédito, depois qual pool de capital P2P disponível pode financiá-lo de forma sustentável. Escolha uma oportunidade, rode o motor de crédito e depois a alocação de capital sobre o que ele qualificar.",
-        })} />
+        })}
+        actions={profile && ["sponsor", "partner", "admin", "auditor"].includes(profile.role) ? (
+          <Button asChild variant="outline" className="gap-2">
+            <Link to="/app/capital/economics"><BarChart3 size={16} /> {tr({ en: "Operating economics", pt: "Economia operacional" })}</Link>
+          </Button>
+        ) : undefined} />
 
       <CapitalPools engineLink={false} tilesOnly />
 
@@ -174,7 +181,7 @@ export default function AllocationEngine() {
             )}
           </div>
           {domestic && global && (
-            <div className="border-t border-border pt-4">
+            <div id="assumptions" className="scroll-mt-32 border-t border-border pt-4">
               <Assumptions domestic={domestic} global={global} onDomestic={setDomestic} onGlobal={setGlobal} changed={changed}
                 onReset={() => { if (dbForms) { setDomestic(dbForms.domestic); setGlobal(dbForms.global); } }} />
               <p className="mt-2 text-xs text-muted-foreground">{tr({
@@ -248,7 +255,7 @@ export default function AllocationEngine() {
       </div>
 
       {overview.data && policies && (
-        <Replay demand={overview.data.demand} policies={policies} coverage={overview.data.coverage} assumptionsChanged={changed} />
+        <div id="replay" className="scroll-mt-32"><Replay demand={overview.data.demand} policies={policies} coverage={overview.data.coverage} assumptionsChanged={changed} /></div>
       )}
 
       <p className="px-1 text-xs text-muted-foreground">{prototypeNotice()}</p>

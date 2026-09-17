@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
-import { BadgeCheck, CalendarRange, Download, FileText, Printer, Users } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { BadgeCheck, BarChart3, CalendarRange, Download, FileText, Printer, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -152,9 +152,14 @@ export default function ImpactIntelligence() {
                 <SelectContent>{programs.data.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
               </Select>
             )}
+            {programId && (
+              <Button asChild variant="outline" className="gap-2">
+                <Link to={`/app/capital/economics?program=${programId}`}><BarChart3 size={16} /> {tr({ en: "Cost to serve", pt: "Custo de servir" })}</Link>
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button disabled={!data} className="gap-2"><FileText size={16} /> {tr({ en: "Generate auditable report", pt: "Gerar relatório auditável" })}</Button>
+                <Button id="report" disabled={!data} className="scroll-mt-32 gap-2"><FileText size={16} /> {tr({ en: "Generate auditable report", pt: "Gerar relatório auditável" })}</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-72">
                 <DropdownMenuItem onSelect={() => data && downloadReport(data)} className="items-start gap-3 py-2">

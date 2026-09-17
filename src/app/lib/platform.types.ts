@@ -2377,6 +2377,7 @@ export type Database = {
         }
         Returns: string
       }
+      operating_economics: { Args: { p_program_id?: string }; Returns: Json }
       partner_decide: {
         Args: {
           p_approved_amount_cents?: number
