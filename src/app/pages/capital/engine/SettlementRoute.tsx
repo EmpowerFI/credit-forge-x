@@ -35,7 +35,7 @@ function Quote({ q, chosen, grossForPrincipal }: { q: RouteQuote; chosen: boolea
 
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          {tr({ en: "Reaches her Pix", pt: "Chega no Pix dela" })}
+          {tr({ en: "Reaches her Pix", pt: "Chega no Pix da empreendedora" })}
         </p>
         <p className={cn("num font-heading text-2xl font-bold", chosen ? "text-positive" : "text-foreground")}>
           {money(q.net_brl_cents)}
@@ -62,7 +62,7 @@ function Quote({ q, chosen, grossForPrincipal }: { q: RouteQuote; chosen: boolea
         </div>
         {grossForPrincipal != null && (
           <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">{tr({ en: "To deliver her principal", pt: "Para entregar o principal dela" })}</dt>
+            <dt className="text-muted-foreground">{tr({ en: "To deliver her principal", pt: "Para entregar o principal da empreendedora" })}</dt>
             <dd className="text-foreground">{usdc(grossForPrincipal, 2)}</dd>
           </div>
         )}
@@ -104,7 +104,7 @@ export default function SettlementRoute({ result }: { result: SettlementRouteRes
           <p className="max-w-2xl text-sm text-muted-foreground">
             {tr({
               en: "Global capital won, so the dollars have to become her reais. There are two ways, and they differ in where the exchange rate is struck.",
-              pt: "O capital global venceu, então os dólares precisam virar os reais dela. Há duas formas, e elas diferem em onde o câmbio é fechado.",
+              pt: "O capital global venceu, então os dólares precisam virar os reais da empreendedora. Há duas formas, e elas diferem em onde o câmbio é fechado.",
             })}
           </p>
         </div>
@@ -130,7 +130,7 @@ export default function SettlementRoute({ result }: { result: SettlementRouteRes
           <p className="num text-sm text-foreground">
             {tr({
               en: <>{money(delta)} more reaches her this way, on {usdc(result.compared_gross_micro_usdc, 0)} released.</>,
-              pt: <>{money(delta)} a mais chegam a ela por este caminho, sobre {usdc(result.compared_gross_micro_usdc, 0)} liberados.</>,
+              pt: <>{money(delta)} a mais chegam à empreendedora por este caminho, sobre {usdc(result.compared_gross_micro_usdc, 0)} liberados.</>,
             })}
           </p>
         )}
@@ -139,7 +139,7 @@ export default function SettlementRoute({ result }: { result: SettlementRouteRes
       <p className="rounded-xl border tone-caution px-3 py-2 text-xs">
         {tr({
           en: "She receives her contracted principal whole whichever route pays it. What routing costs is what the vault must release to deliver it — never taken out of her Pix.",
-          pt: "Ela recebe o principal contratado inteiro, seja qual for a rota que pagar. O que o roteamento custa é o que o cofre precisa liberar para entregá-lo — nunca é tirado do Pix dela.",
+          pt: "A empreendedora recebe o principal contratado inteiro, seja qual for a rota que pagar. O que o roteamento custa é o que o cofre precisa liberar para entregá-lo — nunca é tirado do Pix dela.",
         })}
       </p>
 
@@ -167,7 +167,7 @@ export default function SettlementRoute({ result }: { result: SettlementRouteRes
               <Row label={tr({ en: "Spread", pt: "Spread" })} values={quotes.map((q) => `${bpsPercent(q.fx_spread_bps)} · ${money(q.fx_cost_cents)}`)} />
               <Row label={tr({ en: "Provider fee", pt: "Taxa do provedor" })} values={quotes.map((q) => money(q.provider_fee_cents))} />
               <Row label={tr({ en: "Network", pt: "Rede" })} values={quotes.map((q) => money(q.network_fee_cents))} />
-              <Row label={tr({ en: "Reaches her Pix", pt: "Chega no Pix dela" })} values={quotes.map((q) => money(q.net_brl_cents))} />
+              <Row label={tr({ en: "Reaches her Pix", pt: "Chega no Pix da empreendedora" })} values={quotes.map((q) => money(q.net_brl_cents))} />
               <Row label={tr({ en: "Total cost", pt: "Custo total" })} values={quotes.map((q) => `${money(q.total_cost_cents)} · ${bpsPercent(q.cost_bps)}`)} />
               <Row label={tr({ en: "Settles in", pt: "Liquida em" })} values={quotes.map((q) => eta(q.execution_eta_sec))} />
               <Row label={tr({ en: "Quote valid until", pt: "Cotação válida até" })}
@@ -181,7 +181,7 @@ export default function SettlementRoute({ result }: { result: SettlementRouteRes
           <p className="text-xs text-muted-foreground">
             {tr({
               en: <>Feasibility first, then the reais she receives, then what it costs, then the number of conversions; speed breaks what is left. Rate cards are assumptions of this prototype. <span className="font-mono">{result.model_version}</span></>,
-              pt: <>Primeiro a viabilidade, depois os reais que ela recebe, depois o custo, depois o número de conversões; a velocidade desempata o que sobrar. Os rate cards são premissas deste protótipo. <span className="font-mono">{result.model_version}</span></>,
+              pt: <>Primeiro a viabilidade, depois os reais que a empreendedora recebe, depois o custo, depois o número de conversões; a velocidade desempata o que sobrar. Os rate cards são premissas deste protótipo. <span className="font-mono">{result.model_version}</span></>,
             })}
           </p>
         </div>

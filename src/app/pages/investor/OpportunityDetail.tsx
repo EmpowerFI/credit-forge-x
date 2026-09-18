@@ -108,7 +108,7 @@ export default function OpportunityDetail() {
     disbursed: {
       done: false,
       reality: "mock",
-      detail: tr({ en: `${money(row.amount_cents)} to her account, in one Pix`, pt: `${money(row.amount_cents)} na conta dela, num único Pix` }),
+      detail: tr({ en: `${money(row.amount_cents)} to her account, in one Pix`, pt: `${money(row.amount_cents)} na conta da empreendedora, num único Pix` }),
     },
     repayments: {
       done: false,

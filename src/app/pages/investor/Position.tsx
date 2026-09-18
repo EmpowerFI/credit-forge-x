@@ -166,7 +166,7 @@ export default function Position() {
       done: Boolean(settlement?.pix),
       reality: "mock",
       detail: settlement?.pix
-        ? tr({ en: `${money(settlement.pix.brl_cents)} to her account · ${date(settlement.pix.at)}`, pt: `${money(settlement.pix.brl_cents)} na conta dela · ${date(settlement.pix.at)}` })
+        ? tr({ en: `${money(settlement.pix.brl_cents)} to her account · ${date(settlement.pix.at)}`, pt: `${money(settlement.pix.brl_cents)} na conta da empreendedora · ${date(settlement.pix.at)}` })
         : tr({ en: "When EmpowerFI's P2P desk disburses", pt: "Quando a mesa P2P da EmpowerFI desembolsar" }),
     },
     repayments: {
@@ -236,7 +236,7 @@ export default function Position() {
               <DataTag kind="derived" withLabel />
               {tr({
                 en: `Settled through ${ROUTE[chosen.route].label}, ${FX_STRUCK[chosen.fx_struck].label.toLowerCase()}. Her principal arrived whole either way; the route is what the vault had to release to deliver it.`,
-                pt: `Liquidado pela rota ${ROUTE[chosen.route].label}, ${FX_STRUCK[chosen.fx_struck].label.toLowerCase()}. O principal dela chegou inteiro de qualquer forma; a rota é o que o cofre teve de liberar para entregá-lo.`,
+                pt: `Liquidado pela rota ${ROUTE[chosen.route].label}, ${FX_STRUCK[chosen.fx_struck].label.toLowerCase()}. O principal da empreendedora chegou inteiro de qualquer forma; a rota é o que o cofre teve de liberar para entregá-lo.`,
               })}
               <span className="font-mono">{route.model_version}</span>
             </p>

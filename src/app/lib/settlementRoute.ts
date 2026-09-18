@@ -121,7 +121,7 @@ export const ROUTE: Record<SettlementRoute, { label: string; short: string; says
     short: { en: "Direct", pt: "Direta" },
     says: {
       en: "One conversion, at the moment she is paid: the off-ramp turns USDC into reais and sends the Pix.",
-      pt: "Uma conversão, no momento em que ela é paga: o off-ramp transforma USDC em reais e envia o Pix.",
+      pt: "Uma conversão, no momento em que a empreendedora é paga: o off-ramp transforma USDC em reais e envia o Pix.",
     },
   },
   brl_stable_pix: {
@@ -140,7 +140,7 @@ export const FX_STRUCK: Record<"allocation" | "payout", { label: string; says: s
     label: { en: "Locked at allocation", pt: "Travado na alocação" },
     says: {
       en: "The reais were fixed when investors' capital was committed, so what she receives no longer moves with the exchange rate.",
-      pt: "Os reais foram fixados quando o capital dos investidores foi comprometido, então o que ela recebe não se move mais com o câmbio.",
+      pt: "Os reais foram fixados quando o capital dos investidores foi comprometido, então o que a empreendedora recebe não se move mais com o câmbio.",
     },
   },
   payout: {
@@ -155,7 +155,7 @@ export const FX_STRUCK: Record<"allocation" | "payout", { label: string; says: s
 export const ROUTE_REASON: Record<RouteReason, { label: string; says: string; tone: Tone }> = localized({
   DIRECT_LOWEST_COST: {
     label: { en: "Direct costs less", pt: "A direta custa menos" },
-    says: { en: "It leaves more reais in her account for the same dollars.", pt: "Ela deixa mais reais na conta dela pelos mesmos dólares." },
+    says: { en: "It leaves more reais in her account for the same dollars.", pt: "A rota direta deixa mais reais na conta da empreendedora pelos mesmos dólares." },
     tone: "positive",
   },
   DIRECT_FEWEST_STEPS: {
@@ -167,7 +167,7 @@ export const ROUTE_REASON: Record<RouteReason, { label: string; says: string; to
     tone: "info",
   },
   BRL_STABLE_BETTER_NET_BRL: {
-    label: { en: "More reais to her", pt: "Mais reais para ela" },
+    label: { en: "More reais to her", pt: "Mais reais para a empreendedora" },
     says: { en: "The stablecoin route delivers more for the same dollars released.", pt: "A rota da stablecoin entrega mais pelos mesmos dólares liberados." },
     tone: "positive",
   },
@@ -175,7 +175,7 @@ export const ROUTE_REASON: Record<RouteReason, { label: string; says: string; to
     label: { en: "Principal locked earlier", pt: "Principal travado antes" },
     says: {
       en: "Its rate was struck when the opportunity was allocated, before the payout leg could move.",
-      pt: "A taxa dela foi fechada quando a oportunidade foi alocada, antes de a perna de pagamento se mexer.",
+      pt: "A taxa dessa rota foi fechada quando a oportunidade foi alocada, antes de a perna de pagamento se mexer.",
     },
     tone: "info",
   },
@@ -188,7 +188,7 @@ export const ROUTE_REASON: Record<RouteReason, { label: string; says: string; to
     label: { en: "The extra conversion costs more than it saves", pt: "A conversão extra custa mais do que economiza" },
     says: {
       en: "The stablecoin route could have settled this, and would have left her with less.",
-      pt: "A rota da stablecoin poderia ter liquidado esta, e teria deixado menos para ela.",
+      pt: "A rota da stablecoin poderia ter liquidado esta, e teria deixado menos para a empreendedora.",
     },
     tone: "caution",
   },
@@ -216,7 +216,7 @@ export const ROUTE_REASON: Record<RouteReason, { label: string; says: string; to
     label: { en: "No route available", pt: "Nenhuma rota disponível" },
     says: {
       en: "Neither way of turning these dollars into her reais can run: a decision, not an error.",
-      pt: "Nenhuma das formas de transformar estes dólares nos reais dela pode rodar: uma decisão, não um erro.",
+      pt: "Nenhuma das formas de transformar estes dólares nos reais da empreendedora pode rodar: uma decisão, não um erro.",
     },
     tone: "alert",
   },

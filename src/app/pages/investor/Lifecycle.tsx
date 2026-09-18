@@ -86,11 +86,11 @@ export default function Lifecycle({ principalCents, instalmentCents, termMonths,
     <Panel title={tr({ en: "Written in reais, funded in dollars", pt: "Escrito em reais, financiado em dólares" })}
       description={tr({
         en: "She owes reais: the principal and every instalment are fixed in her currency, and never move with the exchange rate. The dollar figures are what those reais are worth at the quote this opportunity holds — informational, and never what she repays.",
-        pt: "A dívida dela é em reais: o principal e cada parcela são fixos na moeda dela e não se movem com o câmbio. Os valores em dólar são quanto esses reais valem pela cotação que esta oportunidade carrega — informativos, e nunca o que ela paga.",
+        pt: "A dívida da empreendedora é em reais: o principal e cada parcela são fixos na moeda dela e não se movem com o câmbio. Os valores em dólar são quanto esses reais valem pela cotação que esta oportunidade carrega — informativos, e nunca o que ela paga.",
       })}>
       <div className="grid gap-3 sm:grid-cols-2">
         <Figure label={tr({ en: "Principal, contracted in reais", pt: "Principal, contratado em reais" })} cents={principalCents} fxMilli={fxMilli} />
-        <Figure label={tr({ en: "What she repays in total", pt: "O que ela paga no total" })} cents={instalmentCents * termMonths} fxMilli={fxMilli}
+        <Figure label={tr({ en: "What she repays in total", pt: "O que a empreendedora paga no total" })} cents={instalmentCents * termMonths} fxMilli={fxMilli}
           sub={tr({ en: `${termMonths} × ${money(instalmentCents)}`, pt: `${termMonths} × ${money(instalmentCents)}` })} />
       </div>
 

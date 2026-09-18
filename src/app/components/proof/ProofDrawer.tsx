@@ -103,7 +103,7 @@ function Drawer({ proof, onClose }: { proof: ProofTarget | null; onClose: () => 
                     <span className="block text-xs text-muted-foreground">
                       {tr({
                         en: "reais delivered on the gross the routes were compared at — not her disbursement, which arrives whole",
-                        pt: "reais entregues sobre o bruto em que as rotas foram comparadas — não o desembolso dela, que chega inteiro",
+                        pt: "reais entregues sobre o bruto em que as rotas foram comparadas — não o desembolso da empreendedora, que chega inteiro",
                       })}
                     </span>
                   </Fact>
