@@ -12,6 +12,7 @@ export * from "./anchorConsent.ts";
 export * from "./anchorOpportunity.ts";
 export * from "./anchorOutcome.ts";
 export * from "./anchorPayment.ts";
+export * from "./anchorSettlementRoute.ts";
 export * from "./attestEligibility.ts";
 export * from "./attestReadiness.ts";
 export * from "./createLoan.ts";

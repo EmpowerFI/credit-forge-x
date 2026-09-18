@@ -76,6 +76,74 @@
       },
       "canonical": "{\"amount_cents\":9007199254740991}",
       "commitment": "bb3142ba50ee2181b416099d37ca4bafaa718824f5fd201f41727d85946df024"
+    },
+    {
+      "name": "settlement route decision",
+      "domain": "EMPOWERFI:SETTLEMENT_ROUTE:v1",
+      "payload": {
+        "compared_gross_micro_usdc": 704000000,
+        "decided_at": "2026-09-18T13:34:13.828Z",
+        "loan_id": "01a0fec7-200f-45c2-a92c-2dac849cd7be",
+        "model_version": "settlement-route-v1.0.0",
+        "net_brl_delta_cents": 2254,
+        "opportunity_no": 7,
+        "principal_cents": 380000,
+        "quotes": [
+          {
+            "blocks": [],
+            "cost_bps": 179,
+            "execution_eta_sec": 900,
+            "expires_at": "2026-09-18T13:44:13.828Z",
+            "feasible": true,
+            "fx_cost_cents": 4562,
+            "fx_rate_milli": 5400,
+            "fx_spread_bps": 120,
+            "fx_struck": "payout",
+            "gross_brl_cents": 380160,
+            "hops": 1,
+            "liquidity_ok": true,
+            "net_brl_cents": 373344,
+            "network_fee_cents": 0,
+            "provider": "regulated_offramp",
+            "provider_fee_cents": 2254,
+            "quoted_at": "2026-09-18T13:34:13.828Z",
+            "reality": "simulated",
+            "route": "direct_usdc_pix",
+            "total_cost_cents": 6816
+          },
+          {
+            "blocks": [
+              "ROUTE_PROVIDER_UNAVAILABLE"
+            ],
+            "cost_bps": 239,
+            "execution_eta_sec": 300,
+            "expires_at": "2026-09-14T01:00:00.000Z",
+            "feasible": false,
+            "fx_cost_cents": 4562,
+            "fx_rate_milli": 5400,
+            "fx_spread_bps": 120,
+            "fx_struck": "allocation",
+            "gross_brl_cents": 380160,
+            "hops": 2,
+            "liquidity_ok": true,
+            "net_brl_cents": 371090,
+            "network_fee_cents": 0,
+            "provider": "brl_stablecoin",
+            "provider_fee_cents": 4508,
+            "quoted_at": "2026-09-13T01:00:00.000Z",
+            "reality": "simulated",
+            "route": "brl_stable_pix",
+            "total_cost_cents": 9070
+          }
+        ],
+        "reason_codes": [
+          "DIRECT_LOWEST_COST",
+          "EXTRA_CONVERSION_ADDS_COST"
+        ],
+        "selected_route": "direct_usdc_pix"
+      },
+      "canonical": "{\"compared_gross_micro_usdc\":704000000,\"decided_at\":\"2026-09-18T13:34:13.828Z\",\"loan_id\":\"01a0fec7-200f-45c2-a92c-2dac849cd7be\",\"model_version\":\"settlement-route-v1.0.0\",\"net_brl_delta_cents\":2254,\"opportunity_no\":7,\"principal_cents\":380000,\"quotes\":[{\"blocks\":[],\"cost_bps\":179,\"execution_eta_sec\":900,\"expires_at\":\"2026-09-18T13:44:13.828Z\",\"feasible\":true,\"fx_cost_cents\":4562,\"fx_rate_milli\":5400,\"fx_spread_bps\":120,\"fx_struck\":\"payout\",\"gross_brl_cents\":380160,\"hops\":1,\"liquidity_ok\":true,\"net_brl_cents\":373344,\"network_fee_cents\":0,\"provider\":\"regulated_offramp\",\"provider_fee_cents\":2254,\"quoted_at\":\"2026-09-18T13:34:13.828Z\",\"reality\":\"simulated\",\"route\":\"direct_usdc_pix\",\"total_cost_cents\":6816},{\"blocks\":[\"ROUTE_PROVIDER_UNAVAILABLE\"],\"cost_bps\":239,\"execution_eta_sec\":300,\"expires_at\":\"2026-09-14T01:00:00.000Z\",\"feasible\":false,\"fx_cost_cents\":4562,\"fx_rate_milli\":5400,\"fx_spread_bps\":120,\"fx_struck\":\"allocation\",\"gross_brl_cents\":380160,\"hops\":2,\"liquidity_ok\":true,\"net_brl_cents\":371090,\"network_fee_cents\":0,\"provider\":\"brl_stablecoin\",\"provider_fee_cents\":4508,\"quoted_at\":\"2026-09-13T01:00:00.000Z\",\"reality\":\"simulated\",\"route\":\"brl_stable_pix\",\"total_cost_cents\":9070}],\"reason_codes\":[\"DIRECT_LOWEST_COST\",\"EXTRA_CONVERSION_ADDS_COST\"],\"selected_route\":\"direct_usdc_pix\"}",
+      "commitment": "7d13f768c6111653a482427132cc2d795ed8f399a7075b11590c7954f895c885"
     }
   ],
   "borrower_ref_hashes": [

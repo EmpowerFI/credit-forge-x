@@ -231,14 +231,22 @@ export default function Position() {
       {!domestic && loan && (
         <Lifecycle principalCents={loan.principal_cents} instalmentCents={loan.instalment_cents} termMonths={loan.term_months}
           fxMilli={opp.fx_brl_per_usdc_milli} stages={stages}>
-          {chosen && route && (
+          {chosen && route && loan && (
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-4 text-xs text-muted-foreground">
-              <DataTag kind="derived" withLabel />
+              <DataTag kind="proven" withLabel />
               {tr({
                 en: `Settled through ${ROUTE[chosen.route].label}, ${FX_STRUCK[chosen.fx_struck].label.toLowerCase()}. Her principal arrived whole either way; the route is what the vault had to release to deliver it.`,
                 pt: `Liquidado pela rota ${ROUTE[chosen.route].label}, ${FX_STRUCK[chosen.fx_struck].label.toLowerCase()}. O principal da empreendedora chegou inteiro de qualquer forma; a rota é o que o cofre teve de liberar para entregá-lo.`,
               })}
               <span className="font-mono">{route.model_version}</span>
+              <VerifyButton icon className="text-xs text-positive" label={tr({ en: "Open the proof", pt: "Abrir a prova" })} proof={{
+                kind: "settlement_route", entity_id: loan.id,
+                settlement: {
+                  route: chosen.route, quoted_at: chosen.quoted_at, net_brl_cents: chosen.net_brl_cents,
+                  source: chosen.provider, source_url: chosen.source_url, reason_code: route.reason_codes[0] ?? null,
+                  reality: chosen.reality, model_version: route.model_version,
+                },
+              }} />
             </p>
           )}
         </Lifecycle>

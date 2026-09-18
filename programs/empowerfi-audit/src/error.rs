@@ -40,4 +40,6 @@ pub enum AuditError {
     NotAMint,
     #[msg("Consent records are numbered from 1")]
     InvalidConsentNumber,
+    #[msg("A settlement route is recorded only once the loan's money has moved")]
+    RouteBeforeDisbursement,
 }

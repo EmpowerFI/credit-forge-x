@@ -684,6 +684,129 @@
       ]
     },
     {
+      "name": "anchor_settlement_route",
+      "docs": [
+        "Commits how a global loan's dollars became her reais: which of the two",
+        "settlement routes paid it, with both quotes and the reasons inside the",
+        "commitment. Once per loan, after the money has moved."
+      ],
+      "discriminator": [
+        175,
+        161,
+        138,
+        78,
+        92,
+        47,
+        45,
+        117
+      ],
+      "accounts": [
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "config"
+          ]
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "loan",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  111,
+                  97,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "loan.opportunity",
+                "account": "LoanAccount"
+              }
+            ]
+          }
+        },
+        {
+          "name": "settlement_route",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  101,
+                  116,
+                  116,
+                  108,
+                  101,
+                  109,
+                  101,
+                  110,
+                  116,
+                  95,
+                  114,
+                  111,
+                  117,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "loan"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "route",
+          "type": {
+            "defined": {
+              "name": "SettlementRoute"
+            }
+          }
+        },
+        {
+          "name": "commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "attest_eligibility",
       "docs": [
         "Attests an eligibility assessment. Only against a CreditReady readiness",
@@ -1806,6 +1929,19 @@
         188,
         147
       ]
+    },
+    {
+      "name": "SettlementRouteCommitment",
+      "discriminator": [
+        40,
+        12,
+        239,
+        86,
+        229,
+        12,
+        211,
+        250
+      ]
     }
   ],
   "errors": [
@@ -1903,6 +2039,11 @@
       "code": 6018,
       "name": "InvalidConsentNumber",
       "msg": "Consent records are numbered from 1"
+    },
+    {
+      "code": 6019,
+      "name": "RouteBeforeDisbursement",
+      "msg": "A settlement route is recorded only once the loan's money has moved"
     }
   ],
   "types": [
@@ -2655,6 +2796,73 @@
           }
         ]
       }
+    },
+    {
+      "name": "SettlementRoute",
+      "docs": [
+        "Which way a global loan's dollars became her reais. The two the comparator",
+        "weighs, and nothing about a provider, an amount or a person: the economics",
+        "live in the commitment, and the record behind it in the database."
+      ],
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "DirectUsdcPix"
+          },
+          {
+            "name": "BrlStablePix"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SettlementRouteCommitment",
+      "docs": [
+        "The settlement route a loan took, as a commitment. One per loan: the",
+        "decision is taken once, when the money moves, and is never revised — a",
+        "later route would be a different loan. The route itself is public, because",
+        "a proof that hides which way it went proves nothing worth proving; both",
+        "quotes, their costs and the reasons stay inside the commitment."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "loan",
+            "type": "pubkey"
+          },
+          {
+            "name": "route",
+            "type": {
+              "defined": {
+                "name": "SettlementRoute"
+              }
+            }
+          },
+          {
+            "name": "commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "decided_at",
+            "type": "i64"
+          },
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
     }
   ],
   "constants": [
@@ -2727,6 +2935,11 @@
       ],
       "type": "u8",
       "value": "1"
+    },
+    {
+      "name": "SETTLEMENT_ROUTE_SEED",
+      "type": "bytes",
+      "value": "[115, 101, 116, 116, 108, 101, 109, 101, 110, 116, 95, 114, 111, 117, 116, 101]"
     },
     {
       "name": "VAULT_SEED",

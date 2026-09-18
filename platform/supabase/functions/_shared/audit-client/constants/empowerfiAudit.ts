@@ -58,6 +58,10 @@ export const READINESS_SEED: ReadonlyUint8Array = new Uint8Array([
 
 export const SCHEMA_VERSION: number = 1;
 
+export const SETTLEMENT_ROUTE_SEED: ReadonlyUint8Array = new Uint8Array([
+  115, 101, 116, 116, 108, 101, 109, 101, 110, 116, 95, 114, 111, 117, 116, 101,
+]);
+
 export const VAULT_SEED: ReadonlyUint8Array = new Uint8Array([
   118, 97, 117, 108, 116,
 ]);

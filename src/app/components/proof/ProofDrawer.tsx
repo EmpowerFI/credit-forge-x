@@ -131,10 +131,10 @@ function Drawer({ proof, onClose }: { proof: ProofTarget | null; onClose: () => 
                   <Fact label={tr({ en: "Comparator", pt: "Comparador" })}><span className="font-mono text-xs">{p.settlement.model_version}</span></Fact>
                 </dl>
                 <p className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <DataTag kind="derived" withLabel />
+                  <DataTag kind="proven" withLabel />
                   {tr({
-                    en: "Recorded, not anchored: EmpowerFI's comparator chose this route from the providers' rate cards, and the proof above is the disbursement itself. No stablecoin transaction was made, so none is shown.",
-                    pt: "Registrado, não ancorado: o comparador da EmpowerFI escolheu esta rota a partir dos rate cards dos provedores, e a prova acima é o próprio desembolso. Nenhuma transação em stablecoin foi feita, então nenhuma é exibida.",
+                    en: "What Solana keeps is the route and a hash of the whole decision — both quotes, their costs and the reasons. Never a provider, an amount or a rate; and no stablecoin transaction was made, so none is shown.",
+                    pt: "O que a Solana guarda é a rota e um hash da decisão inteira — as duas cotações, seus custos e os motivos. Nunca um provedor, um valor ou uma taxa; e nenhuma transação em stablecoin foi feita, então nenhuma é exibida.",
                   })}
                 </p>
               </section>

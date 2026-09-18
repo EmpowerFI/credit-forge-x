@@ -11,7 +11,7 @@ select set_config(
   true
 );
 
-select plan(31);
+select plan(38);
 
 -- The comparator's helpers are the database's own: no role but the owner may
 -- call them, so the expected model version is read here, once, as postgres.
@@ -346,7 +346,64 @@ select results_eq(
   'and the real deposits still leave the vault for the ramp, as they did before routing existed'
 );
 
+-- ---------------------------------------------------------- the proof of it
+
+select is(
+  (select jsonb_build_object('kind', kind::text, 'status', status::text,
+     'behind', depends_on = private.anchor_of('loan_transition', (
+       select id from loan_events where loan_id = (select id from loan) and to_status = 'DISBURSED')))
+   from chain_anchors where kind = 'settlement_route' and entity_id = (select id from loan)),
+  '{"kind": "settlement_route", "status": "pending", "behind": true}'::jsonb,
+  'the decision is queued for the chain, behind the disbursement that caused it'
+);
+
+-- The payload is what the browser recomputes, so it must be the decision as
+-- the model wrote it, and nothing else.
+select is(
+  (select jsonb_build_object(
+     'selected_route', p -> 'selected_route', 'model_version', p -> 'model_version',
+     'principal_cents', p -> 'principal_cents',
+     'quotes', (select count(*)::int from jsonb_array_elements(p -> 'quotes')),
+     'same_as_compared', (p -> 'quotes') = (select compared from settlement_decisions where loan_id = (select id from loan)))
+   from (select private.anchor_payload('settlement_route', (select id from loan)) as p) t),
+  jsonb_build_object('selected_route', '"direct_usdc_pix"'::jsonb, 'model_version', to_jsonb((select v from mv)),
+    'principal_cents', to_jsonb((select principal_cents from loan)), 'quotes', 2, 'same_as_compared', 'true'::jsonb),
+  'and its payload is the decision the comparator wrote, quotes and all'
+);
+
+-- Nothing on chain, and nothing in the payload, can name a person or a price
+-- she would recognise: the whole point of committing rather than publishing.
+select is(
+  (select array_agg(k order by k) from jsonb_object_keys(
+     private.anchor_payload('settlement_route', (select id from loan))) k
+   where k in ('entrepreneur_id', 'pix_key', 'wallet_address', 'investor_id', 'name', 'cpf')),
+  null,
+  'the payload carries no person: no entrepreneur, investor, wallet, Pix key or name'
+);
+
+select is(
+  (select count(*)::int from jsonb_array_elements(private.anchor_payload('settlement_route', (select id from loan)) -> 'quotes') q
+   where q ? 'signature' or q ? 'txid' or q ? 'explorer_url'),
+  0,
+  'and no quote carries a transaction that was never made'
+);
+
+-- Who may read the record behind the proof, which is not the same as who may
+-- read the chain: the chain is public, the decision is not.
+select pg_temp.act_as('00000000-0000-0000-0000-0000000007a4');
+select ok(not private.can_see_anchor('settlement_route', (select id from loan)),
+  'the entrepreneur reads no routing proof: her side of settlement is reais and Pix');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000007a5');
+select ok(private.can_see_anchor('settlement_route', (select id from loan)),
+  'the desk that holds the loan reads it');
+set local role postgres;
+
 select pg_temp.act_as('00000000-0000-0000-0000-0000000007a8');
+select ok(private.can_see_anchor('settlement_route', (select id from loan)),
+  'and so does an investor whose capital it routed');
+
 select is((select count(*)::int from settlement_quotes where loan_id = (select id from loan)), 2,
   'an investor funding the loan reads the quotes her capital was routed by');
 

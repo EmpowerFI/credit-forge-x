@@ -18,4 +18,5 @@ export * from "./loan.ts";
 export * from "./opportunity.ts";
 export * from "./outcome.ts";
 export * from "./payment.ts";
+export * from "./settlementRoute.ts";
 export * from "./vaultAuthority.ts";

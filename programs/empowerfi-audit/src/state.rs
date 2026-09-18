@@ -256,3 +256,31 @@ pub struct ConsentCommitment {
     pub schema_version: u8,
     pub bump: u8,
 }
+
+/// Which way a global loan's dollars became her reais. The two the comparator
+/// weighs, and nothing about a provider, an amount or a person: the economics
+/// live in the commitment, and the record behind it in the database.
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace, Debug)]
+pub enum SettlementRoute {
+    /// USDC → regulated off-ramp → Pix, with the rate struck at the payout.
+    DirectUsdcPix,
+    /// USDC → a BRL stablecoin held on chain → Pix one to one, with the rate
+    /// struck when the opportunity was allocated.
+    BrlStablePix,
+}
+
+/// The settlement route a loan took, as a commitment. One per loan: the
+/// decision is taken once, when the money moves, and is never revised — a
+/// later route would be a different loan. The route itself is public, because
+/// a proof that hides which way it went proves nothing worth proving; both
+/// quotes, their costs and the reasons stay inside the commitment.
+#[account]
+#[derive(InitSpace)]
+pub struct SettlementRouteCommitment {
+    pub loan: Pubkey,
+    pub route: SettlementRoute,
+    pub commitment: [u8; 32],
+    pub decided_at: i64,
+    pub schema_version: u8,
+    pub bump: u8,
+}

@@ -52,6 +52,8 @@ export const EMPOWERFI_AUDIT_ERROR__ZERO_AMOUNT = 0x1780; // 6016
 export const EMPOWERFI_AUDIT_ERROR__NOT_A_MINT = 0x1781; // 6017
 /** InvalidConsentNumber: Consent records are numbered from 1 */
 export const EMPOWERFI_AUDIT_ERROR__INVALID_CONSENT_NUMBER = 0x1782; // 6018
+/** RouteBeforeDisbursement: A settlement route is recorded only once the loan's money has moved */
+export const EMPOWERFI_AUDIT_ERROR__ROUTE_BEFORE_DISBURSEMENT = 0x1783; // 6019
 
 export type EmpowerfiAuditError =
   | typeof EMPOWERFI_AUDIT_ERROR__COMMUNITY_ALREADY_VERIFIED
@@ -68,6 +70,7 @@ export type EmpowerfiAuditError =
   | typeof EMPOWERFI_AUDIT_ERROR__NOT_UPGRADE_AUTHORITY
   | typeof EMPOWERFI_AUDIT_ERROR__OUTCOME_BEFORE_DISBURSEMENT
   | typeof EMPOWERFI_AUDIT_ERROR__READINESS_NOT_CREDIT_READY
+  | typeof EMPOWERFI_AUDIT_ERROR__ROUTE_BEFORE_DISBURSEMENT
   | typeof EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_AUTHORITY
   | typeof EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_OPERATOR
   | typeof EMPOWERFI_AUDIT_ERROR__ZERO_AMOUNT
@@ -92,6 +95,7 @@ if (process.env["NODE_ENV"] !== "production") {
     [EMPOWERFI_AUDIT_ERROR__NOT_UPGRADE_AUTHORITY]: `Signer is not the program's upgrade authority`,
     [EMPOWERFI_AUDIT_ERROR__OUTCOME_BEFORE_DISBURSEMENT]: `Outcomes are measured only once the loan has been disbursed`,
     [EMPOWERFI_AUDIT_ERROR__READINESS_NOT_CREDIT_READY]: `Eligibility needs a CreditReady readiness attestation of the same borrower`,
+    [EMPOWERFI_AUDIT_ERROR__ROUTE_BEFORE_DISBURSEMENT]: `A settlement route is recorded only once the loan's money has moved`,
     [EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_AUTHORITY]: `Signer is not the platform authority`,
     [EMPOWERFI_AUDIT_ERROR__UNAUTHORIZED_OPERATOR]: `Signer is not the platform operator`,
     [EMPOWERFI_AUDIT_ERROR__ZERO_AMOUNT]: `A transfer moves a positive amount`,

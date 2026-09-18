@@ -31,6 +31,7 @@ import {
   fetchMaybeOutcomeCommitment,
   fetchMaybePaymentCommitment,
   fetchMaybeReadinessAttestation,
+  fetchMaybeSettlementRouteCommitment,
   findAttestationPda,
   findAllocationPda,
   findBorrowerPda,
@@ -42,12 +43,14 @@ import {
   findOpportunityPda,
   findOutcomePda,
   findPaymentPda,
+  findSettlementRoutePda,
   EligibilityDecision,
   getTransitionLoanInstructionDataDecoder,
   Grade,
   LoanStatus,
   ReadinessBand,
   ReadinessStatus,
+  SettlementRoute,
 } from "@empowerfi/audit-client";
 import { assessEligibility, type EligibilityInput } from "@empowerfi/eligibility-engine";
 import { evaluateReadiness, type ReadinessFeatures } from "@empowerfi/readiness-engine";
@@ -80,6 +83,7 @@ export const KIND_TITLE: Record<AnchorKind, string> = localized({
   outcome: { en: "Productive outcome", pt: "Resultado produtivo" },
   allocation: { en: "Capital allocation", pt: "Alocação de capital" },
   consent: { en: "Consent record", pt: "Registro de consentimento" },
+  settlement_route: { en: "Settlement route", pt: "Rota de liquidação" },
 });
 
 const ELIGIBILITY_FIELDS = ELIGIBILITY_RESULT_FIELDS;
@@ -210,10 +214,45 @@ export async function audit(kind: AnchorKind, entityId: string) {
         checks.push({ label: () => tr({ en: "Comes from her eligibility attestation", pt: "Vem do atestado de elegibilidade dela" }), ok: found.data.eligibility === eligibility });
       }
     }
-  } else if (kind === "loan" || kind === "loan_transition" || kind === "payment" || kind === "outcome") {
+  } else if (kind === "loan" || kind === "loan_transition" || kind === "payment" || kind === "outcome"
+             || kind === "settlement_route") {
     const opportunity = borrower ? (await findOpportunityPda({ borrower, opportunityNo: Number(p.opportunity_no) }))[0] : null;
     const loanAddress = opportunity ? (await findLoanPda({ opportunity }))[0] : null;
-    if (kind === "outcome") {
+    if (kind === "settlement_route") {
+      const found = await fetchMaybeSettlementRouteCommitment(rpc, account);
+      if (found.exists) {
+        onChain = new Uint8Array(found.data.commitment);
+        owner = found.programAddress;
+        checks.push({
+          label: () => tr({
+            en: "The route on chain is the one the decision records",
+            pt: "A rota na blockchain é a que a decisão registra",
+          }),
+          ok: SettlementRoute[found.data.route] === SNAKE_TO_PASCAL(p.selected_route),
+        });
+        if (loanAddress) {
+          [expected] = await findSettlementRoutePda({ loan: loanAddress });
+          checks.push({
+            label: () => tr({ en: "Settles her loan", pt: "Liquida o empréstimo dela" }),
+            ok: found.data.loan === loanAddress,
+          });
+        }
+      }
+      // The ranking, redone here from the quotes on record: the chosen route
+      // is feasible, and no feasible one delivers more reais for the same
+      // gross. A decision that fails this is not the model's.
+      const quotes = (p.quotes ?? []) as unknown as { route: string; feasible: boolean; net_brl_cents: number }[];
+      const chosen = quotes.find((q) => q.route === p.selected_route) ?? null;
+      const best = quotes.filter((q) => q.feasible).reduce<number | null>(
+        (m, q) => (m === null || q.net_brl_cents > m ? q.net_brl_cents : m), null);
+      checks.push({
+        label: () => tr({
+          en: "The route chosen could settle this loan, and no other feasible route delivered more reais",
+          pt: "A rota escolhida podia liquidar este empréstimo, e nenhuma outra rota viável entregou mais reais",
+        }),
+        ok: chosen !== null && chosen.feasible && best !== null && chosen.net_brl_cents >= best,
+      });
+    } else if (kind === "outcome") {
       const found = await fetchMaybeOutcomeCommitment(rpc, account);
       if (found.exists) {
         onChain = new Uint8Array(found.data.commitment);

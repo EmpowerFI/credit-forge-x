@@ -2959,6 +2959,7 @@ export type Database = {
         | "outcome"
         | "allocation"
         | "consent"
+        | "settlement_route"
       anchor_status: "pending" | "submitted" | "confirmed" | "failed"
       app_role:
         | "entrepreneur"
@@ -3226,6 +3227,7 @@ export const Constants = {
         "outcome",
         "allocation",
         "consent",
+        "settlement_route",
       ],
       anchor_status: ["pending", "submitted", "confirmed", "failed"],
       app_role: [

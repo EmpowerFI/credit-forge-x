@@ -26,6 +26,8 @@ pub const OUTCOME_SEED: &[u8] = b"outcome";
 pub const ALLOCATION_SEED: &[u8] = b"allocation";
 #[constant]
 pub const CONSENT_SEED: &[u8] = b"consent";
+#[constant]
+pub const SETTLEMENT_ROUTE_SEED: &[u8] = b"settlement_route";
 /// Owner of the program's USDC vault (its associated token account). Investors
 /// deposit with a plain token transfer; the chain sees a deposit to the vault,
 /// never which opportunity it funds.

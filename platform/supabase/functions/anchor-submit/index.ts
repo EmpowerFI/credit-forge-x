@@ -59,6 +59,7 @@ import {
   fetchMaybeOutcomeCommitment,
   fetchMaybePaymentCommitment,
   fetchMaybeReadinessAttestation,
+  fetchMaybeSettlementRouteCommitment,
   findAllocationPda,
   findAttestationPda,
   findBorrowerPda,
@@ -70,12 +71,14 @@ import {
   findOpportunityPda,
   findOutcomePda,
   findPaymentPda,
+  findSettlementRoutePda,
   getAnchorAllocationInstructionAsync,
   getAnchorCheckinInstructionAsync,
   getAnchorConsentInstructionAsync,
   getAnchorOpportunityInstructionAsync,
   getAnchorOutcomeInstructionAsync,
   getAnchorPaymentInstructionAsync,
+  getAnchorSettlementRouteInstructionAsync,
   getAttestEligibilityInstructionAsync,
   getAttestReadinessInstructionAsync,
   getCreateLoanInstructionAsync,
@@ -87,6 +90,7 @@ import {
   getVerifyCommunityInstructionAsync,
   ReadinessBand,
   ReadinessStatus,
+  SettlementRoute,
 } from "../_shared/audit-client/index.ts";
 
 interface Job {
@@ -255,6 +259,12 @@ const LOAN_STATUS = {
   CANCELLED: LoanStatus.Cancelled,
 } as const;
 
+// public.settlement_route → the program's enum.
+const SETTLEMENT_ROUTE = {
+  direct_usdc_pix: SettlementRoute.DirectUsdcPix,
+  brl_stable_pix: SettlementRoute.BrlStablePix,
+} as const;
+
 /** Looks a value up in a map, or fails the job for good: the payload is wrong. */
 function mapped<T>(map: Record<string, T>, value: unknown, what: string): T {
   const v = map[String(value)];
@@ -332,7 +342,8 @@ async function anchor(job: Job): Promise<Proof> {
       return { ...(await send(ix)), account, commitment, recovered: false };
     }
 
-    if (job.kind === "loan" || job.kind === "loan_transition" || job.kind === "payment" || job.kind === "outcome") {
+    if (job.kind === "loan" || job.kind === "loan_transition" || job.kind === "payment" || job.kind === "outcome"
+        || job.kind === "settlement_route") {
       const [opportunity] = await findOpportunityPda({ borrower, opportunityNo: int(p.opportunity_no, "opportunity number") });
       const [loan] = await findLoanPda({ opportunity });
 
@@ -359,6 +370,22 @@ async function anchor(job: Job): Promise<Proof> {
         }
         const ix = await getTransitionLoanInstructionAsync({ operator: signer, loan, to, transitionCommitment: commitment });
         return { ...(await send(ix)), account: loan, commitment, recovered: false };
+      }
+
+      // Which of the two routes turned this loan's dollars into her reais.
+      // The route is on chain; both quotes and the reasons are in the hash.
+      if (job.kind === "settlement_route") {
+        const route = mapped(SETTLEMENT_ROUTE, p.selected_route, "settlement route");
+        const [account] = await findSettlementRoutePda({ loan });
+        const existing = await fetchMaybeSettlementRouteCommitment(rpc, account);
+        if (existing.exists) {
+          if (!sameCommitment(new Uint8Array(existing.data.commitment), commitment)) {
+            throw mismatch("settlement route commitment", account);
+          }
+          return { ...(await recoverSignature(account, "first")), account, commitment, recovered: true };
+        }
+        const ix = await getAnchorSettlementRouteInstructionAsync({ operator: signer, loan, route, commitment });
+        return { ...(await send(ix)), account, commitment, recovered: false };
       }
 
       if (job.kind === "outcome") {

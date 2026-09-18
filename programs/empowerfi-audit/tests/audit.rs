@@ -10,9 +10,9 @@ use {
         error::AuditError, AllocationCommitment, BorrowerAudit, CheckinCommitment, CommunityAudit, CommunityStatus,
         ConsentCommitment, EligibilityAttestation, EligibilityDecision, Grade, LoanAccount, LoanStatus,
         OpportunityCommitment, OutcomeCommitment, PaymentCommitment, PlatformConfig, ReadinessAttestation,
-        ReadinessBand, ReadinessStatus, ALLOCATION_SEED, BORROWER_SEED, CHECKIN_SEED, COMMUNITY_SEED, CONFIG_SEED,
+        ReadinessBand, ReadinessStatus, SettlementRoute, SettlementRouteCommitment, ALLOCATION_SEED, BORROWER_SEED, CHECKIN_SEED, COMMUNITY_SEED, CONFIG_SEED,
         CONSENT_SEED,
-        ELIGIBILITY_SEED, LOAN_SEED, OPPORTUNITY_SEED, OUTCOME_SEED, PAYMENT_SEED, READINESS_SEED,
+        ELIGIBILITY_SEED, LOAN_SEED, OPPORTUNITY_SEED, OUTCOME_SEED, PAYMENT_SEED, READINESS_SEED, SETTLEMENT_ROUTE_SEED,
         SCHEMA_VERSION,
     },
     litesvm::{types::TransactionResult, LiteSVM},
@@ -1319,6 +1319,159 @@ fn an_outcome_is_measured_only_on_a_loan_that_reached_the_business() {
     )
     .unwrap();
     send(&mut env.svm, outcome_ix(&op.pubkey(), &loan, 2), &[&op]).unwrap();
+}
+
+// --------------------------------------------------- the settlement route
+
+fn settlement_route_pda(loan: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[SETTLEMENT_ROUTE_SEED, loan.as_ref()], &empowerfi_audit::ID).0
+}
+
+fn settlement_route_ix(op: &Pubkey, loan: &Pubkey, route: SettlementRoute) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::AnchorSettlementRoute {
+            route,
+            commitment: [91; 32],
+        }
+        .data(),
+        empowerfi_audit::accounts::AnchorSettlementRoute {
+            operator: *op,
+            config: config_pda(),
+            loan: *loan,
+            settlement_route: settlement_route_pda(loan),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+#[test]
+fn a_settlement_route_is_recorded_once_after_the_money_has_moved() {
+    let mut env = initialized();
+    let opp = opportunity(&mut env);
+    let op = env.operator.insecure_clone();
+    send(&mut env.svm, create_loan_ix(&op.pubkey(), &opp), &[&op]).unwrap();
+    let loan = loan_pda(&opp);
+
+    // A draft loan has paid nobody, so there is no route it took.
+    let res = send(
+        &mut env.svm,
+        settlement_route_ix(&op.pubkey(), &loan, SettlementRoute::DirectUsdcPix),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::RouteBeforeDisbursement);
+
+    send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::PartnerApproved, 71),
+        &[&op],
+    )
+    .unwrap();
+    // Approved is still not disbursed.
+    let res = send(
+        &mut env.svm,
+        settlement_route_ix(&op.pubkey(), &loan, SettlementRoute::DirectUsdcPix),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::RouteBeforeDisbursement);
+
+    send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::Disbursed, 72),
+        &[&op],
+    )
+    .unwrap();
+
+    // Only the operator records it.
+    let intruder = Keypair::new();
+    env.svm.airdrop(&intruder.pubkey(), 1_000_000_000).unwrap();
+    let res = send(
+        &mut env.svm,
+        settlement_route_ix(&intruder.pubkey(), &loan, SettlementRoute::BrlStablePix),
+        &[&intruder],
+    );
+    assert_custom_error(res, AuditError::UnauthorizedOperator);
+
+    send(
+        &mut env.svm,
+        settlement_route_ix(&op.pubkey(), &loan, SettlementRoute::BrlStablePix),
+        &[&op],
+    )
+    .unwrap();
+    let r: SettlementRouteCommitment = fetch(&env.svm, &settlement_route_pda(&loan));
+    assert_eq!(r.loan, loan);
+    assert_eq!(r.route, SettlementRoute::BrlStablePix);
+    assert_eq!(r.commitment, [91; 32]);
+    assert_eq!(r.decided_at, NOW);
+    assert_eq!(r.schema_version, SCHEMA_VERSION);
+
+    // The decision is taken once. A second one, by either route, is refused.
+    for route in [SettlementRoute::BrlStablePix, SettlementRoute::DirectUsdcPix] {
+        assert!(
+            send(
+                &mut env.svm,
+                settlement_route_ix(&op.pubkey(), &loan, route),
+                &[&op],
+            )
+            .is_err(),
+            "a route already on chain is never rewritten"
+        );
+    }
+}
+
+#[test]
+fn a_settlement_route_refuses_an_empty_commitment_and_a_cancelled_loan() {
+    let mut env = initialized();
+    let opp = opportunity(&mut env);
+    let op = env.operator.insecure_clone();
+    send(&mut env.svm, create_loan_ix(&op.pubkey(), &opp), &[&op]).unwrap();
+    let loan = loan_pda(&opp);
+    send(
+        &mut env.svm,
+        transition_ix(&op.pubkey(), &loan, LoanStatus::Cancelled, 71),
+        &[&op],
+    )
+    .unwrap();
+    // Cancelled before disbursement: no money moved, so no route to record.
+    let res = send(
+        &mut env.svm,
+        settlement_route_ix(&op.pubkey(), &loan, SettlementRoute::DirectUsdcPix),
+        &[&op],
+    );
+    assert_custom_error(res, AuditError::RouteBeforeDisbursement);
+
+    // On a disbursed loan of its own, an all-zero commitment is not one.
+    let mut env = initialized();
+    let opp = opportunity(&mut env);
+    let op = env.operator.insecure_clone();
+    send(&mut env.svm, create_loan_ix(&op.pubkey(), &opp), &[&op]).unwrap();
+    let loan = loan_pda(&opp);
+    for (to, tag) in [(LoanStatus::PartnerApproved, 71), (LoanStatus::Disbursed, 72)] {
+        send(
+            &mut env.svm,
+            transition_ix(&op.pubkey(), &loan, to, tag),
+            &[&op],
+        )
+        .unwrap();
+    }
+    let zero = Instruction::new_with_bytes(
+        empowerfi_audit::ID,
+        &empowerfi_audit::instruction::AnchorSettlementRoute {
+            route: SettlementRoute::DirectUsdcPix,
+            commitment: [0; 32],
+        }
+        .data(),
+        empowerfi_audit::accounts::AnchorSettlementRoute {
+            operator: op.pubkey(),
+            config: config_pda(),
+            loan,
+            settlement_route: settlement_route_pda(&loan),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    );
+    assert_custom_error(send(&mut env.svm, zero, &[&op]), AuditError::ZeroCommitment);
 }
 
 // --------------------------------------------------------------- allocation

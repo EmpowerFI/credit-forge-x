@@ -130,6 +130,17 @@ pub mod empowerfi_audit {
         anchor_payment::handler(ctx, instalment_no, commitment)
     }
 
+    /// Commits how a global loan's dollars became her reais: which of the two
+    /// settlement routes paid it, with both quotes and the reasons inside the
+    /// commitment. Once per loan, after the money has moved.
+    pub fn anchor_settlement_route(
+        ctx: Context<AnchorSettlementRoute>,
+        route: SettlementRoute,
+        commitment: [u8; 32],
+    ) -> Result<()> {
+        anchor_settlement_route::handler(ctx, route, commitment)
+    }
+
     /// Commits an investor's allocation to an opportunity, keyed by a reference
     /// that links it to neither party on chain.
     pub fn anchor_allocation(

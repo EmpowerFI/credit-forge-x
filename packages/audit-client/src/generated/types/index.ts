@@ -12,3 +12,4 @@ export * from "./grade.ts";
 export * from "./loanStatus.ts";
 export * from "./readinessBand.ts";
 export * from "./readinessStatus.ts";
+export * from "./settlementRoute.ts";

@@ -18,3 +18,4 @@ export * from "./outcomeCommitment.ts";
 export * from "./paymentCommitment.ts";
 export * from "./platformConfig.ts";
 export * from "./readinessAttestation.ts";
+export * from "./settlementRouteCommitment.ts";

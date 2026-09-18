@@ -46,6 +46,7 @@ import {
   getPaymentCommitmentCodec,
   getPlatformConfigCodec,
   getReadinessAttestationCodec,
+  getSettlementRouteCommitmentCodec,
   type AllocationCommitment,
   type AllocationCommitmentArgs,
   type BorrowerAudit,
@@ -70,6 +71,8 @@ import {
   type PlatformConfigArgs,
   type ReadinessAttestation,
   type ReadinessAttestationArgs,
+  type SettlementRouteCommitment,
+  type SettlementRouteCommitmentArgs,
 } from "../accounts/index.ts";
 import {
   getAnchorAllocationInstructionAsync,
@@ -78,6 +81,7 @@ import {
   getAnchorOpportunityInstructionAsync,
   getAnchorOutcomeInstructionAsync,
   getAnchorPaymentInstructionAsync,
+  getAnchorSettlementRouteInstructionAsync,
   getAttestEligibilityInstructionAsync,
   getAttestReadinessInstructionAsync,
   getCreateLoanInstructionAsync,
@@ -94,6 +98,7 @@ import {
   parseAnchorOpportunityInstruction,
   parseAnchorOutcomeInstruction,
   parseAnchorPaymentInstruction,
+  parseAnchorSettlementRouteInstruction,
   parseAttestEligibilityInstruction,
   parseAttestReadinessInstruction,
   parseCreateLoanInstruction,
@@ -110,6 +115,7 @@ import {
   type AnchorOpportunityAsyncInput,
   type AnchorOutcomeAsyncInput,
   type AnchorPaymentAsyncInput,
+  type AnchorSettlementRouteAsyncInput,
   type AttestEligibilityAsyncInput,
   type AttestReadinessAsyncInput,
   type CreateLoanAsyncInput,
@@ -120,6 +126,7 @@ import {
   type ParsedAnchorOpportunityInstruction,
   type ParsedAnchorOutcomeInstruction,
   type ParsedAnchorPaymentInstruction,
+  type ParsedAnchorSettlementRouteInstruction,
   type ParsedAttestEligibilityInstruction,
   type ParsedAttestReadinessInstruction,
   type ParsedCreateLoanInstruction,
@@ -150,6 +157,7 @@ import {
   findOpportunityPda,
   findOutcomePda,
   findPaymentPda,
+  findSettlementRoutePda,
   findVaultAuthorityPda,
 } from "../pdas/index.ts";
 
@@ -169,6 +177,7 @@ export const EmpowerfiAuditAccount = {
   9: "PaymentCommitment",
   10: "PlatformConfig",
   11: "ReadinessAttestation",
+  12: "SettlementRouteCommitment",
   AllocationCommitment: 0,
   BorrowerAudit: 1,
   CheckinCommitment: 2,
@@ -181,6 +190,7 @@ export const EmpowerfiAuditAccount = {
   PaymentCommitment: 9,
   PlatformConfig: 10,
   ReadinessAttestation: 11,
+  SettlementRouteCommitment: 12,
 } as const;
 
 export type EmpowerfiAuditAccount = (typeof EmpowerfiAuditAccount)[Exclude<
@@ -324,6 +334,17 @@ export function identifyEmpowerfiAuditAccount(
   ) {
     return EmpowerfiAuditAccount.ReadinessAttestation;
   }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([40, 12, 239, 86, 229, 12, 211, 250]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditAccount.SettlementRouteCommitment;
+  }
   throw new SolanaError(
     SOLANA_ERROR__PROGRAM_CLIENTS__FAILED_TO_IDENTIFY_ACCOUNT,
     { accountData: data, programName: "empowerfiAudit" },
@@ -337,32 +358,34 @@ export const EmpowerfiAuditInstruction = {
   3: "AnchorOpportunity",
   4: "AnchorOutcome",
   5: "AnchorPayment",
-  6: "AttestEligibility",
-  7: "AttestReadiness",
-  8: "CreateLoan",
-  9: "InitializePlatform",
-  10: "RegisterBorrowerRef",
-  11: "RegisterCommunity",
-  12: "SetOperator",
-  13: "TransitionLoan",
-  14: "VaultTransfer",
-  15: "VerifyCommunity",
+  6: "AnchorSettlementRoute",
+  7: "AttestEligibility",
+  8: "AttestReadiness",
+  9: "CreateLoan",
+  10: "InitializePlatform",
+  11: "RegisterBorrowerRef",
+  12: "RegisterCommunity",
+  13: "SetOperator",
+  14: "TransitionLoan",
+  15: "VaultTransfer",
+  16: "VerifyCommunity",
   AnchorAllocation: 0,
   AnchorCheckin: 1,
   AnchorConsent: 2,
   AnchorOpportunity: 3,
   AnchorOutcome: 4,
   AnchorPayment: 5,
-  AttestEligibility: 6,
-  AttestReadiness: 7,
-  CreateLoan: 8,
-  InitializePlatform: 9,
-  RegisterBorrowerRef: 10,
-  RegisterCommunity: 11,
-  SetOperator: 12,
-  TransitionLoan: 13,
-  VaultTransfer: 14,
-  VerifyCommunity: 15,
+  AnchorSettlementRoute: 6,
+  AttestEligibility: 7,
+  AttestReadiness: 8,
+  CreateLoan: 9,
+  InitializePlatform: 10,
+  RegisterBorrowerRef: 11,
+  RegisterCommunity: 12,
+  SetOperator: 13,
+  TransitionLoan: 14,
+  VaultTransfer: 15,
+  VerifyCommunity: 16,
 } as const;
 
 export type EmpowerfiAuditInstruction =
@@ -440,6 +463,17 @@ export function identifyEmpowerfiAuditInstruction(
     )
   ) {
     return EmpowerfiAuditInstruction.AnchorPayment;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([175, 161, 138, 78, 92, 47, 45, 117]),
+      ),
+      0,
+    )
+  ) {
+    return EmpowerfiAuditInstruction.AnchorSettlementRoute;
   }
   if (
     containsBytes(
@@ -579,6 +613,9 @@ export type ParsedEmpowerfiAuditInstruction<
       instructionType: typeof EmpowerfiAuditInstruction.AnchorPayment;
     } & ParsedAnchorPaymentInstruction<TProgram>)
   | ({
+      instructionType: typeof EmpowerfiAuditInstruction.AnchorSettlementRoute;
+    } & ParsedAnchorSettlementRouteInstruction<TProgram>)
+  | ({
       instructionType: typeof EmpowerfiAuditInstruction.AttestEligibility;
     } & ParsedAttestEligibilityInstruction<TProgram>)
   | ({
@@ -654,6 +691,13 @@ export function parseEmpowerfiAuditInstruction<TProgram extends string>(
       return {
         instructionType: EmpowerfiAuditInstruction.AnchorPayment,
         ...parseAnchorPaymentInstruction(instruction),
+      };
+    }
+    case EmpowerfiAuditInstruction.AnchorSettlementRoute: {
+      assertIsInstructionWithAccounts(instruction);
+      return {
+        instructionType: EmpowerfiAuditInstruction.AnchorSettlementRoute,
+        ...parseAnchorSettlementRouteInstruction(instruction),
       };
     }
     case EmpowerfiAuditInstruction.AttestEligibility: {
@@ -771,6 +815,13 @@ export type EmpowerfiAuditPluginAccounts = {
     SelfFetchFunctions<PlatformConfigArgs, PlatformConfig>;
   readinessAttestation: ReturnType<typeof getReadinessAttestationCodec> &
     SelfFetchFunctions<ReadinessAttestationArgs, ReadinessAttestation>;
+  settlementRouteCommitment: ReturnType<
+    typeof getSettlementRouteCommitmentCodec
+  > &
+    SelfFetchFunctions<
+      SettlementRouteCommitmentArgs,
+      SettlementRouteCommitment
+    >;
 };
 
 export type EmpowerfiAuditPluginInstructions = {
@@ -797,6 +848,10 @@ export type EmpowerfiAuditPluginInstructions = {
   anchorPayment: (
     input: AnchorPaymentAsyncInput,
   ) => ReturnType<typeof getAnchorPaymentInstructionAsync> &
+    SelfPlanAndSendFunctions;
+  anchorSettlementRoute: (
+    input: AnchorSettlementRouteAsyncInput,
+  ) => ReturnType<typeof getAnchorSettlementRouteInstructionAsync> &
     SelfPlanAndSendFunctions;
   attestEligibility: (
     input: AttestEligibilityAsyncInput,
@@ -848,6 +903,7 @@ export type EmpowerfiAuditPluginPdas = {
   opportunity: typeof findOpportunityPda;
   outcome: typeof findOutcomePda;
   payment: typeof findPaymentPda;
+  settlementRoute: typeof findSettlementRoutePda;
   eligibility: typeof findEligibilityPda;
   attestation: typeof findAttestationPda;
   loan: typeof findLoanPda;
@@ -911,6 +967,10 @@ export function empowerfiAuditProgram() {
             client,
             getReadinessAttestationCodec(),
           ),
+          settlementRouteCommitment: addSelfFetchFunctions(
+            client,
+            getSettlementRouteCommitmentCodec(),
+          ),
         },
         instructions: {
           anchorAllocation: (input) =>
@@ -942,6 +1002,11 @@ export function empowerfiAuditProgram() {
             addSelfPlanAndSendFunctions(
               client,
               getAnchorPaymentInstructionAsync(input),
+            ),
+          anchorSettlementRoute: (input) =>
+            addSelfPlanAndSendFunctions(
+              client,
+              getAnchorSettlementRouteInstructionAsync(input),
             ),
           attestEligibility: (input) =>
             addSelfPlanAndSendFunctions(
@@ -1002,6 +1067,7 @@ export function empowerfiAuditProgram() {
           opportunity: findOpportunityPda,
           outcome: findOutcomePda,
           payment: findPaymentPda,
+          settlementRoute: findSettlementRoutePda,
           eligibility: findEligibilityPda,
           attestation: findAttestationPda,
           loan: findLoanPda,

@@ -62,6 +62,13 @@ const ACCOUNT_FIELDS: Record<string, string[]> = {
   // Which uses she allowed stays in the database: the chain keeps only that
   // record N existed, when, and its hash.
   ConsentCommitment: ["borrower", "consent_no", "commitment", "recorded_at", "schema_version", "bump"],
+  // Reviewed on 18 Sep 2026. `route` is one of two enum variants and the only
+  // field here that says anything: which way a loan's dollars became reais. It
+  // names no provider, carries no amount and is not about a person — the chain
+  // already holds the loan and its status. A proof that hid which route it was
+  // would prove nothing worth proving; both quotes, their costs, the fees and
+  // the reasons stay inside the commitment, in the database.
+  SettlementRouteCommitment: ["loan", "route", "commitment", "decided_at", "schema_version", "bump"],
 };
 
 // Every argument of every instruction, which transaction history keeps.
@@ -72,6 +79,7 @@ const INSTRUCTION_ARGS: Record<string, string[]> = {
   anchor_opportunity: ["opportunity_no", "commitment"],
   anchor_outcome: ["outcome_no", "commitment"],
   anchor_payment: ["instalment_no", "commitment"],
+  anchor_settlement_route: ["route", "commitment"],
   attest_eligibility: ["eligibility_no", "decision", "risk_band", "confidence", "model_version", "commitment"],
   attest_readiness: ["assessment_no", "status", "band", "model_version", "commitment"],
   create_loan: ["terms_commitment"],

@@ -26,6 +26,7 @@ export const PROOF_KIND_LABEL: Record<AnchorKind, string> = localized({
   payment: { en: "Instalment paid", pt: "Parcela paga" },
   outcome: { en: "Productive outcome", pt: "Resultado produtivo" },
   allocation: { en: "Capital allocation", pt: "Alocação de capital" },
+  settlement_route: { en: "Settlement route", pt: "Rota de liquidação" },
 });
 
 export const EVENT_LABEL: Record<string, string> = localized({

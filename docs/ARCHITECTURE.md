@@ -74,7 +74,7 @@ The product is one chain of facts. Each fact is written by a database function t
 | Investors fund it | `investments` | `investment-confirm` (global, a wallet deposit), `allocate_domestic` (domestic, simulated reais) | `AllocationCommitment` |
 | Funded, it is formalised | `partner_decisions`, `loans` | `formalise_loan` (EmpowerFI's P2P desk), at the engine's rate; the desk may decline instead, and investors are refunded | `LoanAccount` (terms) |
 | The loan moves | `loan_events` | `transition_loan` (the desk) | `LoanAccount` status, following the same state machine on chain |
-| On disbursement of a global loan, how the dollars become her reais | `settlement_quotes` (both routes), `settlement_decisions`, `settlement_legs.route` | `private.settle_on_disbursal` → `private.record_settlement_route` | — recorded, not anchored: the disbursement itself is proven by the `LoanAccount` transition, and the route is an economic decision with its model version ([Settlement routing](#settlement-routing)) |
+| On disbursement of a global loan, how the dollars become her reais | `settlement_quotes` (both routes), `settlement_decisions`, `settlement_legs.route` | `private.settle_on_disbursal` → `private.record_settlement_route` | `SettlementRouteCommitment`, queued behind the disbursement's own transition: the route is public, both quotes and the reasons are in the commitment ([Settlement routing](#settlement-routing)) |
 | Instalments are paid | `payments` | `record_payment` (the desk) | `PaymentCommitment` per instalment |
 | What changed in the business | `productive_outcomes` | `measure_outcome` (EmpowerFI) | `OutcomeCommitment` |
 
@@ -135,20 +135,22 @@ anchor-submit      →  claim → commitment from anchor_payload() → look befo
 | `OpportunityCommitment` | `opportunity`, borrower, n | eligibility, commitment |
 | `LoanAccount` | `loan`, opportunity | status, terms commitment, last transition commitment, transitions |
 | `PaymentCommitment` | `payment`, loan, instalment | commitment |
+| `SettlementRouteCommitment` | `settlement_route`, loan | selected route, commitment over the whole decision |
 | `AllocationCommitment` | `allocation`, random ref | commitment (which investment funds which opportunity stays in the database) |
 | `OutcomeCommitment` | `outcome`, loan, n | commitment |
 | `ConsentCommitment` | `consent`, borrower, n | commitment of the uses she allowed |
 
-It has 16 instructions, all signed by the operator key except `initialize_platform` and `set_operator`, which need the upgrade authority. `vault_transfer` is the only one that moves value: USDC out of the program's vault, for a refund, a release to the off-ramp or an investor's payout, with no borrower, opportunity or allocation account attached. `set_operator` means a leaked server key can be rotated without changing the program ID. The rules live on chain as well as in the database:
+It has 17 instructions, all signed by the operator key except `initialize_platform` and `set_operator`, which need the upgrade authority. `vault_transfer` is the only one that moves value: USDC out of the program's vault, for a refund, a release to the off-ramp or an investor's payout, with no borrower, opportunity or allocation account attached. `set_operator` means a leaked server key can be rotated without changing the program ID. The rules live on chain as well as in the database:
 
 - eligibility needs the same borrower's CreditReady attestation;
 - an opportunity needs a non-NotEligible eligibility;
 - one loan per opportunity;
 - the loan state machine (`Draft → PartnerApproved → Disbursed → Active → Paid | Defaulted`, cancellable only before disbursement);
 - payments only on disbursed or active loans, one per instalment;
-- outcomes only on loans that reached the business.
+- outcomes only on loans that reached the business;
+- a settlement route only on a loan that has been disbursed, and only once.
 
-The program has 26 LiteSVM tests.
+The program has 28 LiteSVM tests.
 
 ## The audit screen
 
@@ -243,7 +245,11 @@ Order: feasibility, then the reais delivered, then total cost, then the number o
 
 `private.settlement_experiment()` is the switch. With it off, nothing is quoted, no decision is written, every leg keeps a null route, and the pgTAP suite asserts that no leg, amount or payload changes.
 
-**No fabricated proof, and no fabricated transaction.** Every anchor kind in this system is one of the program's instructions, so a new proof kind means changing the Anchor program and upgrading it on devnet. The routing decision is therefore recorded in the database with its model version and read beside the loan's existing proofs, labelled **derived** — the vocabulary the product already uses for something computed from recorded facts rather than proven on chain. Because no stablecoin transfer happens, none is shown: the leg is dashed and labelled *Simulated*, with no explorer link.
+**Proven, and still no fabricated transaction.** `SettlementRouteCommitment`, seeded by the loan, holds which of the two routes paid it and a commitment over the whole decision: both quotes as the comparator saw them, their costs, the reason codes and the model version. One per loan — `init` refuses a second, so a decision on chain is never rewritten — and the program refuses one at all until the loan has reached `Disbursed`, because a route is how a disbursement was paid.
+
+The route itself is public, deliberately: a proof that hid which way the money went would prove nothing worth proving. The chain gets that and a hash, and never a provider, an amount, a rate or anyone's identity. The job is queued behind the disbursement's own `loan_transition` anchor, off a trigger on the queue itself — the decision is taken inside the transition's trigger, before that transition's anchor row exists, so the dependency is written in the one place it cannot be missing.
+
+And still no stablecoin transfer happens, so none is shown: the leg is dashed and labelled *Simulated*, with no explorer link. The proof says a decision was taken, never that a token moved.
 
 It is read in three places: the Credit & Capital Engine prices both routes in the browser from the same rate cards and shows them side by side (analysis only, like everything else on that page); an investor's position says which route paid her loan, when its rate was struck and what it cost, with the routing fields in the disbursement's proof drawer; and the desk's settlement view counts what each route has settled. The entrepreneur's screens are untouched — she sees reais, Pix and her instalments, and no crypto vocabulary.
 
@@ -267,10 +273,10 @@ The first-cycle facts are recorded through the live functions and then dated to 
 
 | Suite | Count | Covers |
 |---|---|---|
-| pgTAP (`platform/supabase/tests`) | 499 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement and its route comparator, Zcash, cost to serve, outcomes, Impact Intelligence (sponsor scope, small groups hidden, consent, no private keys), mandates, operating economics (who reads it, program scope, no private keys), and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
-| LiteSVM (`programs/empowerfi-audit/tests`) | 26 | every instruction's rules and state machine |
-| Vitest | 173 | engines, the allocation engine's vectors and per-check trace, the settlement route comparator's vectors, the engine page's run plan and demo cases, investor mandates, the five views and their tools against RBAC, commitments, the IDL privacy review, settlement and ramp helpers, languages, UI helpers |
-| Deno | 47 | the vendored engines and commitments against the same vectors, and the MoneyGram quote |
+| pgTAP (`platform/supabase/tests`) | 506 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement and its route comparator, Zcash, cost to serve, outcomes, Impact Intelligence (sponsor scope, small groups hidden, consent, no private keys), mandates, operating economics (who reads it, program scope, no private keys), and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
+| LiteSVM (`programs/empowerfi-audit/tests`) | 28 | every instruction's rules and state machine |
+| Vitest | 176 | engines, the allocation engine's vectors and per-check trace, the settlement route comparator's vectors, the engine page's run plan and demo cases, investor mandates, the five views and their tools against RBAC, commitments, the IDL privacy review, settlement and ramp helpers, languages, UI helpers |
+| Deno | 49 | the vendored engines and commitments against the same vectors, and the MoneyGram quote |
 | Devnet scan (`scripts/platform/scan-chain-pii.mts`) | every account | reviewed types only, and none of the database's names, e-mails or amounts |
 
 ## Repository map
