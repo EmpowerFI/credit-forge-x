@@ -71,6 +71,50 @@ export async function fetchRoutePreview(opportunityId: string) {
   return data as unknown as (SettlementRouteResult & { enabled: boolean; applies: boolean }) | { enabled: boolean; applies: false };
 }
 
+/**
+ * A quote as `settlement_quotes` holds it, read back beside a position: the
+ * model's figures plus the provider's name and the page its card came from.
+ * It has no `gross_micro_usdc` — both quotes are priced at the same gross,
+ * which the decision carries once.
+ */
+export interface PositionRouteQuote {
+  route: SettlementRoute;
+  provider: string;
+  name: string;
+  asset: string;
+  source_url: string | null;
+  net_brl_cents: number;
+  total_cost_cents: number;
+  cost_bps: number;
+  fx_rate_milli: number;
+  fx_struck: "allocation" | "payout";
+  fx_spread_bps: number;
+  fx_cost_cents: number;
+  provider_fee_cents: number;
+  network_fee_cents: number;
+  gross_brl_cents: number;
+  gross_for_principal_micro_usdc: number;
+  execution_eta_sec: number;
+  quoted_at: string;
+  expires_at: string;
+  liquidity_ok: boolean;
+  reality: string;
+  hops: number;
+  feasible: boolean;
+  blocks: RouteReason[];
+}
+
+/** The route a position's capital took, with both quotes as they were written at disbursement. */
+export interface PositionRoute {
+  selected: SettlementRoute;
+  reason_codes: RouteReason[];
+  model_version: string;
+  net_brl_delta_cents: number | null;
+  compared_gross_micro_usdc: number;
+  decided_at: string;
+  quotes: PositionRouteQuote[];
+}
+
 export const ROUTE: Record<SettlementRoute, { label: string; short: string; says: string }> = localized({
   direct_usdc_pix: {
     label: { en: "Direct · USDC → Pix", pt: "Direta · USDC → Pix" },

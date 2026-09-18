@@ -1,5 +1,5 @@
 import type { Tone } from "../components/product/StatusPill";
-import { localized } from "../i18n";
+import { formatNumber, localized } from "../i18n";
 
 // Settlement: how capital reaches her business and comes back, and which of
 // its legs are real on devnet, simulated at a quote, or mocks.
@@ -116,6 +116,14 @@ export function mockPixE2e(at = new Date()): string {
   const minute = `${at.getUTCFullYear()}${pad(at.getUTCMonth() + 1)}${pad(at.getUTCDate())}${pad(at.getUTCHours())}${pad(at.getUTCMinutes())}`;
   return `E99999999${minute}${Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("")}`;
 }
+
+/**
+ * A quote as a rate: reais per USDC, in the reader's own separators. Printed
+ * with the wrong ones, "R$ 5.400" reads as five thousand four hundred to a
+ * Brazilian, and "R$ 5,400" reads the same way to everyone else.
+ */
+export const reaisRate = (milli: number, digits = 2) =>
+  `R$ ${formatNumber(milli / 1000, { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 
 /** Reais, in centavos, that a USDC amount becomes at a quote (milli-reais per USDC) less spreads in basis points. */
 export function reaisAtRamp(microUsdc: number, fxMilli: number, spreadBps: number): number {

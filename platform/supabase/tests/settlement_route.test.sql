@@ -277,7 +277,11 @@ select is(
 );
 set local role postgres;
 
-select is((select count(*)::int from settlement_quotes), 0, 'a preview writes no quote');
+-- Scoped to this fixture's opportunity: a seeded database may hold quotes of its own.
+select is(
+  (select count(*)::int from settlement_quotes q join loans l on l.id = q.loan_id where l.opportunity_id = (select id from opp)),
+  0, 'a preview writes no quote'
+);
 
 -- A request the domestic pool takes has no dollars to convert.
 update qualified_credit_opportunities set funding_pool = 'domestic' where id = (select id from opp2);
@@ -354,11 +358,13 @@ select is(
   'her position carries the route her capital took, with both quotes beside it'
 );
 
+-- The roll-up is over every loan, so this asserts what must be there, not the
+-- whole list: a seeded database settles cases of its own.
 select is(
   (select jsonb_build_object('experiment', o -> 'experiment',
-     'routes', (select jsonb_agg(r ->> 'route') from jsonb_array_elements(o -> 'routes') r))
+     'direct', (select count(*)::int from jsonb_array_elements(o -> 'routes') r where r ->> 'route' = 'direct_usdc_pix'))
    from (select settlement_overview() as o) t),
-  '{"experiment": true, "routes": ["direct_usdc_pix"]}'::jsonb,
+  '{"experiment": true, "direct": 1}'::jsonb,
   'and the settlement page counts what each route has settled'
 );
 set local role postgres;

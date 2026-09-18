@@ -5,6 +5,9 @@ import { ArrowUpRight, Loader2, Lock } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { formatDateTime, tr } from "../../i18n";
 import { describeError } from "../../lib/errors";
+import { money } from "../../lib/readiness";
+import { REALITY, type Reality } from "../../lib/settlement";
+import { ROUTE, ROUTE_REASON } from "../../lib/settlementRoute";
 import { audit, KIND_TITLE } from "../../lib/verify";
 import { DataTag } from "../product/DataLegend";
 import ExplorerLink from "../product/ExplorerLink";
@@ -86,6 +89,56 @@ function Drawer({ proof, onClose }: { proof: ProofTarget | null; onClose: () => 
               <Fact label={tr({ en: "Devnet transaction", pt: "Transação na devnet" })}>{p.signature ? <ExplorerLink tx={p.signature} /> : "—"}</Fact>
               {p.account && <Fact label={tr({ en: "Account", pt: "Conta" })}><ExplorerLink address={p.account} /></Fact>}
             </dl>
+
+            {p.settlement && (
+              <section className="space-y-2">
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  {tr({ en: "Settlement routing", pt: "Roteamento da liquidação" })}
+                </h3>
+                <dl className="divide-y divide-border rounded-xl border border-border bg-card/40 px-4">
+                  <Fact label={tr({ en: "Route", pt: "Rota" })}>{ROUTE[p.settlement.route].label}</Fact>
+                  <Fact label={tr({ en: "Quoted at", pt: "Cotada em" })}>{formatDateTime(p.settlement.quoted_at)}</Fact>
+                  <Fact label={tr({ en: "Quoted net", pt: "Líquido cotado" })}>
+                    <span className="num">{money(p.settlement.net_brl_cents)}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {tr({
+                        en: "reais delivered on the gross the routes were compared at — not her disbursement, which arrives whole",
+                        pt: "reais entregues sobre o bruto em que as rotas foram comparadas — não o desembolso dela, que chega inteiro",
+                      })}
+                    </span>
+                  </Fact>
+                  <Fact label={tr({ en: "Quote source", pt: "Origem da cotação" })}>
+                    {p.settlement.source_url
+                      ? <a href={p.settlement.source_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
+                        {p.settlement.source} <ArrowUpRight size={13} aria-hidden />
+                      </a>
+                      : <span className="font-mono text-xs">{p.settlement.source}</span>}
+                    <span className="block pt-1 text-xs text-muted-foreground">
+                      {tr({ en: "the provider's rate card, an assumption of this prototype", pt: "o rate card do provedor, uma premissa deste protótipo" })}
+                    </span>
+                  </Fact>
+                  {p.settlement.reason_code && (
+                    <Fact label={tr({ en: "Reason", pt: "Motivo" })}>
+                      <StatusPill tone={ROUTE_REASON[p.settlement.reason_code].tone} dot={false}>{ROUTE_REASON[p.settlement.reason_code].label}</StatusPill>
+                      <span className="block pt-1 text-xs text-muted-foreground">{ROUTE_REASON[p.settlement.reason_code].says}</span>
+                    </Fact>
+                  )}
+                  <Fact label={tr({ en: "Simulation status", pt: "Situação da simulação" })}>
+                    <StatusPill tone={REALITY[p.settlement.reality as Reality]?.tone ?? "caution"} dot={false}>
+                      {REALITY[p.settlement.reality as Reality]?.label ?? p.settlement.reality}
+                    </StatusPill>
+                  </Fact>
+                  <Fact label={tr({ en: "Comparator", pt: "Comparador" })}><span className="font-mono text-xs">{p.settlement.model_version}</span></Fact>
+                </dl>
+                <p className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <DataTag kind="derived" withLabel />
+                  {tr({
+                    en: "Recorded, not anchored: EmpowerFI's comparator chose this route from the providers' rate cards, and the proof above is the disbursement itself. No stablecoin transaction was made, so none is shown.",
+                    pt: "Registrado, não ancorado: o comparador da EmpowerFI escolheu esta rota a partir dos rate cards dos provedores, e a prova acima é o próprio desembolso. Nenhuma transação em stablecoin foi feita, então nenhuma é exibida.",
+                  })}
+                </p>
+              </section>
+            )}
 
             {p.signature && p.commitment && (
               <div className="space-y-2">

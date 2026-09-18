@@ -2,7 +2,7 @@
 
 **Source:** *EmpowerFI — Hackathon MVP Addendum: BRL-Denominated On-Chain Settlement & Stablecoin Routing Experiment* (founder, 17 Sep 2026), complementing the *Site + Hackathon MVP Refactor Specification — 2026*.
 **Work:** on `hackathon`. Migrations, reseeds and the merge to `main` happen only after the founder approves.
-**Status, 18 Sep:** founder approved the three decisions in §8. **Steps 1-4 done** — the model (`packages/settlement-route`, 23 Vitest cases), the database (`20260925000000`, `20260925000100`, 30 pgTAP cases), the read paths the console needs, and the engine's settlement card. Step 3 changed shape once its real cost was known: see §4.9. Nothing pushed. Steps 5-8 below are open, and §8.4 is a decision waiting on the founder.
+**Status, 18 Sep:** founder approved the three decisions in §8. **Steps 1-5 done** — the model (`packages/settlement-route`, 23 Vitest cases), the database (`20260925000000`, `20260925000100`, 30 pgTAP cases), the read paths the console needs, the engine's settlement card, and the investor console in reais. Step 3 changed shape once its real cost was known: see §4.9. Nothing pushed. Steps 6-8 below are open, and §8.4 is a decision waiting on the founder.
 
 **Rules kept from the refactor plan:** do not rebuild, do not hard-code engine decisions, label every simulated, test or devnet step, put nothing personal on chain — and, added by this addendum, **never display a BRS transaction that did not happen**.
 
@@ -133,11 +133,15 @@ A **Settlement route** card in `Decision`, shown only when the global pool wins.
 
 It is priced **in the browser**, from the database's own rate cards, as this page re-runs every other engine there and writes nothing. That needed two columns the opportunity already had (`20260925000200`, read-only): what a global allocation raised, and the rate it locked.
 
-### 5.2 Investor Console (§8.2)
-Funding stays in USDC. `Position.tsx` and `OpportunityDetail.tsx` show the principal and the repayment obligation **in BRL with an informational USD equivalent**, and a lifecycle line: *USDC funded → BRL locked → Pix disbursed → BRL repayments → investor settlement*, each step carrying the reality it already has elsewhere.
+### 5.2 Investor Console (§8.2) — **done, 18 Sep**
+Funding stays in USDC; **what she owes reads in reais on both pools**. A shared `Lifecycle` panel — *Written in reais, funded in dollars* — carries the principal and the total she repays, each with an informational dollar equivalent at the opportunity's quote, and the addendum's five steps beneath them: *USDC funded → BRL locked → Pix disbursed → BRL repayments → investor settlement*, each with the reality it already has elsewhere and a tick when it has actually happened. It lays itself out in as many columns as its container allows, because it sits full width on a position and in a 570 px column on an opportunity.
 
-### 5.3 Proof drawer (§8.3)
-`settlement_route`, `quote_timestamp`, `quoted_net_brl`, `quote_source`, `route_reason_code`, `simulation_status`, shown with the loan's existing proofs and marked derived (see §4.9). A real Solana signature keeps its explorer link; the routing decision shows what it is — a record, with the disbursement's own proof next to it — and never a token transfer that did not happen.
+On `Position.tsx` the obligation tiles (repaid, outstanding) now lead in reais with the USDC beside them, the instalment table shows both, and *Invested* still leads in USDC — that is the currency that moved. The route's own step in *Where the money went* names the route that paid her, where its rate was struck and what it cost. On `OpportunityDetail.tsx` the same panel reads forward, before a loan exists.
+
+One rounding rule for reais across the page: `positionReais`, which is `private.usdc_to_cents`. The quote is printed by one shared helper (`reaisRate`), after `R$ 5.400` was found reading as five thousand four hundred in Portuguese — the same trap in reverse in English, which is why the helper uses the reader's separators everywhere, including the engine card and the opportunity header.
+
+### 5.3 Proof drawer (§8.3) — **done, 18 Sep**
+The disbursement's proof carries a **Settlement routing** block: route, quoted at, quoted net, quote source (the provider's key and the page its card came from), reason code, simulation status and the comparator's version — marked **derived**, and reading *"Recorded, not anchored… no stablecoin transaction was made, so none is shown."* The proof above it is the disbursement itself, with its own commitment and devnet link (see §4.9). The block appears only where there is a decision to show.
 
 ### 5.4 The entrepreneur's screen
 **Unchanged.** No BRS, no wallet, no crypto vocabulary (§8.2, last bullet). She sees reais, Pix and her instalments, as she does now.
@@ -185,7 +189,7 @@ These need a reseed of the hackathon database, with approval.
    The suite is written to pass on a fresh *or* a seeded database: it gives the global pool its own room, rather than depending on what else happens to be raising. The older suites still need `db reset --local` (a seeded pool leaves nothing to allocate, and their fixtures fail before their first assertion) — which is why `settlement_route.test.sql` covers the release leg too, the one part of `settle_on_disbursal` this migration re-creates.
 3. ~~Anchor kind and payload; `audit-commitments` domain; Verify.~~ **Done differently, 18 Sep** — see §4.9: no anchor kind, a recorded decision labelled derived, and the two read paths the console needs (`20260925000100`), covered by two more pgTAP cases.
 4. ~~Engine card and `CapitalPath` hop.~~ **Done, 18 Sep.** Checked on seeded data in both languages and at 390 px: no overflow, no console errors, and the exchange rate printed in the reader's own separators — "R$ 5.400" reads as five thousand four hundred to a Brazilian, and did until it was fixed.
-5. Investor console: BRL denomination and the lifecycle line.
+5. ~~Investor console: BRL denomination and the lifecycle line.~~ **Done, 18 Sep.** Checked on seeded local data against a real decision, in both languages and at 1280 and 390 px: no overflow, no console errors. Two fixes came out of it. The provider's card name is written in English in the database and said in English what the route label already said in the reader's language, so the prose now uses the localised route and the card's key is kept where it belongs, as the quote's source in the proof drawer. And two assertions in `settlement_route.test.sql` counted rows across the whole database rather than the fixture's own loan, so the suite was not seed-independent after all where it claimed to be — both are now scoped, which also keeps them honest once step 6 seeds a case B.
 6. Seed cases A/B/C; local reseed.
 7. Docs: ARCHITECTURE (a settlement-routing section and the flow row), DEMO (one beat after formalisation), PRIVACY (quotes carry no personal data), I18N glossary; then Vitest, pgTAP, build, lint and screenshots at 1440 and 390 px in EN and PT.
 8. With approval: push the migrations, reseed hackathon, merge to `main`.

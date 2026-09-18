@@ -2,15 +2,12 @@ import { ArrowRight, ChevronRight } from "lucide-react";
 import type { RouteQuote, SettlementRouteResult } from "@empowerfi/settlement-route";
 import { cn } from "@/lib/utils";
 import StatusPill from "../../../components/product/StatusPill";
-import { formatNumber, tr } from "../../../i18n";
+import { tr } from "../../../i18n";
 import { bpsPercent } from "../../../lib/capital";
 import { money } from "../../../lib/readiness";
-import { REALITY } from "../../../lib/settlement";
+import { reaisRate, REALITY } from "../../../lib/settlement";
 import { eta, FX_STRUCK, ROUTE, ROUTE_REASON, type RouteReason } from "../../../lib/settlementRoute";
 import { usdc } from "../../../lib/solana";
-
-/** Milli-reais per USDC as a rate: three decimals, in the reader's own separators. */
-const rate = (milli: number) => formatNumber(milli / 1000, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
 // The settlement route, after the global pool wins: her loan is in reais, and
 // these are the two ways the investors' dollars become those reais. Analysis
@@ -55,7 +52,7 @@ function Quote({ q, chosen, grossForPrincipal }: { q: RouteQuote; chosen: boolea
         <div className="flex justify-between gap-3">
           <dt className="text-muted-foreground">{tr({ en: "Exchange rate", pt: "Câmbio" })}</dt>
           <dd className="text-right text-foreground">
-            R$ {rate(q.fx_rate_milli)}
+            {reaisRate(q.fx_rate_milli, 3)}
             <span className="block text-[11px] font-normal text-muted-foreground">{struck.label}</span>
           </dd>
         </div>
@@ -165,7 +162,7 @@ export default function SettlementRoute({ result }: { result: SettlementRouteRes
             </thead>
             <tbody>
               <Row label={tr({ en: "Released", pt: "Liberado" })} values={quotes.map((q) => `${usdc(q.gross_micro_usdc, 0)} · ${money(q.gross_brl_cents)}`)} />
-              <Row label={tr({ en: "Exchange rate", pt: "Câmbio" })} values={quotes.map((q) => `R$ ${rate(q.fx_rate_milli)}`)} />
+              <Row label={tr({ en: "Exchange rate", pt: "Câmbio" })} values={quotes.map((q) => reaisRate(q.fx_rate_milli, 3))} />
               <Row label={tr({ en: "Rate struck", pt: "Câmbio fechado" })} values={quotes.map((q) => FX_STRUCK[q.fx_struck].label)} />
               <Row label={tr({ en: "Spread", pt: "Spread" })} values={quotes.map((q) => `${bpsPercent(q.fx_spread_bps)} · ${money(q.fx_cost_cents)}`)} />
               <Row label={tr({ en: "Provider fee", pt: "Taxa do provedor" })} values={quotes.map((q) => money(q.provider_fee_cents))} />

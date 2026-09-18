@@ -10,7 +10,7 @@ import PoolPill from "../../components/product/PoolPill";
 import PrivacyBoundaries from "../../components/product/PrivacyBoundaries";
 import StatusPill from "../../components/product/StatusPill";
 import VerifyOnSolana from "../../components/product/VerifyOnSolana";
-import { poolOf, positionReais } from "../../lib/capital";
+import { bpsPercent, poolOf, positionReais } from "../../lib/capital";
 import { CAPITAL_USE_LABEL, LOAN_LABEL, type CapitalUse, type LoanStatus } from "../../lib/credit";
 import { type FundingStatus, type Grade, positionState, RISK, title } from "../../lib/investor";
 import { platform } from "../../lib/platform";
@@ -19,7 +19,9 @@ import { usdc } from "../../lib/solana";
 import { fetchZecReturns, POOL_LABEL, usdPerZec, zcashExplorerTx, zec, type ZecReturn, zecReturnsKey } from "../../lib/zcash";
 import { useAuth } from "../../auth/useAuth";
 import ZecReturns from "./ZecReturns";
-import { type PayoutStatus, reaisAtRamp, REALITY, type Reality } from "../../lib/settlement";
+import { type PayoutStatus, reaisAtRamp, reaisRate, REALITY, type Reality } from "../../lib/settlement";
+import { FX_STRUCK, ROUTE, ROUTE_REASON, type PositionRoute } from "../../lib/settlementRoute";
+import Lifecycle, { type LifecycleStage, type StageState } from "./Lifecycle";
 import { formatDate, formatNumber, tr } from "../../i18n";
 import EvcLabel from "../../components/product/EvcLabel";
 import VerifyButton from "../../components/proof/VerifyButton";
@@ -77,6 +79,8 @@ interface PositionData {
     disbursed_at: string | null; active_since: string | null; instalment_share_micro_usdc: number } | null;
   settlement: {
     ramp_bps: number;
+    /** Null until a global loan is disbursed with the routing experiment on. */
+    route: PositionRoute | null;
     release: { status: PayoutStatus; amount_micro_usdc: number; signature: string | null; transfer_micro_usdc: number | null;
       loans_in_transfer: number; at: string | null } | null;
     pix: { e2e: string; brl_cents: number; at: string | null } | null;
@@ -91,8 +95,6 @@ interface PositionData {
 const date = (iso: string | null) => (iso ? formatDate(iso, { day: "2-digit", month: "short", year: "numeric" }) : "—");
 /** A percentage: 12.5% or 12,5%. */
 const pct = (value: number, digits: number) => `${formatNumber(value, { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
-/** Reais per USDC, in the Brazilian format in both languages. */
-const reaisRate = (milli: number) => `R$ ${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(milli / 1000)}`;
 const confidenceLabel = (grade: Grade) =>
   tr({ en: grade.toLowerCase(), pt: grade === "HIGH" ? "alta" : grade === "MEDIUM" ? "média" : "baixa" });
 
@@ -118,9 +120,61 @@ export default function Position() {
   const expected = loan ? loan.instalment_share_micro_usdc * loan.term_months : null;
   const now = Date.now();
   const domestic = poolOf(opp.funding_pool) === "domestic";
-  // A domestic position reads in reais; its book is kept in USDC at the opportunity's quote.
-  const amount = (micro: number | null | undefined, cents?: number | null) =>
-    domestic ? money(positionReais(cents ?? null, micro ?? 0, opp.fx_brl_per_usdc_milli)) : usdc(micro);
+  const route = settlement?.route ?? null;
+  const chosen = route?.quotes.find((q) => q.route === route.selected) ?? null;
+  // What she owes is written in reais on either pool, and the book is kept in
+  // USDC at the quote this loan holds. On the global pool both are shown: the
+  // reais bind, the dollars are what moved.
+  const obligation = (micro: number | null | undefined, cents?: number | null) =>
+    money(positionReais(cents ?? null, micro ?? 0, opp.fx_brl_per_usdc_milli));
+
+  const paid = schedule.filter((i) => i.paid_at).length;
+  const paidOut = schedule.filter((i) => i.payout?.status === "done").length;
+  // The lifecycle the addendum names, filled in with what this position did.
+  const stages: Record<LifecycleStage, StageState> = {
+    funded: {
+      done: true,
+      reality: inv.is_simulated ? "simulated" : zcash ? "zcash" : "real",
+      detail: inv.is_simulated
+        ? tr({ en: `${usdc(inv.amount_micro_usdc)}, simulated: no USDC moved`, pt: `${usdc(inv.amount_micro_usdc)}, simulado: nenhum USDC se moveu` })
+        : tr({ en: `Your ${usdc(inv.amount_micro_usdc)} into the program's vault`, pt: `Seus ${usdc(inv.amount_micro_usdc)} no cofre do programa` }),
+    },
+    locked: {
+      done: Boolean(loan?.disbursed_at),
+      reality: "simulated",
+      detail: chosen
+        ? tr({
+          en: `${FX_STRUCK[chosen.fx_struck].label}, at ${reaisRate(chosen.fx_rate_milli, 3)}/USDC`,
+          pt: `${FX_STRUCK[chosen.fx_struck].label}, a ${reaisRate(chosen.fx_rate_milli, 3)}/USDC`,
+        })
+        : loan?.disbursed_at
+        ? tr({ en: `At this loan's quote, ${reaisRate(opp.fx_brl_per_usdc_milli, 3)}/USDC`, pt: `Pela cotação deste empréstimo, ${reaisRate(opp.fx_brl_per_usdc_milli, 3)}/USDC` })
+        : tr({ en: "Struck when the desk settles the loan", pt: "Fechado quando a mesa liquidar o empréstimo" }),
+    },
+    disbursed: {
+      done: Boolean(settlement?.pix),
+      reality: "mock",
+      detail: settlement?.pix
+        ? tr({ en: `${money(settlement.pix.brl_cents)} to her account · ${date(settlement.pix.at)}`, pt: `${money(settlement.pix.brl_cents)} na conta dela · ${date(settlement.pix.at)}` })
+        : tr({ en: "When EmpowerFI's P2P desk disburses", pt: "Quando a mesa P2P da EmpowerFI desembolsar" }),
+    },
+    repayments: {
+      done: paid > 0,
+      reality: "mock",
+      detail: loan
+        ? tr({ en: `${paid} of ${loan.term_months} instalments paid by Pix`, pt: `${paid} de ${loan.term_months} parcelas pagas por Pix` })
+        : tr({ en: "Monthly, once repayment starts", pt: "Todo mês, depois que os pagamentos começarem" }),
+    },
+    settlement: {
+      done: inv.is_simulated ? paid > 0 : paidOut > 0,
+      reality: inv.is_simulated ? "simulated" : zecOnly ? "zcash" : "real",
+      detail: inv.is_simulated
+        ? tr({ en: "Your share is shown, not paid", pt: "Sua parte aparece, mas não é paga" })
+        : zecOnly
+        ? tr({ en: `${obligation(repaid)} owed back to you in shielded ZEC`, pt: `${obligation(repaid)} a voltar para você em ZEC blindado` })
+        : tr({ en: `${usdc(repaid)} paid out to your wallet`, pt: `${usdc(repaid)} repassados para a sua carteira` }),
+    },
+  };
 
   return (
     <div className="space-y-6">
@@ -143,20 +197,41 @@ export default function Position() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label={tr({ en: "Invested", pt: "Investido" })} value={amount(inv.amount_micro_usdc, inv.amount_cents)} hint={date(inv.invested_at)} />
+        <StatTile label={tr({ en: "Invested", pt: "Investido" })}
+          value={domestic ? obligation(inv.amount_micro_usdc, inv.amount_cents) : usdc(inv.amount_micro_usdc)}
+          hint={domestic ? date(inv.invested_at) : `${date(inv.invested_at)} · ≈ ${obligation(inv.amount_micro_usdc, inv.amount_cents)}`} />
         <StatTile label={tr({ en: "Your share of the loan", pt: "Sua parte do empréstimo" })} value={pct(inv.share_bps / 100, 1)} hint={money(opp.amount_cents)} />
-        <StatTile label={tr({ en: "Repaid to you", pt: "Pago a você" })} value={amount(repaid)} hintTone="positive"
+        <StatTile label={tr({ en: "Repaid to you", pt: "Pago a você" })} value={obligation(repaid)} hintTone="positive"
           hint={loan
             ? tr({
-              en: `${schedule.filter((s) => s.paid_at).length} of ${loan.term_months} instalments`,
-              pt: `${schedule.filter((s) => s.paid_at).length} de ${loan.term_months} parcelas`,
+              en: `${schedule.filter((s) => s.paid_at).length} of ${loan.term_months} instalments${domestic ? "" : ` · ${usdc(repaid)}`}`,
+              pt: `${schedule.filter((s) => s.paid_at).length} de ${loan.term_months} parcelas${domestic ? "" : ` · ${usdc(repaid)}`}`,
             })
             : tr({ en: "not disbursed", pt: "não desembolsado" })} />
-        <StatTile label={tr({ en: "Outstanding", pt: "A receber" })} value={expected !== null ? amount(Math.max(0, expected - repaid)) : "—"}
+        <StatTile label={tr({ en: "Outstanding", pt: "A receber" })} value={expected !== null ? obligation(Math.max(0, expected - repaid)) : "—"}
           hint={expected !== null && loan
-            ? tr({ en: `of ${amount(expected)} scheduled at ${pct(loan.rate_bps / 100, 2)}/month · simulated`, pt: `de ${amount(expected)} previstos a ${pct(loan.rate_bps / 100, 2)} ao mês · simulado` })
+            ? tr({
+              en: `of ${obligation(expected)} scheduled at ${pct(loan.rate_bps / 100, 2)}/month${domestic ? "" : ` · ${usdc(Math.max(0, expected - repaid))}`} · simulated`,
+              pt: `de ${obligation(expected)} previstos a ${pct(loan.rate_bps / 100, 2)} ao mês${domestic ? "" : ` · ${usdc(Math.max(0, expected - repaid))}`} · simulado`,
+            })
             : undefined} />
       </div>
+
+      {!domestic && loan && (
+        <Lifecycle principalCents={loan.principal_cents} instalmentCents={loan.instalment_cents} termMonths={loan.term_months}
+          fxMilli={opp.fx_brl_per_usdc_milli} stages={stages}>
+          {chosen && route && (
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-border pt-4 text-xs text-muted-foreground">
+              <DataTag kind="derived" withLabel />
+              {tr({
+                en: `Settled through ${ROUTE[chosen.route].label}, ${FX_STRUCK[chosen.fx_struck].label.toLowerCase()}. Her principal arrived whole either way; the route is what the vault had to release to deliver it.`,
+                pt: `Liquidado pela rota ${ROUTE[chosen.route].label}, ${FX_STRUCK[chosen.fx_struck].label.toLowerCase()}. O principal dela chegou inteiro de qualquer forma; a rota é o que o cofre teve de liberar para entregá-lo.`,
+              })}
+              <span className="font-mono">{route.model_version}</span>
+            </p>
+          )}
+        </Lifecycle>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title={tr({ en: "Investment", pt: "Investimento" })}
@@ -268,7 +343,16 @@ export default function Position() {
                     {e.note && <span className="text-muted-foreground"> · {e.note}</span>}
                     <span className="block text-xs text-muted-foreground">{date(e.at)}</span>
                   </span>
-                  <VerifyButton className="text-xs text-positive" proof={{ kind: "loan_transition", entity_id: e.event_id }} />
+                  <VerifyButton className="text-xs text-positive" proof={{
+                    kind: "loan_transition", entity_id: e.event_id,
+                    settlement: e.to_status === "DISBURSED" && chosen && route
+                      ? {
+                        route: chosen.route, quoted_at: chosen.quoted_at, net_brl_cents: chosen.net_brl_cents,
+                        source: chosen.provider, source_url: chosen.source_url, reason_code: route.reason_codes[0] ?? null,
+                        reality: chosen.reality, model_version: route.model_version,
+                      }
+                      : null,
+                  }} />
                 </li>
               ))}
             </ol>
@@ -332,8 +416,17 @@ export default function Position() {
                   </>
                 ) : tr({ en: "Leaving the vault now.", pt: "Saindo do cofre agora." })}
             </RouteStep>
-            <RouteStep n={3} title={tr({ en: "Converted to reais", pt: "Convertido em reais" })} reality={loan?.disbursed_at ? "simulated" : null}>
-              {loan?.disbursed_at
+            <RouteStep n={3}
+              title={chosen
+                ? tr({ en: `Converted to reais · ${ROUTE[chosen.route].short}`, pt: `Convertido em reais · ${ROUTE[chosen.route].short}` })
+                : tr({ en: "Converted to reais", pt: "Convertido em reais" })}
+              reality={loan?.disbursed_at ? "simulated" : null}>
+              {chosen && route
+                ? tr({
+                  en: `${FX_STRUCK[chosen.fx_struck].label} at ${reaisRate(chosen.fx_rate_milli, 3)} per USDC, ${bpsPercent(chosen.cost_bps)} in spread and fees. ${route.reason_codes[0] ? ROUTE_REASON[route.reason_codes[0]].says : ""}`,
+                  pt: `${FX_STRUCK[chosen.fx_struck].label} a ${reaisRate(chosen.fx_rate_milli, 3)} por USDC, ${bpsPercent(chosen.cost_bps)} de spread e taxas. ${route.reason_codes[0] ? ROUTE_REASON[route.reason_codes[0]].says : ""}`,
+                })
+                : loan?.disbursed_at
                 ? tr({
                   en: `Your ${usdc(inv.amount_micro_usdc)} ≈ ${money(reaisAtRamp(inv.amount_micro_usdc, opp.fx_brl_per_usdc_milli, settlement?.ramp_bps ?? 50))} at ${reaisRate(opp.fx_brl_per_usdc_milli)} per USDC, less the ramp's ${pct((settlement?.ramp_bps ?? 50) / 100, 2)}.`,
                   pt: `Seus ${usdc(inv.amount_micro_usdc)} ≈ ${money(reaisAtRamp(inv.amount_micro_usdc, opp.fx_brl_per_usdc_milli, settlement?.ramp_bps ?? 50))} a ${reaisRate(opp.fx_brl_per_usdc_milli)} por USDC, menos os ${pct((settlement?.ramp_bps ?? 50) / 100, 2)} da rampa.`,
@@ -406,7 +499,10 @@ export default function Position() {
                           : late ? <StatusPill tone="alert">{tr({ en: "Late", pt: "Em atraso" })}</StatusPill>
                           : <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Circle size={10} /> {tr({ en: "Scheduled", pt: "Prevista" })}</span>}
                       </td>
-                      <td className="num py-2.5 pr-4 text-right text-foreground">{amount(s.share_micro_usdc ?? loan.instalment_share_micro_usdc)}</td>
+                      <td className="num py-2.5 pr-4 text-right">
+                        <span className="block text-foreground">{obligation(s.share_micro_usdc ?? loan.instalment_share_micro_usdc)}</span>
+                        {!domestic && <span className="block text-xs text-muted-foreground">{usdc(s.share_micro_usdc ?? loan.instalment_share_micro_usdc)}</span>}
+                      </td>
                       <td className="py-2.5 pr-4">
                         {s.payment_id ? (
                           <PayoutCell payout={s.payout} simulated={inv.is_simulated}

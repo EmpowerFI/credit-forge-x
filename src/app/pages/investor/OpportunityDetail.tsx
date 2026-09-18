@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, Loader2, MapPin, ShieldCheck } from "lucide-react";
-import { formatNumber, localized, tr } from "../../i18n";
+import { localized, tr } from "../../i18n";
 import LoadError from "../../components/LoadError";
 import { DataTag } from "../../components/product/DataLegend";
 import ExplorerLink from "../../components/product/ExplorerLink";
@@ -13,7 +13,9 @@ import { poolOf, prototypeNotice } from "../../lib/capital";
 import { DECISION_LABEL, ELIGIBILITY_REASON, percent } from "../../lib/credit";
 import { FUNDING_LABEL, PROOF_LABEL, type Proof, reaisFromUsdc, RISK, title } from "../../lib/investor";
 import { money } from "../../lib/readiness";
+import { reaisRate } from "../../lib/settlement";
 import { usdc } from "../../lib/solana";
+import Lifecycle, { type LifecycleStage, type StageState } from "./Lifecycle";
 import FundingBar from "./FundingBar";
 import DomesticInvest from "./DomesticInvest";
 import FundingRoute from "./FundingRoute";
@@ -83,6 +85,42 @@ export default function OpportunityDetail() {
   const exceptions = row.eligibility_reasons.filter((r) => !["AFFORDABLE"].includes(r));
   const consent = proofs.find((p) => p.kind === "consent");
   const pool = poolOf(row.funding_pool);
+  // What this opportunity's money will do, before any of it has happened: the
+  // same five steps a position reads, each already carrying the reality it
+  // will have. Global pool only — it is where the two currencies meet.
+  const stages: Record<LifecycleStage, StageState> = {
+    funded: {
+      done: row.funding_status === "funded",
+      reality: "real",
+      detail: tr({
+        en: `${usdc(row.funded_micro_usdc, 0)} of ${usdc(row.funding_target_micro_usdc, 0)} from ${row.investors} ${row.investors === 1 ? "investor" : "investors"}`,
+        pt: `${usdc(row.funded_micro_usdc, 0)} de ${usdc(row.funding_target_micro_usdc, 0)}, de ${row.investors} ${row.investors === 1 ? "investidor" : "investidores"}`,
+      }),
+    },
+    locked: {
+      done: false,
+      reality: "simulated",
+      detail: tr({
+        en: "Struck when the desk settles: at allocation on the stablecoin route, at the payout on the direct one.",
+        pt: "Fechado quando a mesa liquidar: na alocação pela rota da stablecoin, no pagamento pela direta.",
+      }),
+    },
+    disbursed: {
+      done: false,
+      reality: "mock",
+      detail: tr({ en: `${money(row.amount_cents)} to her account, in one Pix`, pt: `${money(row.amount_cents)} na conta dela, num único Pix` }),
+    },
+    repayments: {
+      done: false,
+      reality: "mock",
+      detail: tr({ en: `${row.term_months} × ${money(row.instalment_cents)}, monthly`, pt: `${row.term_months} × ${money(row.instalment_cents)}, todo mês` }),
+    },
+    settlement: {
+      done: false,
+      reality: "real",
+      detail: tr({ en: "Your share of each instalment, paid out in USDC", pt: "Sua parte de cada parcela, repassada em USDC" }),
+    },
+  };
 
   return (
     <div className="space-y-6">
@@ -115,8 +153,8 @@ export default function OpportunityDetail() {
                 <p className="num text-xs text-muted-foreground">
                   {pool === "global"
                     ? tr({
-                      en: `${usdc(row.funding_target_micro_usdc, 0)} at R$ ${formatNumber((row.fx_brl_per_usdc_milli ?? 0) / 1000, { maximumFractionDigits: 3 })}/USDC, simulated quote`,
-                      pt: `${usdc(row.funding_target_micro_usdc, 0)} a R$ ${formatNumber((row.fx_brl_per_usdc_milli ?? 0) / 1000, { maximumFractionDigits: 3 })}/USDC, cotação simulada`,
+                      en: `${usdc(row.funding_target_micro_usdc, 0)} at ${reaisRate(row.fx_brl_per_usdc_milli ?? 0, 3)}/USDC, simulated quote`,
+                      pt: `${usdc(row.funding_target_micro_usdc, 0)} a ${reaisRate(row.fx_brl_per_usdc_milli ?? 0, 3)}/USDC, cotação simulada`,
                     })
                     : tr({ en: "in reais, from the domestic pool", pt: "em reais, do pool doméstico" })}
                 </p>
@@ -182,6 +220,11 @@ export default function OpportunityDetail() {
           </section>
 
           <FundingRoute row={row} />
+
+          {pool === "global" && (
+            <Lifecycle principalCents={row.amount_cents} instalmentCents={row.instalment_cents} termMonths={row.term_months}
+              fxMilli={row.fx_brl_per_usdc_milli} stages={stages} />
+          )}
 
           <PrivacyBoundaries>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-4 text-sm">
