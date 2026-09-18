@@ -13,6 +13,11 @@ select set_config(
 
 select plan(31);
 
+-- The comparator's helpers are the database's own: no role but the owner may
+-- call them, so the expected model version is read here, once, as postgres.
+create temp table mv as select private.settlement_route_model_version() as v;
+grant select on mv to public;
+
 -- ------------------------------------------------------------ the vectors
 -- packages/settlement-route/vectors/scenarios.json, which the package's own
 -- tests hold the TypeScript model to. Quoted and expiry timestamps are left
@@ -271,7 +276,7 @@ select is(
   (select jsonb_build_object('applies', p -> 'applies', 'model_version', p -> 'model_version',
      'routes', (select count(*)::int from jsonb_array_elements(p -> 'quotes')), 'selected', p -> 'selected')
    from (select settlement_route_preview((select id from opp)) as p) t),
-  jsonb_build_object('applies', 'true'::jsonb, 'model_version', to_jsonb(private.settlement_route_model_version()),
+  jsonb_build_object('applies', 'true'::jsonb, 'model_version', to_jsonb((select v from mv)),
     'routes', 2, 'selected', '"direct_usdc_pix"'::jsonb),
   'the desk may price both routes before it formalises, and nothing is written'
 );
@@ -312,7 +317,7 @@ select results_eq(
 select results_eq(
   $$ select selected_route::text, model_version, cardinality(reason_codes) > 0, principal_cents
      from settlement_decisions where loan_id = (select id from loan) $$,
-  $$ select 'direct_usdc_pix'::text, private.settlement_route_model_version(), true, principal_cents from loan $$,
+  $$ select 'direct_usdc_pix'::text, (select v from mv), true, principal_cents from loan $$,
   'and records one decision, with the model that took it and why'
 );
 
@@ -354,7 +359,7 @@ select is(
    from (select investor_position((select id from investments
      where opportunity_id = (select id from opp) and investor_id = '00000000-0000-0000-0000-0000000007a8')) as p) t),
   jsonb_build_object('selected', '"direct_usdc_pix"'::jsonb, 'quotes', 2,
-    'model_version', to_jsonb(private.settlement_route_model_version())),
+    'model_version', to_jsonb((select v from mv))),
   'her position carries the route her capital took, with both quotes beside it'
 );
 

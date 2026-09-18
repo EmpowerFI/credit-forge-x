@@ -570,5 +570,21 @@ begin
 end;
 $$;
 
+-- The helpers are the database's own: nobody calls them directly, and a new
+-- function is executable by PUBLIC until it is told otherwise.
+revoke all on function private.settlement_experiment(), private.settlement_route_model_version(),
+  private.settlement_hops(text), private.settlement_net_cents(bigint, integer, jsonb),
+  private.settlement_gross_for_cents(bigint, integer, jsonb),
+  private.settlement_quote(jsonb, integer, timestamptz, bigint, timestamptz),
+  private.settle_route(bigint, bigint, timestamptz, jsonb), private.settlement_card(public.settlement_route),
+  private.settlement_requests(uuid, timestamptz), private.record_settlement_route(uuid, timestamptz)
+  from public, anon, authenticated;
+grant execute on function private.settlement_experiment(), private.settlement_route_model_version(),
+  private.settlement_hops(text), private.settlement_net_cents(bigint, integer, jsonb),
+  private.settlement_gross_for_cents(bigint, integer, jsonb),
+  private.settlement_quote(jsonb, integer, timestamptz, bigint, timestamptz),
+  private.settle_route(bigint, bigint, timestamptz, jsonb), private.settlement_card(public.settlement_route),
+  private.settlement_requests(uuid, timestamptz) to service_role;
+
 revoke all on function public.settlement_route_preview(uuid) from public, anon;
 grant execute on function public.settlement_route_preview(uuid) to authenticated;
