@@ -11,7 +11,7 @@ select set_config(
   true
 );
 
-select plan(28);
+select plan(30);
 
 -- ------------------------------------------------------------ the vectors
 -- packages/settlement-route/vectors/scenarios.json, which the package's own
@@ -329,6 +329,27 @@ select results_eq(
 select pg_temp.act_as('00000000-0000-0000-0000-0000000007a8');
 select is((select count(*)::int from settlement_quotes where loan_id = (select id from loan)), 2,
   'an investor funding the loan reads the quotes her capital was routed by');
+
+-- What the investor console reads: her position's route, and the two quotes it was chosen from.
+select is(
+  (select jsonb_build_object(
+     'selected', p -> 'settlement' -> 'route' -> 'selected',
+     'quotes', (select count(*)::int from jsonb_array_elements(p -> 'settlement' -> 'route' -> 'quotes')),
+     'model_version', p -> 'settlement' -> 'route' -> 'model_version')
+   from (select investor_position((select id from investments
+     where opportunity_id = (select id from opp) and investor_id = '00000000-0000-0000-0000-0000000007a8')) as p) t),
+  jsonb_build_object('selected', '"direct_usdc_pix"'::jsonb, 'quotes', 2,
+    'model_version', to_jsonb(private.settlement_route_model_version())),
+  'her position carries the route her capital took, with both quotes beside it'
+);
+
+select is(
+  (select jsonb_build_object('experiment', o -> 'experiment',
+     'routes', (select jsonb_agg(r ->> 'route') from jsonb_array_elements(o -> 'routes') r))
+   from (select settlement_overview() as o) t),
+  '{"experiment": true, "routes": ["direct_usdc_pix"]}'::jsonb,
+  'and the settlement page counts what each route has settled'
+);
 set local role postgres;
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000007a4');

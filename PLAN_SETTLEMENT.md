@@ -2,7 +2,7 @@
 
 **Source:** *EmpowerFI — Hackathon MVP Addendum: BRL-Denominated On-Chain Settlement & Stablecoin Routing Experiment* (founder, 17 Sep 2026), complementing the *Site + Hackathon MVP Refactor Specification — 2026*.
 **Work:** on `hackathon`. Migrations, reseeds and the merge to `main` happen only after the founder approves.
-**Status, 18 Sep:** founder approved the three decisions in §8. **Steps 1 and 2 done** — the model (`packages/settlement-route`, 23 Vitest cases) and the database (migration `20260925000000`, 28 pgTAP cases, types regenerated). Nothing on screen yet, nothing pushed. Steps 3-8 below are open.
+**Status, 18 Sep:** founder approved the three decisions in §8. **Steps 1-3 done** — the model (`packages/settlement-route`, 23 Vitest cases), the database (`20260925000000`, `20260925000100`, 30 pgTAP cases) and the read paths the console needs. Step 3 changed shape once its real cost was known: see §4.9. Nothing on screen yet, nothing pushed. Steps 4-8 below are open, and §8.4 is a decision waiting on the founder.
 
 **Rules kept from the refactor plan:** do not rebuild, do not hard-code engine decisions, label every simulated, test or devnet step, put nothing personal on chain — and, added by this addendum, **never display a BRS transaction that did not happen**.
 
@@ -113,7 +113,9 @@ One migration, `20260925000000_settlement_route.sql`, plus a second for the anch
 6. **`private.settlement_experiment()`** — `returns boolean`, the switch of §12. Off ⇒ no quotes, no decision, no route on the legs, and every existing path byte for byte as now.
 7. **`private.settle_route(...)`** and its caller inside `private.settle_on_disbursal`: on a **global** loan, quote both routes from the rate card, write both, decide, stamp the `pix_payout` leg. Domestic loans are untouched — there is no USDC leg to route.
 8. **`public.settlement_route_preview(p_opportunity_id uuid)`** — read-only, writes nothing, for the engine page's card and for the desk before it formalises. This is this codebase's equivalent of the addendum's "inspect both quotes before Confirm Allocation": the engine is already analysis-only, and persistence already happens at disbursement.
-9. **Anchor kind `settlement_route`** (`ALLOCATION`-style domain `EMPOWERFI:SETTLEMENT_ROUTE:v1` in `packages/audit-commitments`), payload: `loan_id`, `route`, `provider`, `quoted_at`, `quoted_net_brl_cents`, `fx_rate_milli`, `reason_codes`, `model_version`, `reality`. No names, no Pix keys, no wallet of hers — she has none.
+9. **No anchor kind — a recorded decision, labelled as one.** The plan said `settlement_route` would become a proof kind. It cannot be, cheaply: every kind in this system is one-to-one with an instruction of the `empowerfi_audit` program — 13 kinds, 13 instructions — each with its own account type in `state.rs`, its own `fetchMaybe*` in the generated client, its own branch in `anchor-submit` and its own branch in `verify.ts`. A new proof kind therefore means changing the Rust program and upgrading it on devnet **with the operator's upgrade authority**, a key this work does not touch, in the week of the hackathon. The addendum asks for the settlement fields *in the proof drawer* (§8.3) and forbids destabilising the working P0 (§2), so the decision is recorded in the database, read beside the loan's existing proofs — the disbursement's `loan_transition` anchor is what proves that moment happened — and labelled **derived** in the vocabulary the product already uses: computed from recorded facts, not proven on chain. "No fake BRS transaction" (§12) then holds by construction, because there is no transaction to fake.
+
+   Read paths added instead (`20260925000100`, both read-only): `investor_position` carries the route its capital took with both quotes beside it, and `settlement_overview` carries the experiment's state and what each route has settled.
 10. **`settlement_overview()`** gains the selected route per loan, so the desk's settlement view can show it.
 11. **pgTAP `settlement_route.test.sql`:** the vectors, the switch off leaving legs unchanged, RLS (an entrepreneur and an investor cannot read the rate card), cases A/B/C deciding as specified, a BRS leg never carrying a signature, and the anchor payload carrying nothing personal.
 
@@ -130,7 +132,7 @@ A **Settlement route** card, revealed in `Decision` only when the global pool wi
 Funding stays in USDC. `Position.tsx` and `OpportunityDetail.tsx` show the principal and the repayment obligation **in BRL with an informational USD equivalent**, and a lifecycle line: *USDC funded → BRL locked → Pix disbursed → BRL repayments → investor settlement*, each step carrying the reality it already has elsewhere.
 
 ### 5.3 Proof drawer (§8.3)
-`settlement_route`, `quote_timestamp`, `quoted_net_brl`, `quote_source`, `route_reason_code`, `simulation_status` in the drawer and in Verify. A real Solana signature keeps its explorer link; a simulated BRS leg shows the proof of the **decision**, never a token transfer.
+`settlement_route`, `quote_timestamp`, `quoted_net_brl`, `quote_source`, `route_reason_code`, `simulation_status`, shown with the loan's existing proofs and marked derived (see §4.9). A real Solana signature keeps its explorer link; the routing decision shows what it is — a record, with the disbursement's own proof next to it — and never a token transfer that did not happen.
 
 ### 5.4 The entrepreneur's screen
 **Unchanged.** No BRS, no wallet, no crypto vocabulary (§8.2, last bullet). She sees reais, Pix and her instalments, as she does now.
@@ -165,6 +167,7 @@ These need a reseed of the hackathon database, with approval.
 1. **The ranking figure.** §3.3 — rank on reais delivered per US$ 100 and show the USDC needed for her principal beside it, keeping her disbursement whole. *(My recommendation; the alternative — netting costs out of what she receives — would make the demo claim she gets less than her contract says.)*
 2. **Where the decision binds.** At disbursement, with a read-only preview on the engine and for the desk. *(Recommended: the quote has a TTL, and binding it at allocation would guarantee it is stale by the time money moves — which is case B itself.)*
 3. **The switch's default.** On for the hackathon; `private.settlement_experiment()` off restores today's behaviour exactly.
+4. **Open — does the routing decision need its own on-chain proof?** (§4.9.) Saying yes means a new instruction in the Anchor program, a devnet upgrade run with the operator's upgrade authority, a regenerated client and new branches in `anchor-submit` and `verify.ts`. It is a day's work and it touches the program every existing proof depends on, so it is not something to do mid-hackathon on my own initiative — and the upgrade itself has to be run by whoever holds the key. *Recommendation: not now. The demo already proves the disbursement; the route that paid it is an economic decision, and calling it "recorded" is the honest word.*
 
 ## 9 · Implementation sequence
 
@@ -175,7 +178,7 @@ These need a reseed of the hackathon database, with approval.
    - **Time is compared in whole epoch seconds**, not `date_trunc`, so a decision cannot depend on the session's time zone and matches the TypeScript exactly.
 
    The suite is written to pass on a fresh *or* a seeded database: it gives the global pool its own room, rather than depending on what else happens to be raising. The older suites still need `db reset --local` (a seeded pool leaves nothing to allocate, and their fixtures fail before their first assertion) — which is why `settlement_route.test.sql` covers the release leg too, the one part of `settle_on_disbursal` this migration re-creates.
-3. Anchor kind and payload; `audit-commitments` domain; Verify.
+3. ~~Anchor kind and payload; `audit-commitments` domain; Verify.~~ **Done differently, 18 Sep** — see §4.9: no anchor kind, a recorded decision labelled derived, and the two read paths the console needs (`20260925000100`), covered by two more pgTAP cases.
 4. Engine card and `CapitalPath` hop.
 5. Investor console: BRL denomination and the lifecycle line.
 6. Seed cases A/B/C; local reseed.
