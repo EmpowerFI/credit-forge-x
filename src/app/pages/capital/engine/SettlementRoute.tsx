@@ -2,7 +2,7 @@ import { ArrowRight, ChevronRight } from "lucide-react";
 import type { RouteQuote, SettlementRouteResult } from "@empowerfi/settlement-route";
 import { cn } from "@/lib/utils";
 import StatusPill from "../../../components/product/StatusPill";
-import { tr } from "../../../i18n";
+import { formatDateTime, tr } from "../../../i18n";
 import { bpsPercent } from "../../../lib/capital";
 import { money } from "../../../lib/readiness";
 import { reaisRate, REALITY } from "../../../lib/settlement";
@@ -171,7 +171,9 @@ export default function SettlementRoute({ result }: { result: SettlementRouteRes
               <Row label={tr({ en: "Total cost", pt: "Custo total" })} values={quotes.map((q) => `${money(q.total_cost_cents)} · ${bpsPercent(q.cost_bps)}`)} />
               <Row label={tr({ en: "Settles in", pt: "Liquida em" })} values={quotes.map((q) => eta(q.execution_eta_sec))} />
               <Row label={tr({ en: "Quote valid until", pt: "Cotação válida até" })}
-                values={quotes.map((q) => new Date(q.expires_at).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" }))} />
+                values={quotes.map((q) => (q.fx_struck === "allocation"
+                  ? tr({ en: "a struck rate does not expire", pt: "uma taxa fechada não vence" })
+                  : formatDateTime(q.expires_at, { dateStyle: "short", timeStyle: "short" })))} />
               <Row label={tr({ en: "Can settle this ticket", pt: "Consegue liquidar este ticket" })}
                 values={quotes.map((q) => q.feasible ? tr({ en: "yes", pt: "sim" }) : q.blocks.map((b) => ROUTE_REASON[b as RouteReason].label).join(" · "))} />
             </tbody>

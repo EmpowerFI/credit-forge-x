@@ -122,6 +122,17 @@ export default function Position() {
   const domestic = poolOf(opp.funding_pool) === "domestic";
   const route = settlement?.route ?? null;
   const chosen = route?.quotes.find((q) => q.route === route.selected) ?? null;
+  const other = route?.quotes.find((q) => q.route !== route.selected) ?? null;
+  // Why this route and not the other one. A reason code reads as a comparison
+  // when both could settle; when only one could, it is the other's own block,
+  // and saying "the route is switched off" beside the route that paid her
+  // would read as if that one had been.
+  const why = other && !other.feasible && other.blocks[0]
+    ? tr({
+      en: `The ${ROUTE[other.route].short} route could not settle this one: ${ROUTE_REASON[other.blocks[0]].label.toLowerCase()}.`,
+      pt: `A rota ${ROUTE[other.route].short} não pôde liquidar esta: ${ROUTE_REASON[other.blocks[0]].label.toLowerCase()}.`,
+    })
+    : route?.reason_codes[0] ? ROUTE_REASON[route.reason_codes[0]].says : "";
   // What she owes is written in reais on either pool, and the book is kept in
   // USDC at the quote this loan holds. On the global pool both are shown: the
   // reais bind, the dollars are what moved.
@@ -423,8 +434,8 @@ export default function Position() {
               reality={loan?.disbursed_at ? "simulated" : null}>
               {chosen && route
                 ? tr({
-                  en: `${FX_STRUCK[chosen.fx_struck].label} at ${reaisRate(chosen.fx_rate_milli, 3)} per USDC, ${bpsPercent(chosen.cost_bps)} in spread and fees. ${route.reason_codes[0] ? ROUTE_REASON[route.reason_codes[0]].says : ""}`,
-                  pt: `${FX_STRUCK[chosen.fx_struck].label} a ${reaisRate(chosen.fx_rate_milli, 3)} por USDC, ${bpsPercent(chosen.cost_bps)} de spread e taxas. ${route.reason_codes[0] ? ROUTE_REASON[route.reason_codes[0]].says : ""}`,
+                  en: `${FX_STRUCK[chosen.fx_struck].label} at ${reaisRate(chosen.fx_rate_milli, 3)} per USDC, ${bpsPercent(chosen.cost_bps)} in spread and fees. ${why}`,
+                  pt: `${FX_STRUCK[chosen.fx_struck].label} a ${reaisRate(chosen.fx_rate_milli, 3)} por USDC, ${bpsPercent(chosen.cost_bps)} de spread e taxas. ${why}`,
                 })
                 : loan?.disbursed_at
                 ? tr({

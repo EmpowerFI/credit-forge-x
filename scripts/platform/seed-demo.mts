@@ -155,13 +155,29 @@ if (!irene) throw new Error("run seed-demo-accounts.mts first: no demo investor"
 // target is whole USDC; a domestic pool's is her reais at the quote, so the
 // last investor takes exactly what remains.
 const fundRandom = rng(20260915);
+/**
+ * Case B of the settlement addendum: the reais this opportunity locked when it
+ * was allocated are worth more than the reais today's rate would buy, so the
+ * stablecoin route delivers more even with its extra conversion. A rate, not a
+ * flag — everything downstream reads it as it reads any other opportunity's.
+ */
+const CASE_B_FX_MILLI = 5500;
+const locksBetterFx = new Set<string>();
 async function fund(opportunityId: string, fill: number, ireneShare: number, at: string) {
   const { data: o, error } = await db.from("qualified_credit_opportunities")
-    .select("funding_target_micro_usdc, funding_status").eq("id", opportunityId).single();
+    .select("id, amount_cents, created_at, funding_pool, funding_target_micro_usdc, funding_status").eq("id", opportunityId).single();
   if (error) throw error;
   // Not offered to investors, by her choice, or no pool could take it: it waits.
   if (!o.funding_status) return;
-  const target = o.funding_target_micro_usdc as number;
+  // A pool is chosen the moment the opportunity is listed, and the settlement
+  // comparator prices the stablecoin leg at the rate struck then. So that
+  // moment must be the one it really was, not the second this script ran.
+  const lock = o.funding_pool === "global" && locksBetterFx.has(opportunityId) ? CASE_B_FX_MILLI : null;
+  await must("date allocation", db.from("qualified_credit_opportunities").update({
+    allocated_at: o.created_at,
+    ...(lock ? { fx_brl_per_usdc_milli: lock, funding_target_micro_usdc: Math.ceil((o.amount_cents * 10) / lock) * 1_000_000 } : {}),
+  }).eq("id", opportunityId));
+  const target = lock ? Math.ceil((o.amount_cents * 10) / lock) * 1_000_000 : o.funding_target_micro_usdc as number;
   const whole = (micro: number) => Math.floor(micro / 1_000_000) * 1_000_000;
   const goal = fill >= 1 ? target : whole(target * fill);
   const parts: [string, number][] = [];
@@ -179,6 +195,37 @@ async function fund(opportunityId: string, fill: number, ireneShare: number, at:
       p_mode: "simulated", p_is_simulated: true, p_created_at: at,
     }));
   }
+}
+
+/**
+ * Case C: the stablecoin desk is unavailable at the moment one loan settles.
+ * The card stays in the database and the route is still priced — that is how
+ * ROUTE_PROVIDER_UNAVAILABLE comes out of the model rather than a route
+ * quietly disappearing — and the switch is put back straight after.
+ */
+async function stablecoinRoute(enabled: boolean) {
+  await must("stablecoin route", db.from("settlement_providers")
+    .update({ enabled, updated_at: new Date().toISOString() }).eq("route", "brl_stable_pix"));
+}
+
+/**
+ * A first-cycle loan was disbursed in July but is recorded by this script
+ * today, so its routing decision is re-dated with the rest of its facts. The
+ * stablecoin's quote already carries the day the opportunity was allocated;
+ * the direct one is priced at the payout, which is the moment being moved.
+ */
+async function dateSettlementRoute(loanId: string, at: string) {
+  const { data: direct } = await db.from("settlement_quotes")
+    .select("id, quote_ttl_sec").eq("loan_id", loanId).eq("route", "direct_usdc_pix").maybeSingle();
+  if (!direct) return;
+  const quoted = iso(new Date(at));
+  const expires = iso(new Date(new Date(at).getTime() + direct.quote_ttl_sec * 1000));
+  await must("date quote", db.from("settlement_quotes").update({ quoted_at: quoted, expires_at: expires }).eq("id", direct.id));
+  const { data: decision } = await db.from("settlement_decisions").select("compared").eq("loan_id", loanId).maybeSingle();
+  if (!decision) return;
+  const compared = (decision.compared as { route: string; quoted_at: string; expires_at: string }[])
+    .map((q) => (q.route === "direct_usdc_pix" ? { ...q, quoted_at: quoted, expires_at: expires } : q));
+  await must("date routing decision", db.from("settlement_decisions").update({ compared, decided_at: quoted }).eq("loan_id", loanId));
 }
 
 // -------------------------------------------------------------- the worker
@@ -682,6 +729,7 @@ for (const c of firstCycle) {
   await must("date pix payout", db.from("settlement_legs")
     .update({ created_at: JULY.disbursed, done_at: JULY.disbursed, pix_e2e: mockPixE2e(new Date(JULY.disbursed)) })
     .eq("loan_id", loan.id).eq("kind", "pix_payout"));
+  await dateSettlementRoute(loan.id, JULY.disbursed);
 
   // September: what changed in the business since. One on-time loan is left
   // for the desk to measure during the demo, which the sponsor then sees.
@@ -815,6 +863,12 @@ const { data: referred, error: referredError } = await db.from("qualified_credit
 if (referredError) throw referredError;
 const toWorkOn = referred.slice(0, Math.max(0, referred.length - 3));
 let formalised = 0, declined = 0, ready = 0, raising = 0, cancelled = 0, unlisted = 0;
+// The addendum's three settlement cases, on the two loans the desk disburses
+// here: both are global, and the first-cycle loans in July are case A too.
+// B is chosen before the money arrives, because the rate it locks decides how
+// much USDC the opportunity raises; C is the provider being down at the minute
+// this one settles.
+const settlementCase = new Map<string, "B" | "C">();
 // Most of the qualified demand is still raising, at different points: that is
 // what the capital console shows. A few have moved on: two loans formalised
 // (one repaying), one funded and waiting for the desk, one declined while
@@ -830,7 +884,16 @@ for (const [i, o] of toWorkOn.entries()) {
   const ireneShare = i % 2 === 0 ? 0.2 : 0;
   const at = "2026-09-13T12:00:00-03:00";
   if (formalised < 2) {
-    await fund(o.id, 1, ireneShare, at);
+    const { data: pool } = await db.from("qualified_credit_opportunities").select("funding_pool").eq("id", o.id).single();
+    if (pool?.funding_pool === "global" && ![...settlementCase.values()].includes("B")) {
+      settlementCase.set(o.id, "B");
+      locksBetterFx.add(o.id);
+    } else if (pool?.funding_pool === "global" && ![...settlementCase.values()].includes("C")) {
+      settlementCase.set(o.id, "C");
+    }
+    // The demo investor holds a piece of both loans the desk disburses here, so
+    // the settlement cases are readable from a position, not only from the desk.
+    await fund(o.id, 1, Math.max(ireneShare, 0.2), at);
     if ((await funding()) !== "funded") {
       raising++;
       continue;
@@ -838,7 +901,9 @@ for (const [i, o] of toWorkOn.entries()) {
     const loanId = await must("formalise", asPartner.rpc("formalise_loan", { p_opportunity_id: o.id })) as string;
     formalised++;
     const { data: loan } = await asPartner.from("loans").select("id, instalment_cents").eq("id", loanId).single();
+    if (settlementCase.get(o.id) === "C") await stablecoinRoute(false);
     await must("disburse", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "DISBURSED", p_note: "Pix sent" }));
+    if (settlementCase.get(o.id) === "C") await stablecoinRoute(true);
     if (formalised === 1) {
       await must("activate", asPartner.rpc("transition_loan", { p_loan_id: loan!.id, p_to: "ACTIVE" }));
       await must("pay", asPartner.rpc("record_payment", { p_loan_id: loan!.id, p_instalment_no: 1, p_amount_cents: loan!.instalment_cents }));
@@ -908,6 +973,15 @@ console.log(`short history, awaiting manual review: ${inserted.find((e) => e.id 
 console.log(`first cycle: ${cycleLoans} loans since July, outcomes measured in September except one left for the demo (${leftToMeasure ?? "none"})`);
 console.log(`programme: ${PROGRAM.name}, ${communities.length} communities, sponsored by ${sponsor?.name ?? "no sponsor: run seed-demo-accounts.mts"}`);
 console.log(`consent: ${consentRows.length} recorded at enrollment, ${consentRows.filter((c) => !c.impact).length} outside impact figures, ${private_.length} requests kept from investors`);
+{
+  // The addendum's cases, read back from what was actually recorded.
+  const { data: decisions } = await db.from("settlement_decisions")
+    .select("loan_id, selected_route, reason_codes, net_brl_delta_cents");
+  const routes = (decisions ?? []).reduce<Record<string, number>>((acc, d) => (
+    { ...acc, [d.selected_route as string]: (acc[d.selected_route as string] ?? 0) + 1 }), {});
+  const reasons = [...new Set((decisions ?? []).flatMap((d) => d.reason_codes as string[]))].sort();
+  console.log(`settlement routes: ${decisions?.length ?? 0} decided ${JSON.stringify(routes)}; reasons ${reasons.join(", ") || "none"}`);
+}
 await must("release the anchor worker", db.rpc("finish_anchor_run"));
 const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");
 console.log(`anchors queued: ${queued}`);

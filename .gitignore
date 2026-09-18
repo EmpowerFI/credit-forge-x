@@ -46,3 +46,6 @@ test-ledger
 .surfpool
 **/*.rs.bk
 /deno.lock
+
+# TypeScript incremental build info
+*.tsbuildinfo

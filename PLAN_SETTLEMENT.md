@@ -2,7 +2,7 @@
 
 **Source:** *EmpowerFI — Hackathon MVP Addendum: BRL-Denominated On-Chain Settlement & Stablecoin Routing Experiment* (founder, 17 Sep 2026), complementing the *Site + Hackathon MVP Refactor Specification — 2026*.
 **Work:** on `hackathon`. Migrations, reseeds and the merge to `main` happen only after the founder approves.
-**Status, 18 Sep:** founder approved the three decisions in §8. **Steps 1-5 done** — the model (`packages/settlement-route`, 23 Vitest cases), the database (`20260925000000`, `20260925000100`, 30 pgTAP cases), the read paths the console needs, the engine's settlement card, and the investor console in reais. Step 3 changed shape once its real cost was known: see §4.9. Nothing pushed. Steps 6-8 below are open, and §8.4 is a decision waiting on the founder.
+**Status, 18 Sep:** founder approved the three decisions in §8. **Steps 1-6 done** — the model (`packages/settlement-route`, 23 Vitest cases), the database (`20260925000000`, `20260925000100`, 30 pgTAP cases), the read paths the console needs, the engine's settlement card, the investor console in reais, and the three seeded cases. Step 3 changed shape once its real cost was known: see §4.9. Nothing pushed to the hackathon project. Steps 7-8 below are open, and §8.4 is a decision waiting on the founder.
 
 **Rules kept from the refactor plan:** do not rebuild, do not hard-code engine decisions, label every simulated, test or devnet step, put nothing personal on chain — and, added by this addendum, **never display a BRS transaction that did not happen**.
 
@@ -148,17 +148,21 @@ The disbursement's proof carries a **Settlement routing** block: route, quoted a
 
 ---
 
-## 6 · Seeded demo cases (§9)
+## 6 · Seeded demo cases (§9) — **done locally, 18 Sep**
 
-In `scripts/platform/seed-demo.mts`, on global loans only:
+In `scripts/platform/seed-demo.mts`, on global loans only. Four decisions come out of a run: two of case A from the July cycle, then B and C on the two loans the desk disburses on camera, all four in the demo investor's portfolio.
 
-| Case | Setup | Expected |
+| Case | Setup | Recorded |
 | --- | --- | --- |
-| A — Direct wins | Both feasible; BRS's extra conversion costs more than it saves. | `direct_usdc_pix` · `DIRECT_LOWEST_COST` |
-| B — BRL stable wins | Direct's quote expired at disbursement and its FX is worse; BRS locked the principal at allocation. | `brl_stable_pix` · `BRL_STABLE_BETTER_NET_BRL`, `BRL_STABLE_LOCKS_PRINCIPAL_EARLIER` |
-| C — BRS unavailable | Provider disabled or liquidity below the ticket. | `direct_usdc_pix` · `ROUTE_PROVIDER_UNAVAILABLE` |
+| A — Direct wins | Both feasible; the stablecoin's extra conversion costs more than it saves. | `direct_usdc_pix` · `DIRECT_LOWEST_COST`, `EXTRA_CONVERSION_ADDS_COST` |
+| B — BRL stable wins | The opportunity locked R$ 5,500/USDC when it was allocated; today's rate is R$ 5,400, so the reais bought then are worth more than the reais bought now — by more than the extra conversion costs. | `brl_stable_pix` · `BRL_STABLE_BETTER_NET_BRL`, `BRL_STABLE_LOCKS_PRINCIPAL_EARLIER`, `BRL_STABLE_NO_FX_ON_PAYOUT`; R$ 28.66 more on the compared gross |
+| C — Stablecoin unavailable | The provider is switched off for the minute that loan settles, and put back straight after. It is still priced, so the block comes out of the model. | `direct_usdc_pix` · `ROUTE_PROVIDER_UNAVAILABLE` alone — no comparative code, because only one route could have run |
 
-These need a reseed of the hackathon database, with approval.
+**Case B is a rate, not a flag.** `fx_brl_per_usdc_milli` is set before the opportunity raises anything, because it decides how much USDC the target is; everything downstream reads it as it reads any other opportunity's.
+
+**A fix the cases forced.** `allocated_at` was `now()` at listing, so every seeded opportunity claimed to have been allocated the second the script ran — two months *after* the July loans were disbursed. It is the stablecoin's quote timestamp, so the demo would have shown a rate struck after the money moved. The seed now dates it to the listing, and re-dates the July cohort's routing decision with the rest of its facts, as it already did for the Pix leg.
+
+Still needs a reseed of the hackathon database, with approval (step 8).
 
 ---
 
@@ -190,7 +194,7 @@ These need a reseed of the hackathon database, with approval.
 3. ~~Anchor kind and payload; `audit-commitments` domain; Verify.~~ **Done differently, 18 Sep** — see §4.9: no anchor kind, a recorded decision labelled derived, and the two read paths the console needs (`20260925000100`), covered by two more pgTAP cases.
 4. ~~Engine card and `CapitalPath` hop.~~ **Done, 18 Sep.** Checked on seeded data in both languages and at 390 px: no overflow, no console errors, and the exchange rate printed in the reader's own separators — "R$ 5.400" reads as five thousand four hundred to a Brazilian, and did until it was fixed.
 5. ~~Investor console: BRL denomination and the lifecycle line.~~ **Done, 18 Sep.** Checked on seeded local data against a real decision, in both languages and at 1280 and 390 px: no overflow, no console errors. Two fixes came out of it. The provider's card name is written in English in the database and said in English what the route label already said in the reader's language, so the prose now uses the localised route and the card's key is kept where it belongs, as the quote's source in the proof drawer. And two assertions in `settlement_route.test.sql` counted rows across the whole database rather than the fixture's own loan, so the suite was not seed-independent after all where it claimed to be — both are now scoped, which also keeps them honest once step 6 seeds a case B.
-6. Seed cases A/B/C; local reseed.
+6. ~~Seed cases A/B/C; local reseed.~~ **Done, 18 Sep.** Reseeded locally and read back from the browser: case B's position says *"Travado na alocação, a R$ 5,500/USDC"* and settles through the stablecoin; case C says the stablecoin *"não pôde liquidar esta: provedor indisponível"*. Two things came out of reading it: a reason code that describes the route that did **not** run read, beside the route that paid her, as though that one had been switched off — the position now names the route it is about; and a quote's expiry was printed in the browser's locale rather than the reader's, and shown at all for a rate struck at allocation, which cannot expire. The engine card now says so.
 7. Docs: ARCHITECTURE (a settlement-routing section and the flow row), DEMO (one beat after formalisation), PRIVACY (quotes carry no personal data), I18N glossary; then Vitest, pgTAP, build, lint and screenshots at 1440 and 390 px in EN and PT.
 8. With approval: push the migrations, reseed hackathon, merge to `main`.
 
