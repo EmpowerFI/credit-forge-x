@@ -1,0 +1,130 @@
+{
+  "model_version": "settlement-route-v1.0.0",
+  "note": "Rate cards are assumptions of this prototype. BRS on Solana is production-only with no sandbox, so its economics are seeded and labelled simulated; the direct route's are seeded too, because MoneyGram's sandbox only prices US$2-US$200 and a loan is larger.",
+  "providers": {
+    "direct": {
+      "route": "direct_usdc_pix",
+      "provider": "regulated_offramp",
+      "asset": "USDC",
+      "fx_spread_bps": 120,
+      "fx_struck": "payout",
+      "provider_fee_bps": 60,
+      "provider_fee_fixed_cents": 0,
+      "network_fee_cents": 0,
+      "execution_eta_sec": 900,
+      "quote_ttl_sec": 600,
+      "min_ticket_cents": 10000,
+      "max_ticket_cents": 2000000,
+      "liquidity_cents": 5000000,
+      "reality": "simulated",
+      "enabled": true
+    },
+    "brl_stable": {
+      "route": "brl_stable_pix",
+      "provider": "brl_stablecoin",
+      "asset": "BRS",
+      "fx_spread_bps": 120,
+      "fx_struck": "allocation",
+      "provider_fee_bps": 120,
+      "provider_fee_fixed_cents": 0,
+      "network_fee_cents": 0,
+      "execution_eta_sec": 300,
+      "quote_ttl_sec": 86400,
+      "min_ticket_cents": 10000,
+      "max_ticket_cents": 2000000,
+      "liquidity_cents": 3000000,
+      "reality": "simulated",
+      "enabled": true
+    }
+  },
+  "base": {
+    "gross_micro_usdc": 100000000,
+    "now": "2026-09-18T12:00:00.000Z",
+    "direct_quoted_at": "2026-09-18T11:58:00.000Z",
+    "direct_fx_rate_milli": 5400,
+    "brl_stable_quoted_at": "2026-09-18T10:00:00.000Z",
+    "brl_stable_fx_rate_milli": 5400
+  },
+  "scenarios": [
+    {
+      "name": "A · at the same rate, the extra conversion is not worth taking",
+      "input": { "principal_cents": 150000 },
+      "expect": {
+        "selected": "direct_usdc_pix",
+        "reason_codes": ["DIRECT_LOWEST_COST", "EXTRA_CONVERSION_ADDS_COST"],
+        "direct_net_brl_cents": 53031,
+        "brl_stable_net_brl_cents": 52711,
+        "net_brl_delta_cents": 320,
+        "direct_cost_bps": 179,
+        "brl_stable_cost_bps": 239,
+        "gross_for_principal": { "direct_usdc_pix": 282850000, "brl_stable_pix": 284566667 }
+      }
+    },
+    {
+      "name": "B · the rate moved against the payout leg, and the locked reais win",
+      "input": { "principal_cents": 150000, "direct_fx_rate_milli": 5180 },
+      "expect": {
+        "selected": "brl_stable_pix",
+        "reason_codes": ["BRL_STABLE_BETTER_NET_BRL", "BRL_STABLE_LOCKS_PRINCIPAL_EARLIER", "BRL_STABLE_NO_FX_ON_PAYOUT"],
+        "direct_net_brl_cents": 50870,
+        "brl_stable_net_brl_cents": 52711,
+        "net_brl_delta_cents": 1841,
+        "gross_for_principal": { "direct_usdc_pix": 294862935, "brl_stable_pix": 284566667 }
+      }
+    },
+    {
+      "name": "B2 · the direct quote expired before the money moved",
+      "input": { "direct_quoted_at": "2026-09-18T11:45:00.000Z" },
+      "expect": {
+        "selected": "brl_stable_pix",
+        "reason_codes": ["BRL_STABLE_LOCKS_PRINCIPAL_EARLIER", "BRL_STABLE_NO_FX_ON_PAYOUT", "ROUTE_QUOTE_EXPIRED"],
+        "direct_feasible": false,
+        "brl_stable_net_brl_cents": 52711,
+        "net_brl_delta_cents": null
+      }
+    },
+    {
+      "name": "C · the stablecoin provider is not available",
+      "input": { "brl_stable": { "enabled": false } },
+      "expect": {
+        "selected": "direct_usdc_pix",
+        "reason_codes": ["ROUTE_PROVIDER_UNAVAILABLE"],
+        "brl_stable_feasible": false,
+        "direct_net_brl_cents": 53031,
+        "net_brl_delta_cents": null
+      }
+    },
+    {
+      "name": "C2 · the stablecoin route cannot settle this ticket",
+      "input": { "brl_stable": { "liquidity_cents": 20000 } },
+      "expect": {
+        "selected": "direct_usdc_pix",
+        "reason_codes": ["ROUTE_NO_LIQUIDITY"],
+        "brl_stable_feasible": false,
+        "net_brl_delta_cents": null
+      }
+    },
+    {
+      "name": "D · a ticket under both rate cards settles nowhere",
+      "input": { "gross_micro_usdc": 1000000 },
+      "expect": {
+        "selected": null,
+        "reason_codes": ["ROUTE_TICKET_OUTSIDE_POLICY", "NO_ROUTE_AVAILABLE"],
+        "direct_feasible": false,
+        "brl_stable_feasible": false,
+        "net_brl_delta_cents": null
+      }
+    },
+    {
+      "name": "E · on equal economics the shorter route wins, even when it is the slower one",
+      "input": { "brl_stable": { "provider_fee_bps": 60 } },
+      "expect": {
+        "selected": "direct_usdc_pix",
+        "reason_codes": ["DIRECT_FEWEST_STEPS"],
+        "direct_net_brl_cents": 53031,
+        "brl_stable_net_brl_cents": 53031,
+        "net_brl_delta_cents": 0
+      }
+    }
+  ]
+}

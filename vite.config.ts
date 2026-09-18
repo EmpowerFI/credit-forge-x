@@ -26,6 +26,7 @@ export default defineConfig(({ mode }) => ({
       "@empowerfi/readiness-engine": path.resolve(__dirname, "./packages/readiness-engine/src/index.ts"),
       "@empowerfi/eligibility-engine": path.resolve(__dirname, "./packages/eligibility-engine/src/index.ts"),
       "@empowerfi/capital-allocation": path.resolve(__dirname, "./packages/capital-allocation/src/index.ts"),
+      "@empowerfi/settlement-route": path.resolve(__dirname, "./packages/settlement-route/src/index.ts"),
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },
