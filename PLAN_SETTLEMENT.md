@@ -2,7 +2,7 @@
 
 **Source:** *EmpowerFI — Hackathon MVP Addendum: BRL-Denominated On-Chain Settlement & Stablecoin Routing Experiment* (founder, 17 Sep 2026), complementing the *Site + Hackathon MVP Refactor Specification — 2026*.
 **Work:** on `hackathon`. Migrations, reseeds and the merge to `main` happen only after the founder approves.
-**Status, 18 Sep:** founder approved the three decisions in §8. **Step 1 done** — `packages/settlement-route`, its vectors and 23 Vitest cases; nothing in the database or the UI yet. Steps 2-8 below are open.
+**Status, 18 Sep:** founder approved the three decisions in §8. **Steps 1 and 2 done** — the model (`packages/settlement-route`, 23 Vitest cases) and the database (migration `20260925000000`, 28 pgTAP cases, types regenerated). Nothing on screen yet, nothing pushed. Steps 3-8 below are open.
 
 **Rules kept from the refactor plan:** do not rebuild, do not hard-code engine decisions, label every simulated, test or devnet step, put nothing personal on chain — and, added by this addendum, **never display a BRS transaction that did not happen**.
 
@@ -169,7 +169,12 @@ These need a reseed of the hackathon database, with approval.
 ## 9 · Implementation sequence
 
 1. ~~`packages/settlement-route` + vectors + Vitest. No UI, no database.~~ **Done, 18 Sep.** `settlement-route-v1.0.0`; 7 scenarios (the addendum's A, B, C plus quote expiry, no liquidity, a ticket under both cards, and an economic tie) and 16 property and unit cases. Its `centsFromMicroUsdc` is asserted equal to the allocation engine's `usdcToCents`, so a loan priced by one and settled by the other cannot drift. The rate cards in `vectors/scenarios.json` are the numbers step 2 seeds into `settlement_providers`.
-2. Migration: providers, quotes, decisions, the switch, `settle_route`, the preview RPC, types; pgTAP.
+2. ~~Migration: providers, quotes, decisions, the switch, `settle_route`, the preview RPC, types; pgTAP.~~ **Done, 18 Sep.** All 7 vectors give the same answer in SQL as in TypeScript. Built as planned, with three decisions taken while writing it:
+   - **The stablecoin's quote is read from facts already recorded**, not invented: its locked rate is the opportunity's `fx_brl_per_usdc_milli` and its moment is `allocated_at`, while the direct route is priced at today's rate at the moment the money moves. That difference is the whole experiment, and case B is what it looks like.
+   - **A provider that is switched off is still priced and still compared**, so `ROUTE_PROVIDER_UNAVAILABLE` comes out of the model rather than a route quietly disappearing.
+   - **Time is compared in whole epoch seconds**, not `date_trunc`, so a decision cannot depend on the session's time zone and matches the TypeScript exactly.
+
+   The suite is written to pass on a fresh *or* a seeded database: it gives the global pool its own room, rather than depending on what else happens to be raising. The older suites still need `db reset --local` (a seeded pool leaves nothing to allocate, and their fixtures fail before their first assertion) — which is why `settlement_route.test.sql` covers the release leg too, the one part of `settle_on_disbursal` this migration re-creates.
 3. Anchor kind and payload; `audit-commitments` domain; Verify.
 4. Engine card and `CapitalPath` hop.
 5. Investor console: BRL denomination and the lifecycle line.

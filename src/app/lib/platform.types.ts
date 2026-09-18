@@ -1725,6 +1725,64 @@ export type Database = {
           },
         ]
       }
+      settlement_decisions: {
+        Row: {
+          compared: Json
+          compared_gross_micro_usdc: number
+          decided_at: string
+          loan_id: string
+          model_version: string
+          net_brl_delta_cents: number | null
+          principal_cents: number | null
+          reason_codes: string[]
+          selected_quote_id: string | null
+          selected_route: Database["public"]["Enums"]["settlement_route"] | null
+        }
+        Insert: {
+          compared: Json
+          compared_gross_micro_usdc: number
+          decided_at?: string
+          loan_id: string
+          model_version: string
+          net_brl_delta_cents?: number | null
+          principal_cents?: number | null
+          reason_codes: string[]
+          selected_quote_id?: string | null
+          selected_route?:
+            | Database["public"]["Enums"]["settlement_route"]
+            | null
+        }
+        Update: {
+          compared?: Json
+          compared_gross_micro_usdc?: number
+          decided_at?: string
+          loan_id?: string
+          model_version?: string
+          net_brl_delta_cents?: number | null
+          principal_cents?: number | null
+          reason_codes?: string[]
+          selected_quote_id?: string | null
+          selected_route?:
+            | Database["public"]["Enums"]["settlement_route"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlement_decisions_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: true
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlement_decisions_selected_quote_id_fkey"
+            columns: ["selected_quote_id"]
+            isOneToOne: false
+            referencedRelation: "settlement_quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settlement_legs: {
         Row: {
           amount_cents: number | null
@@ -1738,6 +1796,8 @@ export type Database = {
           loan_id: string
           payment_id: string | null
           pix_e2e: string | null
+          quote_id: string | null
+          route: Database["public"]["Enums"]["settlement_route"] | null
           status: Database["public"]["Enums"]["settlement_leg_status"]
           transfer_id: number | null
         }
@@ -1753,6 +1813,8 @@ export type Database = {
           loan_id: string
           payment_id?: string | null
           pix_e2e?: string | null
+          quote_id?: string | null
+          route?: Database["public"]["Enums"]["settlement_route"] | null
           status: Database["public"]["Enums"]["settlement_leg_status"]
           transfer_id?: number | null
         }
@@ -1768,6 +1830,8 @@ export type Database = {
           loan_id?: string
           payment_id?: string | null
           pix_e2e?: string | null
+          quote_id?: string | null
+          route?: Database["public"]["Enums"]["settlement_route"] | null
           status?: Database["public"]["Enums"]["settlement_leg_status"]
           transfer_id?: number | null
         }
@@ -1794,11 +1858,183 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "settlement_legs_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "settlement_quotes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "settlement_legs_transfer_id_fkey"
             columns: ["transfer_id"]
             isOneToOne: false
             referencedRelation: "vault_transfers"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      settlement_providers: {
+        Row: {
+          asset: string
+          enabled: boolean
+          execution_eta_sec: number
+          fx_spread_bps: number
+          fx_struck: string
+          liquidity_cents: number
+          max_ticket_cents: number
+          min_ticket_cents: number
+          name: string
+          network_fee_cents: number
+          provider: string
+          provider_fee_bps: number
+          provider_fee_fixed_cents: number
+          quote_ttl_sec: number
+          reality: Database["public"]["Enums"]["quote_reality"]
+          route: Database["public"]["Enums"]["settlement_route"]
+          source_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          asset: string
+          enabled?: boolean
+          execution_eta_sec: number
+          fx_spread_bps: number
+          fx_struck: string
+          liquidity_cents: number
+          max_ticket_cents: number
+          min_ticket_cents: number
+          name: string
+          network_fee_cents?: number
+          provider: string
+          provider_fee_bps: number
+          provider_fee_fixed_cents?: number
+          quote_ttl_sec: number
+          reality: Database["public"]["Enums"]["quote_reality"]
+          route: Database["public"]["Enums"]["settlement_route"]
+          source_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asset?: string
+          enabled?: boolean
+          execution_eta_sec?: number
+          fx_spread_bps?: number
+          fx_struck?: string
+          liquidity_cents?: number
+          max_ticket_cents?: number
+          min_ticket_cents?: number
+          name?: string
+          network_fee_cents?: number
+          provider?: string
+          provider_fee_bps?: number
+          provider_fee_fixed_cents?: number
+          quote_ttl_sec?: number
+          reality?: Database["public"]["Enums"]["quote_reality"]
+          route?: Database["public"]["Enums"]["settlement_route"]
+          source_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      settlement_quotes: {
+        Row: {
+          blocks: string[]
+          cost_bps: number
+          created_at: string
+          execution_eta_sec: number
+          expires_at: string
+          feasible: boolean
+          fx_cost_cents: number
+          fx_rate_milli: number
+          fx_spread_bps: number
+          fx_struck: string
+          gross_brl_cents: number
+          gross_for_principal_micro_usdc: number | null
+          gross_micro_usdc: number
+          hops: number
+          id: string
+          liquidity_ok: boolean
+          loan_id: string
+          net_brl_cents: number
+          network_fee_cents: number
+          provider: string
+          provider_fee_cents: number
+          quote_ttl_sec: number
+          quoted_at: string
+          reality: Database["public"]["Enums"]["quote_reality"]
+          route: Database["public"]["Enums"]["settlement_route"]
+          total_cost_cents: number
+        }
+        Insert: {
+          blocks?: string[]
+          cost_bps: number
+          created_at?: string
+          execution_eta_sec: number
+          expires_at: string
+          feasible: boolean
+          fx_cost_cents: number
+          fx_rate_milli: number
+          fx_spread_bps: number
+          fx_struck: string
+          gross_brl_cents: number
+          gross_for_principal_micro_usdc?: number | null
+          gross_micro_usdc: number
+          hops: number
+          id?: string
+          liquidity_ok: boolean
+          loan_id: string
+          net_brl_cents: number
+          network_fee_cents: number
+          provider: string
+          provider_fee_cents: number
+          quote_ttl_sec: number
+          quoted_at: string
+          reality: Database["public"]["Enums"]["quote_reality"]
+          route: Database["public"]["Enums"]["settlement_route"]
+          total_cost_cents: number
+        }
+        Update: {
+          blocks?: string[]
+          cost_bps?: number
+          created_at?: string
+          execution_eta_sec?: number
+          expires_at?: string
+          feasible?: boolean
+          fx_cost_cents?: number
+          fx_rate_milli?: number
+          fx_spread_bps?: number
+          fx_struck?: string
+          gross_brl_cents?: number
+          gross_for_principal_micro_usdc?: number | null
+          gross_micro_usdc?: number
+          hops?: number
+          id?: string
+          liquidity_ok?: boolean
+          loan_id?: string
+          net_brl_cents?: number
+          network_fee_cents?: number
+          provider?: string
+          provider_fee_cents?: number
+          quote_ttl_sec?: number
+          quoted_at?: string
+          reality?: Database["public"]["Enums"]["quote_reality"]
+          route?: Database["public"]["Enums"]["settlement_route"]
+          total_cost_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "settlement_quotes_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "settlement_quotes_provider_fkey"
+            columns: ["provider"]
+            isOneToOne: false
+            referencedRelation: "settlement_providers"
+            referencedColumns: ["provider"]
           },
         ]
       }
@@ -2601,6 +2837,10 @@ export type Database = {
         Returns: undefined
       }
       settlement_overview: { Args: never; Returns: Json }
+      settlement_route_preview: {
+        Args: { p_opportunity_id: string }
+        Returns: Json
+      }
       shared_audit_report: { Args: { p_token: string }; Returns: Json }
       start_anchor_run: { Args: { p_lease_seconds?: number }; Returns: boolean }
       submit_checkin: {
@@ -2816,6 +3056,7 @@ export type Database = {
         | "impact_fund"
         | "other"
       partner_verdict: "approved" | "declined" | "more_information"
+      quote_reality: "sandbox" | "devnet" | "test" | "simulated"
       readiness_band: "LOW" | "MEDIUM" | "HIGH"
       readiness_status:
         | "CREDIT_READY"
@@ -2831,6 +3072,7 @@ export type Database = {
         | "done"
         | "failed"
         | "mock"
+      settlement_route: "direct_usdc_pix" | "brl_stable_pix"
       sponsor_kind: "company" | "foundation" | "impact_fund"
       vault_transfer_kind: "release" | "payout"
       vault_transfer_status: "pending" | "confirmed" | "failed"
@@ -3093,6 +3335,7 @@ export const Constants = {
         "other",
       ],
       partner_verdict: ["approved", "declined", "more_information"],
+      quote_reality: ["sandbox", "devnet", "test", "simulated"],
       readiness_band: ["LOW", "MEDIUM", "HIGH"],
       readiness_status: [
         "CREDIT_READY",
@@ -3110,6 +3353,7 @@ export const Constants = {
         "failed",
         "mock",
       ],
+      settlement_route: ["direct_usdc_pix", "brl_stable_pix"],
       sponsor_kind: ["company", "foundation", "impact_fund"],
       vault_transfer_kind: ["release", "payout"],
       vault_transfer_status: ["pending", "confirmed", "failed"],
