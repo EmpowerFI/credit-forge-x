@@ -18,6 +18,7 @@ const opportunity = (over: Partial<EngineOpportunity> = {}): EngineOpportunity =
   amount_cents: 220_000, term_months: 6, instalment_cents: 41_000, risk_band: "LOW", confidence: "HIGH", impact_eligible: true,
   funding_status: "open", funding_pool: "domestic", allocation: null, allocation_reason_codes: ["DOMESTIC_LIQUIDITY_AVAILABLE"],
   allocation_model_version: "capital-allocation-v1.0.0", allocated_at: null,
+  funding_target_micro_usdc: null, fx_brl_per_usdc_milli: null,
   readiness: {
     status: "CREDIT_READY", score: 97, band: "HIGH", model_version: "readiness-v0.1.0", as_of_period: "2026-09", assessed_at: "",
     months_reported: 6, consecutive_months: 6, records_kept_bps: 10_000, positive_months_last3: 3,

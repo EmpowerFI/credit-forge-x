@@ -10,6 +10,7 @@ import PageHeader from "../../components/product/PageHeader";
 import StatusPill from "../../components/product/StatusPill";
 import { localized, tr } from "../../i18n";
 import { prototypeNotice } from "../../lib/capital";
+import { compareForOpportunity } from "../../lib/settlementRoute";
 import { creditSteps, type CreditStep, type EngineOpportunity, type EngineState, runPlan, stateAt } from "../../lib/engine";
 import CapitalPools from "../investor/CapitalPools";
 import { useCapitalOverview } from "../investor/queries";
@@ -25,7 +26,7 @@ import Snapshot from "./engine/Snapshot";
 import TwoEngines from "./engine/TwoEngines";
 import { useEngineRun } from "./engine/useEngineRun";
 import VerifyDecision from "./engine/VerifyDecision";
-import { useEngineOpportunities } from "./queries";
+import { useEngineOpportunities, useRouteCards } from "./queries";
 
 // The Credit & Capital Engine page: pick a qualified opportunity, run the credit
 // engine, then capital allocation on what it qualified, and watch the decision
@@ -65,6 +66,7 @@ export default function AllocationEngine() {
   const { profile } = useAuth();
   const overview = useCapitalOverview();
   const opportunities = useEngineOpportunities();
+  const cards = useRouteCards();
   const [domestic, setDomestic] = useState<PoolForm | null>(null);
   const [global, setGlobal] = useState<PoolForm | null>(null);
   const [selected, setSelected] = useState<EngineOpportunity | null>(null);
@@ -97,6 +99,11 @@ export default function AllocationEngine() {
   if (opportunities.isError) return <LoadError error={opportunities.error} onRetry={() => opportunities.refetch()} />;
 
   const fx = overview.data?.fx_brl_per_usdc_milli ?? 5400;
+  // Settlement is priced here too, from the database's own rate cards: the
+  // engine page runs every engine in the browser and writes nothing.
+  const settlement = run?.result?.pool === "global" && cards.data
+    ? compareForOpportunity(cards.data, run.o, fx)
+    : null;
   const policies = domestic && global ? { domestic: policyOf("domestic", domestic, fx), global: policyOf("global", global, fx) } : null;
   const changed = Boolean(dbForms && domestic && global
     && (JSON.stringify(dbForms.domestic) !== JSON.stringify(domestic) || JSON.stringify(dbForms.global) !== JSON.stringify(global)));
@@ -255,7 +262,7 @@ export default function AllocationEngine() {
 
               {clock.done && (
                 <div className="space-y-4">
-                  <Decision o={run.o} steps={run.steps} result={run.result} policies={run.policies} fxMilli={fx} />
+                  <Decision o={run.o} steps={run.steps} result={run.result} policies={run.policies} fxMilli={fx} settlement={settlement} />
                   {!run.plan.rejected && <VerifyDecision o={run.o} route={run.result?.pool ?? null} />}
                 </div>
               )}

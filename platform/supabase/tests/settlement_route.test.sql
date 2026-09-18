@@ -11,7 +11,7 @@ select set_config(
   true
 );
 
-select plan(30);
+select plan(31);
 
 -- ------------------------------------------------------------ the vectors
 -- packages/settlement-route/vectors/scenarios.json, which the package's own
@@ -85,6 +85,17 @@ select is(
     "routes": {"direct_usdc_pix": {"net_brl_cents": 53031, "cost_bps": 179, "feasible": false},
                "brl_stable_pix": {"net_brl_cents": 52711, "cost_bps": 239, "feasible": true}}}'::jsonb,
   'vector B2: the direct quote expired before the money moved'
+);
+
+select is(
+  pg_temp.summary(pg_temp.routed(pg_temp.direct(), pg_temp.stable(), 100000000, null, 5400, 5620,
+    '2026-09-18T11:58:00Z', '2026-09-15T09:00:00Z')),
+  '{"selected": "brl_stable_pix",
+    "reason_codes": ["BRL_STABLE_BETTER_NET_BRL", "BRL_STABLE_LOCKS_PRINCIPAL_EARLIER", "BRL_STABLE_NO_FX_ON_PAYOUT"],
+    "net_brl_delta_cents": 1827, "gross_for_principal": {"direct_usdc_pix": null, "brl_stable_pix": null},
+    "routes": {"direct_usdc_pix": {"net_brl_cents": 53031, "cost_bps": 179, "feasible": true},
+               "brl_stable_pix": {"net_brl_cents": 54858, "cost_bps": 239, "feasible": true}}}'::jsonb,
+  'vector B3: a rate struck at allocation does not expire, however old it is'
 );
 
 select is(

@@ -166,8 +166,11 @@ begin
   if not v_liquidity then
     v_blocks := array_append(v_blocks, 'ROUTE_NO_LIQUIDITY');
   end if;
-  -- Whole seconds, as the package compares them, and no session time zone in it.
-  if floor(extract(epoch from p_now)) >= floor(extract(epoch from v_expires)) then
+  -- A rate already struck cannot expire: where the reais were bought at
+  -- allocation there is nothing left to execute, however long ago that was.
+  -- Whole seconds, as the package compares them, and no session time zone.
+  if p_card ->> 'fx_struck' = 'payout'
+    and floor(extract(epoch from p_now)) >= floor(extract(epoch from v_expires)) then
     v_blocks := array_append(v_blocks, 'ROUTE_QUOTE_EXPIRED');
   end if;
 

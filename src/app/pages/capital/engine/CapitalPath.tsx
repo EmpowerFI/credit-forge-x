@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowRight } from "lucide-react";
 import { Fragment } from "react";
 import type { PoolId } from "@empowerfi/capital-allocation";
+import type { SettlementRoute } from "@empowerfi/settlement-route";
 import { cn } from "@/lib/utils";
 import StatusPill from "../../../components/product/StatusPill";
 import { tr } from "../../../i18n";
@@ -11,13 +12,19 @@ interface Hop {
   reality: "real" | "simulated" | null;
 }
 
-const hops = (pool: PoolId): Hop[] =>
+const hops = (pool: PoolId, route: SettlementRoute | null): Hop[] =>
   pool === "global"
     ? [
       { label: tr({ en: "Global investor", pt: "Investidor global" }), note: tr({ en: "wallet on devnet", pt: "carteira na devnet" }), reality: "real" },
       { label: "USDC", note: tr({ en: "test USDC", pt: "USDC de teste" }), reality: "real" },
       { label: "Solana", note: tr({ en: "program vault, devnet", pt: "cofre do programa, devnet" }), reality: "real" },
-      { label: tr({ en: "Regulated off-ramp", pt: "Off-ramp regulado" }), note: tr({ en: "MoneyGram sandbox quote", pt: "cotação do sandbox MoneyGram" }), reality: "simulated" },
+      // The stablecoin route buys her reais here and holds them on chain; the
+      // direct route converts only at the payout. Neither leg is real: a BRL
+      // stablecoin on Solana is production-only, with no sandbox to run it in.
+      ...(route === "brl_stable_pix"
+        ? [{ label: tr({ en: "BRL stablecoin", pt: "Stablecoin de real" }), note: tr({ en: "rate locked at allocation", pt: "câmbio travado na alocação" }), reality: "simulated" as const },
+           { label: tr({ en: "1:1 payout", pt: "Pagamento 1:1" }), note: tr({ en: "no exchange rate here", pt: "sem câmbio aqui" }), reality: "simulated" as const }]
+        : [{ label: tr({ en: "Regulated off-ramp", pt: "Off-ramp regulado" }), note: tr({ en: "rate struck at payout", pt: "câmbio fechado no pagamento" }), reality: "simulated" as const }]),
       { label: "BRL / Pix", note: tr({ en: "mock Pix", pt: "Pix fictício" }), reality: "simulated" },
       { label: tr({ en: "Entrepreneur", pt: "Empreendedora" }), note: tr({ en: "repays in reais by Pix", pt: "paga em reais por Pix" }), reality: null },
     ]
@@ -29,8 +36,8 @@ const hops = (pool: PoolId): Hop[] =>
     ];
 
 /** Where the capital would travel on the selected route, each hop labelled real on devnet or simulated. */
-export default function CapitalPath({ pool }: { pool: PoolId }) {
-  const list = hops(pool);
+export default function CapitalPath({ pool, route = null }: { pool: PoolId; route?: SettlementRoute | null }) {
+  const list = hops(pool, route);
   return (
     <div className="space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{tr({ en: "Capital path", pt: "Caminho do capital" })}</p>

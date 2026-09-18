@@ -43,6 +43,9 @@ export interface EngineOpportunity {
   allocation_reason_codes: string[] | null;
   allocation_model_version: string | null;
   allocated_at: string | null;
+  /** What a global allocation raised, and the rate it locked: the settlement comparator prices from these. */
+  funding_target_micro_usdc: number | null;
+  fx_brl_per_usdc_milli: number | null;
   readiness: {
     status: string;
     score: number;

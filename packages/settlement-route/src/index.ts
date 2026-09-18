@@ -207,7 +207,11 @@ export function quote(request: QuoteRequest, grossMicroUsdc: number, now: string
   if (!p.enabled) blocks.push("ROUTE_PROVIDER_UNAVAILABLE");
   if (gross < p.min_ticket_cents || gross > p.max_ticket_cents) blocks.push("ROUTE_TICKET_OUTSIDE_POLICY");
   if (!liquidityOk) blocks.push("ROUTE_NO_LIQUIDITY");
-  if (seconds(now) >= seconds(expiresAt)) blocks.push("ROUTE_QUOTE_EXPIRED");
+  // A rate already struck cannot expire. A quote does: it is a price someone
+  // will hold for a while, and FX execution risk is the risk of it running out
+  // before the money moves. Where the reais were bought at allocation there is
+  // nothing left to execute, however long ago that was.
+  if (p.fx_struck === "payout" && seconds(now) >= seconds(expiresAt)) blocks.push("ROUTE_QUOTE_EXPIRED");
 
   return {
     route: p.route,

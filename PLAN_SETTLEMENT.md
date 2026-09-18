@@ -2,7 +2,7 @@
 
 **Source:** *EmpowerFI — Hackathon MVP Addendum: BRL-Denominated On-Chain Settlement & Stablecoin Routing Experiment* (founder, 17 Sep 2026), complementing the *Site + Hackathon MVP Refactor Specification — 2026*.
 **Work:** on `hackathon`. Migrations, reseeds and the merge to `main` happen only after the founder approves.
-**Status, 18 Sep:** founder approved the three decisions in §8. **Steps 1-3 done** — the model (`packages/settlement-route`, 23 Vitest cases), the database (`20260925000000`, `20260925000100`, 30 pgTAP cases) and the read paths the console needs. Step 3 changed shape once its real cost was known: see §4.9. Nothing on screen yet, nothing pushed. Steps 4-8 below are open, and §8.4 is a decision waiting on the founder.
+**Status, 18 Sep:** founder approved the three decisions in §8. **Steps 1-4 done** — the model (`packages/settlement-route`, 23 Vitest cases), the database (`20260925000000`, `20260925000100`, 30 pgTAP cases), the read paths the console needs, and the engine's settlement card. Step 3 changed shape once its real cost was known: see §4.9. Nothing pushed. Steps 5-8 below are open, and §8.4 is a decision waiting on the founder.
 
 **Rules kept from the refactor plan:** do not rebuild, do not hard-code engine decisions, label every simulated, test or devnet step, put nothing personal on chain — and, added by this addendum, **never display a BRS transaction that did not happen**.
 
@@ -78,8 +78,11 @@ Order: feasibility → net BRL → total cost → fewest conversions → executi
 **One deviation from §7, deliberate.** The addendum orders the last two the other way round: execution time, then operational complexity. Built as written, two routes with identical economics would settle through the stablecoin because it is minutes faster — which is the thing §7's own bullet forbids ("do not route through a BRL stablecoin merely to increase on-chain activity"). Minutes of settlement do not buy a second counterparty to reconcile, so on equal reais *and* equal cost the shorter route wins, and speed breaks whatever is left. Scenario E in the vectors pins this: the stablecoin route is 10 minutes faster and still loses a tie.
 
 ```
-feasible(route) = provider enabled ∧ liquidity_ok ∧ ticket within policy ∧ quote not expired at `now`
+feasible(route) = provider enabled ∧ liquidity_ok ∧ ticket within policy
+                  ∧ (fx struck at allocation ∨ quote not expired at `now`)
 ```
+
+**A rate already struck cannot expire.** Found while looking at the card on real data, where the stablecoin route read *cannot settle* on every seeded opportunity: its rate was struck at allocation, days ago, and a TTL was being applied to it. A quote expires because it is a price someone will hold for a while, and FX execution risk is the risk of it running out before the money moves. Where the reais were bought at allocation there is nothing left to execute, however old that is. The gate now applies only to a route that quotes at payout — which is exactly where that risk lives. Vector B3 pins it.
 
 Reason codes, in the allocation engine's style:
 
@@ -125,8 +128,10 @@ One migration, `20260925000000_settlement_route.sql`, plus a second for the anch
 
 ## 5 · UI changes
 
-### 5.1 Credit & Capital Engine (§8.1)
-A **Settlement route** card, revealed in `Decision` only when the global pool wins, below the existing pool decision. Two comparable sub-cards — *Direct USDC→Pix* and *USDC→BRS→Pix* — each showing net BRL per US$ 100, total estimated cost, FX and where it is struck, ETA, liquidity and its reality pill. The selected one is highlighted with its reason code, and a `<details>` "Why this route?" carries the full comparison (the same pattern as the `about` disclosures added on 17 Sep). `CapitalPath` gains the BRS hop on route B, dashed and labelled **Simulated**, with no explorer link.
+### 5.1 Credit & Capital Engine (§8.1) — **done, 18 Sep**
+A **Settlement route** card in `Decision`, shown only when the global pool wins. Two comparable cards — *Direct* and *BRL stablecoin* — each leading with **what reaches her Pix**, then the rate and where it was struck, the spread and fees, and the USDC the vault must release for her principal. The selected one is highlighted, the reason codes read as sentences, and a `<details>` "Why this route?" carries the full line-by-line comparison and the model version. `CapitalPath` names the leg that pays her: the off-ramp, or the stablecoin and its 1:1 payout, both dashed and labelled **Simulated**, with no explorer link on either.
+
+It is priced **in the browser**, from the database's own rate cards, as this page re-runs every other engine there and writes nothing. That needed two columns the opportunity already had (`20260925000200`, read-only): what a global allocation raised, and the rate it locked.
 
 ### 5.2 Investor Console (§8.2)
 Funding stays in USDC. `Position.tsx` and `OpportunityDetail.tsx` show the principal and the repayment obligation **in BRL with an informational USD equivalent**, and a lifecycle line: *USDC funded → BRL locked → Pix disbursed → BRL repayments → investor settlement*, each step carrying the reality it already has elsewhere.
@@ -179,7 +184,7 @@ These need a reseed of the hackathon database, with approval.
 
    The suite is written to pass on a fresh *or* a seeded database: it gives the global pool its own room, rather than depending on what else happens to be raising. The older suites still need `db reset --local` (a seeded pool leaves nothing to allocate, and their fixtures fail before their first assertion) — which is why `settlement_route.test.sql` covers the release leg too, the one part of `settle_on_disbursal` this migration re-creates.
 3. ~~Anchor kind and payload; `audit-commitments` domain; Verify.~~ **Done differently, 18 Sep** — see §4.9: no anchor kind, a recorded decision labelled derived, and the two read paths the console needs (`20260925000100`), covered by two more pgTAP cases.
-4. Engine card and `CapitalPath` hop.
+4. ~~Engine card and `CapitalPath` hop.~~ **Done, 18 Sep.** Checked on seeded data in both languages and at 390 px: no overflow, no console errors, and the exchange rate printed in the reader's own separators — "R$ 5.400" reads as five thousand four hundred to a Brazilian, and did until it was fixed.
 5. Investor console: BRL denomination and the lifecycle line.
 6. Seed cases A/B/C; local reseed.
 7. Docs: ARCHITECTURE (a settlement-routing section and the flow row), DEMO (one beat after formalisation), PRIVACY (quotes carry no personal data), I18N glossary; then Vitest, pgTAP, build, lint and screenshots at 1440 and 390 px in EN and PT.

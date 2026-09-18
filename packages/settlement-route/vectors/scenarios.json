@@ -48,47 +48,95 @@
   "scenarios": [
     {
       "name": "A · at the same rate, the extra conversion is not worth taking",
-      "input": { "principal_cents": 150000 },
+      "input": {
+        "principal_cents": 150000
+      },
       "expect": {
         "selected": "direct_usdc_pix",
-        "reason_codes": ["DIRECT_LOWEST_COST", "EXTRA_CONVERSION_ADDS_COST"],
+        "reason_codes": [
+          "DIRECT_LOWEST_COST",
+          "EXTRA_CONVERSION_ADDS_COST"
+        ],
         "direct_net_brl_cents": 53031,
         "brl_stable_net_brl_cents": 52711,
         "net_brl_delta_cents": 320,
         "direct_cost_bps": 179,
         "brl_stable_cost_bps": 239,
-        "gross_for_principal": { "direct_usdc_pix": 282850000, "brl_stable_pix": 284566667 }
+        "gross_for_principal": {
+          "direct_usdc_pix": 282850000,
+          "brl_stable_pix": 284566667
+        }
       }
     },
     {
       "name": "B · the rate moved against the payout leg, and the locked reais win",
-      "input": { "principal_cents": 150000, "direct_fx_rate_milli": 5180 },
+      "input": {
+        "principal_cents": 150000,
+        "direct_fx_rate_milli": 5180
+      },
       "expect": {
         "selected": "brl_stable_pix",
-        "reason_codes": ["BRL_STABLE_BETTER_NET_BRL", "BRL_STABLE_LOCKS_PRINCIPAL_EARLIER", "BRL_STABLE_NO_FX_ON_PAYOUT"],
+        "reason_codes": [
+          "BRL_STABLE_BETTER_NET_BRL",
+          "BRL_STABLE_LOCKS_PRINCIPAL_EARLIER",
+          "BRL_STABLE_NO_FX_ON_PAYOUT"
+        ],
         "direct_net_brl_cents": 50870,
         "brl_stable_net_brl_cents": 52711,
         "net_brl_delta_cents": 1841,
-        "gross_for_principal": { "direct_usdc_pix": 294862935, "brl_stable_pix": 284566667 }
+        "gross_for_principal": {
+          "direct_usdc_pix": 294862935,
+          "brl_stable_pix": 284566667
+        }
       }
     },
     {
       "name": "B2 · the direct quote expired before the money moved",
-      "input": { "direct_quoted_at": "2026-09-18T11:45:00.000Z" },
+      "input": {
+        "direct_quoted_at": "2026-09-18T11:45:00.000Z"
+      },
       "expect": {
         "selected": "brl_stable_pix",
-        "reason_codes": ["BRL_STABLE_LOCKS_PRINCIPAL_EARLIER", "BRL_STABLE_NO_FX_ON_PAYOUT", "ROUTE_QUOTE_EXPIRED"],
+        "reason_codes": [
+          "BRL_STABLE_LOCKS_PRINCIPAL_EARLIER",
+          "BRL_STABLE_NO_FX_ON_PAYOUT",
+          "ROUTE_QUOTE_EXPIRED"
+        ],
         "direct_feasible": false,
         "brl_stable_net_brl_cents": 52711,
         "net_brl_delta_cents": null
       }
     },
     {
+      "name": "B3 · a rate struck at allocation does not expire, however old it is",
+      "input": {
+        "brl_stable_quoted_at": "2026-09-15T09:00:00.000Z",
+        "brl_stable_fx_rate_milli": 5620
+      },
+      "expect": {
+        "selected": "brl_stable_pix",
+        "reason_codes": [
+          "BRL_STABLE_BETTER_NET_BRL",
+          "BRL_STABLE_LOCKS_PRINCIPAL_EARLIER",
+          "BRL_STABLE_NO_FX_ON_PAYOUT"
+        ],
+        "direct_feasible": true,
+        "brl_stable_feasible": true,
+        "net_brl_delta_cents": 1827
+      }
+    },
+    {
       "name": "C · the stablecoin provider is not available",
-      "input": { "brl_stable": { "enabled": false } },
+      "input": {
+        "brl_stable": {
+          "enabled": false
+        }
+      },
       "expect": {
         "selected": "direct_usdc_pix",
-        "reason_codes": ["ROUTE_PROVIDER_UNAVAILABLE"],
+        "reason_codes": [
+          "ROUTE_PROVIDER_UNAVAILABLE"
+        ],
         "brl_stable_feasible": false,
         "direct_net_brl_cents": 53031,
         "net_brl_delta_cents": null
@@ -96,20 +144,31 @@
     },
     {
       "name": "C2 · the stablecoin route cannot settle this ticket",
-      "input": { "brl_stable": { "liquidity_cents": 20000 } },
+      "input": {
+        "brl_stable": {
+          "liquidity_cents": 20000
+        }
+      },
       "expect": {
         "selected": "direct_usdc_pix",
-        "reason_codes": ["ROUTE_NO_LIQUIDITY"],
+        "reason_codes": [
+          "ROUTE_NO_LIQUIDITY"
+        ],
         "brl_stable_feasible": false,
         "net_brl_delta_cents": null
       }
     },
     {
       "name": "D · a ticket under both rate cards settles nowhere",
-      "input": { "gross_micro_usdc": 1000000 },
+      "input": {
+        "gross_micro_usdc": 1000000
+      },
       "expect": {
         "selected": null,
-        "reason_codes": ["ROUTE_TICKET_OUTSIDE_POLICY", "NO_ROUTE_AVAILABLE"],
+        "reason_codes": [
+          "ROUTE_TICKET_OUTSIDE_POLICY",
+          "NO_ROUTE_AVAILABLE"
+        ],
         "direct_feasible": false,
         "brl_stable_feasible": false,
         "net_brl_delta_cents": null
@@ -117,10 +176,16 @@
     },
     {
       "name": "E · on equal economics the shorter route wins, even when it is the slower one",
-      "input": { "brl_stable": { "provider_fee_bps": 60 } },
+      "input": {
+        "brl_stable": {
+          "provider_fee_bps": 60
+        }
+      },
       "expect": {
         "selected": "direct_usdc_pix",
-        "reason_codes": ["DIRECT_FEWEST_STEPS"],
+        "reason_codes": [
+          "DIRECT_FEWEST_STEPS"
+        ],
         "direct_net_brl_cents": 53031,
         "brl_stable_net_brl_cents": 53031,
         "net_brl_delta_cents": 0

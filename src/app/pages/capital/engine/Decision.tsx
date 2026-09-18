@@ -6,9 +6,11 @@ import StatusPill from "../../../components/product/StatusPill";
 import { tr } from "../../../i18n";
 import { bpsPercent, POOL, REASON } from "../../../lib/capital";
 import { type CreditStep, type EngineOpportunity, orderedChecks } from "../../../lib/engine";
+import type { SettlementRouteResult } from "../../../lib/settlementRoute";
 import { money } from "../../../lib/readiness";
 import { usdc } from "../../../lib/solana";
 import CapitalPath from "./CapitalPath";
+import SettlementRoute from "./SettlementRoute";
 import { checkDetail, CHECK_TITLE, creditDetail, CREDIT_STEP_TITLE } from "./labels";
 
 function Why({ ok, children }: { ok: boolean; children: React.ReactNode }) {
@@ -54,12 +56,14 @@ function Consumption({ pool, policy, amount, fxMilli }: { pool: PoolId; policy: 
  * waiting for capital, which is a decision, not an error. Or Engine 1 stopping,
  * in which case no pool was asked.
  */
-export default function Decision({ o, steps, result, policies, fxMilli }: {
+export default function Decision({ o, steps, result, policies, fxMilli, settlement }: {
   o: EngineOpportunity;
   steps: CreditStep[];
   result: AllocationResult | null;
   policies: { domestic: PoolPolicy; global: PoolPolicy };
   fxMilli: number;
+  /** Priced here too, and only shown once global capital has won. */
+  settlement: SettlementRouteResult | null;
 }) {
   const failed = steps.find((s) => !s.passed);
   if (failed || !result) {
@@ -172,7 +176,9 @@ export default function Decision({ o, steps, result, policies, fxMilli }: {
         </div>
       </div>
 
-      <CapitalPath pool={pool} />
+      <CapitalPath pool={pool} route={pool === "global" ? settlement?.selected ?? null : null} />
+
+      {pool === "global" && settlement && <SettlementRoute result={settlement} />}
     </div>
   );
 }
