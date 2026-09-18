@@ -74,7 +74,7 @@ npm run audit-client:generate                       # after changing the program
 
 | Command | What |
 |---|---|
-| `npm test` | Vitest: engines and their vectors, the Capital Allocation Engine's vectors, commitments and golden vectors, the on-chain privacy review of the IDL, settlement and ramp helpers, languages |
+| `npm test` | Vitest: engines and their vectors, the Capital Allocation Engine's and the settlement route comparator's vectors, commitments and golden vectors, the on-chain privacy review of the IDL, settlement and ramp helpers, languages |
 | `npx supabase test db --workdir platform` | pgTAP: every role's access, the thesis, the anchoring and reconciliation queues, cost to serve, capital, outcomes, catalog-wide RBAC rules (add `--linked` to run against the remote, rolled back) |
 | `cargo test -p empowerfi-audit` | the program's rules in LiteSVM |
 | `deno test --allow-read platform/supabase/functions/_shared/` | the vendored engines and commitments, in the runtime that uses them |
@@ -85,7 +85,7 @@ npm run audit-client:generate                       # after changing the program
 ```
 src/app/                     the platform (/app): pages by role, audit screen
 src/                         the public site (EN at /, PT-BR at /pt)
-packages/                    readiness-engine · eligibility-engine · capital-allocation · audit-commitments · audit-client
+packages/                    readiness-engine · eligibility-engine · capital-allocation · settlement-route · audit-commitments · audit-client
 programs/empowerfi-audit     the Anchor program and its tests
 platform/supabase            migrations, pgTAP tests, Edge Functions
 services/zcash-watcher       Zcash viewing-key scanner (Rust → WebAssembly) for the zcash-watch function

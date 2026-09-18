@@ -74,6 +74,7 @@ The product is one chain of facts. Each fact is written by a database function t
 | Investors fund it | `investments` | `investment-confirm` (global, a wallet deposit), `allocate_domestic` (domestic, simulated reais) | `AllocationCommitment` |
 | Funded, it is formalised | `partner_decisions`, `loans` | `formalise_loan` (EmpowerFI's P2P desk), at the engine's rate; the desk may decline instead, and investors are refunded | `LoanAccount` (terms) |
 | The loan moves | `loan_events` | `transition_loan` (the desk) | `LoanAccount` status, following the same state machine on chain |
+| On disbursement of a global loan, how the dollars become her reais | `settlement_quotes` (both routes), `settlement_decisions`, `settlement_legs.route` | `private.settle_on_disbursal` → `private.record_settlement_route` | — recorded, not anchored: the disbursement itself is proven by the `LoanAccount` transition, and the route is an economic decision with its model version ([Settlement routing](#settlement-routing)) |
 | Instalments are paid | `payments` | `record_payment` (the desk) | `PaymentCommitment` per instalment |
 | What changed in the business | `productive_outcomes` | `measure_outcome` (EmpowerFI) | `OutcomeCommitment` |
 
@@ -168,7 +169,7 @@ Editing the record in the database turns the verdict to MISMATCH. The page also 
 - **A global investment.** The investor signs in with a Solana wallet (Sign-In with Solana, through Supabase Auth) — from the login page or, without leaving it, from the opportunity she is reading, since the wallet sign-in replaces the demo session in place — and sends test USDC to the program's vault with a plain token transfer. `investment-confirm` reads the transaction from devnet, checks the amount, the vault and the sender, and records the allocation, which is queued as an `AllocationCommitment`.
 - **With shielded ZEC.** `zcash-request` answers with a ZIP 321 payment request to EmpowerFI's shielded treasury on Zcash testnet, with a random memo reference. `zcash-watch` scans new blocks every minute with the treasury's viewing key (`services/zcash-watcher`, Rust compiled to WebAssembly) and, once a payment confirms, credits the vault with USDC for that allocation.
 - **A domestic allocation.** `allocate_domestic` records a simulated position in reais; nothing moves on chain but its proof.
-- **Settlement.** When the desk disburses, the database creates settlement legs; `vault-settle` sends the real ones (the release of global capital to the off-ramp's account, then each instalment's shares paid out to investors) and marks the rest as simulated: the conversion to reais at the demo quote, and Pix both ways. `ramp-quote` asks MoneyGram Ramps' sandbox what a USDC cash-out to Brazil would cost, to show beside the simulated conversion.
+- **Settlement.** When the desk disburses, the database creates settlement legs; `vault-settle` sends the real ones (the release of global capital to the off-ramp's account, then each instalment's shares paid out to investors) and marks the rest as simulated: the conversion to reais at the demo quote, and Pix both ways. `ramp-quote` asks MoneyGram Ramps' sandbox what a USDC cash-out to Brazil would cost, to show beside the simulated conversion. On a global loan, the same moment prices both ways of turning the dollars into reais and records which one paid her: [Settlement routing](#settlement-routing).
 - **Refunds.** If the desk declines a funded opportunity, or she withdraws consent before disbursement, `vault-refund` returns each wallet investor's USDC from the vault.
 
 Every cron-driven function is dispatched by `pg_cron` through `pg_net` only when work is due, with the shared secret from Vault.
@@ -206,7 +207,7 @@ There are two routes, and only two (founder specification, 16 Sep):
 | | Domestic P2P | Global P2P |
 |---|---|---|
 | Capital | Brazilian investors, a simulated BRL pool | International and impact investors, test USDC on Solana devnet |
-| To her business | Pix, in reais | Program vault → regulated off-ramp (simulated; MoneyGram sandbox quote) → Pix |
+| To her business | Pix, in reais | Program vault → one of two settlement routes (simulated; MoneyGram sandbox quote) → Pix. See [Settlement routing](#settlement-routing) |
 | FX / hedge | none | an explicit assumption |
 
 `funding_pools` holds each pool's policy: capital, required return, risk appetite, ticket range, mandate, and for global the FX hedge and ramp cost. `packages/capital-allocation` is the engine, mirrored in SQL as `private.allocate_funding` and held to the same hand-reasoned vectors by Vitest and pgTAP:
@@ -223,6 +224,29 @@ It selects from `engine_opportunities()`: the same queue, pseudonymous, bound by
 
 The opportunity's commitment on chain covers the request, not the pool: the allocation is recorded with its model version and re-runs in the browser. The engine chooses capital; it is not a credit decision.
 
+## Settlement routing
+
+The allocation engine stops at the pool. A global loan still has a second question to answer, and the addendum of 17 Sep asks it: **her loan is in reais, the capital is in dollars, so where do the dollars become reais?** There are two ways, and they differ less in how many hops they have than in **where the exchange rate is struck**.
+
+| | Direct | BRL stablecoin |
+|---|---|---|
+| Path | USDC → regulated off-ramp → Pix | USDC → BRL stablecoin on chain → Pix, 1:1 |
+| Rate struck | at the payout, so the reais are known only when the money moves | at allocation, so the reais were fixed when investors' capital was committed |
+| Conversions | one | two, the second with no FX at all |
+
+`packages/settlement-route` (`settlement-route-v1.0.0`) is the comparator, built like the allocation engine: a pure integer function, mirrored in SQL as `private.settle_route`, and both held to the same vectors by Vitest and pgTAP. `settlement_providers` holds one rate card per route — spread, fees, execution time, quote TTL, ticket range, liquidity, whether it is enabled, and the page the numbers came from — so the economics are data, and a third provider needs no code.
+
+Order: feasibility, then the reais delivered, then total cost, then the number of conversions; speed breaks whatever is left. Ties go to the shorter route. Two rules are worth stating because they were got wrong first:
+
+- **She receives her contracted principal whole, whichever route pays it.** So "net reais" cannot rank the routes — it would be the same number on both. They are ranked on the reais delivered for the *same gross released*, with the USDC the vault must release for her principal shown beside it. Nothing is ever deducted from her disbursement.
+- **A rate already struck cannot expire.** A quote expires because it is a price someone holds for a while; the risk is that it runs out before the money moves. Where the reais were bought at allocation there is nothing left to execute, however old the quote is. The expiry gate applies only to a route that quotes at the payout.
+
+`private.settlement_experiment()` is the switch. With it off, nothing is quoted, no decision is written, every leg keeps a null route, and the pgTAP suite asserts that no leg, amount or payload changes.
+
+**No fabricated proof, and no fabricated transaction.** Every anchor kind in this system is one of the program's instructions, so a new proof kind means changing the Anchor program and upgrading it on devnet. The routing decision is therefore recorded in the database with its model version and read beside the loan's existing proofs, labelled **derived** — the vocabulary the product already uses for something computed from recorded facts rather than proven on chain. Because no stablecoin transfer happens, none is shown: the leg is dashed and labelled *Simulated*, with no explorer link.
+
+It is read in three places: the Credit & Capital Engine prices both routes in the browser from the same rate cards and shows them side by side (analysis only, like everything else on that page); an investor's position says which route paid her loan, when its rate was struck and what it cost, with the routing fields in the disbursement's proof drawer; and the desk's settlement view counts what each route has settled. The entrepreneur's screens are untouched — she sees reais, Pix and her instalments, and no crypto vocabulary.
+
 ## Languages
 
 The app reads in English or Brazilian Portuguese (`src/app/i18n`). Every text is written in both where it is used, labels in module constants read the language at the moment they are used, and numbers and dates follow the language. The site's Portuguese pages open the app in Portuguese. Records, codes, model versions and hashes do not change with the language, so a proof is the same in both. See [I18N.md](I18N.md).
@@ -234,6 +258,7 @@ The app reads in English or Brazilian Portuguese (`src/app/i18n`). Every text is
 - 4 verified communities and 100 participants, with education and 6–7 months of check-ins shaped by business profiles;
 - readiness for everyone, requests from some of those who are ready, eligibility, allocation to a pool, P2P funding, and formalisations and declines taken through the desk's own session;
 - a July cycle of six loans with repayment and outcomes, one left unmeasured for the demo;
+- the addendum's three settlement cases on global loans: the direct route winning, the stablecoin winning because the rate it locked at allocation beats today's, and the stablecoin unavailable when a loan settles;
 - a fictional sponsor funding a program run by the four communities, and the demo investor managing an impact fund with a mandate.
 
 The first-cycle facts are recorded through the live functions and then dated to when they happened. The seed holds the anchor worker's lease meanwhile, so their proofs carry those dates. Everything is marked `is_simulated`.
@@ -242,9 +267,9 @@ The first-cycle facts are recorded through the live functions and then dated to 
 
 | Suite | Count | Covers |
 |---|---|---|
-| pgTAP (`platform/supabase/tests`) | 468 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement, Zcash, cost to serve, outcomes, Impact Intelligence (sponsor scope, small groups hidden, consent, no private keys), mandates, operating economics (who reads it, program scope, no private keys), and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
+| pgTAP (`platform/supabase/tests`) | 499 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement and its route comparator, Zcash, cost to serve, outcomes, Impact Intelligence (sponsor scope, small groups hidden, consent, no private keys), mandates, operating economics (who reads it, program scope, no private keys), and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
 | LiteSVM (`programs/empowerfi-audit/tests`) | 26 | every instruction's rules and state machine |
-| Vitest | 149 | engines, the allocation engine's vectors and per-check trace, the engine page's run plan and demo cases, investor mandates, the five views and their tools against RBAC, commitments, the IDL privacy review, settlement and ramp helpers, languages, UI helpers |
+| Vitest | 173 | engines, the allocation engine's vectors and per-check trace, the settlement route comparator's vectors, the engine page's run plan and demo cases, investor mandates, the five views and their tools against RBAC, commitments, the IDL privacy review, settlement and ramp helpers, languages, UI helpers |
 | Deno | 47 | the vendored engines and commitments against the same vectors, and the MoneyGram quote |
 | Devnet scan (`scripts/platform/scan-chain-pii.mts`) | every account | reviewed types only, and none of the database's names, e-mails or amounts |
 
@@ -258,6 +283,7 @@ packages/eligibility-engine  eligibility rules + vectors
 packages/audit-commitments   canonical JSON, domains, commitments + golden vectors
 packages/audit-client        Codama-generated client for the program, IDL, privacy test
 packages/capital-allocation  the Capital Allocation Engine + vectors
+packages/settlement-route    the settlement route comparator + vectors
 programs/empowerfi-audit     the Anchor program + LiteSVM tests
 services/zcash-watcher       Zcash viewing-key scanner, compiled to WebAssembly
 platform/supabase            migrations, pgTAP tests, Edge Functions (see platform/README.md)
