@@ -78,6 +78,7 @@ npm run audit-client:generate                       # after changing the program
 | `npx supabase test db --workdir platform` | pgTAP: every role's access, the thesis, the anchoring and reconciliation queues, cost to serve, capital, outcomes, catalog-wide RBAC rules (add `--linked` to run against the remote, rolled back) |
 | `cargo test -p empowerfi-audit` | the program's rules in LiteSVM |
 | `deno test --allow-read platform/supabase/functions/_shared/` | the vendored engines and commitments, in the runtime that uses them |
+| `npm run test:deno-check` | every Edge Function type-checks in Deno — the tests above cover `_shared/` only, and the functions are where a new anchor kind is easiest to half-add |
 | `npx tsx scripts/platform/scan-chain-pii.mts` | every account on devnet: reviewed types only, none of the database's personal data |
 
 ## Repository
