@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { opensView, roleOpens, toolPath, viewById, viewOf, VIEWS } from "./views";
+import { opensView, roleOpens, roleOpensPath, toolPath, viewById, viewOf, VIEWS } from "./views";
 
 describe("views: View platform as", () => {
   it("has the five views of the spec, in order", () => {
@@ -16,6 +16,29 @@ describe("views: View platform as", () => {
         expect(roleOpens(tool, v.persona.role), `${v.id}: ${tool.to}`).toBe(true);
       }
     }
+  });
+
+  it("lists no destination twice, so every tool is a different place", () => {
+    for (const v of VIEWS) {
+      const where = [...v.primary, ...v.secondary].map((t) => `${t.community ? "community:" : ""}${t.to}`);
+      expect(new Set(where).size, `${v.id}: ${where.join(" ")}`).toBe(where.length);
+    }
+  });
+
+  it("does not send a persona to a page its role cannot open", () => {
+    // The login page keeps `next` only where this holds; otherwise the visitor
+    // lands on "Not available for your role" one click after choosing a view.
+    expect(roleOpensPath("/app/investor", "partner")).toBe(false);
+    expect(roleOpensPath("/app/investor", "community_leader")).toBe(false);
+    expect(roleOpensPath("/app/investor", "entrepreneur")).toBe(false);
+    expect(roleOpensPath("/app/investor/positions/abc", "capital_provider")).toBe(true);
+    expect(roleOpensPath("/app/capital/economics", "capital_provider")).toBe(false);
+    expect(roleOpensPath("/app/capital", "capital_provider")).toBe(true);
+    expect(roleOpensPath("/app/impact", "partner")).toBe(false);
+    // Pages inside no area are not role-gated: anyone signed in opens them.
+    expect(roleOpensPath("/app/start?as=operator", "entrepreneur")).toBe(true);
+    expect(roleOpensPath("/app/audit/loan/abc", "entrepreneur")).toBe(true);
+    expect(roleOpensPath("/app/investor", undefined)).toBe(false);
   });
 
   it("maps each role to the view it holds; admins and auditors hold none", () => {

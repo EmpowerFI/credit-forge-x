@@ -88,7 +88,8 @@ export default function Opportunities() {
           ),
         })} />
 
-      <div className="space-y-3">
+      {/* "Mandate filters" in Your tools opens here, not at the top of the page. */}
+      <div id="filters" className="scroll-mt-32 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {m && (
             <FilterSelect label={tr({ en: "Mandate", pt: "Mandato" })} value={filter.mandate} onChange={set("mandate")}

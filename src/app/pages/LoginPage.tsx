@@ -8,8 +8,8 @@ import DataLegend from "../components/product/DataLegend";
 import NetworkBadge from "../components/product/NetworkBadge";
 import { useAuth } from "../auth/useAuth";
 import { platformConfigured } from "../lib/platform";
-import { DEMO_PASSWORD, OPERATIONS, STORIES } from "../lib/stories";
-import { type Tool, toolPath, type View, viewById, VIEWS } from "../lib/views";
+import { areaOf, DEMO_PASSWORD, OPERATIONS, STORIES } from "../lib/stories";
+import { roleOpensPath, type Tool, toolPath, type View, viewById, VIEWS } from "../lib/views";
 import RoleLanding, { ViewChoice } from "../components/views/RoleLanding";
 import { useWalletEntry } from "../wallet/WalletSignIn";
 import { prototypeNotice } from "../lib/capital";
@@ -28,7 +28,18 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [busyTool, setBusyTool] = useState<Tool | null>(null);
-  const entry = useWalletEntry(() => navigate(next === "/app" ? "/app/investor" : next, { replace: true }));
+  /**
+   * Where entering should land. `next` is the page the visitor was sent here
+   * from — but they choose who to enter as, and that choice may not open it.
+   * Following `next` regardless signs someone in as one persona and drops them
+   * on another's page, which RBAC then refuses: a dead end one click in. So
+   * `next` is honoured only when this entry opens it, and otherwise the entry
+   * goes to its own home.
+   */
+  const landing = (home: string, opensNext: boolean) => (next !== "/app" && opensNext ? next : home);
+
+  const entry = useWalletEntry(() =>
+    navigate(landing("/app/investor", roleOpensPath(next, "capital_provider")), { replace: true }));
 
   if (session) return <Navigate to={next} replace />;
 
@@ -40,10 +51,12 @@ export default function LoginPage() {
     if (error) setError(error === "Invalid login credentials" ? tr({ en: "Wrong email or password.", pt: "E-mail ou senha incorretos." }) : error);
     else navigate(to, { replace: true });
   };
-  // A view opens at the tool chosen, unless the visitor was sent here from a page.
+  // A view opens at the tool chosen; `next` wins only where this view's
+  // persona can follow it.
   const openTool = async (tool: Tool) => {
     setBusyTool(tool);
-    await enter(view.persona.email, DEMO_PASSWORD, next === "/app" ? toolPath(tool, null) : next);
+    await enter(view.persona.email, DEMO_PASSWORD,
+      landing(toolPath(tool, null), roleOpensPath(next, view.persona.role)));
     setBusyTool(null);
   };
   const choose = (id: View["id"]) => {
@@ -124,7 +137,7 @@ export default function LoginPage() {
               const Icon = area.icon;
               return (
                 <li key={area.id}>
-                  <button type="button" onClick={() => enter(area.persona.email, DEMO_PASSWORD, next === "/app" ? area.to : next)} disabled={busy !== null}
+                  <button type="button" onClick={() => enter(area.persona.email, DEMO_PASSWORD, landing(area.to, areaOf(next)?.id === area.id))} disabled={busy !== null}
                     aria-label={tr({ en: `Enter ${area.label}`, pt: `Entrar em ${area.label}` })}
                     className="panel flex h-full w-full items-start gap-3 p-4 text-left transition-colors hover:border-accent/50 disabled:opacity-60">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground">{i + 1}</span>
@@ -144,7 +157,7 @@ export default function LoginPage() {
           <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <span>{tr({ en: "Oversight:", pt: "Supervisão:" })}</span>
             {oversight.map((area) => (
-              <button key={area.id} type="button" onClick={() => enter(area.persona.email, DEMO_PASSWORD, next === "/app" ? area.to : next)} disabled={busy !== null}
+              <button key={area.id} type="button" onClick={() => enter(area.persona.email, DEMO_PASSWORD, landing(area.to, areaOf(next)?.id === area.id))} disabled={busy !== null}
                 title={area.audience} className="inline-flex items-center gap-1.5 font-medium text-foreground underline-offset-4 hover:underline disabled:opacity-60">
                 <area.icon size={14} className="text-accent" aria-hidden /> {area.label}
               </button>

@@ -543,7 +543,10 @@ export default function MePage() {
 
       {/* --------------------------------------------------------- credit */}
       {/* A live request stays visible even if a later assessment drops below ready. */}
-      {(readiness?.status === "CREDIT_READY" || intent) && (
+      {/* Capital is a place on this page in every state: "Credit intent" and */}
+      {/* "Loan and payments" both open #capital, and an anchor that exists */}
+      {/* only once you qualify is a link that goes nowhere until then. */}
+      {(readiness?.status === "CREDIT_READY" || intent) ? (
         <section id="capital" className="scroll-mt-32 space-y-4 rounded-2xl p-6 glass glow-border">
           <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Capital", pt: "Capital" })}</h2>
           {intent ? (
@@ -621,6 +624,28 @@ export default function MePage() {
               </div>
             </form>
           )}
+        </section>
+      ) : (
+        <section id="capital" className="scroll-mt-32 space-y-2 rounded-2xl p-6 glass">
+          <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Capital", pt: "Capital" })}</h2>
+          <p className="text-sm text-muted-foreground">
+            {tr({
+              en: (
+                <>
+                  Asking for capital opens once your readiness reaches credit-ready.{" "}
+                  <a href="#readiness" className="underline underline-offset-4 hover:text-foreground">Your readiness</a> says
+                  what is still missing.
+                </>
+              ),
+              pt: (
+                <>
+                  O pedido de capital abre quando sua prontidão chega a pronta para crédito.{" "}
+                  <a href="#readiness" className="underline underline-offset-4 hover:text-foreground">Sua prontidão</a> diz
+                  o que ainda falta.
+                </>
+              ),
+            })}
+          </p>
         </section>
       )}
 

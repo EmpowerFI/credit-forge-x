@@ -1,5 +1,5 @@
 import {
-  ArrowLeftRight, Briefcase, CalendarCheck, CalendarClock, ClipboardCheck, Coins, Cpu, FileCheck2, Gavel, History, KeyRound,
+  ArrowLeftRight, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardCheck, Coins, Cpu, FileCheck2, Gavel, History, KeyRound,
   LayoutDashboard, PieChart, Route as RouteIcon, ServerCog, Share2, ShieldCheck, Split, Sprout, Store, Users, Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -121,6 +121,12 @@ export const HOME: Record<Role, AreaId> = {
 
 /** Each area's own views, in its sidebar. A leader's community views come from her community. */
 export const SUBNAV: Partial<Record<AreaId, NavItem[]>> = localized({
+  // The engine's home had no sidebar at all: whoever entered as the operator
+  // landed there with no way on except the header menu.
+  engine: [
+    { to: "/app/capital", label: { en: "Engine", pt: "Motor" }, icon: Split, end: true },
+    { to: "/app/capital/economics", label: { en: "Operating economics", pt: "Economia operacional" }, icon: BarChart3 },
+  ],
   business: [
     { to: "/app/me", label: { en: "My business", pt: "Meu negócio" }, icon: Store },
     { to: "/app/check-in", label: { en: "Monthly check-in", pt: "Check-in mensal" }, icon: CalendarCheck },

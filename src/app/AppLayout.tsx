@@ -17,7 +17,7 @@ import { ROLE_LABEL } from "./lib/platform";
 import { prototypeNotice } from "./lib/capital";
 import { COMMUNITY_TABS } from "./lib/community";
 import { type Area, areaOf, canOpen, type NavItem, OPERATIONS, STORIES, SUBNAV } from "./lib/stories";
-import { opensView, viewById, viewOf, VIEWS } from "./lib/views";
+import { opensView, roleOpensPath, viewById, viewOf, VIEWS } from "./lib/views";
 import { useLedCommunity } from "./pages/community/queries";
 import { tr } from "./i18n";
 import LanguageSwitch from "./i18n/LanguageSwitch";
@@ -246,6 +246,14 @@ export default function AppLayout() {
           to: `/app/community/${led.data!.id}${t.to ? `/${t.to}` : ""}`, label: t.label, icon: TAB_ICON[t.to] ?? Activity, end: "end" in t,
         }))
       : SUBNAV[current.id] ?? [];
+  // A sidebar must not offer a door that is locked. Operating economics is
+  // narrower than the engine area around it, so an investor inside the engine
+  // would be shown a link that refuses her. Filter only where the role opens
+  // the area itself; an admin or auditor looking into someone else's area
+  // keeps the whole sidebar, as the routes there let them through.
+  const nav = current && canOpen(current, profile?.role)
+    ? subnav.filter((item) => roleOpensPath(item.to, profile?.role))
+    : subnav;
   const initials = profile?.display_name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (
@@ -310,10 +318,10 @@ export default function AppLayout() {
       </header>
 
       <div className="flex">
-        {subnav.length > 0 && (
+        {nav.length > 0 && (
           <aside className="sticky top-[6.75rem] hidden h-[calc(100vh-6.75rem)] w-60 shrink-0 border-r border-border bg-sidebar lg:block">
             <div className="flex h-full flex-col justify-between gap-8 overflow-y-auto p-4">
-              <SubNav items={subnav} />
+              <SubNav items={nav} />
               <Footnote />
             </div>
           </aside>
@@ -325,10 +333,10 @@ export default function AppLayout() {
             <div className="space-y-6 p-4">
               <ViewSelector onNavigate={() => setOpen(false)} />
               <StoryBar current={current} vertical onNavigate={() => setOpen(false)} />
-              {subnav.length > 0 && (
+              {nav.length > 0 && (
                 <div className="space-y-1 border-t border-border pt-4">
                   <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{current?.label}</p>
-                  <SubNav items={subnav} onNavigate={() => setOpen(false)} />
+                  <SubNav items={nav} onNavigate={() => setOpen(false)} />
                 </div>
               )}
               <Footnote />

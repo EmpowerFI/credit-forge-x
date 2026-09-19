@@ -105,7 +105,7 @@ export const VIEWS: View[] = localized([
       CONSOLE,
       t({ to: "/app/investor/opportunities", icon: Coins, label: { en: "Opportunities", pt: "Oportunidades" },
         what: { en: "Qualified requests by code, with affordability and proof status.", pt: "Pedidos qualificados por código, com capacidade de pagamento e status das provas." } }),
-      t({ to: "/app/investor/opportunities", icon: SlidersHorizontal, label: { en: "Mandate filters", pt: "Filtros do mandato" },
+      t({ to: "/app/investor/opportunities#filters", icon: SlidersHorizontal, label: { en: "Mandate filters", pt: "Filtros do mandato" },
         what: { en: "Geography, purpose, ticket, risk appetite and impact mandate.", pt: "Território, finalidade, ticket, apetite a risco e mandato de impacto." } }),
       t({ to: "/app/investor/portfolio", icon: PieChart, label: { en: "Portfolio and positions", pt: "Carteira e posições" },
         what: { en: "Funded, outstanding, repaid and the outcome of each.", pt: "Captado, em aberto, pago e o resultado de cada uma." } }),
@@ -129,10 +129,8 @@ export const VIEWS: View[] = localized([
     persona: { email: "partner@demo.empowerfi.io", name: "Paulo Mendes", role: "partner" },
     home: ENGINE,
     primary: [
-      t({ ...ENGINE, label: { en: "Credit Engine", pt: "Motor de crédito" },
-        what: { en: "Readiness, affordability, risk and eligibility, run live.", pt: "Prontidão, capacidade de pagamento, risco e elegibilidade, rodados ao vivo." } }),
-      t({ to: "/app/capital", icon: RouteIcon, label: { en: "Capital allocation", pt: "Alocação de capital" },
-        what: { en: "Domestic or global, on liquidity, ticket, risk appetite, mandate and economics.", pt: "Doméstico ou global, por liquidez, ticket, apetite a risco, mandato e economia." } }),
+      t({ ...ENGINE, icon: RouteIcon,
+        what: { en: "Readiness, affordability, risk and eligibility run live — then domestic or global, on liquidity, ticket, risk appetite, mandate and economics.", pt: "Prontidão, capacidade de pagamento, risco e elegibilidade rodados ao vivo — e então doméstico ou global, por liquidez, ticket, apetite a risco, mandato e economia." } }),
       t({ to: "/app/capital#replay", icon: History, label: { en: "Portfolio replay", pt: "Replay da carteira" },
         what: { en: "The whole demand, re-run through the engine.", pt: "Toda a demanda, rodada de novo pelo motor." } }),
       t({ to: "/app/capital#assumptions", icon: SlidersHorizontal, label: { en: "Pool assumptions", pt: "Premissas dos pools" },
@@ -179,7 +177,9 @@ export const VIEWS: View[] = localized([
       t({ to: "/participants?action=any", community: true, icon: ClipboardList, label: { en: "Tasks", pt: "Tarefas" },
         what: { en: "The follow-ups waiting on the community.", pt: "Os acompanhamentos que esperam pela comunidade." } }),
     ],
-    secondary: [COMMUNITY_HOME],
+    // No secondary: a leader's work is all inside her community, and the
+    // overview is already the button above.
+    secondary: [],
   },
   {
     id: "entrepreneur", icon: Store,
@@ -199,10 +199,8 @@ export const VIEWS: View[] = localized([
         what: { en: "Your month in two minutes.", pt: "Seu mês em dois minutos." } }),
       t({ to: "/app/me#readiness", icon: Gauge, label: { en: "Readiness", pt: "Prontidão" },
         what: { en: "Where you stand, and what is missing.", pt: "Onde você está, e o que falta." } }),
-      t({ to: "/app/me#capital", icon: HandCoins, label: { en: "Credit intent", pt: "Pedido de crédito" },
-        what: { en: "Ask for capital when you are ready.", pt: "Peça capital quando estiver pronta." } }),
-      t({ to: "/app/me#capital", icon: CalendarClock, label: { en: "Loan and payments", pt: "Empréstimo e pagamentos" },
-        what: { en: "Your instalments, paid by Pix.", pt: "Suas parcelas, pagas por Pix." } }),
+      t({ to: "/app/me#capital", icon: HandCoins, label: { en: "Capital", pt: "Capital" },
+        what: { en: "Ask for capital when you are ready, then follow the loan and your instalments, paid by Pix.", pt: "Peça capital quando estiver pronta e acompanhe o empréstimo e suas parcelas, pagas por Pix." } }),
       t({ to: "/app/consent", icon: ShieldCheck, label: { en: "Consent", pt: "Consentimento" },
         what: { en: "You decide what your data is used for.", pt: "Você decide para que seus dados são usados." } }),
     ],
@@ -222,13 +220,19 @@ export function toolPath(tool: Tool, communityId?: string | null): string {
   return `/app${tool.to ? `?community=${encodeURIComponent(tool.to)}` : ""}`;
 }
 
-/** Whether a role opens a tool: the route's own area decides, as RBAC does. */
-export function roleOpens(tool: Tool, role: Role | undefined): boolean {
+/** Whether a role opens a platform path: the path's own area decides, as RBAC does. */
+export function roleOpensPath(path: string, role: Role | undefined): boolean {
   if (!role) return false;
-  if (tool.to.startsWith("/app/capital/economics")) return ["sponsor", "partner", "admin", "auditor"].includes(role);
-  const area = areaOf(tool.community ? "/app/community" : tool.to.split(/[?#]/)[0]);
-  return Boolean(area?.roles.includes(role));
+  if (path.startsWith("/app/capital/economics")) return ["sponsor", "partner", "admin", "auditor"].includes(role);
+  const area = areaOf(path.split(/[?#]/)[0]);
+  // A path inside no area (/app, /app/start, a single record's proof) is not
+  // role-gated: anyone signed in opens it.
+  return area ? area.roles.includes(role) : true;
 }
+
+/** Whether a role opens a tool. */
+export const roleOpens = (tool: Tool, role: Role | undefined) =>
+  roleOpensPath(tool.community ? "/app/community" : tool.to, role);
 
 /** A view an account opens without switching: its role holds it, or oversees every tool in it. */
 export const opensView = (view: View, role: Role | undefined) =>
