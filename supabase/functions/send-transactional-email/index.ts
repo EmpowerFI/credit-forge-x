@@ -1,7 +1,7 @@
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
+import { TEMPLATES, renderTemplate } from '../_shared/transactional-email-templates/registry.ts'
 
 // Display name and domains used in the From: header.
 // FROM_DOMAIN must be a domain verified with the email provider (Resend).
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
   let recipientEmail: string
   let idempotencyKey: string
   let messageId: string
-  let templateData: Record<string, any> = {}
+  let templateData: Record<string, unknown> = {}
   try {
     const body = await req.json()
     templateName = body.templateName || body.template_name
@@ -281,10 +281,10 @@ Deno.serve(async (req) => {
 
   // 4. Render React Email template to HTML and plain text
   const html = await renderAsync(
-    React.createElement(template.component, templateData)
+    renderTemplate(template, templateData)
   )
   const plainText = await renderAsync(
-    React.createElement(template.component, templateData),
+    renderTemplate(template, templateData),
     { plainText: true }
   )
 

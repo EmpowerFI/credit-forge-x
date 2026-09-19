@@ -23,12 +23,12 @@ interface QueueMessage {
 // (and `.retryAfterSeconds` on 429) so the rate-limit / forbidden handling
 // below keeps working unchanged.
 async function sendEmail(
-  payload: Record<string, any>,
+  payload: Record<string, unknown>,
   apiKey: string,
   baseUrl: string
 ): Promise<void> {
   const headers: Record<string, string> = {}
-  if (payload.unsubscribe_token) {
+  if (typeof payload.unsubscribe_token === 'string') {
     const unsubUrl = `${baseUrl}/functions/v1/handle-email-unsubscribe?token=${payload.unsubscribe_token}`
     headers['List-Unsubscribe'] = `<${unsubUrl}>`
     headers['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click'

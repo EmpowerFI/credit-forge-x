@@ -51,8 +51,8 @@ const ContactQuestionForFounder = ({ name, email, message }: Props) => (
 
 export const template = {
   component: ContactQuestionForFounder,
-  subject: (data: Record<string, any>) =>
-    `Nova pergunta pelo site${data?.name ? ` — ${data.name}` : ''}`,
+  subject: (data: Record<string, unknown>) =>
+    `Nova pergunta pelo site${data?.name ? ` — ${String(data.name)}` : ''}`,
   to: 'daniele@empowerfi.io',
   displayName: 'Pergunta do site (para a fundadora)',
   previewData: {
