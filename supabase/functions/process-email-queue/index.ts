@@ -1,5 +1,24 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
+// One factory, so the client's type and the client itself cannot drift apart.
+// `ReturnType<typeof createClient>` is NOT this client: with no type argument
+// it instantiates the declared default generics, a stricter client whose
+// `.from()` yields never[] and whose `.rpc()` accepts none of the names this
+// function calls. Inferring from the call we actually make gives the client we
+// actually hold — one built without generated Database types, because this
+// function predates them.
+const makeClient = (url: string, key: string) => createClient(url, key)
+type QueueClient = ReturnType<typeof makeClient>
+
+// One message as read_email_batch returns it: the queue's own bookkeeping
+// (pgmq sets msg_id, read_ct and enqueued_at) around the payload we enqueued.
+interface QueueMessage {
+  msg_id: number
+  read_ct: number
+  enqueued_at: string
+  message: Record<string, unknown>
+}
+
 // Send one transactional email via Resend. Throws an Error carrying `.status`
 // (and `.retryAfterSeconds` on 429) so the rate-limit / forbidden handling
 // below keeps working unchanged.
@@ -99,9 +118,9 @@ function parseJwtClaims(token: string): Record<string, unknown> | null {
 
 // Move a message to the dead letter queue and log the reason.
 async function moveToDlq(
-  supabase: ReturnType<typeof createClient>,
+  supabase: QueueClient,
   queue: string,
-  msg: { msg_id: number; message: Record<string, unknown> },
+  msg: QueueMessage,
   reason: string
 ): Promise<void> {
   const payload = msg.message
@@ -156,7 +175,7 @@ Deno.serve(async (req) => {
     )
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase = makeClient(supabaseUrl, supabaseServiceKey)
 
   // 1. Check rate-limit cooldown and read queue config
   const { data: state } = await supabase
@@ -182,11 +201,13 @@ Deno.serve(async (req) => {
 
   // 2. Process auth_emails first (priority), then transactional_emails
   for (const queue of ['auth_emails', 'transactional_emails']) {
-    const { data: messages, error: readError } = await supabase.rpc('read_email_batch', {
+    // The client carries no generated types, so the RPC hands back `any`;
+    // naming the shape here is what keeps the whole chain below typed.
+    const { data: messages, error: readError } = (await supabase.rpc('read_email_batch', {
       queue_name: queue,
       batch_size: batchSize,
       vt: 30,
-    })
+    })) as { data: QueueMessage[] | null; error: unknown }
 
     if (readError) {
       console.error('Failed to read email batch', { queue, error: readError })
@@ -245,7 +266,10 @@ Deno.serve(async (req) => {
       // Drop expired messages (TTL exceeded).
       // Prefer payload.queued_at when present; fall back to PGMQ's enqueued_at
       // which is always set by the queue.
-      const queuedAt = payload.queued_at ?? msg.enqueued_at
+      // `??` alone would accept a non-string queued_at from the payload and
+      // hand `new Date` something that yields Invalid Date, silently skipping
+      // the TTL instead of falling back to the queue's own timestamp.
+      const queuedAt = typeof payload.queued_at === 'string' ? payload.queued_at : msg.enqueued_at
       if (queuedAt) {
         const ageMs = Date.now() - new Date(queuedAt).getTime()
         const maxAgeMs = ttlMinutes[queue] * 60 * 1000
