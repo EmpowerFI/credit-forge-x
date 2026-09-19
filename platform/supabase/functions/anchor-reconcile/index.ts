@@ -48,6 +48,7 @@ import {
   getOutcomeCommitmentDecoder,
   getPaymentCommitmentDecoder,
   getReadinessAttestationDecoder,
+  getSettlementRouteCommitmentDecoder,
   getTransitionLoanInstructionDataDecoder,
   identifyEmpowerfiAuditAccount,
 } from "../_shared/audit-client/index.ts";
@@ -100,6 +101,10 @@ const HOLDER: Record<AnchorKind, { type: EmpowerfiAuditAccount; read: (data: Uin
   outcome: { type: EmpowerfiAuditAccount.OutcomeCommitment, read: (d) => new Uint8Array(getOutcomeCommitmentDecoder().decode(d).commitment) },
   allocation: { type: EmpowerfiAuditAccount.AllocationCommitment, read: (d) => new Uint8Array(getAllocationCommitmentDecoder().decode(d).commitment) },
   consent: { type: EmpowerfiAuditAccount.ConsentCommitment, read: (d) => new Uint8Array(getConsentCommitmentDecoder().decode(d).commitment) },
+  settlement_route: {
+    type: EmpowerfiAuditAccount.SettlementRouteCommitment,
+    read: (d) => new Uint8Array(getSettlementRouteCommitmentDecoder().decode(d).commitment),
+  },
 };
 
 /** The commitment a transition_loan transaction carried, if it succeeded. */
