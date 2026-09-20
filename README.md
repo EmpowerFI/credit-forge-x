@@ -79,6 +79,7 @@ npm run audit-client:generate                       # after changing the program
 | `cargo test -p empowerfi-audit` | the program's rules in LiteSVM |
 | `deno test --allow-read platform/supabase/functions/_shared/` | the vendored engines and commitments, in the runtime that uses them |
 | `npm run test:deno-check` | every Edge Function type-checks in Deno — the tests above cover `_shared/` only, and the functions are where a new anchor kind is easiest to half-add |
+| `UX_BASE=http://localhost:5173 npm run test:ux-paths` | in a browser, as each of the five demo personas: entering from a deep link, every tool its view lists, and every `/app` link it is shown — nothing refuses them, bounces them, or scrolls to an anchor that is not there. Needs `npm run dev` and a seeded database |
 | `npx tsx scripts/platform/scan-chain-pii.mts` | every account on devnet: reviewed types only, none of the database's personal data |
 
 ## Repository
