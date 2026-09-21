@@ -63,18 +63,12 @@ const en = {
   },
   how: {
     eyebrow: "How it works",
-    title: "One economic loop,",
-    accent: "from program to proof.",
-    subtitle:
-      "The same data that demonstrates impact qualifies credit, mobilizes capital and returns to the sponsor and the investor — with every step recorded on Solana.",
+    // The figure carries the headline and the summary, so the section does not
+    // repeat them in text above it.
     figureAlt:
-      "One economic loop: a sponsor funds a cohort, the community runs the program, the evidence layer captures and proves the data, the Credit Engine judges readiness and eligibility, the Capital Engine routes the opportunity to the domestic pool in reais or the global impact pool in USDC, the business receives by Pix and repays, and repayment and outcomes return to the sponsor as verified evidence. Solana sits in the middle — immutable proofs, privacy by design, real-time transparency and programmable capital — and each step names the proof it leaves on chain.",
-    figureCaption: "From program to proof: every step, the proof it leaves, and where the capital comes from.",
-    figureNote: "",
+      "From opportunity to global capital: a six-step loop around EmpowerFI. Sponsors fund programs and set impact goals; communities engage and support entrepreneurs locally; entrepreneurs build their businesses, access capital and grow; each loan, or pool of loans, becomes a programmable asset on Solana; investors provide capital in reais or USDC and can hold or trade their positions; and the result is thriving businesses, stronger communities and a more inclusive economy, whose measured results and verified impact return to the sponsors as evidence.",
     figureSwipe: "Drag the figure sideways, or open it full size.",
     figureOpen: "Open the full figure",
-    caption:
-      "A sponsor funds a cohort, a community runs the program, the evidence layer captures and proves the data, the Credit Engine qualifies an opportunity, the Capital Engine routes it to the domestic or the global pool, the business receives by Pix and repays, and repayment and outcomes return to the sponsor as evidence. Solana sits in the middle: immutable proofs, privacy by design, real-time transparency and programmable capital.",
     judgements: [
       { q: "Is the business ready?", a: "Readiness" },
       { q: "For this amount?", a: "Eligibility" },
@@ -237,18 +231,12 @@ const pt: typeof en = {
   },
   how: {
     eyebrow: "Como funciona",
-    title: "Um ciclo econômico,",
-    accent: "do programa à prova.",
-    subtitle:
-      "Os mesmos dados que demonstram impacto qualificam o crédito, mobilizam capital e voltam ao patrocinador e ao investidor — com cada etapa registrada na Solana.",
+    // Não há mais o aviso de que a figura está em inglês: agora ela tem versão
+    // em português, e a legenda que descrevia a figura antiga saiu com ela.
     figureAlt:
-      "Um ciclo econômico: um patrocinador financia uma turma, a comunidade conduz o programa, a camada de evidência captura e prova os dados, o Motor de Crédito julga prontidão e elegibilidade, o Motor de Capital encaminha a oportunidade ao pool doméstico em reais ou ao pool global de impacto em USDC, o negócio recebe por Pix e paga, e pagamento e resultados voltam ao patrocinador como evidência verificada. A Solana está no centro — provas imutáveis, privacidade por desenho, transparência em tempo real e capital programável — e cada etapa nomeia a prova que deixa na blockchain.",
-    figureCaption: "Do programa à prova: cada etapa, a prova que ela deixa e de onde vem o capital.",
-    figureNote: "A figura está em inglês.",
+      "Da oportunidade ao capital global: um ciclo de seis etapas em torno da EmpowerFI. Patrocinadores financiam programas e definem metas de impacto; comunidades engajam e apoiam empreendedoras locais; as empreendedoras desenvolvem seus negócios, acessam capital e geram renda; cada empréstimo, ou carteira, se torna um ativo programável na Solana; investidores fornecem capital em reais ou USDC e podem manter ou negociar suas posições; e o resultado são negócios mais fortes, comunidades mais resilientes e uma economia mais inclusiva, cujos resultados mensuráveis e impacto verificado voltam aos patrocinadores como evidência.",
     figureSwipe: "Arraste a figura para o lado, ou abra em tamanho cheio.",
     figureOpen: "Abrir a figura inteira",
-    caption:
-      "Um patrocinador financia uma turma, uma comunidade conduz o programa, a camada de evidência captura e prova os dados, o Motor de Crédito qualifica uma oportunidade, o Motor de Capital a encaminha ao pool doméstico ou global, o negócio recebe por Pix e paga, e pagamento e resultados voltam ao patrocinador como evidência. A Solana está no centro: provas imutáveis, privacidade por desenho, transparência em tempo real e capital programável.",
     judgements: [
       { q: "O negócio está pronto?", a: "Prontidão" },
       { q: "Para este valor?", a: "Elegibilidade" },

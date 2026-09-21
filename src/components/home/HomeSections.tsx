@@ -62,7 +62,11 @@ export const HomeHowItWorks = ({ lang }: { lang: Lang }) => {
   return (
     <section id="how-it-works" className="section-padding gradient-subtle">
       <div className="container mx-auto space-y-12">
-        <SectionHeading eyebrow={t.eyebrow} title={t.title} accent={t.accent} subtitle={t.subtitle} />
+        {/* The figure headlines itself, so the section does not say it again.
+            The eyebrow becomes the heading rather than disappearing: #how-it-works
+            is a nav target, and a section anyone can jump to needs a heading to
+            land on. */}
+        <h2 className="text-center text-sm font-medium uppercase tracking-widest text-accent">{t.eyebrow}</h2>
         <EconomicLoop lang={lang} />
         <div className="mx-auto max-w-3xl space-y-3">
           <div className="grid gap-3 sm:grid-cols-3">
