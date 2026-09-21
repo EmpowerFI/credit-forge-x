@@ -9,7 +9,7 @@ select set_config(
   true
 );
 
-select plan(58);
+select plan(69);
 
 -- ------------------------------------------------------------------ fixtures
 -- Maria, Bea and Cris are ready and asked; Ana is ready and did not ask.
@@ -453,6 +453,83 @@ select results_eq(
 select throws_ok($$ select audit_record('outcome', (select id from outcome)) $$, '42501', 'not_allowed_to_audit',
   'nor the proof, whose record holds her figures');
 set local role postgres;
+
+-- ------------------------------------------------- the rate card, and the ticket
+-- Costs are priced by a card that has a version. The card may change; what was
+-- already recorded may not. And what the ticket would change is a model over
+-- the card, never a rewrite of the facts.
+
+select is(
+  (select count(distinct rate_version)::int from cost_events), 1,
+  'every cost event names the card that priced it');
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002a1');
+create temp table cs as select cost_sensitivity() as v;
+select is((select v #>> '{basis,occurrences}' from cs), 'observed',
+  'with a loan on the books, the model counts each stage as often as it has occurred');
+select is((select v #>> '{card,source}' from cs), 'simulated',
+  'and prices it by the pilot card, which is an assumption');
+
+select ok(
+  (select bool_and(smaller < larger) from (
+     select (x ->> 'per_100_disbursed_cents')::bigint as larger,
+       lead((x ->> 'per_100_disbursed_cents')::bigint) over (order by (x ->> 'ticket_cents')::bigint) as smaller
+     from cs, jsonb_array_elements(v -> 'tickets') x) s
+   where smaller is not null),
+  'a larger ticket costs less for every R$ 100 lent');
+-- Multiplied back by its ticket, every one of them is the same cost per loan:
+-- the work did not change, only the amount it is divided by. (Each side is
+-- rounded to the cent, which is all the slack the comparison allows.)
+select ok(
+  (select bool_and(
+     abs((x ->> 'credit_per_100_cents')::numeric * (x ->> 'ticket_cents')::numeric / 10000
+         - (v #>> '{per_loan,credit_cents}')::numeric) <= (x ->> 'ticket_cents')::numeric / 20000 + 0.5)
+   from cs, jsonb_array_elements(v -> 'tickets') x),
+  'because nothing in the work changed: only the amount it is divided by');
+
+-- A model detached from the measurement would be worth nothing: the ticket
+-- actually lent is in the answer, and at that ticket the model must land near
+-- the number the page shows.
+select is(
+  (select (x ->> 'ticket_cents')::bigint from cs, jsonb_array_elements(v -> 'tickets') x
+   where (x ->> 'is_current')::boolean),
+  (select (v #>> '{basis,current_ticket_cents}')::bigint from cs),
+  'the ticket actually lent is one of the rows, and says so');
+select ok(
+  (select abs(modelled - measured) / measured < 0.3
+   from (select (cost_sensitivity(null, array[(v #>> '{basis,current_ticket_cents}')::bigint])
+                 #>> '{tickets,0,per_100_disbursed_cents}')::numeric as modelled from cs) m,
+        (select (cts_summary() ->> 'per_100_disbursed_cents')::numeric as measured) k),
+  'at the ticket actually lent, the model lands near the measured cost per R$ 100');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002a3');
+select throws_ok($$ select cost_sensitivity() $$, '42501', 'not_allowed_to_see_costs',
+  'an entrepreneur does not model the platform''s costs');
+set local role postgres;
+
+-- The pilot measures what a stage really takes, and a new card carries it.
+insert into cost_rate_cards (version, effective_from, source, note) values
+  ('pgTAP-observed', now() - interval '1 minute', 'observed', 'pgTAP: measured, not assumed');
+insert into cost_rates (card_version, stage, staff_minutes, hourly_rate_cents, fixed_cents, borne_by, phase, note)
+select 'pgTAP-observed', stage, staff_minutes * 2, hourly_rate_cents, fixed_cents, borne_by, phase, note
+from cost_rates where card_version = 'pilot-2026.09';
+
+insert into entrepreneurs (id, display_name, business_sector) values
+  ('00000000-0000-0000-0000-0000000002ef', 'pgTAP Nova', 'food');
+insert into community_memberships (community_id, entrepreneur_id) values
+  ('00000000-0000-0000-0000-0000000002c1', '00000000-0000-0000-0000-0000000002ef');
+
+select is(
+  (select amount_cents from cost_events where stage = 'enrollment' and entrepreneur_id = '00000000-0000-0000-0000-0000000002ef'),
+  (select amount_cents * 2 from cost_events where stage = 'enrollment' and entrepreneur_id = '00000000-0000-0000-0000-0000000002e1'),
+  'what happens after the new card takes effect is priced by it');
+select is(
+  (select rate_version from cost_events where stage = 'enrollment' and entrepreneur_id = '00000000-0000-0000-0000-0000000002ef'),
+  'pgTAP-observed', 'and says so');
+select is(
+  (select rate_version from cost_events where stage = 'enrollment' and entrepreneur_id = '00000000-0000-0000-0000-0000000002e1'),
+  'pilot-2026.09', 'while what was recorded before keeps the card that priced it, and its price');
 
 select * from finish();
 rollback;

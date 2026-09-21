@@ -23,6 +23,9 @@ interface CostToServe {
   per_loan_cents: number | null;
   per_100_disbursed_cents: number | null;
   automated_share_bps: number | null;
+  /** The cards that priced these events, and the one in force now. */
+  rate_card: string[];
+  rate_card_current: string;
 }
 
 /**
@@ -158,8 +161,8 @@ export default function Impact() {
         </div>
         <p className="text-xs text-muted-foreground">
           {tr({
-            en: "Rates are pilot assumptions (staff time at R$ 30/h), which the pilot exists to replace with measured costs.",
-            pt: "As taxas são premissas do piloto (tempo de equipe a R$ 30/h), e o piloto existe para trocá-las por custos medidos.",
+            en: `Priced by rate card ${c.rate_card.join(", ") || c.rate_card_current}: pilot assumptions (staff time at R$ 30/h), which the pilot exists to replace with measured costs. Each cost keeps the card in force when it happened.`,
+            pt: `Precificado pela tabela ${c.rate_card.join(", ") || c.rate_card_current}: premissas do piloto (tempo de equipe a R$ 30/h), e o piloto existe para trocá-las por custos medidos. Cada custo mantém a tabela que valia quando aconteceu.`,
           })}
         </p>
       </Panel>

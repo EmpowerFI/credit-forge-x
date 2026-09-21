@@ -2,7 +2,7 @@
 
 **Source:** *EmpowerFI MVP Addendum — Operating Economics & Cost-to-Serve Validation* (founder, 21 Sep 2026), companion to the *Site + Hackathon MVP Refactor Specification v2 — Solana*.
 **Work:** on `hackathon`. Migrations, reseeds and the merge to `main` happen only after the founder approves.
-**Status, 21 Sep:** reviewed against what is built. **Most of the addendum already exists**; five things do not. §3 is a review of the addendum itself, including one place where following it literally would make an honest number flattering.
+**Status, 21 Sep:** reviewed against what is built. **Most of the addendum already exists**; five things did not. §3 is a review of the addendum itself, including one place where following it literally would make an honest number flattering. The founder accepted the three decisions in §7, and **P0 is built and live**: the rate card is versioned (G2) and the ticket model is on the page (G1).
 
 **Rules kept:** do not rebuild what works, label every simulated value, put nothing personal on chain, and — added by this addendum — **never show an efficiency number without the guardrail that keeps it honest**.
 
@@ -25,8 +25,8 @@ Everything else in §4, §7, §10 and §11 is already met. These five are not.
 
 | # | Gap | Addendum |
 | --- | --- | --- |
-| G1 | **No ticket-sensitivity simulation.** Nothing lets you move the ticket and watch cost per R$ 100 move. | §6 |
-| G2 | **The rate card is not versioned.** `cost_rates` is one mutable row per stage, with a boolean `is_assumption`. Observed pilot rates would overwrite the pilot card in place, and no number could say which card produced it. | §9, §11 |
+| ~~G1~~ | ~~**No ticket-sensitivity simulation.**~~ **Done.** `cost_sensitivity()` over the card, on `/app/capital/economics` under the cost pair, with the ticket actually lent among its rows and the measured number beside it. | §6 |
+| ~~G2~~ | ~~**The rate card is not versioned.**~~ **Done.** `cost_rate_cards` (version, effective_from, source, note); `cost_rates.card_version`; `cost_events.rate_version`, stamped by the date of the fact. `is_assumption` is gone: the card says it. | §9, §11 |
 | G3 | **No operating economics inside the engine flow.** It is a program-wide page; the engine run shows route economics only. | §4, §3 |
 | G4 | **No snapshot per opportunity.** Nothing persists ticket, cost total, ratio and breakdown against a `qualified_credit_opportunity` and an engine version. | §9 |
 | G5 | **No proof for it.** Nothing anchors a snapshot hash/version/timestamp. | §9, §11 |
@@ -86,7 +86,9 @@ Tickets R$ 1.000 / 2.000 / 5.000 / 10.000, as §6 asks. The output is labelled *
 - Not a CTS-ratio tile duplicating cost per R$ 100.
 - Not funding cost, expected loss, FX, hedge or ramp fees inside operating cost — §5 is right, and the engine already keeps them apart.
 
-## 7 · Decisions for the founder
+## 7 · Decisions for the founder — settled, 21 Sep
+
+All three accepted as recommended: the two numbers, no anchor for the hackathon, and the schema change (no reseed was needed for P0 — existing cost events were stamped with the pilot card in place).
 
 1. **The two numbers (§3) instead of §4's single estimated CTS.** My recommendation: yes. It is more honest and it reuses what exists.
 2. **G5 — anchor the snapshot as a 15th proof kind?** My recommendation: **not for the hackathon.** Operating economics is a *modelled* number over an assumption card; proving on chain that we committed to an assumption proves less than the 14 kinds that prove facts about a person's journey and a loan. If the pilot replaces assumptions with observed data, that is when a proof starts to mean something. The cost is a devnet program upgrade of the program all 981 existing proofs depend on.
@@ -94,9 +96,9 @@ Tickets R$ 1.000 / 2.000 / 5.000 / 10.000, as §6 asks. The output is labelled *
 
 ## 8 · Sequence
 
-**P0 — makes the hypothesis visible and measurable (§12's "smallest P0 version")**
-1. G2, the versioned rate card. It comes first because it is what lets pilot data land later without rewriting history — the addendum's central requirement, and nothing else should be built on an unversioned card.
-2. G1, ticket sensitivity. The clearest single demonstration of the structural problem, and the thing a judge remembers.
+**P0 — makes the hypothesis visible and measurable (§12's "smallest P0 version") — done, 21 Sep**
+1. ~~G2, the versioned rate card.~~ Migration `20260927000000_cost_rate_cards.sql`, pushed. A card is a row with a source and a date; each rate belongs to one; each cost event is stamped by the card in force **on the date of the fact**, so the pilot's measured rates arrive as a new card and nothing already recorded moves. Proved in `credit.test.sql`: a new card prices what happens after it, and what was recorded before keeps its card *and its price*.
+2. ~~G1, ticket sensitivity.~~ `cost_sensitivity()` (migrations `…000000` and `…000100`), on the page under the cost pair. It never reads recorded amounts — those are facts about work that happened. It runs over the card, with how often each stage has occurred as its multipliers, and it puts **the ticket actually lent among its rows** with the measured number beside it, because a model nobody can hold against a measurement is a claim. On the demo today: R$ 43,09 per R$ 100 lent at a R$ 1.000 ticket, R$ 4,31 at R$ 10.000 — the same work, divided by ten times as much.
 
 **P1 — puts it in the flow**
 3. G3, the two numbers in the engine run.

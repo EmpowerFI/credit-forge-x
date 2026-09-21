@@ -8,6 +8,14 @@ import { platform } from "./platform";
 export type CostPhase = "preparation" | "origination" | "servicing";
 export type TimingStep = "intent_to_eligibility" | "eligibility_to_opportunity" | "opportunity_to_decision" | "decision_to_disbursement" | "intent_to_disbursement";
 
+/** Which card priced a cost: a version, and whether its numbers are assumed or measured. */
+export interface RateCard {
+  version: string;
+  source: "simulated" | "observed";
+  effective_from: string;
+  note: string;
+}
+
 export interface OperatingEconomics {
   scope: { program_id: string | null; communities: number; participants: number };
   cost: {
@@ -17,7 +25,8 @@ export interface OperatingEconomics {
     per_participant_cents: number | null; per_opportunity_cents: number | null; per_loan_cents: number | null;
     credit_minutes_per_loan: number | null;
     per_100_disbursed_cents: number | null; credit_per_100_disbursed_cents: number | null;
-    opportunities: number; loans: number; disbursed_cents: number; rate_card_is_assumption: boolean;
+    opportunities: number; loans: number; disbursed_cents: number;
+    rate_card: RateCard; rate_card_is_assumption: boolean; rate_cards_used: string[];
     by_stage: { stage: string; phase: CostPhase; borne_by: "empowerfi" | "community" | "partner"; events: number; staff_minutes: number; cents: number }[];
   };
   timing: { step: TimingStep; n: number; median_seconds: number | null; p90_seconds: number | null }[];
@@ -31,6 +40,34 @@ export interface OperatingEconomics {
   capital: { opportunities: number; allocated: number; domestic: number; global: number; waiting: number; funded: number; reasons: { code: string; n: number }[] };
   follow_up: { checkins: number; self_reported: number; reporting: number; open_follow_ups: number; contacts: number; instalments_recorded: number; outcomes_measured: number };
   quality: { loans: number; repaying: number; late: number; paid: number; defaulted: number; instalments_due: number; instalments_paid: number };
+}
+
+/**
+ * What a larger ticket would do to cost per R$ 100 lent. A model over the rate
+ * card, never over the recorded events: those are facts about work that
+ * happened, and moving the ticket does not change them.
+ */
+export interface CostSensitivity {
+  card: RateCard;
+  basis: {
+    program_id: string | null;
+    participants: number; loans: number; disbursed_cents: number;
+    current_ticket_cents: number | null;
+    participants_per_loan: number | null;
+    participants_per_loan_source: "observed" | "given" | null;
+    occurrences: "observed" | "assumed";
+  };
+  per_loan: {
+    credit_cents: number; pipeline_cents: number | null;
+    by_stage: { stage: string; phase: CostPhase; borne_by: "empowerfi" | "community" | "partner"; cents: number; per_unit_milli: number; cents_per_loan: number }[];
+  };
+  tickets: { ticket_cents: number; is_current: boolean; credit_per_100_cents: number; per_100_disbursed_cents: number | null }[];
+}
+
+export async function fetchCostSensitivity(programId: string | null): Promise<CostSensitivity> {
+  const { data, error } = await platform.rpc("cost_sensitivity", programId ? { p_program_id: programId } : {});
+  if (error) throw error;
+  return data as unknown as CostSensitivity;
 }
 
 export async function fetchOperatingEconomics(programId: string | null): Promise<OperatingEconomics> {
@@ -83,6 +120,12 @@ export const PHASE_LABEL: Record<CostPhase, string> = localized({
   preparation: { en: "Preparation", pt: "Preparo" },
   origination: { en: "Origination", pt: "Originação" },
   servicing: { en: "Servicing", pt: "Acompanhamento" },
+});
+
+/** What the numbers on a rate card are. */
+export const CARD_SOURCE: Record<"simulated" | "observed", string> = localized({
+  simulated: { en: "assumptions", pt: "premissas" },
+  observed: { en: "measured in the pilot", pt: "medido no piloto" },
 });
 
 export const BEARER_LABEL: Record<"empowerfi" | "community" | "partner", string> = localized({
