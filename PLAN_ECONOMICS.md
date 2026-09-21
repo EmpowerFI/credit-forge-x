@@ -1,0 +1,112 @@
+# Operating economics and cost to serve — review of the addendum, and plan
+
+**Source:** *EmpowerFI MVP Addendum — Operating Economics & Cost-to-Serve Validation* (founder, 21 Sep 2026), companion to the *Site + Hackathon MVP Refactor Specification v2 — Solana*.
+**Work:** on `hackathon`. Migrations, reseeds and the merge to `main` happen only after the founder approves.
+**Status, 21 Sep:** reviewed against what is built. **Most of the addendum already exists**; five things do not. §3 is a review of the addendum itself, including one place where following it literally would make an honest number flattering.
+
+**Rules kept:** do not rebuild what works, label every simulated value, put nothing personal on chain, and — added by this addendum — **never show an efficiency number without the guardrail that keeps it honest**.
+
+---
+
+## 1 · Current-state map — what the addendum touches
+
+| What exists | Where | What it does today |
+| --- | --- | --- |
+| Cost model | `20260914200200_cost_to_serve.sql` | 14 `cost_stage` values with a pilot rate card (`cost_rates`: staff minutes, hourly rate, fixed cents, who bears it, phase). Costs are **recorded from the facts themselves** by triggers, one row per fact (`unique (stage, fact_id)`), counted **from the first community onboarding** — not from disbursement. |
+| Program reader | `public.operating_economics(p_program_id)` (`20260924000000`) | Cost per R$ 100 lent (all-in and credit-only), per opportunity, per participant, stage breakdown, automated share, plus the discipline counters. Program-scoped. |
+| Operating Economics page | `/app/capital/economics` → `src/app/pages/capital/OperatingEconomics.tsx` | Inside the Credit & Capital Engine area, not a separate workspace. Every metric is rendered as a **`Pair`**: "Must improve" beside "Must not be sacrificed". |
+| Engine flow | `src/app/pages/capital/AllocationEngine.tsx` + `engine/*` | Credit Engine qualifies, then the Capital Allocation Engine routes. `Decision` shows an "estimated all-in cost" in bps — that is **route economics** (funding, FX, ramp), which §5 rightly says to keep apart from operating cost to serve. |
+| Benchmark | `OperatingEconomics.tsx:155`, `src/content/sources.ts`, `components/home/copy.ts` | WPS 8252 is already labelled "Reference, not a comparison … Neither is EmpowerFI's measured cost", and explains that it counts a whole institution against its portfolio while this counts modelled stage costs against reais lent. |
+| Proof layer | 14 anchor kinds, `verify.ts`, proof drawer | None of them is operating economics. |
+
+## 2 · Gaps against the addendum
+
+Everything else in §4, §7, §10 and §11 is already met. These five are not.
+
+| # | Gap | Addendum |
+| --- | --- | --- |
+| G1 | **No ticket-sensitivity simulation.** Nothing lets you move the ticket and watch cost per R$ 100 move. | §6 |
+| G2 | **The rate card is not versioned.** `cost_rates` is one mutable row per stage, with a boolean `is_assumption`. Observed pilot rates would overwrite the pilot card in place, and no number could say which card produced it. | §9, §11 |
+| G3 | **No operating economics inside the engine flow.** It is a program-wide page; the engine run shows route economics only. | §4, §3 |
+| G4 | **No snapshot per opportunity.** Nothing persists ticket, cost total, ratio and breakdown against a `qualified_credit_opportunity` and an engine version. | §9 |
+| G5 | **No proof for it.** Nothing anchors a snapshot hash/version/timestamp. | §9, §11 |
+
+## 3 · Review of the addendum
+
+**§4's "Estimated Cost to Serve" per opportunity would flatter the number, and must not replace the one on the page.**
+This is the one place where following the addendum literally would weaken what exists. The cost model counts **every** participant from the first community onboarding, including everyone prepared who never borrows. That is deliberate, and it is the whole point: the expensive part of small-ticket lending is not the loan you make, it is the pipeline behind it. An "estimated cost to serve" for one qualified opportunity counts a single successful path and would come out far lower than the program number on `/app/capital/economics` — two numbers with the same name and a silent disagreement between them, which is exactly the shape of a claim a judge should not trust.
+
+**Proposal instead of §4's single field:** the engine panel shows **two numbers side by side**, and the gap between them is the story.
+
+| | What it is | Source |
+| --- | --- | --- |
+| **This opportunity, so far** | The cost events actually recorded for this entrepreneur, enrollment to now | `cost_events`, a fact, not an estimate |
+| **The program, per R$ 100 lent** | The funnel-wide number, everyone included | `operating_economics`, already built |
+
+The second is always larger. Showing both says what the hypothesis actually claims: the marginal case looks cheap, and the honest cost is the pipeline.
+
+**§5's "CTS ratio" and "cost per R$100" are the same quantity.** `ratio × 100 = cost per R$ 100`. The page already shows the readable form. Adding the ratio as a separate tile would be one more number saying the same thing — skip it, and keep the currency amount and per-R$ 100 that §11 asks for.
+
+**§6's sensitivity cannot recompute from the recorded events.** Cost events are facts about work that happened; changing a ticket size does not change them. The simulation must run over the **rate card**, as a model, clearly separated from the measured page. That is a feature, not a limitation — it is the difference between "what we spent" and "what the structure implies".
+
+**§9 asks for more versioning than is needed.** `cost_events` already stores the computed `amount_cents` and `staff_minutes` at the moment of the fact, so history is **already immune** to a later rate change — the addendum's "observed pilot data must never overwrite historical snapshots" is half-satisfied. What is genuinely missing is narrow: a version stamp, so a number can say which card produced it. That is a column and a small table, not a snapshot architecture.
+
+**§9's anchoring is the expensive one, and it is the founder's call.** A 15th anchor kind means a Rust account type and instruction, a devnet program upgrade, a privacy review entry, an `anchor-submit` branch, a `verify.ts` branch, a migration for the enum and one for the payload, and `anchor-reconcile`'s `HOLDER` map. That was a full day for `settlement_route`. See §7.
+
+**§10 and §11's messaging criteria are already met**, and in places exceeded — the benchmark copy explains the methodological difference, which the addendum does not ask for.
+
+## 4 · The model — ticket sensitivity (G1)
+
+Not a new engine. A pure function over the rate card, `packages/` or a SQL reader, with the split made explicit:
+
+- **Per-loan stages** — `credit_intent`, `eligibility_assessment`, `opportunity_preparation`, `partner_referral`, `partner_decision`, `disbursement`: incurred once, whatever the ticket.
+- **Per-instalment stages** — `servicing`: incurred per instalment recorded.
+- **Pipeline stages** — `community_onboarding` … `readiness_assessment`: incurred per participant, not per loan, and therefore divided by however many participants it takes to produce one loan. This ratio is itself an assumption and must be labelled.
+
+`cost per R$100 (ticket) = (per-loan + servicing × instalments + pipeline ÷ conversion) ÷ ticket × 100`
+
+Tickets R$ 1.000 / 2.000 / 5.000 / 10.000, as §6 asks. The output is labelled **illustrative** and states the conversion assumption on its face, because that assumption moves the answer more than the ticket does.
+
+## 5 · Database and UI
+
+| # | Change | Where |
+| --- | --- | --- |
+| G2 | `cost_rate_cards` (version, effective_from, source `simulated`/`observed`, note) + `cost_rates.card_version` + `cost_events.rate_version`, stamped by `private.record_cost` | new migration |
+| G1 | `public.cost_sensitivity(p_ticket_cents[])` over the current card | same migration |
+| G1 | Ticket selector and recomputed tiles, under the cost `Pair`, marked illustrative | `OperatingEconomics.tsx` |
+| G2 | The card's version and source shown wherever a cost number is | `OperatingEconomics.tsx` |
+| G3 | Operating-economics step between the Credit Engine and the Capital Engine: the two numbers of §3, with its guardrail | `engine/` |
+| G4 | `operating_economics_snapshots` (opportunity, ticket, totals, breakdown, card version, engine version) written when an opportunity opens for funding | new migration |
+
+## 6 · What I will not do
+
+- Not a fourth workspace (§3 forbids it, and the page is already inside the engine area).
+- Not a per-opportunity "cost to serve" that competes with the program number — see §3.
+- Not a cost-reduction claim anywhere, in any language, before pilot data exists.
+- Not a CTS-ratio tile duplicating cost per R$ 100.
+- Not funding cost, expected loss, FX, hedge or ramp fees inside operating cost — §5 is right, and the engine already keeps them apart.
+
+## 7 · Decisions for the founder
+
+1. **The two numbers (§3) instead of §4's single estimated CTS.** My recommendation: yes. It is more honest and it reuses what exists.
+2. **G5 — anchor the snapshot as a 15th proof kind?** My recommendation: **not for the hackathon.** Operating economics is a *modelled* number over an assumption card; proving on chain that we committed to an assumption proves less than the 14 kinds that prove facts about a person's journey and a loan. If the pilot replaces assumptions with observed data, that is when a proof starts to mean something. The cost is a devnet program upgrade of the program all 981 existing proofs depend on.
+3. **Reseed?** G2 and G4 change the schema; the hackathon project would need a push and, for snapshots to exist on seeded opportunities, a reseed.
+
+## 8 · Sequence
+
+**P0 — makes the hypothesis visible and measurable (§12's "smallest P0 version")**
+1. G2, the versioned rate card. It comes first because it is what lets pilot data land later without rewriting history — the addendum's central requirement, and nothing else should be built on an unversioned card.
+2. G1, ticket sensitivity. The clearest single demonstration of the structural problem, and the thing a judge remembers.
+
+**P1 — puts it in the flow**
+3. G3, the two numbers in the engine run.
+4. G4, the snapshot, which G5 would need.
+
+**P2 — the founder's call**
+5. G5, the proof.
+
+## 9 · Risks
+
+- **Two numbers called "cost to serve" is the main risk of this addendum.** §3's naming has to survive translation into both languages: *this opportunity so far* and *the program, per R$ 100 lent* must never both be labelled "custo de servir".
+- **The conversion assumption in §4's model** moves the sensitivity result more than the ticket does. If it is not on the face of the tile, the tile is a claim rather than a simulation.
+- **A reseed before the demo** is the usual risk: the operator wallet must be funded first, or the anchor queue stalls silently.
