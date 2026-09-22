@@ -1,9 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, Loader2, LogIn, Wallet } from "lucide-react";
+import { ArrowRight, Loader2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import DataLegend from "../components/product/DataLegend";
 import NetworkBadge from "../components/product/NetworkBadge";
 import { useAuth } from "../auth/useAuth";
@@ -23,8 +21,6 @@ export default function LoginPage() {
   const next = params.get("next")?.startsWith("/app") ? params.get("next")! : "/app";
   const view = viewById(params.get("as")) ?? VIEWS[0];
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [busyTool, setBusyTool] = useState<Tool | null>(null);
@@ -63,10 +59,6 @@ export default function LoginPage() {
     const p = new URLSearchParams(params);
     p.set("as", id);
     setParams(p, { replace: true });
-  };
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    void enter(email, password);
   };
   const investor = view.id === "investor";
   const oversight = OPERATIONS.filter((a) => a.id === "admin" || a.id === "audit");
@@ -165,30 +157,6 @@ export default function LoginPage() {
           </p>
         </section>
 
-        <details className="panel max-w-xl p-5">
-          <summary className="cursor-pointer text-sm font-medium text-foreground">{tr({ en: "Sign in with email", pt: "Entrar com e-mail" })}</summary>
-          <form onSubmit={submit} className="mt-4 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="login-email">{tr({ en: "Email", pt: "E-mail" })}</Label>
-              <Input id="login-email" type="email" autoComplete="email" required value={email}
-                onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="login-password">{tr({ en: "Password", pt: "Senha" })}</Label>
-              <Input id="login-password" type="password" autoComplete="current-password" required
-                value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-            <Button type="submit" disabled={busy !== null} className="w-full gap-2">
-              {busy === email + next ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />} {tr({ en: "Sign in", pt: "Entrar" })}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              {tr({
-                en: <>Demo accounts use the password <code className="text-foreground">{DEMO_PASSWORD}</code>.</>,
-                pt: <>As contas de demonstração usam a senha <code className="text-foreground">{DEMO_PASSWORD}</code>.</>,
-              })}
-            </p>
-          </form>
-        </details>
       </main>
     </div>
   );

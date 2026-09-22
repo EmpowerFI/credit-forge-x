@@ -1,6 +1,6 @@
 # Demo script: one economic loop
 
-This script follows one story end to end: a sponsor's evidence, credit intelligence, a qualified opportunity, capital, repayment and outcome, then back to the sponsor. It runs on the hackathon environment at `www.empowerfi.io/app`, and every demo account uses the password `EmpowerFI-demo-2026`.
+This script follows one story end to end: a sponsor's evidence, credit intelligence, a qualified opportunity, capital, repayment and outcome, then back to the sponsor. It runs on the hackathon environment at `www.empowerfi.io/app`. The login page enters each demo account with one click — nobody types a password on camera.
 
 The bar at the top of the app numbers the three stories: 1 Impact Intelligence, 2 Credit & Capital Engine, 3 Investor Console. Operations sit beside them. On the right, **View platform as** switches between the five views (sponsor, investor or impact fund, operator, community, entrepreneur): each opens a page with that view's value and tools. A demo account switches to the right demo persona in one click, so a judge never has to sign out.
 

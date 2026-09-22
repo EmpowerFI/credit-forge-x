@@ -12,7 +12,7 @@ The marketplace app is live on Google Play; this repository is the Colosseum hac
 
 ## Try it
 
-The platform is live at **[www.empowerfi.io/app](https://www.empowerfi.io/app)** (or `http://localhost:8080/app` locally), and the site's **App - Devnet** button opens it. It reads in English or Portuguese: the Portuguese pages open it in Portuguese, and the EN | PT switch changes it. Sign in with one of the demo accounts. The login page lists them, and all share the password **`EmpowerFI-demo-2026`** (public on purpose; every demo record is simulated).
+The platform is live at **[www.empowerfi.io/app](https://www.empowerfi.io/app)** (or `http://localhost:8080/app` locally), and the site's **App - Devnet** button opens it. It reads in English or Portuguese: the Portuguese pages open it in Portuguese, and the EN | PT switch changes it. Sign in with one of the demo accounts: the login page lists them and enters each with one click. They share the password **`EmpowerFI-demo-2026`** (public on purpose; every demo record is simulated), which the page carries for you — the scripts in `scripts/platform` need it, people do not.
 
 The app tells one loop in three stories: **1 Impact Intelligence**, **2 Credit & Capital Engine**, **3 Investor Console**. Community operations, the P2P desk, the entrepreneur's own journey, admin and the audit console sit under **Operations**. A demo account moves between them in one click, as the right demo persona. **View platform as** picks one of five views (program sponsor, investor or impact fund, credit and capital operator, community operator, entrepreneur), each with its value and its own tools, without widening anyone's permissions.
 
