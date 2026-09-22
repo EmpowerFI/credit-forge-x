@@ -16,7 +16,9 @@ export default function StatTile({ label, value, hint, hintTone = "neutral", ico
   return (
     <div className="panel flex min-w-0 flex-col gap-2 p-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
+        {/* Two lines rather than one: a label cut off mid-word ("Credit, per
+            R$ 100 lent…") hides the very thing that says what the number is. */}
+        <p className="line-clamp-2 text-xs font-medium text-muted-foreground">{label}</p>
         {icon && <span className="text-muted-foreground">{icon}</span>}
       </div>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">

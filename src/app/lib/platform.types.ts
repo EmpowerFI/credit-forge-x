@@ -1171,6 +1171,66 @@ export type Database = {
           },
         ]
       }
+      operating_economics_snapshots: {
+        Row: {
+          allocation_model_version: string | null
+          by_phase: Json
+          by_stage: Json
+          cost_total_cents: number
+          created_at: string
+          events: number
+          opportunity_id: string
+          per_100_of_ticket_cents: number | null
+          rate_card_version: string
+          staff_minutes: number
+          taken_at: string
+          ticket_cents: number
+        }
+        Insert: {
+          allocation_model_version?: string | null
+          by_phase: Json
+          by_stage: Json
+          cost_total_cents: number
+          created_at?: string
+          events: number
+          opportunity_id: string
+          per_100_of_ticket_cents?: number | null
+          rate_card_version: string
+          staff_minutes: number
+          taken_at: string
+          ticket_cents: number
+        }
+        Update: {
+          allocation_model_version?: string | null
+          by_phase?: Json
+          by_stage?: Json
+          cost_total_cents?: number
+          created_at?: string
+          events?: number
+          opportunity_id?: string
+          per_100_of_ticket_cents?: number | null
+          rate_card_version?: string
+          staff_minutes?: number
+          taken_at?: string
+          ticket_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operating_economics_snapshots_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: true
+            referencedRelation: "qualified_credit_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operating_economics_snapshots_rate_card_version_fkey"
+            columns: ["rate_card_version"]
+            isOneToOne: false
+            referencedRelation: "cost_rate_cards"
+            referencedColumns: ["version"]
+          },
+        ]
+      }
       outreach_events: {
         Row: {
           action: Database["public"]["Enums"]["outreach_action"]
@@ -2669,6 +2729,10 @@ export type Database = {
         Returns: string
       }
       operating_economics: { Args: { p_program_id?: string }; Returns: Json }
+      opportunity_economics: {
+        Args: { p_opportunity_id: string }
+        Returns: Json
+      }
       partner_decide: {
         Args: {
           p_approved_amount_cents?: number
