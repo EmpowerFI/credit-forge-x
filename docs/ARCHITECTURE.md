@@ -240,6 +240,8 @@ There are two routes, and only two (founder specification, 16 Sep):
 | To her business | Pix, in reais | Program vault → one of two settlement routes (simulated; MoneyGram sandbox quote) → Pix. See [Settlement routing](#settlement-routing) |
 | FX / hedge | none | an explicit assumption |
 
+**A pool is declared capacity, not custody.** EmpowerFI holds no capital: `funding_pools.capital_*` is what each side of the market has said it will lend through this desk, and a pool's liquidity is that figure less what is already lent. It exists so the second engine can answer *waiting for capital* rather than assume there is always more — which is why one seeded case is a request no pool can fund. An investor's money moves when she funds one named opportunity, into the program's vault, and only between the allocation and the disbursement. Both pool figures are pilot assumptions and are flagged `is_simulated`.
+
 `funding_pools` holds each pool's policy: capital, required return, risk appetite, ticket range, mandate, and for global the FX hedge and ramp cost. `packages/capital-allocation` is the engine, mirrored in SQL as `private.allocate_funding` and held to the same hand-reasoned vectors by Vitest and pgTAP:
 
 1. Is domestic capital available and eligible for this opportunity?

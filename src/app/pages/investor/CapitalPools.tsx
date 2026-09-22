@@ -5,7 +5,7 @@ import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
 import { tr } from "../../i18n";
-import { bpsPercent, POOL, reaisShort, usdcShort } from "../../lib/capital";
+import { bpsPercent, poolCapacityNote, POOL, reaisShort, usdcShort } from "../../lib/capital";
 import { money } from "../../lib/readiness";
 import { REALITY } from "../../lib/settlement";
 import { useCapitalOverview } from "./queries";
@@ -38,9 +38,12 @@ export default function CapitalPools({ engineLink = true, tilesOnly = false }: {
           <>
             <StatTile label={tr({ en: "Qualified demand", pt: "Demanda qualificada" })} value={reaisShort(d.coverage.demand_cents)}
               hint={tr({ en: `${d.demand.length} opportunities`, pt: `${d.demand.length} oportunidades` })} />
-            <StatTile label={tr({ en: "Domestic liquidity", pt: "Liquidez doméstica" })} value={reaisShort(domestic.liquidity_cents)}
-              hint={tr({ en: "simulated BRL pool", pt: "pool em reais, simulado" })} />
-            <StatTile label={tr({ en: "Global liquidity", pt: "Liquidez global" })} value={usdcShort(global.liquidity_micro_usdc ?? 0)} hint={`≈ ${reaisShort(global.liquidity_cents)}`} />
+            {/* Capacity, never "liquidity": nothing is held here, and a draining
+                bar beside the word invites the reading that something is. */}
+            <StatTile label={tr({ en: "Domestic capacity", pt: "Capacidade doméstica" })} value={reaisShort(domestic.liquidity_cents)}
+              hint={tr({ en: "declared, in simulated reais", pt: "declarada, em reais simulados" })} />
+            <StatTile label={tr({ en: "Global capacity", pt: "Capacidade global" })} value={usdcShort(global.liquidity_micro_usdc ?? 0)}
+              hint={tr({ en: `declared · ≈ ${reaisShort(global.liquidity_cents)}`, pt: `declarada · ≈ ${reaisShort(global.liquidity_cents)}` })} />
             <StatTile label={tr({ en: "Funding coverage", pt: "Cobertura de captação" })} value={bpsPercent(d.coverage.combined_coverage_bps)}
               hint={tr({ en: `${bpsPercent(d.coverage.domestic_coverage_bps)} domestic alone`, pt: `${bpsPercent(d.coverage.domestic_coverage_bps)} só com o doméstico` })} hintTone="info" />
           </>
@@ -71,6 +74,7 @@ export default function CapitalPools({ engineLink = true, tilesOnly = false }: {
                 </>,
               })}
             </p>
+            <p className="text-xs text-muted-foreground">{poolCapacityNote()}</p>
             <div className="flex flex-wrap items-center gap-2 rounded-xl border tone-caution px-3 py-2 text-xs">
               <span className="font-semibold">{tr({ en: "Routing principle:", pt: "Princípio de roteamento:" })}</span>
               <span>{tr({

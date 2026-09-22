@@ -7,7 +7,7 @@ import Panel from "../../../components/product/Panel";
 import PoolPill from "../../../components/product/PoolPill";
 import StatusPill from "../../../components/product/StatusPill";
 import { tr } from "../../../i18n";
-import { bpsPercent, type CapitalOverview, POOL } from "../../../lib/capital";
+import { bpsPercent, type CapitalOverview, poolCapacityNote, POOL } from "../../../lib/capital";
 import { money } from "../../../lib/readiness";
 import { bandLetter } from "./labels";
 import { useEngineRun } from "./useEngineRun";
@@ -69,8 +69,8 @@ export default function Replay({ demand, policies, coverage, assumptionsChanged 
   return (
     <Panel title={tr({ en: "Today's allocation, replayed", pt: "A alocação de hoje, reprocessada" })}
       description={tr({
-        en: "Every qualified opportunity not yet lent, in the order it came, through the same engine: each draws down the pool it gets, until a pool runs out.",
-        pt: "Cada oportunidade qualificada ainda não emprestada, na ordem em que chegou, pelo mesmo motor: cada uma consome o pool que recebe, até um pool se esgotar.",
+        en: "Every qualified opportunity not yet lent, in the order it came, through the same engine: each draws down the capacity of the pool it gets, until a pool has no room left. Nothing is being spent — this asks how far today's declared capital would go.",
+        pt: "Cada oportunidade qualificada ainda não emprestada, na ordem em que chegou, pelo mesmo motor: cada uma consome a capacidade do pool que recebe, até um pool ficar sem espaço. Nada está sendo gasto — isto pergunta até onde o capital declarado hoje chegaria.",
       })}
       actions={
         <div className="flex flex-wrap gap-2">
@@ -87,6 +87,7 @@ export default function Replay({ demand, policies, coverage, assumptionsChanged 
         <div className="space-y-4">
           {bar(now.d, policies.domestic.available_cents, "domestic")}
           {bar(now.g, policies.global.available_cents, "global")}
+          <p className="text-xs text-muted-foreground">{poolCapacityNote()}</p>
           <dl className="grid grid-cols-2 gap-3 border-t border-border pt-3 text-sm">
             <div><dt className="text-xs text-muted-foreground">{tr({ en: "Evaluated", pt: "Avaliadas" })}</dt><dd className="num font-semibold text-foreground">{shown} / {demand.length}</dd></div>
             <div><dt className="text-xs text-muted-foreground">{tr({ en: "Fundable", pt: "Financiável" })}</dt><dd className="num font-semibold text-positive">{money(now.funded)}</dd></div>

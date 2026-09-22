@@ -157,12 +157,14 @@ export default function AllocationEngine() {
             <>
               <p>Engine 1 asks whether a business should become a qualified credit opportunity, from its readiness, its history, affordability and risk. Engine 2 asks which available pool can fund that opportunity sustainably, on liquidity, ticket, risk appetite, mandate and economics — and answers domestic, global, or waiting for capital.</p>
               <p>Both run here in your browser against today's liquidity and the assumptions in the drawer, with the same code the database runs. Nothing on this page writes: the database allocates when an opportunity opens to investors.</p>
+              <p>Liquidity here is declared capacity, not money held. EmpowerFI custodies nothing: a pool is what capital has said it will lend through this desk, less what is already lent, and it exists so engine 2 can answer "waiting for capital" instead of assuming there is always more. An investor's money moves when she funds one named opportunity, into the vault, not into a pool.</p>
             </>
           ),
           pt: (
             <>
               <p>O Motor 1 pergunta se um negócio deve virar uma oportunidade de crédito qualificada, a partir da prontidão, do histórico, da capacidade de pagamento e do risco. O Motor 2 pergunta qual pool disponível pode financiá-la de forma sustentável, por liquidez, ticket, apetite a risco, mandato e economia — e responde doméstico, global ou aguardando capital.</p>
               <p>Os dois rodam aqui no seu navegador, com a liquidez de hoje e as premissas da gaveta, usando o mesmo código que roda no banco. Nada nesta página escreve: o banco aloca quando uma oportunidade abre para investidores.</p>
+              <p>Liquidez aqui é capacidade declarada, não dinheiro guardado. A EmpowerFI não custodia nada: um pool é o quanto o capital disse que empresta por esta mesa, menos o que já está emprestado, e existe para que o Motor 2 possa responder "aguardando capital" em vez de supor que sempre há mais. O dinheiro da investidora se move quando ela financia uma oportunidade específica, para o cofre, não para um pool.</p>
             </>
           ),
         })}
