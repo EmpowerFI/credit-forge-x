@@ -1,18 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Coins, FlaskConical } from "lucide-react";
+import { ArrowLeft, ArrowRight, Coins, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
+import ExplorerLink from "../../components/product/ExplorerLink";
 import PageHeader from "../../components/product/PageHeader";
+import Panel from "../../components/product/Panel";
 import StatusPill from "../../components/product/StatusPill";
-import { formatNumber, tr } from "../../i18n";
+import { formatDate, formatNumber, tr } from "../../i18n";
 import {
-  fetchTokenizedPositions, POSITION_LIQUIDITY, POSITION_RELATION, POSITION_STATE, POSITION_TONE,
-  positionDisclaimer, positionNotBuilt, positionRoadmap, positionsKey, type TokenizedPosition,
+  eligibleWalletsKey, fetchEligibleWallets, fetchPositionHistory, fetchTokenizedPositions,
+  POSITION_LIQUIDITY, POSITION_RELATION, POSITION_STATE, POSITION_TONE, positionDisclaimer,
+  positionHistoryKey, positionNotBuilt, positionRoadmap, positionsKey,
+  type PositionHistoryEntry, type TokenizedPosition,
 } from "../../lib/positions";
 import { money } from "../../lib/readiness";
-import { shortAddress } from "../../lib/solana";
+import { shortAddress, usdc } from "../../lib/solana";
 
 // The investor's assets: one per funded loan she is in.
 //
@@ -62,8 +66,56 @@ function Row({ p }: { p: TokenizedPosition }) {
   );
 }
 
+/**
+ * What this wallet held and handed on. Not a position — she is not party to
+ * that credit any more — but the record of having been, which is hers and is
+ * on Solana under her own signature.
+ */
+function Held({ entries, names }: { entries: PositionHistoryEntry[]; names: Map<string, string> }) {
+  return (
+    <Panel title={tr({ en: "Assets you have handed on", pt: "Ativos que você entregou" })}>
+      <p className="pb-3 text-xs text-muted-foreground">{tr({
+        en: "You no longer hold these, so what the loans behind them do now is not shown. This is the record of having held them.",
+        pt: "Você não detém mais estes, então o que os empréstimos por trás deles fazem agora não é exibido. Isto é o registro de tê-los tido.",
+      })}</p>
+      <ul className="space-y-3">
+        {entries.map((h) => (
+          <li key={`${h.asset}-${h.handed_on_at}`}
+            className="grid gap-1 border-b border-border/60 pb-3 last:border-0 last:pb-0 sm:grid-cols-[1fr_auto] sm:items-baseline">
+            <span className="min-w-0 space-y-0.5">
+              <span className="num block text-sm font-medium text-foreground">
+                {h.asset}
+                <span className="ml-2 font-normal text-muted-foreground">
+                  {formatNumber(h.share_bps / 100, { maximumFractionDigits: 2 })}% · {usdc(h.principal_micro_usdc)}
+                </span>
+              </span>
+              <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                {h.received_at ? formatDate(h.received_at) : "—"}
+                <ArrowRight size={12} aria-hidden />
+                {formatDate(h.handed_on_at)}
+                {" · "}
+                {tr({
+                  en: `to ${names.get(h.handed_on_to) ?? shortAddress(h.handed_on_to)}`,
+                  pt: `para ${names.get(h.handed_on_to) ?? shortAddress(h.handed_on_to)}`,
+                })}
+              </span>
+            </span>
+            {h.handed_on_signature && (
+              <ExplorerLink tx={h.handed_on_signature}
+                label={tr({ en: "The transfer", pt: "A transferência" })} />
+            )}
+          </li>
+        ))}
+      </ul>
+    </Panel>
+  );
+}
+
 export default function Positions() {
   const q = useQuery({ queryKey: positionsKey, queryFn: fetchTokenizedPositions });
+  const history = useQuery({ queryKey: positionHistoryKey, queryFn: fetchPositionHistory });
+  const wallets = useQuery({ queryKey: eligibleWalletsKey, queryFn: fetchEligibleWallets });
+  const names = new Map((wallets.data ?? []).map((w) => [w.wallet, w.label]));
 
   if (q.isError) return <LoadError error={q.error} onRetry={() => q.refetch()} />;
 
@@ -111,6 +163,8 @@ export default function Positions() {
           {(q.data ?? []).map((p) => <Row key={p.id} p={p} />)}
         </div>
       )}
+
+      {(history.data ?? []).length > 0 && <Held entries={history.data ?? []} names={names} />}
 
       <footer className="panel space-y-2 p-4 text-xs text-muted-foreground">
         <p className="font-heading text-sm font-bold text-foreground">

@@ -23,8 +23,8 @@ import { formatDate, formatNumber, tr } from "../../i18n";
 import { duration } from "../../lib/economics";
 import {
   eligibleWalletsKey, fetchEligibleWallets, fetchTokenizedPosition, POSITION_EVENT, POSITION_LIQUIDITY,
-  POSITION_RELATION, POSITION_STATE, POSITION_TONE, positionDisclaimer, positionKey, positionsKey,
-  prepareTransfer, recordTransfer,
+  POSITION_RELATION, POSITION_STATE, POSITION_TONE, positionDisclaimer, positionHistoryKey,
+  positionKey, positionsKey, prepareTransfer, recordTransfer,
 } from "../../lib/positions";
 import { money } from "../../lib/readiness";
 import { CLUSTER, confirmSignature, rpc, shortAddress } from "../../lib/solana";
@@ -219,6 +219,8 @@ export default function PositionAsset() {
     const keepsAccess = p?.relation === "invested";
     if (!keepsAccess) setHandedOn({ to, signature });
     await queryClient.invalidateQueries({ queryKey: positionsKey });
+    // She stops holding it and starts having held it.
+    await queryClient.invalidateQueries({ queryKey: positionHistoryKey });
     if (keepsAccess) await queryClient.invalidateQueries({ queryKey: positionKey(id) });
   };
 

@@ -186,6 +186,8 @@ The frozen default is what makes the control real. A token account for one of th
 
 A position is readable by whoever funded it **and** by whoever holds it, and the row says which of the two is reading. Before that, the console asked one question — did you buy this? — which is the wrong question the moment an asset can change hands: transfer one, and the chain says the destination holds it while the screen still lists it under the investor who funded it, and the wallet that actually holds it sees nothing. Either party may ask the platform to admit a destination, because admitting creates and thaws an account and moves nothing; only the key that holds the asset can sign it away.
 
+Handing an asset on ends the claim and the reader refuses her afterwards, which is right: she is not party to that credit any more, and a console still showing her its balance would say otherwise. Losing the claim is not losing the record, though, so `position_history()` gives her what she held, when it reached her, when it left and to whom — frozen at the moment she handed it on, with nothing from the loan, which has carried on without her.
+
 Nothing about this is a market. There is no exchange, order book, bid, price or depth, the screens say so in both languages, and the word *liquidez* is never used for these assets. [LEGAL_REVIEW.md](LEGAL_REVIEW.md) carries the questions counsel has to answer before any of it could be real.
 
 ## Cost to serve

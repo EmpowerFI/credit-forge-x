@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(51);
+select plan(55);
 
 -- ------------------------------------------------------------------ fixtures
 -- One partner, one community, Rita and Sara ready and asking. Two wallet
@@ -304,6 +304,34 @@ select is(
   (select v ->> 'relation' from jsonb_array_elements(tokenized_positions()) v
    where (v ->> 'id')::uuid = (select id from wanda_pos)),
   'invested', 'Wanda still sees it, as the investor who funded it');
+select is(jsonb_array_length(position_history()), 0,
+  'and she has no history of it, because she never stopped being party to it');
+set local role postgres;
+
+-- ------------------------------------------------ and when she hands it back
+-- Yara loses the claim, which is right: she is not party to that credit any
+-- more. She does not lose the record of having held it.
+
+set local role service_role;
+select position_transferred((select id from wanda_pos),
+  'YaRa22222222222222222222222222222222222222', 'WaNdA1111111111111111111111111111111111111',
+  'AtAwAnDa11111111111111111111111111111111111', 'sig-transfer-2');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000004b2');
+select is(jsonb_array_length(tokenized_positions()), 1,
+  'Yara is back to the one position she funded herself');
+select throws_ok($$ select tokenized_position((select id from wanda_pos)) $$, '42501', 'not_your_position',
+  'and the one she handed on is no longer hers to read');
+select is(
+  (select jsonb_build_object(
+     'n', jsonb_array_length(position_history()),
+     'to', position_history() -> 0 ->> 'handed_on_to',
+     'came', position_history() -> 0 ->> 'received_signature',
+     'went', position_history() -> 0 ->> 'handed_on_signature')),
+  jsonb_build_object('n', 1, 'to', 'WaNdA1111111111111111111111111111111111111',
+    'came', 'sig-transfer-1', 'went', 'sig-transfer-2'),
+  'but her history says what she held, how it reached her and where she sent it');
 set local role postgres;
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');

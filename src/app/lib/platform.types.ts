@@ -3027,6 +3027,7 @@ export type Database = {
           term_months: number
         }[]
       }
+      position_history: { Args: never; Returns: Json }
       position_mint_claim: { Args: { p_limit?: number }; Returns: Json }
       position_mint_failed: {
         Args: { p_error: string; p_position_id: string }

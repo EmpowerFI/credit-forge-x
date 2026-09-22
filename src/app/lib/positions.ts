@@ -73,6 +73,24 @@ export interface PositionDetail extends TokenizedPosition {
   }[];
 }
 
+/**
+ * An asset a wallet used to hold. Frozen at the moment it was handed on: the
+ * asset, the share, how it arrived and where it went. Nothing about the loan,
+ * which has carried on without her.
+ */
+export interface PositionHistoryEntry {
+  asset: string;
+  share_bps: number;
+  principal_micro_usdc: number;
+  mint_address: string | null;
+  received_at: string | null;
+  received_signature: string | null;
+  handed_on_at: string;
+  handed_on_to: string;
+  handed_on_signature: string | null;
+  is_simulated: boolean;
+}
+
 export interface EligibleWallet {
   wallet: string;
   label: string;
@@ -82,6 +100,7 @@ export interface EligibleWallet {
 export const positionsKey = ["platform", "tokenized-positions"] as const;
 export const positionKey = (id: string) => ["platform", "tokenized-position", id] as const;
 export const eligibleWalletsKey = ["platform", "eligible-wallets"] as const;
+export const positionHistoryKey = ["platform", "position-history"] as const;
 
 export async function fetchTokenizedPositions(): Promise<TokenizedPosition[]> {
   const { data, error } = await platform.rpc("tokenized_positions");
@@ -93,6 +112,13 @@ export async function fetchTokenizedPosition(id: string): Promise<PositionDetail
   const { data, error } = await platform.rpc("tokenized_position", { p_position_id: id });
   if (error) throw error;
   return data as unknown as PositionDetail;
+}
+
+/** What this wallet held and handed on. Empty for an account with no wallet. */
+export async function fetchPositionHistory(): Promise<PositionHistoryEntry[]> {
+  const { data, error } = await platform.rpc("position_history");
+  if (error) throw error;
+  return (data ?? []) as unknown as PositionHistoryEntry[];
 }
 
 /** Where a position may be sent: the wallets the platform has admitted. */
