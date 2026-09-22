@@ -14,8 +14,8 @@ import { formatNumber, tr } from "../../i18n";
 import { REASON } from "../../lib/capital";
 import { ELIGIBILITY_REASON } from "../../lib/credit";
 import {
-  BEARER_LABEL, bps, DECISION_LABEL, duration, fetchOperatingEconomics, type OperatingEconomics as Data, PHASE_LABEL, share,
-  STAGE_LABEL, staffHours, STEP_LABEL,
+  BEARER_LABEL, bps, CARD_SOURCE, type CostSensitivity, DECISION_LABEL, duration, fetchCostSensitivity, fetchOperatingEconomics,
+  type OperatingEconomics as Data, PHASE_LABEL, share, STAGE_LABEL, staffHours, STEP_LABEL,
 } from "../../lib/economics";
 import { fetchPrograms } from "../../lib/impact";
 import { money } from "../../lib/readiness";
@@ -85,7 +85,75 @@ function Line({ label, value, hint }: { label: string; value: ReactNode; hint?: 
   );
 }
 
-function CostPair({ d }: { d: Data }) {
+/**
+ * What a larger ticket would do — a model over the rate card, never over the
+ * recorded events, which are facts about work that happened. Nothing in the
+ * work changes with the ticket; only the amount it is divided by. That is the
+ * hypothesis of small-ticket credit, shown so a reader can check it.
+ */
+function TicketModel({ s, measured }: { s: CostSensitivity; measured: number | null }) {
+  const rows = s.tickets;
+  const top = Math.max(1, ...rows.map((r) => r.per_100_disbursed_cents ?? r.credit_per_100_cents));
+  const conversion = s.basis.participants_per_loan;
+  const observed = s.basis.occurrences === "observed" && conversion != null;
+  const perLoan = formatNumber(conversion ?? 0, { maximumFractionDigits: 1 });
+  const modelled = rows.find((r) => r.is_current)?.per_100_disbursed_cents;
+  return (
+    <div className="space-y-3 rounded-lg border border-border p-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-sm font-semibold text-foreground">{tr({ en: "If the ticket were larger", pt: "Se o ticket fosse maior" })}</h3>
+        <span className="rounded-full border border-caution/35 px-2 py-0.5 text-[11px] font-medium text-caution">
+          {tr({ en: "Illustrative model", pt: "Modelo ilustrativo" })}
+        </span>
+      </div>
+      <ul className="space-y-2">
+        {rows.map((r) => {
+          const all = r.per_100_disbursed_cents;
+          return (
+            <li key={r.ticket_cents} className={cn("space-y-1", r.is_current && "rounded-md bg-secondary/40 px-2 py-1.5")}>
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="num min-w-0 text-foreground">
+                  {money(r.ticket_cents)}
+                  {r.is_current && <span className="ml-2 text-[11px] font-medium uppercase tracking-wide text-accent">{tr({ en: "lent here", pt: "emprestado aqui" })}</span>}
+                </span>
+                <span className="num shrink-0 text-right">
+                  <span className="font-semibold text-foreground">{money(all)}</span>
+                  <span className="block text-[11px] text-muted-foreground">{tr({ en: "credit ", pt: "crédito " })}{money(r.credit_per_100_cents)}</span>
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
+                <div className="h-full rounded-full bg-accent" style={{ width: `${((all ?? r.credit_per_100_cents) / top) * 100}%` }} />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="text-xs text-muted-foreground">{tr({
+        en: <>Per R$ 100 lent, all-in; credit alone beneath it. A model over the rate card, not a measurement.{" "}
+          {observed
+            ? <>Each stage costs what the card says and happens as often as it happens here — {perLoan} participants reached for every loan made.</>
+            : <>Each stage costs what the card says; with nothing lent in this scope yet, the model assumes one of each origination step and twelve instalments.</>}{" "}
+          Nothing in the work changes with the ticket; only the amount it is divided by — and that conversion moves the all-in number more than the ticket does.</>,
+        pt: <>Por R$ 100 emprestados, tudo incluído; o crédito sozinho abaixo. Um modelo sobre a tabela de custos, não uma medição.{" "}
+          {observed
+            ? <>Cada etapa custa o que a tabela diz e acontece na frequência em que acontece aqui — {perLoan} participantes alcançadas para cada empréstimo feito.</>
+            : <>Cada etapa custa o que a tabela diz; como ainda não há nada emprestado neste escopo, o modelo assume uma ocorrência de cada etapa de originação e doze parcelas.</>}{" "}
+          Nada no trabalho muda com o ticket; muda só o valor pelo qual ele é dividido — e essa conversão move o número com tudo incluído mais do que o ticket.</>,
+      })}</p>
+      {/* The model, held against the measurement at the same ticket. Without
+          this line the two numbers would sit on one page and disagree in
+          silence. */}
+      {measured != null && (
+        <p className="border-t border-border pt-2 text-xs text-muted-foreground">{tr({
+          en: <>At the ticket lent here the model gives <span className="num text-foreground">{money(modelled)}</span> against the <span className="num text-foreground">{money(measured)}</span> recorded above. The model prices the minutes the card assumes; the measurement counts the minutes the work actually took, the extra time included. The distance between them is what the pilot has to close.</>,
+          pt: <>No ticket emprestado aqui o modelo dá <span className="num text-foreground">{money(modelled)}</span> contra os <span className="num text-foreground">{money(measured)}</span> registrados acima. O modelo precifica os minutos que a tabela assume; a medição conta os minutos que o trabalho de fato levou, com o tempo extra. A distância entre os dois é o que o piloto precisa fechar.</>,
+        })}</p>
+      )}
+    </div>
+  );
+}
+
+function CostPair({ d, s }: { d: Data; s?: CostSensitivity }) {
   const c = d.cost;
   const phases = (["preparation", "origination", "servicing"] as const);
   const total = Math.max(1, c.total_cents);
@@ -123,6 +191,7 @@ function CostPair({ d }: { d: Data }) {
                 pt: "O preparo alcança todas as participantes, peçam crédito ou não: neste modelo, é o que um programa patrocinado financia. O que um empréstimo acrescenta é a originação e o acompanhamento.",
               })}</p>
             </div>
+            {s && <TicketModel s={s} measured={c.per_100_disbursed_cents} />}
             <details className="rounded-lg border border-border">
               <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-foreground">{tr({ en: "Cost by stage", pt: "Custo por etapa" })}</summary>
               <div className="overflow-x-auto px-3 pb-3">
@@ -150,6 +219,14 @@ function CostPair({ d }: { d: Data }) {
                 </table>
               </div>
             </details>
+            <p className="text-xs text-muted-foreground">
+              {tr({
+                en: <>Priced by rate card <span className="text-foreground">{c.rate_card.version}</span>, {CARD_SOURCE[c.rate_card.source]}{
+                  c.rate_cards_used.length > 1 ? <>. Events here were priced by more than one card ({c.rate_cards_used.join(", ")}): each keeps the one in force when it happened</> : null}.</>,
+                pt: <>Precificado pela tabela <span className="text-foreground">{c.rate_card.version}</span>, {CARD_SOURCE[c.rate_card.source]}{
+                  c.rate_cards_used.length > 1 ? <>. Os eventos aqui foram precificados por mais de uma tabela ({c.rate_cards_used.join(", ")}): cada um mantém a que valia quando aconteceu</> : null}.</>,
+              })}
+            </p>
             <p className="rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground">
               {tr({
                 en: <>Reference, not a comparison: a World Bank study found microfinance institutions' median operating expense near <span className="text-foreground">US$ 14 per US$ 100 of loans outstanding</span> (WPS 8252, 2005–2009). It counts a whole institution's costs against its portfolio; this counts modelled stage costs against reais lent. Neither is EmpowerFI's measured cost.</>,
@@ -333,6 +410,12 @@ export default function OperatingEconomics() {
     queryFn: () => fetchOperatingEconomics(programId),
     enabled: ready,
   });
+  // The model beside the measurement: a second reader, over the rate card.
+  const sensitivity = useQuery({
+    queryKey: ["platform", "cost-sensitivity", programId ?? ALL],
+    queryFn: () => fetchCostSensitivity(programId),
+    enabled: ready,
+  });
   const d = economics.data;
 
   if (economics.isError) return <LoadError error={economics.error} onRetry={() => economics.refetch()} />;
@@ -382,7 +465,7 @@ export default function OperatingEconomics() {
             en: `${formatNumber(d.scope.participants)} participants in ${formatNumber(d.scope.communities)} communities · ${formatNumber(d.cost.opportunities)} qualified opportunities · ${formatNumber(d.cost.loans)} loans, ${money(d.cost.disbursed_cents)} lent.`,
             pt: `${formatNumber(d.scope.participants)} participantes em ${formatNumber(d.scope.communities)} comunidades · ${formatNumber(d.cost.opportunities)} oportunidades qualificadas · ${formatNumber(d.cost.loans)} empréstimos, ${money(d.cost.disbursed_cents)} emprestados.`,
           })}</p>
-          <CostPair d={d} />
+          <CostPair d={d} s={sensitivity.data} />
           <TimePair d={d} />
           <ScalePair d={d} />
           <CapitalPair d={d} />

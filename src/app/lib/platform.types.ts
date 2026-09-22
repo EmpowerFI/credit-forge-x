@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
       audit_reports: {
@@ -411,6 +416,7 @@ export type Database = {
           id: number
           is_simulated: boolean
           phase: string
+          rate_version: string
           staff_minutes: number
           stage: Database["public"]["Enums"]["cost_stage"]
         }
@@ -424,6 +430,7 @@ export type Database = {
           id?: never
           is_simulated?: boolean
           phase: string
+          rate_version: string
           staff_minutes: number
           stage: Database["public"]["Enums"]["cost_stage"]
         }
@@ -437,6 +444,7 @@ export type Database = {
           id?: never
           is_simulated?: boolean
           phase?: string
+          rate_version?: string
           staff_minutes?: number
           stage?: Database["public"]["Enums"]["cost_stage"]
         }
@@ -455,14 +463,45 @@ export type Database = {
             referencedRelation: "entrepreneurs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cost_events_rate_version_fkey"
+            columns: ["rate_version"]
+            isOneToOne: false
+            referencedRelation: "cost_rate_cards"
+            referencedColumns: ["version"]
+          },
         ]
+      }
+      cost_rate_cards: {
+        Row: {
+          created_at: string
+          effective_from: string
+          note: string
+          source: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          effective_from: string
+          note: string
+          source: string
+          version: string
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          note?: string
+          source?: string
+          version?: string
+        }
+        Relationships: []
       }
       cost_rates: {
         Row: {
           borne_by: Database["public"]["Enums"]["cost_bearer"]
+          card_version: string
           fixed_cents: number
           hourly_rate_cents: number
-          is_assumption: boolean
           note: string
           phase: string
           staff_minutes: number
@@ -470,9 +509,9 @@ export type Database = {
         }
         Insert: {
           borne_by: Database["public"]["Enums"]["cost_bearer"]
+          card_version: string
           fixed_cents: number
           hourly_rate_cents: number
-          is_assumption?: boolean
           note: string
           phase: string
           staff_minutes: number
@@ -480,15 +519,23 @@ export type Database = {
         }
         Update: {
           borne_by?: Database["public"]["Enums"]["cost_bearer"]
+          card_version?: string
           fixed_cents?: number
           hourly_rate_cents?: number
-          is_assumption?: boolean
           note?: string
           phase?: string
           staff_minutes?: number
           stage?: Database["public"]["Enums"]["cost_stage"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cost_rates_card_version_fkey"
+            columns: ["card_version"]
+            isOneToOne: false
+            referencedRelation: "cost_rate_cards"
+            referencedColumns: ["version"]
+          },
+        ]
       }
       credit_intents: {
         Row: {
@@ -2481,6 +2528,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      cost_sensitivity: {
+        Args: {
+          p_participants_per_loan?: number
+          p_program_id?: string
+          p_tickets_cents?: number[]
+        }
+        Returns: Json
+      }
       create_audit_report: {
         Args: { p_checks?: Json; p_title: string }
         Returns: Json
@@ -3372,4 +3427,3 @@ export const Constants = {
     },
   },
 } as const
-
