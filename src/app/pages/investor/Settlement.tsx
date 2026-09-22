@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
+import MarketRate from "../../components/product/MarketRate";
 import ExplorerLink from "../../components/product/ExplorerLink";
 import PageHeader from "../../components/product/PageHeader";
 import Panel from "../../components/product/Panel";
@@ -120,9 +121,12 @@ function Simulator({ fxMilli, rampBps }: { fxMilli: number; rampBps: number }) {
         en: "What a USDC release becomes in reais on her side of the global route, at MoneyGram's sandbox quote or at assumptions you set. The domestic route has no conversion: reais in, reais out.",
         pt: "Quanto uma liberação em USDC vira em reais do lado dela na rota global, pela cotação do sandbox da MoneyGram ou por premissas que você define. A rota doméstica não tem conversão: entra real, sai real.",
       })}>
+      {/* What the market says now, so MoneyGram's rate and the demo's
+          assumption can both be read against it. */}
+      <MarketRate />
       <div role="radiogroup" aria-label={tr({ en: "Quote from", pt: "Cotação de" })} className="grid grid-cols-2 gap-1 rounded-xl border border-border p-1">
         {([
-          ["moneygram", tr({ en: "MoneyGram sandbox", pt: "Sandbox da MoneyGram" }), tr({ en: "a live quote, $2–$200", pt: "cotação ao vivo, US$ 2–200" })],
+          ["moneygram", tr({ en: "MoneyGram sandbox", pt: "Sandbox da MoneyGram" }), tr({ en: "a live quote · cash pickup, $2–$500", pt: "cotação ao vivo · saque em dinheiro, US$ 2–500" })],
           ["demo", tr({ en: "Demo assumptions", pt: "Premissas da demo" }), tr({ en: "a quote and spread you set", pt: "cotação e spread definidos por você" })],
         ] as const).map(([key, label, hint]) => (
           <button key={key} type="button" role="radio" aria-checked={source === key} onClick={() => change(setSource)(key)}
@@ -166,7 +170,7 @@ function Simulator({ fxMilli, rampBps }: { fxMilli: number; rampBps: number }) {
         </div>
       ) : !inRampRange(micro) ? (
         <div className="space-y-2 rounded-xl border border-dashed border-border p-3 text-sm">
-          <p className="text-foreground">{tr({ en: "MoneyGram's sandbox quotes a transfer from 2 to 200 USDC.", pt: "O sandbox da MoneyGram cota transferências de 2 a 200 USDC." })}</p>
+          <p className="text-foreground">{tr({ en: "MoneyGram's sandbox quotes a transfer from 2 to 500 USDC.", pt: "O sandbox da MoneyGram cota transferências de 2 a 500 USDC." })}</p>
           <p className="text-xs text-muted-foreground">
             {tr({
               en: "A loan is released in larger amounts: switch to the demo assumptions for those, or quote a transfer MoneyGram would carry.",

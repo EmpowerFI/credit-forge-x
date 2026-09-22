@@ -18,7 +18,8 @@ platform/supabase/
    ├─ vault-refund/          returns declined or withdrawn allocations from the vault
    ├─ zcash-request/         a ZIP 321 request to fund an opportunity with shielded ZEC
    ├─ zcash-watch/           reads the shielded treasury with its viewing key, credits the vault
-   ├─ ramp-quote/            MoneyGram Ramps sandbox quote for a USDC cash-out to Brazil
+   ├─ ramp-quote/            MoneyGram Ramps sandbox quote for a USDC cash-out to Brazil (cash pickup, $2–$500)
+   ├─ fx-quote/              USDC/BRL from Mercado Bitcoin and USD/BRL from the Banco Central, every ten minutes
    └─ _shared/               vendored copies of packages/ (do not edit, see its README)
 ```
 
@@ -30,7 +31,7 @@ npx supabase db reset --workdir platform          # rebuild the local DB from mi
 npx supabase test db --workdir platform           # pgTAP, local
 npx supabase test db --linked --workdir platform  # pgTAP, remote, in a rolled-back transaction
 npx supabase db push --workdir platform           # apply new migrations to the remote
-npx supabase functions deploy <name> --workdir platform  # each of the ten
+npx supabase functions deploy <name> --workdir platform  # each of the eleven
 npm run platform:types                            # regenerate src/app/lib/platform.types.ts
 npm run platform:sync-shared                      # after changing packages/audit-*
 ```
