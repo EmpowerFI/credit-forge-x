@@ -113,6 +113,19 @@ export const REASON: Record<AllocationReason, { label: string; says: string; ton
 });
 
 /**
+ * What a pool's figure is, wherever one is shown. It is the most misreadable
+ * number on these screens: two bars draining look like a treasury being spent,
+ * and there is no treasury. A pool is how much capital has declared itself
+ * willing to lend through this desk — the constraint that lets the second
+ * engine answer "waiting for capital" instead of assuming money is always
+ * there. The money itself never sits here.
+ */
+export const poolCapacityNote = () => tr({
+  en: "A pool is declared capacity, not custody: EmpowerFI holds no one's money. It is what capital has said it will lend through this desk, less what is already lent, and it exists so the engine can answer \"waiting for capital\" rather than assume there is always more. Money moves only when an investor funds one named opportunity — test USDC on Devnet for the global pool, simulated reais for the domestic one — and it moves into the vault, not into a pool. Both figures are pilot assumptions.",
+  pt: "Um pool é capacidade declarada, não custódia: a EmpowerFI não guarda o dinheiro de ninguém. É o quanto o capital disse que empresta por esta mesa, menos o que já está emprestado, e existe para que o motor possa responder \"aguardando capital\" em vez de supor que sempre há mais. O dinheiro só se move quando uma investidora financia uma oportunidade específica — USDC de teste na Devnet no pool global, reais simulados no doméstico — e se move para o cofre, não para um pool. Os dois valores são premissas do piloto.",
+});
+
+/**
  * The required disclaimer, word for word, in English. A plain string cannot
  * change language: where it is shown, render prototypeNotice().
  */
