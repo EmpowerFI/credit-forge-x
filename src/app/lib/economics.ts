@@ -6,6 +6,8 @@ import { platform } from "./platform";
 // The prototype measures; it does not claim the answer (refactor spec §2A).
 
 export type CostPhase = "preparation" | "origination" | "servicing";
+/** Who pays. Three businesses meet on this platform and only one of them is us. */
+export type CostBearer = "empowerfi" | "community" | "partner";
 export type TimingStep = "intent_to_eligibility" | "eligibility_to_opportunity" | "opportunity_to_decision" | "decision_to_disbursement" | "intent_to_disbursement";
 
 /** Which card priced a cost: a version, and whether its numbers are assumed or measured. */
@@ -21,13 +23,14 @@ export interface OperatingEconomics {
   cost: {
     total_cents: number; staff_minutes: number; events: number; automated_events_share_bps: number | null;
     by_phase: Record<CostPhase, number>;
+    by_bearer: Partial<Record<CostBearer, { cents: number; staff_minutes: number; facts: number; preparation_cents: number; credit_cents: number }>>;
     minutes_by_phase: { preparation: number; credit: number };
     per_participant_cents: number | null; per_opportunity_cents: number | null; per_loan_cents: number | null;
     credit_minutes_per_loan: number | null;
     per_100_disbursed_cents: number | null; credit_per_100_disbursed_cents: number | null;
     opportunities: number; loans: number; disbursed_cents: number;
     rate_card: RateCard; rate_card_is_assumption: boolean; rate_cards_used: string[];
-    by_stage: { stage: string; phase: CostPhase; borne_by: "empowerfi" | "community" | "partner"; events: number; staff_minutes: number; cents: number }[];
+    by_stage: { stage: string; phase: CostPhase; borne_by: CostBearer; events: number; staff_minutes: number; cents: number }[];
   };
   timing: { step: TimingStep; n: number; median_seconds: number | null; p90_seconds: number | null }[];
   discipline: {
@@ -109,6 +112,68 @@ export async function fetchOperatingEconomics(programId: string | null): Promise
   return data as unknown as OperatingEconomics;
 }
 
+/**
+ * What the platform is sold for, what it costs to run, and what is left
+ * (business_model). EmpowerFI licenses a tool; the community does the
+ * fieldwork on its own budget; the desk lends. A sponsor either pays the three
+ * separately or buys one package, and which of the two it is comes from the
+ * pricing card rather than from an assumption inside a query.
+ */
+export type BillingModel = "tool_licence" | "bundled";
+
+export interface PricingCard {
+  version: string;
+  billing_model: BillingModel;
+  source: "simulated" | "observed";
+  seat_cents: number;
+  floor_cents: number;
+  community_share_cents: number;
+  note: string;
+  is_assumption: boolean;
+  others: { version: string; billing_model: BillingModel; seat_cents: number; floor_cents: number }[];
+}
+
+export interface BusinessModel {
+  pricing: PricingCard;
+  scope: { program_id: string | null; participants: number; months_measured: number; first_at: string | null; last_at: string | null };
+  monthly: {
+    licence_cents: number; floor_applied: boolean;
+    variable_cents: number; fixed_share_cents: number; passthrough_cents: number;
+    cost_cents: number; margin_cents: number; margin_bps: number | null;
+  };
+  per_participant_month: {
+    licence_cents: number | null; variable_cents: number | null;
+    fixed_share_cents: number | null; community_cents: number | null;
+  };
+  /** A fixed block divided by seats shows no leverage; these two numbers do. */
+  leverage: {
+    capacity_participants: number | null;
+    breakeven_participants: number | null;
+    standalone_cost_cents: number;
+    standalone_margin_bps: number | null;
+  };
+  evidence: { facts: number; proofs: number; proofs_per_participant: number | null; cost_per_proof_cents: number | null };
+  borne_by: { empowerfi_cents: number; community_cents: number; partner_cents: number };
+  rate_card: {
+    version: string; source: "simulated" | "observed";
+    fixed_monthly_cents: number | null;
+    fixed_monthly_capacity_participants: number | null;
+    fixed_monthly_note: string | null;
+  };
+}
+
+export const businessModelKey = (programId: string | null, pricing: string | null) =>
+  ["platform", "business-model", programId, pricing] as const;
+
+export async function fetchBusinessModel(programId: string | null, pricingVersion?: string | null): Promise<BusinessModel> {
+  const { data, error } = await platform.rpc("business_model", {
+    ...(programId ? { p_program_id: programId } : {}),
+    ...(pricingVersion ? { p_pricing_version: pricingVersion } : {}),
+  });
+  if (error) throw error;
+  return data as unknown as BusinessModel;
+}
+
 /** A duration, read at the scale it happened: seconds, minutes, hours or days. */
 export function duration(seconds: number | null | undefined): string {
   if (seconds == null) return "—";
@@ -161,10 +226,34 @@ export const CARD_SOURCE: Record<"simulated" | "observed", string> = localized({
   observed: { en: "measured in the pilot", pt: "medido no piloto" },
 });
 
-export const BEARER_LABEL: Record<"empowerfi" | "community" | "partner", string> = localized({
+export const BEARER_LABEL: Record<CostBearer, string> = localized({
   empowerfi: { en: "EmpowerFI", pt: "EmpowerFI" },
   community: { en: "Community", pt: "Comunidade" },
   partner: { en: "Desk", pt: "Mesa" },
+});
+
+/** What each of the three sells, said in one line, because "who pays" is not the same as "for what". */
+export const BEARER_SELLS: Record<CostBearer, string> = localized({
+  empowerfi: { en: "the tool, licensed", pt: "a ferramenta, licenciada" },
+  community: { en: "the fieldwork, on its own budget", pt: "o trabalho de campo, com orçamento próprio" },
+  partner: { en: "the credit, from its own book", pt: "o crédito, da carteira própria" },
+});
+
+export const BILLING_MODEL: Record<BillingModel, { label: string; says: string }> = localized({
+  tool_licence: {
+    label: { en: "Separate contracts", pt: "Contratos separados" },
+    says: {
+      en: "The sponsor licenses the tool from EmpowerFI and funds the community directly.",
+      pt: "O patrocinador licencia a ferramenta da EmpowerFI e financia a comunidade diretamente.",
+    },
+  },
+  bundled: {
+    label: { en: "One package", pt: "Pacote único" },
+    says: {
+      en: "The sponsor buys one package and EmpowerFI passes the community's share through.",
+      pt: "O patrocinador compra um pacote e a EmpowerFI repassa a parte da comunidade.",
+    },
+  },
 });
 
 export const STAGE_LABEL: Record<string, string> = localized({
