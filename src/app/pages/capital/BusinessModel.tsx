@@ -80,8 +80,8 @@ export default function BusinessModel({ programId }: { programId: string | null 
             {tr({ en: "Three businesses, one screen", pt: "Três negócios, uma tela" })}
           </h2>
           <p className="max-w-2xl text-sm text-muted-foreground">{tr({
-            en: "EmpowerFI licenses a tool. The fieldwork belongs to the community, on a budget of its own; the credit belongs to the desk. A sponsor pays the three under separate contracts, or buys one package — which changes the margin and nothing else.",
-            pt: "A EmpowerFI licencia uma ferramenta. O trabalho de campo é da comunidade, com orçamento próprio; o crédito é da mesa. O patrocinador paga os três em contratos separados, ou compra um pacote — o que muda a margem e mais nada.",
+            en: "EmpowerFI licenses a tool. The fieldwork belongs to the community, on a budget of its own; the credit belongs to the desk. The sponsor pays the three under separate contracts — one package is a shape the model supports and has no agreed community budget to price yet.",
+            pt: "A EmpowerFI licencia uma ferramenta. O trabalho de campo é da comunidade, com orçamento próprio; o crédito é da mesa. O patrocinador paga os três em contratos separados — o pacote único é um formato que o modelo suporta e que ainda não tem orçamento de comunidade acordado para precificar.",
           })}</p>
         </div>
         {cards.length > 1 && (
