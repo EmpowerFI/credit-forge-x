@@ -26,7 +26,7 @@ These never go on chain: a name, CPF, phone, e-mail, address, a business name, a
 Two checks enforce this:
 
 - `packages/audit-client/privacy.test.ts` reads the program's IDL. It pins every account field and every instruction argument by name and type, and allows only 32-byte hashes, public keys, small integers and data-less enums. Nothing can hold text. Adding a field fails the test until someone reviews it deliberately.
-- `scripts/platform/scan-chain-pii.mts` reads every account the program owns on devnet. It checks that each is a reviewed type at its fixed size. Then it searches the raw bytes for every name, business name, e-mail, community name and city in the database, and checks every decoded integer field against every reported amount and loan amount. Last run, before allocations and consent records existed: 3,864 accounts across the ten types then in use, zero findings. It now also reviews `AllocationCommitment` and `ConsentCommitment`.
+- `scripts/platform/scan-chain-pii.mts` reads every account the program owns on devnet. It checks that each is a reviewed type at its fixed size. Then it searches the raw bytes for every name, business name, e-mail, community name and city in the database, and checks every decoded integer field against every reported amount and loan amount. It also reads every Token-2022 mint behind a tokenised position and checks it is a bare mint of the expected size, supply one, no metadata. Last run, 22 Sep 2026: 10,486 accounts across all thirteen types and 21 position mints, searched for 341 names, e-mails and places and 1,067 amounts — zero findings.
 
 ### Why a commitment reveals nothing
 
