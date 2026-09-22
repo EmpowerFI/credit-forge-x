@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(32);
+select plan(40);
 
 -- ------------------------------------------------------------------ fixtures
 -- One partner, one community, Rita and Sara ready and asking. Two wallet
@@ -155,6 +155,8 @@ select results_eq(
   $$ values ('partially_funded', 100000000::bigint) $$,
   'the opportunity is partially funded'
 );
+select is((select count(*)::int from credit_positions where opportunity_id = (select id from rita)), 0,
+  'no credit position exists while the opportunity is still filling');
 select results_eq(
   $$ select (select depends_on from chain_anchors where kind = 'allocation' and entity_id = i.id)
             = (select id from chain_anchors where kind = 'opportunity' and entity_id = i.opportunity_id)
@@ -181,6 +183,50 @@ select throws_ok(
        'YaRa22222222222222222222222222222222222222', 'sig-yara-2') $$,
   'P0001', 'opportunity_not_open', 'after which it takes no more'
 );
+
+-- ------------------------------------------------------- the tokenised position
+-- Funding it turns each allocation into a credit position: one per investment,
+-- owned by the wallet that funded it, and worth her share rather than the loan.
+
+select results_eq(
+  $$ select count(*)::int, sum(share_bps)::int, count(distinct owner_wallet)::int
+     from credit_positions where opportunity_id = (select id from rita) $$,
+  $$ values (2, 10000, 2) $$,
+  'funding it opens one position per investment, and the shares are the whole loan'
+);
+select is(
+  (select share_bps from credit_positions p join investments i on i.id = p.investment_id
+   where i.deposit_signature = 'sig-wanda-1'),
+  round(100000000 * 10000.0 / (select target from rita))::integer,
+  'Wanda''s share is what she put in over what the loan needed'
+);
+select is((select count(*)::int from position_events where kind = 'created'), 2,
+  'and each one opens with an event saying so');
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
+select is((select jsonb_array_length(tokenized_positions())), 1, 'Wanda sees her position and not Yara''s');
+select ok(
+  (select (v ->> 'asset') ~ '^EF-CREDIT-[0-9]+$'
+     and (v ->> 'owner_wallet') = 'WaNdA1111111111111111111111111111111111111'
+     and (v ->> 'liquidity') = 'hold'
+     and (v -> 'loan') = 'null'::jsonb
+   from jsonb_array_elements(tokenized_positions()) v),
+  'with an asset id, her wallet as owner, on hold until minted, and no loan yet'
+);
+select ok(
+  (select (v ->> 'principal_micro_usdc')::bigint = 100000000 and (v ->> 'principal_cents') is null
+   from jsonb_array_elements(tokenized_positions()) v),
+  'her principal is what she put in; the loan has none of its own to share out yet'
+);
+set local role postgres;
+
+create temp table wanda_pos as select p.id from credit_positions p
+  join investments i on i.id = p.investment_id where i.deposit_signature = 'sig-wanda-1';
+grant select on wanda_pos to authenticated;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000004b2');
+select throws_ok($$ select tokenized_position((select id from wanda_pos)) $$, '42501', 'not_your_position',
+  'and Yara cannot open it');
+set local role postgres;
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
 select results_eq(
