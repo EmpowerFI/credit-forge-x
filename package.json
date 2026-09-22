@@ -15,7 +15,7 @@
     "test:ux-paths": "tsx scripts/ux-paths.mts",
     "audit-client:generate": "cp target/idl/empowerfi_audit.json packages/audit-client/idl/ && tsx scripts/generate-audit-client.mts && node scripts/sync-platform-shared.mjs",
     "platform:sync-shared": "node scripts/sync-platform-shared.mjs",
-    "platform:types": "supabase gen types typescript --linked --workdir platform --schema public > src/app/lib/platform.types.ts"
+    "platform:types": "npx supabase gen types typescript --linked --workdir platform --schema public > platform.types.tmp && mv platform.types.tmp src/app/lib/platform.types.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -47,6 +47,7 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@solana-program/token": "^0.16.1",
+    "@solana-program/token-2022": "^0.19.0",
     "@solana/kit": "^8.3.0",
     "@solana/react": "^8.3.0",
     "@supabase/supabase-js": "^2.105.1",

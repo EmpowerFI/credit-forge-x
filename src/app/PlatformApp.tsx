@@ -39,6 +39,8 @@ const InvestorPortfolio = lazy(() => import("./pages/investor/Portfolio"));
 const InvestorPosition = lazy(() => import("./pages/investor/Position"));
 const InvestorAuditTrail = lazy(() => import("./pages/investor/AuditTrail"));
 const InvestorSettlement = lazy(() => import("./pages/investor/Settlement"));
+const InvestorPositions = lazy(() => import("./pages/investor/Positions"));
+const InvestorAsset = lazy(() => import("./pages/investor/PositionAsset"));
 
 // EmpowerFI's P2P desk (the partner role in the database).
 const PartnerLayout = lazy(() => import("./pages/partner/PartnerLayout"));
@@ -156,6 +158,9 @@ function Pages() {
         <Route path="investor/portfolio" element={investor(<InvestorPortfolio />)} />
         <Route path="investor/positions/:id" element={investor(<InvestorPosition />)} />
         <Route path="investor/settlement" element={investor(<InvestorSettlement />)} />
+        {/* The asset, as distinct from the allocation that bought it. */}
+        <Route path="investor/assets" element={investor(<InvestorPositions />)} />
+        <Route path="investor/assets/:id" element={investor(<InvestorAsset />)} />
         <Route path="investor/audit" element={investor(<InvestorAuditTrail />)} />
         <Route path="impact" element={<RequireAuth roles={["sponsor", "admin", "auditor"]}><Suspense fallback={loading}><ImpactIntelligence /></Suspense></RequireAuth>} />
         <Route path="capital" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />

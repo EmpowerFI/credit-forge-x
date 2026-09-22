@@ -600,6 +600,88 @@ export type Database = {
           },
         ]
       }
+      credit_positions: {
+        Row: {
+          asset_no: number
+          closed_at: string | null
+          created_at: string
+          id: string
+          investment_id: string
+          investor_id: string
+          is_simulated: boolean
+          mint_address: string | null
+          mint_claimed_at: string | null
+          mint_error: string | null
+          mint_signature: string | null
+          minted_at: string | null
+          opportunity_id: string
+          owner_wallet: string | null
+          principal_micro_usdc: number
+          share_bps: number
+          token_account: string | null
+        }
+        Insert: {
+          asset_no?: never
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          investment_id: string
+          investor_id: string
+          is_simulated?: boolean
+          mint_address?: string | null
+          mint_claimed_at?: string | null
+          mint_error?: string | null
+          mint_signature?: string | null
+          minted_at?: string | null
+          opportunity_id: string
+          owner_wallet?: string | null
+          principal_micro_usdc: number
+          share_bps: number
+          token_account?: string | null
+        }
+        Update: {
+          asset_no?: never
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          investment_id?: string
+          investor_id?: string
+          is_simulated?: boolean
+          mint_address?: string | null
+          mint_claimed_at?: string | null
+          mint_error?: string | null
+          mint_signature?: string | null
+          minted_at?: string | null
+          opportunity_id?: string
+          owner_wallet?: string | null
+          principal_micro_usdc?: number
+          share_bps?: number
+          token_account?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_positions_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: true
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_positions_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_positions_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "qualified_credit_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       education_modules: {
         Row: {
           created_at: string
@@ -819,6 +901,44 @@ export type Database = {
             columns: ["readiness_assessment_id"]
             isOneToOne: false
             referencedRelation: "readiness_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      eligible_wallets: {
+        Row: {
+          active: boolean
+          admitted_by: string | null
+          created_at: string
+          is_simulated: boolean
+          label: string
+          note: string | null
+          wallet: string
+        }
+        Insert: {
+          active?: boolean
+          admitted_by?: string | null
+          created_at?: string
+          is_simulated?: boolean
+          label: string
+          note?: string | null
+          wallet: string
+        }
+        Update: {
+          active?: boolean
+          admitted_by?: string | null
+          created_at?: string
+          is_simulated?: boolean
+          label?: string
+          note?: string | null
+          wallet?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eligible_wallets_admitted_by_fkey"
+            columns: ["admitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1475,6 +1595,50 @@ export type Database = {
             columns: ["recorded_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      position_events: {
+        Row: {
+          created_at: string
+          detail: Json
+          from_wallet: string | null
+          id: number
+          kind: string
+          occurred_at: string
+          position_id: string
+          signature: string | null
+          to_wallet: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json
+          from_wallet?: string | null
+          id?: never
+          kind: string
+          occurred_at?: string
+          position_id: string
+          signature?: string | null
+          to_wallet?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: Json
+          from_wallet?: string | null
+          id?: never
+          kind?: string
+          occurred_at?: string
+          position_id?: string
+          signature?: string | null
+          to_wallet?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "position_events_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "credit_positions"
             referencedColumns: ["id"]
           },
         ]
@@ -2863,6 +3027,34 @@ export type Database = {
           term_months: number
         }[]
       }
+      position_mint_claim: { Args: { p_limit?: number }; Returns: Json }
+      position_mint_failed: {
+        Args: { p_error: string; p_position_id: string }
+        Returns: undefined
+      }
+      position_mint_record: {
+        Args: {
+          p_mint: string
+          p_position_id: string
+          p_signature: string
+          p_token_account: string
+        }
+        Returns: undefined
+      }
+      position_transfer_check: {
+        Args: { p_position_id: string; p_to_wallet: string }
+        Returns: Json
+      }
+      position_transferred: {
+        Args: {
+          p_from: string
+          p_position_id: string
+          p_signature: string
+          p_to: string
+          p_token_account: string
+        }
+        Returns: undefined
+      }
       readiness_inputs: { Args: { p_entrepreneur_id: string }; Returns: Json }
       record_audit_report_checks: {
         Args: { p_checks: Json; p_id: string }
@@ -3063,6 +3255,8 @@ export type Database = {
         }
         Returns: string
       }
+      tokenized_position: { Args: { p_position_id: string }; Returns: Json }
+      tokenized_positions: { Args: never; Returns: Json }
       transition_loan: {
         Args: {
           p_loan_id: string
