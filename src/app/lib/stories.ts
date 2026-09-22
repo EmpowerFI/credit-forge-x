@@ -1,5 +1,5 @@
 import {
-  ArrowLeftRight, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardCheck, Coins, Cpu, FileCheck2, Gavel, History, KeyRound,
+  ArrowLeftRight, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardCheck, Coins, Cpu, FileCheck2, Gavel, Gem, History, KeyRound,
   LayoutDashboard, PieChart, Route as RouteIcon, ServerCog, Share2, ShieldCheck, Split, Sprout, Store, Users, Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -136,6 +136,7 @@ export const SUBNAV: Partial<Record<AreaId, NavItem[]>> = localized({
     { to: "/app/investor", label: { en: "Overview", pt: "Visão geral" }, icon: LayoutDashboard, end: true },
     { to: "/app/investor/opportunities", label: { en: "Opportunities", pt: "Oportunidades" }, icon: Coins },
     { to: "/app/investor/portfolio", label: { en: "Portfolio", pt: "Carteira" }, icon: PieChart },
+    { to: "/app/investor/assets", label: { en: "Positions", pt: "Posições" }, icon: Gem },
     { to: "/app/investor/settlement", label: { en: "Settlement", pt: "Liquidação" }, icon: ArrowLeftRight },
   ],
   desk: [

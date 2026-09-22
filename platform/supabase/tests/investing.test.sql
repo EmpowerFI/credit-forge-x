@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(40);
+select plan(45);
 
 -- ------------------------------------------------------------------ fixtures
 -- One partner, one community, Rita and Sara ready and asking. Two wallet
@@ -226,6 +226,43 @@ grant select on wanda_pos to authenticated;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b2');
 select throws_ok($$ select tokenized_position((select id from wanda_pos)) $$, '42501', 'not_your_position',
   'and Yara cannot open it');
+set local role postgres;
+
+-- ------------------------------------------------------- handing one on
+-- Nothing may be transferred before it is a token, and nothing may go to a
+-- wallet nobody admitted. Both are refused here as well as on chain, where a
+-- destination account stays frozen until the platform thaws it.
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
+select throws_ok(
+  $$ select position_transfer_check((select id from wanda_pos), 'YaRa22222222222222222222222222222222222222') $$,
+  '22023', 'not_minted_yet', 'a position with no token cannot change hands');
+set local role postgres;
+
+-- As if the mint queue had run.
+update credit_positions set mint_address = 'MiNt111111111111111111111111111111111111111',
+  token_account = 'AtA1111111111111111111111111111111111111111', minted_at = now()
+where id = (select id from wanda_pos);
+insert into eligible_wallets (wallet, label) values
+  ('YaRa22222222222222222222222222222222222222', 'pgTAP Yara');
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
+select is(
+  (position_transfer_check((select id from wanda_pos), 'YaRa22222222222222222222222222222222222222')
+    ->> 'from_wallet'),
+  'WaNdA1111111111111111111111111111111111111',
+  'to an admitted wallet it says who holds it now and what to build');
+select throws_ok(
+  $$ select position_transfer_check((select id from wanda_pos), 'StRaNgEr11111111111111111111111111111111111') $$,
+  '22023', 'wallet_not_admitted', 'to a wallet nobody admitted, it refuses');
+select throws_ok(
+  $$ select position_transfer_check((select id from wanda_pos), 'WaNdA1111111111111111111111111111111111111') $$,
+  '22023', 'same_wallet', 'and to herself, there is nothing to do');
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000004b2');
+select throws_ok(
+  $$ select position_transfer_check((select id from wanda_pos), 'YaRa22222222222222222222222222222222222222') $$,
+  '42501', 'not_your_position', 'and Yara cannot send Wanda''s position to herself');
 set local role postgres;
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');

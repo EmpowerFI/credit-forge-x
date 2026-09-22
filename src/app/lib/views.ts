@@ -1,6 +1,6 @@
 import {
   ArrowLeftRight, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardList, Coins, FileCheck2, FileText, Filter,
-  Gauge, GraduationCap, HandCoins, History, Layers, ListChecks, PieChart, Route as RouteIcon, ShieldCheck, SlidersHorizontal,
+  Gauge, Gem, GraduationCap, HandCoins, History, Layers, ListChecks, PieChart, Route as RouteIcon, ShieldCheck, SlidersHorizontal,
   Split, Sprout, Store, TrendingUp, Users, Wallet, type LucideIcon,
 } from "lucide-react";
 import { localized } from "../i18n";
@@ -109,6 +109,8 @@ export const VIEWS: View[] = localized([
         what: { en: "Geography, purpose, ticket, risk appetite and impact mandate.", pt: "Território, finalidade, ticket, apetite a risco e mandato de impacto." } }),
       t({ to: "/app/investor/portfolio", icon: PieChart, label: { en: "Portfolio and positions", pt: "Carteira e posições" },
         what: { en: "Funded, outstanding, repaid and the outcome of each.", pt: "Captado, em aberto, pago e o resultado de cada uma." } }),
+      t({ to: "/app/investor/assets", icon: Gem, label: { en: "Tokenised positions", pt: "Posições tokenizadas" },
+        what: { en: "Each funded loan as an asset you hold, and where it may go.", pt: "Cada empréstimo financiado como um ativo seu, e para onde ele pode ir." } }),
       t({ to: "/app/investor/settlement", icon: ArrowLeftRight, label: { en: "Payments", pt: "Pagamentos" },
         what: { en: "USDC in and out, the simulated off-ramp and Pix.", pt: "Entrada e saída de USDC, a conversão e o Pix simulados." } }),
       t({ to: "/app/investor/audit", icon: ShieldCheck, label: { en: "Proofs", pt: "Provas" },
