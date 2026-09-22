@@ -8,7 +8,7 @@ import PageHeader from "../../components/product/PageHeader";
 import StatusPill from "../../components/product/StatusPill";
 import { formatNumber, tr } from "../../i18n";
 import {
-  fetchTokenizedPositions, POSITION_LIQUIDITY, POSITION_STATE, POSITION_TONE,
+  fetchTokenizedPositions, POSITION_LIQUIDITY, POSITION_RELATION, POSITION_STATE, POSITION_TONE,
   positionDisclaimer, positionNotBuilt, positionRoadmap, positionsKey, type TokenizedPosition,
 } from "../../lib/positions";
 import { money } from "../../lib/readiness";
@@ -31,6 +31,12 @@ function Row({ p }: { p: TokenizedPosition }) {
           {p.is_simulated && (
             <span className="rounded-full border border-caution/35 px-2 py-0.5 text-[11px] font-medium text-caution">
               {tr({ en: "Simulated", pt: "Simulada" })}
+            </span>
+          )}
+          {/* Only when she did not fund it: "invested" is what this console means. */}
+          {POSITION_RELATION[p.relation] && (
+            <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {POSITION_RELATION[p.relation]?.label}
             </span>
           )}
         </p>

@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(45);
+select plan(51);
 
 -- ------------------------------------------------------------------ fixtures
 -- One partner, one community, Rita and Sara ready and asking. Two wallet
@@ -222,7 +222,7 @@ set local role postgres;
 
 create temp table wanda_pos as select p.id from credit_positions p
   join investments i on i.id = p.investment_id where i.deposit_signature = 'sig-wanda-1';
-grant select on wanda_pos to authenticated;
+grant select on wanda_pos to authenticated, service_role;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b2');
 select throws_ok($$ select tokenized_position((select id from wanda_pos)) $$, '42501', 'not_your_position',
   'and Yara cannot open it');
@@ -244,7 +244,8 @@ update credit_positions set mint_address = 'MiNt11111111111111111111111111111111
   token_account = 'AtA1111111111111111111111111111111111111111', minted_at = now()
 where id = (select id from wanda_pos);
 insert into eligible_wallets (wallet, label) values
-  ('YaRa22222222222222222222222222222222222222', 'pgTAP Yara');
+  ('YaRa22222222222222222222222222222222222222', 'pgTAP Yara'),
+  ('WaNdA1111111111111111111111111111111111111', 'pgTAP Wanda');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
 select is(
@@ -263,6 +264,46 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000004b2');
 select throws_ok(
   $$ select position_transfer_check((select id from wanda_pos), 'YaRa22222222222222222222222222222222222222') $$,
   '42501', 'not_your_position', 'and Yara cannot send Wanda''s position to herself');
+set local role postgres;
+
+-- --------------------------------------------- and once it has changed hands
+-- Two women have a claim on this row now, and they are different claims:
+-- Wanda funded it, Yara holds it. Both must be able to see it, and the row
+-- must say which of the two is reading — a screen that showed them the same
+-- thing would be saying that funding and holding are the same, which is the
+-- one thing this asset exists to distinguish.
+
+set local role service_role;
+select position_transferred((select id from wanda_pos),
+  'WaNdA1111111111111111111111111111111111111', 'YaRa22222222222222222222222222222222222222',
+  'AtAyArA11111111111111111111111111111111111', 'sig-transfer-1');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000004b2');
+select is((select jsonb_array_length(tokenized_positions())), 2,
+  'Yara now sees two: the one she funded and the one she holds');
+select is(
+  (select v ->> 'relation' from jsonb_array_elements(tokenized_positions()) v
+   where (v ->> 'id')::uuid = (select id from wanda_pos)),
+  'holding', 'the one she received reads as held, not as funded by her');
+select is(
+  (select v ->> 'relation' from jsonb_array_elements(tokenized_positions()) v
+   where (v ->> 'id')::uuid <> (select id from wanda_pos)),
+  'invested', 'and her own still reads as hers');
+select ok((tokenized_position((select id from wanda_pos)) ->> 'asset') is not null,
+  'she can open the one she holds, which she could not before');
+select is(
+  (position_transfer_check((select id from wanda_pos), 'WaNdA1111111111111111111111111111111111111')
+    ->> 'from_wallet'),
+  'YaRa22222222222222222222222222222222222222',
+  'and hand it on again, from her own wallet');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
+select is(
+  (select v ->> 'relation' from jsonb_array_elements(tokenized_positions()) v
+   where (v ->> 'id')::uuid = (select id from wanda_pos)),
+  'invested', 'Wanda still sees it, as the investor who funded it');
 set local role postgres;
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');

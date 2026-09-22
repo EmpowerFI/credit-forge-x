@@ -16,6 +16,8 @@ import { platform } from "./platform";
 // twelve per cent of a loan is not worth the loan.
 
 export type PositionState = "pending" | "active" | "paid" | "delinquent" | "closed";
+/** What the reader is to this position: she funded it, she holds it, or she oversees it. */
+export type PositionRelation = "invested" | "holding" | "oversight";
 export type PositionLiquidity = "hold" | "transferable";
 export type PositionEventKind = "created" | "minted" | "payment" | "transferred" | "closed";
 
@@ -24,6 +26,7 @@ export interface TokenizedPosition {
   asset: string;
   state: PositionState;
   owner_wallet: string | null;
+  relation: PositionRelation;
   share_bps: number;
   principal_micro_usdc: number;
   principal_cents: number | null;
@@ -168,6 +171,30 @@ export const POSITION_LIQUIDITY: Record<PositionLiquidity, { label: string; says
     says: {
       en: "May be sent to another admitted wallet. That is not liquidity: there is no buyer, no price and no market.",
       pt: "Pode ser enviada a outra carteira admitida. Isso não é liquidez: não há comprador, nem preço, nem mercado.",
+    },
+  },
+});
+
+/**
+ * Funding one and holding one are different things, and after a transfer they
+ * belong to different people. The screen says which the reader is rather than
+ * letting her assume; `invested` needs no label, because it is what the whole
+ * console already means.
+ */
+export const POSITION_RELATION: Record<PositionRelation, { label: string; says: string } | null> = localized({
+  invested: null,
+  holding: {
+    label: { en: "Held, not funded by you", pt: "Em seu poder, financiada por outra" },
+    says: {
+      en: "The wallet you connected holds this asset; another investor put the money in. Holding it is not a legal right to the repayment — see the note above.",
+      pt: "A carteira que você conectou detém este ativo; quem colocou o dinheiro foi outra investidora. Detê-lo não é direito legal ao pagamento — veja a observação acima.",
+    },
+  },
+  oversight: {
+    label: { en: "Oversight", pt: "Supervisão" },
+    says: {
+      en: "You are reading this as an auditor. It is neither funded by you nor held by you.",
+      pt: "Você lê isto como auditoria. Não foi financiada por você nem está em seu poder.",
     },
   },
 });

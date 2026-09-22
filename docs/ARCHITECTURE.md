@@ -184,6 +184,8 @@ The borrower gets a loan; the investor gets something she can hold. When an oppo
 
 The frozen default is what makes the control real. A token account for one of these assets is unusable the moment it is created, so an asset can only be held by a wallet the platform has thawed, and the list of admitted wallets (`eligible_wallets`) stops being a rule this app applies and becomes one the token program enforces. Transfer has three steps and only the first is ours: `position-transfer` admits the destination by creating and thawing its account, the investor signs the transfer in her own wallet, and the function then asks the chain what happened — destination holding one, source holding none — before writing the new owner down. EmpowerFI cannot move her asset; it can only decide where it may go.
 
+A position is readable by whoever funded it **and** by whoever holds it, and the row says which of the two is reading. Before that, the console asked one question — did you buy this? — which is the wrong question the moment an asset can change hands: transfer one, and the chain says the destination holds it while the screen still lists it under the investor who funded it, and the wallet that actually holds it sees nothing. Either party may ask the platform to admit a destination, because admitting creates and thaws an account and moves nothing; only the key that holds the asset can sign it away.
+
 Nothing about this is a market. There is no exchange, order book, bid, price or depth, the screens say so in both languages, and the word *liquidez* is never used for these assets. [LEGAL_REVIEW.md](LEGAL_REVIEW.md) carries the questions counsel has to answer before any of it could be real.
 
 ## Cost to serve

@@ -23,7 +23,8 @@ import { formatDate, formatNumber, tr } from "../../i18n";
 import { duration } from "../../lib/economics";
 import {
   eligibleWalletsKey, fetchEligibleWallets, fetchTokenizedPosition, POSITION_EVENT, POSITION_LIQUIDITY,
-  POSITION_STATE, POSITION_TONE, positionDisclaimer, positionKey, positionsKey, prepareTransfer, recordTransfer,
+  POSITION_RELATION, POSITION_STATE, POSITION_TONE, positionDisclaimer, positionKey, positionsKey,
+  prepareTransfer, recordTransfer,
 } from "../../lib/positions";
 import { money } from "../../lib/readiness";
 import { CLUSTER, confirmSignature, rpc, shortAddress } from "../../lib/solana";
@@ -214,11 +215,15 @@ export default function PositionAsset() {
           hint={p.risk_band ? tr({ en: `risk ${p.risk_band}`, pt: `risco ${p.risk_band}` }) : undefined} />
       </div>
       <p className="text-xs text-muted-foreground">{POSITION_LIQUIDITY[p.liquidity].says}</p>
+      {POSITION_RELATION[p.relation] && (
+        <p className="text-xs text-muted-foreground">{POSITION_RELATION[p.relation]?.says}</p>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title={tr({ en: "The asset", pt: "O ativo" })}>
           <Line label={tr({ en: "Owner", pt: "Dono" })}
-            value={p.owner_wallet ? <ExplorerLink address={p.owner_wallet} /> : "—"} />
+            value={p.owner_wallet ? <ExplorerLink address={p.owner_wallet} /> : "—"}
+            hint={POSITION_RELATION[p.relation]?.label} />
           <Line label={tr({ en: "Mint", pt: "Mint" })}
             value={p.mint_address ? <ExplorerLink address={p.mint_address} /> : tr({ en: "not created yet", pt: "ainda não criado" })}
             hint={tr({ en: "Token-2022, supply 1, frozen by default", pt: "Token-2022, oferta 1, congelado por padrão" })} />
