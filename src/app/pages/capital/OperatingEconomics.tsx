@@ -14,11 +14,12 @@ import { formatNumber, tr } from "../../i18n";
 import { REASON } from "../../lib/capital";
 import { ELIGIBILITY_REASON } from "../../lib/credit";
 import {
-  BEARER_LABEL, bps, CARD_SOURCE, type CostSensitivity, DECISION_LABEL, duration, fetchCostSensitivity, fetchOperatingEconomics,
+  BEARER_LABEL, BEARER_SELLS, bps, CARD_SOURCE, type CostSensitivity, DECISION_LABEL, duration, fetchCostSensitivity, fetchOperatingEconomics,
   type OperatingEconomics as Data, PHASE_LABEL, share, STAGE_LABEL, staffHours, STEP_LABEL,
 } from "../../lib/economics";
 import { fetchPrograms } from "../../lib/impact";
 import { money } from "../../lib/readiness";
+import BusinessModel from "./BusinessModel";
 
 // Can productive credit become cheaper to operate without becoming weaker
 // credit? (refactor spec §2A.) Four pairs: what must improve beside what must
@@ -168,8 +169,13 @@ function CostPair({ d, s }: { d: Data; s?: CostSensitivity }) {
             <div className="grid grid-cols-2 gap-3">
               <StatTile label={tr({ en: "Credit, per R$ 100 lent", pt: "Crédito, por R$ 100 emprestados" })} value={money(c.credit_per_100_disbursed_cents)}
                 hint={tr({ en: "origination + servicing", pt: "originação + acompanhamento" })} />
-              <StatTile label={tr({ en: "All-in, per R$ 100 lent", pt: "Tudo, por R$ 100 emprestados" })} value={money(c.per_100_disbursed_cents)}
-                hint={tr({ en: "preparation included", pt: "com o preparo" })} />
+              {/* The same denominator, a different question: this one divides
+                  the whole funnel — everyone reached, borrower or not — by the
+                  reais lent, so it answers what the programme costs, not what
+                  the credit costs. */}
+              <StatTile label={tr({ en: "Programme + credit, per R$ 100 lent", pt: "Programa + crédito, por R$ 100 emprestados" })}
+                value={money(c.per_100_disbursed_cents)}
+                hint={tr({ en: "everyone reached, borrower or not", pt: "todas as alcançadas, peçam crédito ou não" })} />
               <StatTile label={tr({ en: "Per qualified opportunity", pt: "Por oportunidade qualificada" })} value={money(c.per_opportunity_cents)} />
               <StatTile label={tr({ en: "Per participant", pt: "Por participante" })} value={money(c.per_participant_cents)}
                 hint={tr({ en: `${formatNumber(d.scope.participants)} reached`, pt: `${formatNumber(d.scope.participants)} alcançadas` })} />
@@ -187,9 +193,29 @@ function CostPair({ d, s }: { d: Data; s?: CostSensitivity }) {
                 ))}
               </p>
               <p className="text-xs text-muted-foreground">{tr({
-                en: "Preparation reaches every participant, whether or not she borrows: in this model, it is what a sponsored program funds. What a loan adds is its origination and servicing.",
-                pt: "O preparo alcança todas as participantes, peçam crédito ou não: neste modelo, é o que um programa patrocinado financia. O que um empréstimo acrescenta é a originação e o acompanhamento.",
+                en: "Preparation reaches every participant, whether or not she borrows, and the community does it on a budget of its own. What a loan adds is its origination and servicing.",
+                pt: "O preparo alcança todas as participantes, peçam crédito ou não, e quem o faz é a comunidade, com orçamento próprio. O que um empréstimo acrescenta é a originação e o acompanhamento.",
               })}</p>
+              {/* The same total, split by who pays it rather than by where it
+                  lands. A sponsor asking what EmpowerFI costs is asking this. */}
+              <ul className="space-y-1.5">
+                {(["empowerfi", "community", "partner"] as const).map((who) => {
+                  const row = c.by_bearer[who];
+                  if (!row) return null;
+                  return (
+                    <li key={who} className="space-y-1">
+                      <div className="flex items-baseline justify-between gap-3 text-xs">
+                        <span className="text-foreground">{BEARER_LABEL[who]} <span className="text-muted-foreground">· {BEARER_SELLS[who]}</span></span>
+                        <span className="num shrink-0 font-semibold text-foreground">{money(row.cents)}</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+                        <div className={cn("h-full rounded-full", who === "empowerfi" ? "bg-accent" : who === "community" ? "bg-primary" : "bg-positive")}
+                          style={{ width: `${(row.cents / total) * 100}%` }} />
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
             {s && <TicketModel s={s} measured={c.per_100_disbursed_cents} />}
             <details className="rounded-lg border border-border">
@@ -229,8 +255,8 @@ function CostPair({ d, s }: { d: Data; s?: CostSensitivity }) {
             </p>
             <p className="rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground">
               {tr({
-                en: <>Reference, not a comparison: a World Bank study found microfinance institutions' median operating expense near <span className="text-foreground">US$ 14 per US$ 100 of loans outstanding</span> (WPS 8252, 2005–2009). It counts a whole institution's costs against its portfolio; this counts modelled stage costs against reais lent. Neither is EmpowerFI's measured cost.</>,
-                pt: <>Referência, não comparação: um estudo do Banco Mundial encontrou despesa operacional mediana perto de <span className="text-foreground">US$ 14 a cada US$ 100 de carteira</span> em instituições de microfinanças (WPS 8252, 2005–2009). Ele conta os custos de uma instituição inteira contra sua carteira; aqui, custos modelados por etapa contra reais emprestados. Nenhum dos dois é o custo medido da EmpowerFI.</>,
+                en: <>Reference, not a comparison: a World Bank study found microfinance institutions' median operating expense near <span className="text-foreground">US$ 14 per US$ 100 of loans outstanding</span> (WPS 8252, 2005–2009). The number to hold it against is the credit one, not the programme one: it counts what an institution spends to lend, and the funnel above it is paid for by whoever funds the programme. It counts a whole institution against its portfolio; this counts modelled stage costs against reais lent. Neither is EmpowerFI's measured cost.</>,
+                pt: <>Referência, não comparação: um estudo do Banco Mundial encontrou despesa operacional mediana perto de <span className="text-foreground">US$ 14 a cada US$ 100 de carteira</span> em instituições de microfinanças (WPS 8252, 2005–2009). O número a colocar ao lado é o do crédito, não o do programa: ele conta o que uma instituição gasta para emprestar, e o funil acima disso é pago por quem financia o programa. Ele conta uma instituição inteira contra sua carteira; aqui, custos modelados por etapa contra reais emprestados. Nenhum dos dois é o custo medido da EmpowerFI.</>,
               })}
             </p>
           </>
@@ -465,6 +491,9 @@ export default function OperatingEconomics() {
             en: `${formatNumber(d.scope.participants)} participants in ${formatNumber(d.scope.communities)} communities · ${formatNumber(d.cost.opportunities)} qualified opportunities · ${formatNumber(d.cost.loans)} loans, ${money(d.cost.disbursed_cents)} lent.`,
             pt: `${formatNumber(d.scope.participants)} participantes em ${formatNumber(d.scope.communities)} comunidades · ${formatNumber(d.cost.opportunities)} oportunidades qualificadas · ${formatNumber(d.cost.loans)} empréstimos, ${money(d.cost.disbursed_cents)} emprestados.`,
           })}</p>
+          {/* Who sells what comes before what anything costs: read the other
+              way round, preparation looks like a cost of lending. */}
+          <BusinessModel programId={programId} />
           <CostPair d={d} s={sensitivity.data} />
           <TimePair d={d} />
           <ScalePair d={d} />

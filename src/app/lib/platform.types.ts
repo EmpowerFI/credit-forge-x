@@ -476,6 +476,9 @@ export type Database = {
         Row: {
           created_at: string
           effective_from: string
+          fixed_monthly_capacity_participants: number | null
+          fixed_monthly_cents: number | null
+          fixed_monthly_note: string | null
           note: string
           source: string
           version: string
@@ -483,6 +486,9 @@ export type Database = {
         Insert: {
           created_at?: string
           effective_from: string
+          fixed_monthly_capacity_participants?: number | null
+          fixed_monthly_cents?: number | null
+          fixed_monthly_note?: string | null
           note: string
           source: string
           version: string
@@ -490,6 +496,9 @@ export type Database = {
         Update: {
           created_at?: string
           effective_from?: string
+          fixed_monthly_capacity_participants?: number | null
+          fixed_monthly_cents?: number | null
+          fixed_monthly_note?: string | null
           note?: string
           source?: string
           version?: string
@@ -1469,6 +1478,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pricing_cards: {
+        Row: {
+          billing_model: string
+          community_share_cents: number
+          created_at: string
+          effective_from: string
+          floor_cents: number
+          is_default: boolean
+          note: string
+          seat_cents: number
+          source: string
+          version: string
+        }
+        Insert: {
+          billing_model: string
+          community_share_cents?: number
+          created_at?: string
+          effective_from: string
+          floor_cents: number
+          is_default?: boolean
+          note: string
+          seat_cents: number
+          source: string
+          version: string
+        }
+        Update: {
+          billing_model?: string
+          community_share_cents?: number
+          created_at?: string
+          effective_from?: string
+          floor_cents?: number
+          is_default?: boolean
+          note?: string
+          seat_cents?: number
+          source?: string
+          version?: string
+        }
+        Relationships: []
       }
       productive_outcomes: {
         Row: {
@@ -2574,6 +2622,10 @@ export type Database = {
       audit_system: { Args: never; Returns: Json }
       audit_zcash: { Args: never; Returns: Json }
       audit_zcash_returns: { Args: never; Returns: Json }
+      business_model: {
+        Args: { p_pricing_version?: string; p_program_id?: string }
+        Returns: Json
+      }
       capital_overview: { Args: never; Returns: Json }
       capital_portfolio: { Args: never; Returns: Json }
       claim_anchor_jobs: {
