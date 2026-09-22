@@ -1,6 +1,7 @@
 import { ArrowRight, ChevronRight } from "lucide-react";
 import type { RouteQuote, SettlementRouteResult } from "@empowerfi/settlement-route";
 import { cn } from "@/lib/utils";
+import MarketRate from "../../../components/product/MarketRate";
 import StatusPill from "../../../components/product/StatusPill";
 import { formatDateTime, tr } from "../../../i18n";
 import { bpsPercent } from "../../../lib/capital";
@@ -110,6 +111,10 @@ export default function SettlementRoute({ result }: { result: SettlementRouteRes
         </div>
         {winner && <StatusPill tone="positive" dot={false}>{ROUTE[winner.route].label}</StatusPill>}
       </div>
+
+      {/* Each route shows the rate it was priced at; this says what the market
+          is doing now, so a rate struck earlier can be read against it. */}
+      <MarketRate />
 
       <div className="grid gap-3 sm:grid-cols-2">
         {quotes.map((q) => (

@@ -3,10 +3,11 @@
 // A quote is what MoneyGram would charge to turn USDC on Solana into reais:
 // its fee, its rate and what is received. Nothing is sent and no customer is
 // named — a quote carries an amount and a destination country, nothing else.
-// In Brazil the sandbox prices cash pickup only, from $2 to $200 a transfer.
+// In Brazil the sandbox prices cash pickup only (WILL_CALL), from $2 to $500 a
+// transfer — re-measured 22 Sep 2026, when the ceiling turned out to be $500.
 
 export const MONEYGRAM_MIN_MICRO_USDC = 2_000_000;
-export const MONEYGRAM_MAX_MICRO_USDC = 200_000_000;
+export const MONEYGRAM_MAX_MICRO_USDC = 500_000_000;
 
 /** The body of POST /v1/quotes for a USDC cash-out to reais, amount at cent precision. */
 export function quoteRequest(microUsdc: number) {

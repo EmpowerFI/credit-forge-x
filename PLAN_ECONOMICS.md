@@ -2,7 +2,7 @@
 
 **Source:** *EmpowerFI MVP Addendum — Operating Economics & Cost-to-Serve Validation* (founder, 21 Sep 2026), companion to the *Site + Hackathon MVP Refactor Specification v2 — Solana*.
 **Work:** on `hackathon`. Migrations, reseeds and the merge to `main` happen only after the founder approves.
-**Status, 21 Sep:** reviewed against what is built, then built. **P0 and P1 are done and live**; only G5, the proof, is left, and it was decided against for the hackathon (§7).
+**Status, 21 Sep: closed.** Reviewed against what is built, then built. **G1–G4 are done and live.** G5, the proof, was decided against — not deferred (§7.2). This work is finished for the hackathon.
 
 **Review:** **most of the addendum already existed**; five things did not. §3 reviews the addendum itself, including one place where following it literally would make an honest number flattering. The founder accepted the three decisions in §7, and G1–G4 were built on 21 Sep.
 
@@ -31,7 +31,7 @@ Everything else in §4, §7, §10 and §11 is already met. These five are not.
 | ~~G2~~ | ~~**The rate card is not versioned.**~~ **Done.** `cost_rate_cards` (version, effective_from, source, note); `cost_rates.card_version`; `cost_events.rate_version`, stamped by the date of the fact. `is_assumption` is gone: the card says it. | §9, §11 |
 | ~~G3~~ | ~~**No operating economics inside the engine flow.**~~ **Done.** The two numbers of §3, with their guardrail, at the end of the engine run — after the decision, where the reader asks what producing it cost. | §4, §3 |
 | ~~G4~~ | ~~**No snapshot per opportunity.**~~ **Done.** `operating_economics_snapshots`, written by trigger when the opportunity opens for funding, and backfilled for the ones that opened before. | §9 |
-| G5 | **No proof for it.** Nothing anchors a snapshot hash/version/timestamp. | §9, §11 |
+| G5 | **No proof for it.** Nothing anchors a snapshot hash/version/timestamp. **Closed, not built:** see §7.2. | §9, §11 |
 
 ## 3 · Review of the addendum
 
@@ -93,7 +93,7 @@ Tickets R$ 1.000 / 2.000 / 5.000 / 10.000, as §6 asks. The output is labelled *
 All three accepted as recommended: the two numbers, no anchor for the hackathon, and the schema change (no reseed was needed for P0 — existing cost events were stamped with the pilot card in place).
 
 1. **The two numbers (§3) instead of §4's single estimated CTS.** My recommendation: yes. It is more honest and it reuses what exists.
-2. **G5 — anchor the snapshot as a 15th proof kind?** My recommendation: **not for the hackathon.** Operating economics is a *modelled* number over an assumption card; proving on chain that we committed to an assumption proves less than the 14 kinds that prove facts about a person's journey and a loan. If the pilot replaces assumptions with observed data, that is when a proof starts to mean something. The cost is a devnet program upgrade of the program all 981 existing proofs depend on.
+2. **G5 — anchor the snapshot as a 15th proof kind? Decided: no.** My recommendation was **not for the hackathon**, and the founder closed it rather than deferring it. Operating economics is a *modelled* number over an assumption card; proving on chain that we committed to an assumption proves less than the 14 kinds that prove facts about a person's journey and a loan. If the pilot replaces assumptions with observed data, that is when a proof starts to mean something. The cost is a devnet program upgrade of the program all 981 existing proofs depend on.
 3. **Reseed?** G2 and G4 change the schema; the hackathon project would need a push and, for snapshots to exist on seeded opportunities, a reseed.
 
 ## 8 · Sequence
@@ -110,8 +110,8 @@ All three accepted as recommended: the two numbers, no anchor for the hackathon,
 
 Not done, and deliberately: a per-opportunity number that replaces the programme's (§6), and G5.
 
-**P2 — the founder's call**
-5. G5, the proof.
+**P2 — closed**
+5. ~~G5, the proof.~~ Decided against, 21 Sep. Operating economics is a number *modelled* over an assumption card: anchoring it would prove that we committed to an assumption, which is less than what the 14 existing kinds prove — facts about a person's journey and a loan. It would also cost a devnet upgrade of the program all 981 live proofs depend on. When the pilot replaces assumptions with observed rates, a proof of the snapshot starts to mean something; until then it would be ceremony. The snapshot itself is already immutable in the database, with the card and the engine version that produced it.
 
 ## 9 · Risks
 

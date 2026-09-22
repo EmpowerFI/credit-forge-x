@@ -432,3 +432,9 @@ verify_jwt = false
 [functions.zcash-watch]
 verify_jwt = false
 static_files = ["./functions/zcash-watch/wasm/*"]
+
+# Called by pg_cron every ten minutes with the anchoring secret, which the
+# gateway does not know about: it would refuse the call for having no
+# Authorization header. A signed-in person's "check now" is verified inside.
+[functions.fx-quote]
+verify_jwt = false

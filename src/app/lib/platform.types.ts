@@ -912,6 +912,39 @@ export type Database = {
         }
         Relationships: []
       }
+      fx_rates: {
+        Row: {
+          ask_milli: number
+          bid_milli: number
+          fetched_at: string
+          id: number
+          mid_milli: number
+          observed_at: string
+          pair: string
+          source: string
+        }
+        Insert: {
+          ask_milli: number
+          bid_milli: number
+          fetched_at?: string
+          id?: never
+          mid_milli: number
+          observed_at: string
+          pair: string
+          source: string
+        }
+        Update: {
+          ask_milli?: number
+          bid_milli?: number
+          fetched_at?: string
+          id?: never
+          mid_milli?: number
+          observed_at?: string
+          pair?: string
+          source?: string
+        }
+        Relationships: []
+      }
       investments: {
         Row: {
           allocation_ref: string
@@ -2652,6 +2685,7 @@ export type Database = {
         Args: { p_note?: string; p_opportunity_id: string }
         Returns: string
       }
+      fx_market: { Args: never; Returns: Json }
       impact_intelligence: { Args: { p_program_id: string }; Returns: Json }
       investor_activity: {
         Args: { p_limit?: number }
@@ -2812,6 +2846,7 @@ export type Database = {
         }
         Returns: Json
       }
+      record_fx_rates: { Args: { p_rows: Json }; Returns: number }
       record_investment: {
         Args: {
           p_amount_micro_usdc: number

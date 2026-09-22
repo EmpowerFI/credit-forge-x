@@ -2,11 +2,15 @@ import { describe, expect, it } from "vitest";
 import { inRampRange, rampFeeBps, receivedAfterTax } from "./ramp";
 
 describe("ramp", () => {
-  it("quotes only what the sandbox prices: $2 to $200", () => {
+  // Re-measured against the sandbox on 22 Sep 2026: it answers up to $500 and
+  // refuses above it ("Maximum amount is $500.00 USD"), so a R$ 2,000 loan —
+  // about $390 — is inside what it will price.
+  it("quotes only what the sandbox prices: $2 to $500", () => {
     expect(inRampRange(1_999_999)).toBe(false);
     expect(inRampRange(2_000_000)).toBe(true);
-    expect(inRampRange(200_000_000)).toBe(true);
-    expect(inRampRange(200_000_001)).toBe(false);
+    expect(inRampRange(390_000_000)).toBe(true);
+    expect(inRampRange(500_000_000)).toBe(true);
+    expect(inRampRange(500_000_001)).toBe(false);
   });
 
   it("reads the fee as a share of what was sent", () => {

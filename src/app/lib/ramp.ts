@@ -3,10 +3,15 @@ import { platform } from "./platform";
 // The ramp's side of the route, priced by MoneyGram Ramps' sandbox: a USDC
 // cash-out in Brazil, quoted by the ramp-quote function. Only the amount and
 // the country go to MoneyGram.
+//
+// In Brazil it is cash pickup at an agent (WILL_CALL) — the sandbox prices no
+// bank or Pix delivery there — so this is not the rail that pays her. It is a
+// real provider's price, and what it measures is the fixed cost of a small
+// transfer: $3 flat up to $10, about 3% at $400.
 
-/** The sandbox quotes Brazil from $2 to $200 a transfer. */
+/** The sandbox quotes Brazil from $2 to $500 a transfer. */
 export const RAMP_MIN_MICRO_USDC = 2_000_000;
-export const RAMP_MAX_MICRO_USDC = 200_000_000;
+export const RAMP_MAX_MICRO_USDC = 500_000_000;
 
 export interface RampQuote {
   source: "moneygram_sandbox";
