@@ -1,0 +1,22 @@
+-- One price on the screen
+--
+-- The bundled card priced a participant at R$ 100 a month, which is what
+-- accompaniment costs, not what a tool costs: two and a half times the whole
+-- operating cost of a median microfinance institution per borrower, and ten
+-- times a large Brazilian social investor's annual budget per beneficiary. It
+-- was seeded beside the licence so the two could be read side by side.
+--
+-- Side by side is exactly the problem. The two cards appeared as equal
+-- options, and the one we do not believe in showed the better margin — 80%
+-- against 67.65% — because its pass-through is priced at the leader's minutes
+-- on the cost card, which is the floor of a community budget rather than a
+-- negotiated one. A screen that makes the wrong answer look better is worse
+-- than a screen with one answer.
+--
+-- So the seeded price is the licence, alone: R$ 20 per participant-month with
+-- a R$ 1,500 floor. `billing_model` stays in the schema, and so does every
+-- query that reads it, because one package remains a real contract shape — it
+-- needs a community budget that someone has actually agreed to, not a number
+-- derived from a rate card. The day that exists, it is one row.
+
+delete from public.pricing_cards where version = 'bundled-2026.09';

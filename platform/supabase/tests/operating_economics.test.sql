@@ -177,9 +177,14 @@ select pg_temp.act_as('00000000-0000-0000-0000-000000000aa7');
 select throws_ok($$ select business_model() $$, '42501', 'not_allowed_to_see_costs', 'an investor reads no prices either');
 set local role postgres;
 
+-- Only the licence is seeded: one package is a contract shape the platform
+-- supports and has no honest price for yet, so the test brings its own.
+insert into pricing_cards (version, effective_from, source, billing_model, seat_cents, floor_cents, community_share_cents, note)
+values ('pgTAP bundled', '2000-01-01', 'simulated', 'bundled', 10000, 150000, 1334, 'pgTAP: one package, the community''s share passed through');
+
 select pg_temp.act_as('00000000-0000-0000-0000-000000000aa5');
 create temp table bm as select business_model('00000000-0000-0000-0000-000000000ad1') as v;
-create temp table bm_bundled as select business_model('00000000-0000-0000-0000-000000000ad1', 'bundled-2026.09') as v;
+create temp table bm_bundled as select business_model('00000000-0000-0000-0000-000000000ad1', 'pgTAP bundled') as v;
 set local role postgres;
 
 select is((select v #>> '{pricing,billing_model}' from bm), 'tool_licence', 'by default the platform is sold as a tool');
