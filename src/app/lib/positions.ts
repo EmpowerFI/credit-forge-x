@@ -189,3 +189,20 @@ export const positionDisclaimer = () => tr({
   en: "A Devnet prototype of a future regulated tokenised-credit structure. The asset confers no legal right on its own, the production legal instrument and any secondary market require validation with Brazilian counsel and the applicable BCB/CVM rules, and transferability is not liquidity.",
   pt: "Protótipo em Devnet de uma futura estrutura regulada de crédito tokenizado. O ativo não confere direito legal por si, o instrumento jurídico de produção e qualquer mercado secundário exigem validação com assessoria jurídica brasileira e as regras aplicáveis do BCB e da CVM, e transferibilidade não é liquidez.",
 });
+
+/**
+ * §3.2 of the plan, and §8 of the addendum: the four secondary-market metrics
+ * are named as roadmap in one line rather than shown as four empty tiles.
+ * Four tiles reading "—" have the shape of a marketplace dashboard, and a
+ * viewer fills the blanks. A sentence cannot be misread that way.
+ */
+export const positionRoadmap = () => tr({
+  en: "Secondary volume, time to exit, discount or premium, and liquidity available are roadmap metrics. None of them is measured here, so none of them is shown.",
+  pt: "Volume secundário, tempo até a saída, deságio ou ágio e liquidez disponível são métricas de roadmap. Nenhuma é medida aqui, então nenhuma é exibida.",
+});
+
+/** What this is not. Said plainly, in the place where it could be assumed. */
+export const positionNotBuilt = () => tr({
+  en: "There is no exchange, order book, auction or pool here, no bid, no depth and no price discovery. EmpowerFI is not a securities marketplace, an exchange, a securitiser or an authorised secondary market, and holding this asset is not legal ownership of a receivable.",
+  pt: "Aqui não há bolsa, livro de ofertas, leilão nem pool, não há lance, profundidade ou formação de preço. A EmpowerFI não é mercado de valores mobiliários, bolsa, securitizadora nem mercado secundário autorizado, e deter este ativo não é titularidade legal de um recebível.",
+});

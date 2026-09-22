@@ -176,6 +176,16 @@ Editing the record in the database turns the verdict to MISMATCH. The page also 
 
 Every cron-driven function is dispatched by `pg_cron` through `pg_net` only when work is due, with the shared secret from Vault.
 
+## The investor's asset
+
+The borrower gets a loan; the investor gets something she can hold. When an opportunity reaches its target, a trigger opens one `credit_positions` row per investment — never earlier, so "a position cannot exist before funding" is a property of the schema rather than a check someone remembers to write — with her share in basis points, taken from the same arithmetic the portfolio already used.
+
+`position-mint`, on the same cron pattern as settlement, turns each into a **Token-2022 mint**: supply one, zero decimals, operator as mint and freeze authority, and the `DefaultAccountState` extension set to *frozen*. The mint carries no metadata; the asset id `EF-CREDIT-####` stays in the database. Its key is derived from the operator's secret and the position's id, so a retry after a timeout builds the same address and the chain refuses the duplicate — a position can be claimed twice and still exist once.
+
+The frozen default is what makes the control real. A token account for one of these assets is unusable the moment it is created, so an asset can only be held by a wallet the platform has thawed, and the list of admitted wallets (`eligible_wallets`) stops being a rule this app applies and becomes one the token program enforces. Transfer has three steps and only the first is ours: `position-transfer` admits the destination by creating and thawing its account, the investor signs the transfer in her own wallet, and the function then asks the chain what happened — destination holding one, source holding none — before writing the new owner down. EmpowerFI cannot move her asset; it can only decide where it may go.
+
+Nothing about this is a market. There is no exchange, order book, bid, price or depth, the screens say so in both languages, and the word *liquidez* is never used for these assets. [LEGAL_REVIEW.md](LEGAL_REVIEW.md) carries the questions counsel has to answer before any of it could be real.
+
 ## Cost to serve
 
 Small tickets fail on operating cost, so cost is counted from a community's first day rather than from disbursement. Triggers write one `cost_events` row per fact at a pilot rate card (`cost_rates`: staff minutes at R$30/h plus fixed costs, and who bears them). Because triggers write the rows, no code path can forget to count. `cts_summary()` gives cost per participant, per ready participant, per opportunity, per loan and per R$100 lent. The capital view reports per loan and per R$1,000.
@@ -307,5 +317,5 @@ packages/settlement-route    the settlement route comparator + vectors
 programs/empowerfi-audit     the Anchor program + LiteSVM tests
 services/zcash-watcher       Zcash viewing-key scanner, compiled to WebAssembly
 platform/supabase            migrations, pgTAP tests, Edge Functions (see platform/README.md)
-scripts/platform             demo accounts, demo scenario, zero-PII scan
+scripts/platform             demo accounts, demo scenario, position wallets, zero-PII scan
 ```

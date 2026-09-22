@@ -20,6 +20,7 @@
 //
 // Everything is marked is_simulated.
 import { createClient } from "@supabase/supabase-js";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { assessReadiness, type CheckinRecord } from "../../packages/readiness-engine/src/index.ts";
 import { assessEligibility, type EligibilityInput } from "../../packages/eligibility-engine/src/index.ts";
@@ -163,7 +164,7 @@ const fundRandom = rng(20260915);
  */
 const CASE_B_FX_MILLI = 5500;
 const locksBetterFx = new Set<string>();
-async function fund(opportunityId: string, fill: number, ireneShare: number, at: string) {
+async function fund(opportunityId: string, fill: number, ireneShare: number, at: string, leaveMicro = 0) {
   const { data: o, error } = await db.from("qualified_credit_opportunities")
     .select("id, amount_cents, created_at, funding_pool, funding_target_micro_usdc, funding_status").eq("id", opportunityId).single();
   if (error) throw error;
@@ -179,7 +180,7 @@ async function fund(opportunityId: string, fill: number, ireneShare: number, at:
   }).eq("id", opportunityId));
   const target = lock ? Math.ceil((o.amount_cents * 10) / lock) * 1_000_000 : o.funding_target_micro_usdc as number;
   const whole = (micro: number) => Math.floor(micro / 1_000_000) * 1_000_000;
-  const goal = fill >= 1 ? target : whole(target * fill);
+  const goal = fill >= 1 ? target - leaveMicro : whole(target * fill);
   const parts: [string, number][] = [];
   const mine = Math.min(goal, whole(target * ireneShare));
   if (mine > 0) parts.push([irene!.id, mine]);
@@ -874,6 +875,15 @@ const settlementCase = new Map<string, "B" | "C">();
 // (one repaying), one funded and waiting for the desk, one declined while
 // raising and one declined at formalisation, with their investors refunded.
 const PARTIAL = [0.6, 0.15, 0.45, 0.8, 0.3, 0, 0.55, 0.25];
+// One global opportunity is left a few dollars short, for the demo to finish
+// live: the investor signs a small transfer of test USDC, the opportunity
+// reaches its target in front of the audience, and her position — and the
+// asset behind it — is created there and then rather than by this script.
+const FINALE_REMAINDER = 5_000_000;  // USDC 5
+let finale: string | null = null;
+/** The same Q-… code the app shows, so the run can name the one to open. */
+const opportunityCode = (id: string) =>
+  "Q-" + createHash("sha256").update(`opportunity:${id}`).digest("hex").slice(0, 6).toUpperCase();
 for (const [i, o] of toWorkOn.entries()) {
   const funding = async () =>
     (await db.from("qualified_credit_opportunities").select("funding_status").eq("id", o.id).single()).data?.funding_status as string | null;
@@ -912,6 +922,10 @@ for (const [i, o] of toWorkOn.entries()) {
     // Funded, and left for the desk to formalise on camera.
     await fund(o.id, 1, ireneShare, at);
     ready++;
+  } else if (!finale && (await db.from("qualified_credit_opportunities")
+    .select("funding_pool").eq("id", o.id).single()).data?.funding_pool === "global") {
+    await fund(o.id, 1, 0, at, FINALE_REMAINDER);
+    finale = o.id;
   } else if (declined === 0) {
     await fund(o.id, 0.3, ireneShare, at);
     await must("decline", asPartner.rpc("partner_decide", {
@@ -969,6 +983,8 @@ console.log(`desk: ${formalised} formalised, ${ready} funded and ready to formal
 }
 console.log(`capital: ${investor ? "R$ 50,000 committed by the demo investor (simulated)" : "no capital provider account"}`);
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
+console.log(`left USDC ${FINALE_REMAINDER / 1e6} short, for the live investment: ${
+  finale ? opportunityCode(finale) : "none — no global opportunity was still raising"}`);
 console.log(`short history, awaiting manual review: ${inserted.find((e) => e.id === recent)?.display_name ?? "none"} (${COMMUNITIES[1].name})`);
 console.log(`first cycle: ${cycleLoans} loans since July, outcomes measured in September except one left for the demo (${leftToMeasure ?? "none"})`);
 console.log(`programme: ${PROGRAM.name}, ${communities.length} communities, sponsored by ${sponsor?.name ?? "no sponsor: run seed-demo-accounts.mts"}`);

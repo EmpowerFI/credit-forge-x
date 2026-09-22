@@ -34,6 +34,38 @@ The Terms of Use and Privacy Policy (`src/content/legal.ts`, last updated 14 Jul
 4. **Consent records.** In the platform, the entrepreneur's consent is by use: assessment, the P2P desk, investors, and impact figures. Each change is a new record, proven on Solana. The wording is versioned (`consent-v2`, English and Portuguese). Should the policy describe it, or refer to it?
 5. **Where it is documented.** `docs/PRIVACY.md` describes what each role can see and what the chain can never see, and can be given to counsel as the technical basis.
 
+## Tokenized credit positions (added 22 Sep 2026)
+
+The platform prototype now turns each funded investment into a **Token-2022 asset on Solana devnet**: one mint per investment, supply of one, zero decimals, and no metadata at all. The asset id `EF-CREDIT-####` lives only in EmpowerFI's database; on chain the position is its mint address and nothing else. The mint uses the `DefaultAccountState` extension set to *frozen*, so a token account for it cannot be used until EmpowerFI, which holds the freeze authority, thaws it. A holder signs her own transfers in her own wallet; EmpowerFI cannot move her asset, only decide which destinations exist. Today every position but one stands behind a simulated investment, and each is labelled as such.
+
+**This is the part of the prototype most likely to be read as something it is not**, so the questions below matter more than the rest of this document.
+
+1. **Is the token a security?** It represents an economic position in a single loan, is not divisible, is not offered to the public, has no price and cannot be traded on any venue. Counsel should say whether, under CVM Parecer de Orientação 40/2022 and the collective-investment-contract test, a future production version would be a *valor mobiliário*, and what changes the answer — pooling, tranching, fungibility, or a market of any kind. The prototype does none of those and the plan (`PLAN_TOKENIZATION.md`, §7) commits to not doing them.
+2. **What legal instrument would make the token carry the credit right?** Today it carries none: the copy says so in both languages. In production the token would have to be tied to an instrument — assignment of credit (*cessão de crédito*, Civil Code art. 286 ff.), a book-entry note, or a structure under the applicable regulated model. Counsel should say which, and what the borrower's contract must say for an assignment to be valid and enforceable against her.
+3. **Transfer under the SEP model.** If the production model is a SEP under CMN Resolution 5.050, counsel should say whether an investor's credit right may be transferred at all, to whom, with what disclosure, and whether EmpowerFI admitting destination wallets makes it an intermediary in that transfer.
+4. **Secondary market.** Any venue where these positions could be bought and sold needs CVM authorization. The prototype has no exchange, order book, auction, bid, depth or price discovery, and the screen says so. Counsel should say what would cross the line — a list of holders willing to sell? a message between two holders? — so the product knows the boundary before it approaches it.
+5. **The admitted-wallet list.** EmpowerFI decides which wallets may receive a position. Counsel should say what that makes EmpowerFI: a registrar, a transfer agent, a gatekeeper with a duty to the holders, or none of these — and what the list's criteria have to be to avoid arbitrary exclusion.
+6. **Tax.** An assignment of a credit right has IOF, income-tax and, for institutional holders, accounting consequences. Out of scope for the prototype; needed before any real issuance.
+7. **What may be said in public.** The hackathon demo and any recording of it show this feature. The fixed wording below is what the product says; counsel should confirm it is enough, and say what must be added.
+
+### The fixed wording, as shipped
+
+Shown on every screen where the asset appears (`src/app/lib/positions.ts`, both locales; the Portuguese is binding):
+
+> *"Protótipo em Devnet de uma futura estrutura regulada de crédito tokenizado. O ativo não confere direito legal por si, o instrumento jurídico de produção e qualquer mercado secundário exigem validação com assessoria jurídica brasileira e as regras aplicáveis do BCB e da CVM, e transferibilidade não é liquidez."*
+
+And, under the list of positions:
+
+> *"Aqui não há bolsa, livro de ofertas, leilão nem pool, não há lance, profundidade ou formação de preço. A EmpowerFI não é mercado de valores mobiliários, bolsa, securitizadora nem mercado secundário autorizado, e deter este ativo não é titularidade legal de um recebível."*
+
+The word *liquidez* is never used for these assets. A position is labelled **transferível** or **retida**, and wherever *transferível* appears it is followed by "não há comprador, nem preço, nem mercado".
+
+### For the Privacy Policy
+
+- **The wallet address is the owner.** Nothing on chain links it to a person, but a transfer publishes a permanent, public link between two addresses. If a holder's address is known to anyone off chain, her positions and their movements are visible to everyone. The policy should say this plainly rather than rely on "pseudonymous".
+- **What the mint holds.** A supply of one, EmpowerFI's authority keys and the frozen-by-default flag. No name, no amount, no borrower, no community, no rate, no date — and not even the asset id, which stays in the database. `scripts/platform/scan-chain-pii.mts` checks the position mints along with the audit program's accounts.
+- **Erasure.** A mint cannot be burned out of history. Closing a position removes it from the screens and stops it moving; the account and its transactions remain on devnet.
+
 ## Also on the pages
 
 - **Footer.** The legal pages use the institutional footer. It now carries the prototype disclaimer and the not-an-offer line, which counsel may want to review with the documents.

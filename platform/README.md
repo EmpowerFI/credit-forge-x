@@ -45,6 +45,9 @@ Local ports are 553xx so this stack runs beside the mobile app's (543xx).
 npx supabase projects api-keys --project-ref yuxrujoghizcfdmbkqfg --reveal -o json  # take the "secret" key
 PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo-accounts.mts        # accounts + the P2P desk
 PLATFORM_SERVICE_KEY_FILE=<file> npx tsx scripts/platform/seed-demo.mts --yes          # scenario
+# wallets for the tokenised positions; --investor-wallet is the one you will connect in the demo
+PLATFORM_SERVICE_KEY_FILE=<file> OPERATOR_KEYPAIR_FILE=<file> \
+  npx tsx scripts/platform/seed-positions.mts --investor-wallet <address>
 ```
 
 `seed-demo` resets the scenario (`reset_demo_data`) and rebuilds it

@@ -9,7 +9,7 @@ import StatusPill from "../../components/product/StatusPill";
 import { formatNumber, tr } from "../../i18n";
 import {
   fetchTokenizedPositions, POSITION_LIQUIDITY, POSITION_STATE, POSITION_TONE,
-  positionDisclaimer, positionsKey, type TokenizedPosition,
+  positionDisclaimer, positionNotBuilt, positionRoadmap, positionsKey, type TokenizedPosition,
 } from "../../lib/positions";
 import { money } from "../../lib/readiness";
 import { shortAddress } from "../../lib/solana";
@@ -105,6 +105,14 @@ export default function Positions() {
           {(q.data ?? []).map((p) => <Row key={p.id} p={p} />)}
         </div>
       )}
+
+      <footer className="panel space-y-2 p-4 text-xs text-muted-foreground">
+        <p className="font-heading text-sm font-bold text-foreground">
+          {tr({ en: "What is not here", pt: "O que não existe aqui" })}
+        </p>
+        <p>{positionNotBuilt()}</p>
+        <p>{positionRoadmap()}</p>
+      </footer>
     </div>
   );
 }
