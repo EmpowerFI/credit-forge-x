@@ -59,14 +59,42 @@ function Line({ label, value, hint }: { label: string; value: React.ReactNode; h
   );
 }
 
-function Transfer({ positionId, mint, owner, account }: {
+/**
+ * A position she cannot read. Almost always because it has changed hands: the
+ * console shows what she funded and what her wallet holds, and an asset she
+ * has handed on is neither. "Try again" would be a lie, so it does not offer
+ * one — anything else that failed still does.
+ */
+function NoLongerYours({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+  const message = typeof error === "object" && error !== null && "message" in error
+    ? String((error as { message: unknown }).message)
+    : String(error);
+  if (message !== "not_your_position") return <LoadError error={error} onRetry={onRetry} />;
+  return (
+    <div className="panel flex flex-col items-center gap-3 px-6 py-12 text-center">
+      <ArrowRightLeft size={26} className="text-muted-foreground" aria-hidden />
+      <p className="font-heading text-lg font-bold text-foreground">
+        {tr({ en: "Not yours to read", pt: "Não é seu para ler" })}
+      </p>
+      <p className="max-w-md text-sm text-muted-foreground">{tr({
+        en: "This asset is neither one you funded nor one the wallet you connected holds. If you handed it on, the transfer is on Solana and whoever holds it reads it now.",
+        pt: "Este ativo não foi financiado por você nem está na carteira que você conectou. Se você o entregou, a transferência está na Solana e quem o detém agora é quem o lê.",
+      })}</p>
+      <Button asChild className="mt-1">
+        <Link to="/app/investor/assets">{tr({ en: "Your positions", pt: "Suas posições" })}</Link>
+      </Button>
+    </div>
+  );
+}
+
+function Transfer({ positionId, mint, owner, account, onTransferred }: {
   positionId: string;
   mint: string;
   owner: string;
   account: UiWalletAccount;
+  onTransferred: (toWallet: string, signature: string) => void | Promise<void>;
 }) {
   const signer = useWalletAccountTransactionSendingSigner(account, CLUSTER);
-  const queryClient = useQueryClient();
   const wallets = useQuery({ queryKey: eligibleWalletsKey, queryFn: fetchEligibleWallets });
   const [to, setTo] = useState<string>("");
   const [step, setStep] = useState<Step | null>(null);
@@ -106,7 +134,9 @@ function Transfer({ positionId, mint, owner, account }: {
       setStep("record");
       await recordTransfer(positionId, to, sent);
       setStep("done");
-      await queryClient.invalidateQueries({ queryKey: ["platform"] });
+      // What to refresh is the page's decision, not this panel's: handing an
+      // asset on can take the page's own data away from her.
+      await onTransferred(to, sent);
     } catch (err) {
       setFailed(err instanceof Error ? err.message : String(err));
     }
@@ -172,10 +202,27 @@ function Transfer({ positionId, mint, owner, account }: {
 export default function PositionAsset() {
   const { id = "" } = useParams();
   const [account] = useSelectedWalletAccount();
-  const q = useQuery({ queryKey: positionKey(id), queryFn: () => fetchTokenizedPosition(id), enabled: Boolean(id) });
+  const queryClient = useQueryClient();
+  // Set when she hands on an asset she held but did not fund: from that moment
+  // the position is not hers to read, so refetching it would answer 403 and
+  // replace the page she is standing on with an error. The page freezes on
+  // what it already has and says what happened instead.
+  const [handedOn, setHandedOn] = useState<{ to: string; signature: string } | null>(null);
+  const q = useQuery({
+    queryKey: positionKey(id), queryFn: () => fetchTokenizedPosition(id),
+    enabled: Boolean(id) && handedOn === null,
+  });
   const p = q.data;
 
-  if (q.isError) return <LoadError error={q.error} onRetry={() => q.refetch()} />;
+  const onTransferred = async (to: string, signature: string) => {
+    // The investor who funded it goes on reading it; whoever only held it does not.
+    const keepsAccess = p?.relation === "invested";
+    if (!keepsAccess) setHandedOn({ to, signature });
+    await queryClient.invalidateQueries({ queryKey: positionsKey });
+    if (keepsAccess) await queryClient.invalidateQueries({ queryKey: positionKey(id) });
+  };
+
+  if (q.isError) return <NoLongerYours error={q.error} onRetry={() => q.refetch()} />;
   if (!p) return <Skeleton className="h-96 w-full rounded-xl" />;
 
   return (
@@ -196,6 +243,25 @@ export default function PositionAsset() {
         <FlaskConical size={16} className="mt-0.5 shrink-0" aria-hidden />
         <span>{positionDisclaimer()}</span>
       </p>
+
+      {handedOn && (
+        <div className="panel space-y-2 p-4">
+          <p className="flex items-center gap-2 font-heading text-sm font-bold text-foreground">
+            <CircleCheck size={16} className="text-positive" aria-hidden />
+            {tr({ en: "You have handed this asset on", pt: "Você entregou este ativo" })}
+          </p>
+          <p className="text-sm text-muted-foreground">{tr({
+            en: `${shortAddress(handedOn.to)} holds it now, so it is no longer yours to read and what follows is what this page last knew.`,
+            pt: `${shortAddress(handedOn.to)} o detém agora, então ele deixou de ser seu para ler e o que segue é o que esta página soube por último.`,
+          })}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <ExplorerLink tx={handedOn.signature} label={tr({ en: "The transfer on Solana Explorer", pt: "A transferência no Solana Explorer" })} />
+            <Button asChild size="sm" variant="outline" className="gap-2">
+              <Link to="/app/investor/assets"><ArrowLeft size={14} /> {tr({ en: "Your positions", pt: "Suas posições" })}</Link>
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label={tr({ en: "State", pt: "Estado" })}
@@ -278,7 +344,8 @@ export default function PositionAsset() {
 
         <Panel title={tr({ en: "Transfer", pt: "Transferência" })}>
           {p.liquidity === "transferable" && p.mint_address && p.owner_wallet && account ? (
-            <Transfer positionId={p.id} mint={p.mint_address} owner={p.owner_wallet} account={account} />
+            <Transfer positionId={p.id} mint={p.mint_address} owner={p.owner_wallet} account={account}
+              onTransferred={onTransferred} />
           ) : (
             <p className="text-sm text-muted-foreground">
               {!p.mint_address
