@@ -438,3 +438,8 @@ static_files = ["./functions/zcash-watch/wasm/*"]
 # Authorization header. A signed-in person's "check now" is verified inside.
 [functions.fx-quote]
 verify_jwt = false
+
+# Called by pg_cron every minute with the anchoring secret, which the gateway
+# does not know about. Nobody signs in to mint a position: the queue does it.
+[functions.position-mint]
+verify_jwt = false
