@@ -11,7 +11,7 @@ select set_config(
   true
 );
 
-select plan(19);
+select plan(28);
 
 -- ------------------------------------------------------------------ fixtures
 -- Helena's foundation sponsors a programme run by Lia's community (Ana, Bia,
@@ -139,8 +139,21 @@ set local role postgres;
 
 select is((select (v #>> '{scope,participants}')::int from oe), 3, 'the sponsor''s scope is the three members of the community running its programme');
 select is(
-  (select jsonb_array_length(v #> '{cost,by_stage}') from oe), (select count(*)::int from cost_rates),
+  (select count(distinct e ->> 'stage')::int from oe, jsonb_array_elements(v #> '{cost,by_stage}') e),
+  (select count(*)::int from cost_rates),
   'every stage of the rate card has its line, even when nothing happened there');
+-- A check-in the leader types costs the platform its fee and the leader ten
+-- minutes. One fact, two bearers, and the table says which is which.
+select is(
+  (select jsonb_agg(jsonb_build_object('borne_by', e -> 'borne_by', 'staff_minutes', e -> 'staff_minutes')
+                    order by e ->> 'borne_by')
+   from oe, jsonb_array_elements(v #> '{cost,by_stage}') e where e ->> 'stage' = 'checkin'),
+  '[{"borne_by": "community", "staff_minutes": 20}, {"borne_by": "empowerfi", "staff_minutes": 0}]'::jsonb,
+  'the leader''s twenty minutes are hers; the platform keeps only the fee it pays');
+select is(
+  (select sum((value ->> 'cents')::bigint)::bigint from oe, jsonb_each(v #> '{cost,by_bearer}')),
+  (select (v #>> '{cost,total_cents}')::bigint from oe),
+  'the bearers add up to the total, with nothing unattributed');
 select ok((select (v #>> '{cost,total_cents}')::bigint > 0 from oe), 'enrolment, check-ins and engine runs have a cost');
 select is((select v #> '{cost,per_100_disbursed_cents}' from oe), 'null'::jsonb, 'with nothing lent, there is no cost per R$ 100 lent');
 select is(
@@ -155,6 +168,32 @@ select is(
    where k in ('display_name', 'business_name', 'entrepreneur_id', 'revenue_cents')),
   null, 'no name, no business, no person id and no reported figure anywhere');
 select ok((select v::text !~ '(pgTAP Ana|Bolos OE|7777777)' from oe), 'and none of their values');
+
+-- -------------------------------------------- what the tool is sold for
+-- Three participants sit far below the floor, which is what a floor is for: a
+-- programme this small does not pay three seats, it pays the minimum.
+
+select pg_temp.act_as('00000000-0000-0000-0000-000000000aa7');
+select throws_ok($$ select business_model() $$, '42501', 'not_allowed_to_see_costs', 'an investor reads no prices either');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-000000000aa5');
+create temp table bm as select business_model('00000000-0000-0000-0000-000000000ad1') as v;
+create temp table bm_bundled as select business_model('00000000-0000-0000-0000-000000000ad1', 'bundled-2026.09') as v;
+set local role postgres;
+
+select is((select v #>> '{pricing,billing_model}' from bm), 'tool_licence', 'by default the platform is sold as a tool');
+select is((select (v #>> '{monthly,licence_cents}')::bigint from bm), 150000::bigint,
+  'three participants pay the floor, not three seats');
+select is((select (v #>> '{monthly,floor_applied}')::boolean from bm), true,
+  'and the floor is said out loud, not hidden inside the number');
+select is((select (v #>> '{monthly,passthrough_cents}')::bigint from bm), 0::bigint,
+  'under separate contracts the sponsor pays the community, not us');
+select ok((select (v #>> '{monthly,passthrough_cents}')::bigint > 0 from bm_bundled),
+  'in one package her share is a cost of ours, and reads as one');
+select is((select (v #>> '{borne_by,empowerfi_cents}')::bigint from bm),
+  (select (v #>> '{cost,by_bearer,empowerfi,cents}')::bigint from oe),
+  'and the two readings of who bore what agree');
 
 -- ------------------------------------------- one opportunity, for its sponsor
 -- A sponsor reads what one of its own participants' journeys cost, and the
