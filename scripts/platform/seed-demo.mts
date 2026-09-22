@@ -881,6 +881,17 @@ const PARTIAL = [0.6, 0.15, 0.45, 0.8, 0.3, 0, 0.55, 0.25];
 // asset behind it — is created there and then rather than by this script.
 const FINALE_REMAINDER = 5_000_000;  // USDC 5
 let finale: string | null = null;
+/**
+ * Global, because only a global opportunity's target is whole USDC and the
+ * remainder has to be investable, and large enough that what is left is a
+ * last slice rather than the whole raise.
+ */
+async function finaleFits(id: string): Promise<boolean> {
+  const { data } = await db.from("qualified_credit_opportunities")
+    .select("funding_pool, funding_target_micro_usdc").eq("id", id).single();
+  return data?.funding_pool === "global" && (data.funding_target_micro_usdc ?? 0) >= FINALE_REMAINDER * 10;
+}
+
 /** The same Q-… code the app shows, so the run can name the one to open. */
 const opportunityCode = (id: string) =>
   "Q-" + createHash("sha256").update(`opportunity:${id}`).digest("hex").slice(0, 6).toUpperCase();
@@ -922,8 +933,7 @@ for (const [i, o] of toWorkOn.entries()) {
     // Funded, and left for the desk to formalise on camera.
     await fund(o.id, 1, ireneShare, at);
     ready++;
-  } else if (!finale && (await db.from("qualified_credit_opportunities")
-    .select("funding_pool").eq("id", o.id).single()).data?.funding_pool === "global") {
+  } else if (!finale && await finaleFits(o.id)) {
     await fund(o.id, 1, 0, at, FINALE_REMAINDER);
     finale = o.id;
   } else if (declined === 0) {
