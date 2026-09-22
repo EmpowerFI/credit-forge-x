@@ -118,6 +118,16 @@ for (const investorId of [...new Set(positions.map((p) => p.investor_id))]) {
     active: true,
   }, { onConflict: "wallet" }));
 
+  // A wallet that was hers and is not any more keeps its admission — assets
+  // minted to it could never move otherwise — but it stops carrying her name,
+  // or the destination list has two rows reading the same thing.
+  if (held && held !== wallet) {
+    await must("relabel", db.from("eligible_wallets").update({
+      label: `${name.replace(/\s*\(seed\)$/, "")} · carteira anterior`,
+      note: "Superseded wallet; admitted because assets were minted to it",
+    }).eq("wallet", held));
+  }
+
   // Never an asset that already exists: the chain, not this script, says who
   // holds one of those.
   const toClaim = mine.filter((p) => !p.mint_address && p.owner_wallet !== wallet).map((p) => p.asset_no);
