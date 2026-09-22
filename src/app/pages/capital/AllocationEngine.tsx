@@ -18,6 +18,7 @@ import Assumptions from "./engine/Assumptions";
 import { formFor, type PoolForm, policyOf } from "./engine/pools";
 import CreditEngine from "./engine/CreditEngine";
 import Decision from "./engine/Decision";
+import Economics from "./engine/Economics";
 import OpportunityPicker from "./engine/OpportunityPicker";
 import { EngineHeader, Flow } from "./engine/parts";
 import PoolBranch from "./engine/PoolBranch";
@@ -263,6 +264,7 @@ export default function AllocationEngine() {
               {clock.done && (
                 <div className="space-y-4">
                   <Decision o={run.o} steps={run.steps} result={run.result} policies={run.policies} fxMilli={fx} settlement={settlement} />
+                  {!run.plan.rejected && <Economics o={run.o} />}
                   {!run.plan.rejected && <VerifyDecision o={run.o} route={run.result?.pool ?? null} />}
                 </div>
               )}

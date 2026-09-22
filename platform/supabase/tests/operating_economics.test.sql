@@ -11,7 +11,7 @@ select set_config(
   true
 );
 
-select plan(16);
+select plan(19);
 
 -- ------------------------------------------------------------------ fixtures
 -- Helena's foundation sponsors a programme run by Lia's community (Ana, Bia,
@@ -155,6 +155,34 @@ select is(
    where k in ('display_name', 'business_name', 'entrepreneur_id', 'revenue_cents')),
   null, 'no name, no business, no person id and no reported figure anywhere');
 select ok((select v::text !~ '(pgTAP Ana|Bolos OE|7777777)' from oe), 'and none of their values');
+
+-- ------------------------------------------- one opportunity, for its sponsor
+-- A sponsor reads what one of its own participants' journeys cost, and the
+-- programme's own number beside it. Nobody else's, and no leader's.
+
+create temp table ana_opp as select id from qualified_credit_opportunities
+  where entrepreneur_id = '00000000-0000-0000-0000-000000000ae1';
+grant select on ana_opp to authenticated;
+
+select pg_temp.act_as('00000000-0000-0000-0000-000000000aa5');
+select is(
+  (select opportunity_economics((select id from ana_opp))
+          #>> '{programme,program_id}'),
+  '00000000-0000-0000-0000-000000000ad1',
+  'the programme beside her costs is the sponsor''s own, not everyone''s');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-000000000aa6');
+select throws_ok(
+  $$ select opportunity_economics((select id from ana_opp)) $$,
+  '42501', 'not_allowed_to_see_costs', 'another sponsor reads nothing of it');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-000000000aa2');
+select throws_ok(
+  $$ select opportunity_economics((select id from ana_opp)) $$,
+  '42501', 'not_allowed_to_see_costs', 'nor a community leader, who has her community''s own costs');
+set local role postgres;
 
 select * from finish();
 rollback;

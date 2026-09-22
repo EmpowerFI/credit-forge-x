@@ -9,7 +9,7 @@ select set_config(
   true
 );
 
-select plan(69);
+select plan(74);
 
 -- ------------------------------------------------------------------ fixtures
 -- Maria, Bea and Cris are ready and asked; Ana is ready and did not ask.
@@ -530,6 +530,33 @@ select is(
 select is(
   (select rate_version from cost_events where stage = 'enrollment' and entrepreneur_id = '00000000-0000-0000-0000-0000000002e1'),
   'pilot-2026.09', 'while what was recorded before keeps the card that priced it, and its price');
+
+-- ------------------------------------------- what serving this one cost, and the programme's
+-- Two numbers, never one: what was recorded for her, and the funnel-wide cost
+-- per R$ 100 lent. The first always looks cheaper, and that is the point.
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002a1');
+create temp table oe1 as select opportunity_economics(
+  (select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000002e1')) as v;
+
+select ok((select (v #>> '{so_far,total_cents}')::bigint > 0 from oe1),
+  'her journey has a recorded cost, out of cost_events and not out of an estimate');
+select ok(
+  (select (v #>> '{so_far,per_100_of_ticket_cents}')::bigint < (v #>> '{programme,per_100_disbursed_cents}')::bigint from oe1),
+  'and against her own ticket it comes out below the programme''s cost per R$ 100 lent: one path that worked, against the funnel that produced it');
+select is(
+  (select v #>> '{at_allocation,rate_card_version}' from oe1), 'pilot-2026.09',
+  'the snapshot names the card that priced it');
+select ok(
+  (select (v #>> '{at_allocation,cost_total_cents}')::bigint < (v #>> '{so_far,total_cents}')::bigint from oe1),
+  'and it was frozen when the opportunity opened: the servicing recorded after that is not in it');
+set local role postgres;
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000002b1');
+select throws_ok(
+  $$ select opportunity_economics((select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000002e1')) $$,
+  '42501', 'not_allowed_to_see_costs', 'an investor sees an opportunity, never what it cost to make one');
+set local role postgres;
 
 select * from finish();
 rollback;

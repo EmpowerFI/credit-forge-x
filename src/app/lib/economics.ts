@@ -70,6 +70,39 @@ export async function fetchCostSensitivity(programId: string | null): Promise<Co
   return data as unknown as CostSensitivity;
 }
 
+/** What one entrepreneur's recorded journey cost, and the programme's number beside it. */
+export interface JourneyCosts {
+  total_cents: number; staff_minutes: number; events: number;
+  first_at: string | null; last_at: string | null;
+  by_phase: Record<CostPhase, number>;
+  by_stage: { stage: string; phase: CostPhase; events: number; cents: number }[];
+  rate_cards: string[];
+}
+
+export interface OpportunityEconomics {
+  opportunity: { id: string; ticket_cents: number; allocated_at: string | null; allocation_model_version: string | null };
+  /** Recorded for her, enrolment to now — a fact, not an estimate. */
+  so_far: JourneyCosts & { per_100_of_ticket_cents: number | null };
+  /** The same, frozen when the opportunity opened for funding. */
+  at_allocation: {
+    taken_at: string; ticket_cents: number; cost_total_cents: number; staff_minutes: number; events: number;
+    by_phase: Record<CostPhase, number>; by_stage: JourneyCosts["by_stage"];
+    per_100_of_ticket_cents: number | null; rate_card_version: string; allocation_model_version: string | null;
+  } | null;
+  /** Everyone counted, including everyone prepared who never borrowed. */
+  programme: {
+    program_id: string | null;
+    per_100_disbursed_cents: number | null; credit_per_100_disbursed_cents: number | null;
+    participants: number; loans: number; disbursed_cents: number; rate_card: RateCard;
+  };
+}
+
+export async function fetchOpportunityEconomics(opportunityId: string): Promise<OpportunityEconomics> {
+  const { data, error } = await platform.rpc("opportunity_economics", { p_opportunity_id: opportunityId });
+  if (error) throw error;
+  return data as unknown as OpportunityEconomics;
+}
+
 export async function fetchOperatingEconomics(programId: string | null): Promise<OperatingEconomics> {
   const { data, error } = await platform.rpc("operating_economics", programId ? { p_program_id: programId } : {});
   if (error) throw error;
