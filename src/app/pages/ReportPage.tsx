@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Download, ExternalLink, Loader2, Printer, ShieldCheck, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Download, Loader2, Printer, ShieldCheck, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../components/LoadError";
@@ -9,6 +9,7 @@ import { formatDateTime, localized, tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
 import DataLegend from "../components/product/DataLegend";
 import ExplorerLink from "../components/product/ExplorerLink";
+import ZcashTx from "../components/product/ZcashTx";
 import NetworkBadge from "../components/product/NetworkBadge";
 import Panel from "../components/product/Panel";
 import StatTile from "../components/product/StatTile";
@@ -20,7 +21,7 @@ import type { AnchorKind } from "../lib/platform";
 import { checkOnChain, fetchSharedReport, proofIssue, type ChainCheck, type SharedReport } from "../lib/report";
 import { money } from "../lib/readiness";
 import { usdc } from "../lib/solana";
-import { zcashExplorerTx, zec } from "../lib/zcash";
+import { shieldedExplorerNote, zec } from "../lib/zcash";
 
 const CONSENT_CHECK: Record<string, string> = localized({
   assessed_without_consent: { en: "Readiness assessed without consent", pt: "Prontidão avaliada sem consentimento" },
@@ -409,12 +410,11 @@ export default function ReportPage() {
                 })}
               </Row>
             </div>
+            <p className="text-xs text-muted-foreground">{shieldedExplorerNote()}</p>
             <ul className="divide-y divide-border text-sm">
               {s.zcash.receipts.map((r) => (
                 <li key={`${r.txid}-${r.pool}`} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                  <a href={zcashExplorerTx(r.txid)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
-                    {short(r.txid)} <ExternalLink size={11} />
-                  </a>
+                  <ZcashTx txid={r.txid} />
                   <span className="text-xs text-muted-foreground">{r.pool} · {tr({ en: "block", pt: "bloco" })} {r.height}</span>
                   <span className="num">{zec(r.value_zat)}</span>
                   {r.credited && r.credit_signature ? <span className="text-xs">{tr({ en: "credited", pt: "creditado" })} · <ExplorerLink tx={r.credit_signature} /></span>
@@ -428,9 +428,7 @@ export default function ReportPage() {
                 <ul className="divide-y divide-border text-sm">
                   {s.zcash.returns.map((r) => (
                     <li key={r.txid} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                      <a href={zcashExplorerTx(r.txid)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
-                        {short(r.txid)} <ExternalLink size={11} />
-                      </a>
+                      <ZcashTx txid={r.txid} />
                       <span className="text-xs text-muted-foreground">{r.kind === "refund" ? tr({ en: "refund", pt: "reembolso" }) : tr({ en: "instalment share", pt: "parte da parcela" })} · {shortDate(r.sent_at)}</span>
                       <span className="num">{zec(r.amount_zat)} <span className="text-xs text-muted-foreground">({usdc(r.amount_micro_usdc)})</span></span>
                     </li>

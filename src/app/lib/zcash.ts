@@ -76,6 +76,25 @@ export function paymentUri(r: Pick<ZcashRequest, "address" | "amount_zat" | "mem
 export const usdPerZec = (cents: number) =>
   `${getLocale() === "pt" ? "US$ " : "$"}${formatNumber(cents / 100, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+/**
+ * What an explorer can and cannot say about a shielded payment, wherever one
+ * is linked. The link is the first thing a reader clicks and it often answers
+ * "Transaction Not Found": testnet explorers lag, and not every one indexes
+ * the newest shielded pool. Without this sentence beside it, that reads as
+ * the payment having failed, when the payment is exactly what the explorer
+ * was never able to show.
+ */
+export const shieldedExplorerNote = () => tr({
+  en: "A shielded transaction shows no amount, no memo and no addresses on an explorer — that is the point of it. An explorer can only say that a transaction exists, and testnet explorers often lag or do not index the newest shielded pool, so this link may find nothing. What proves the payment is the treasury's viewing key, which the audit console hands over with the commands to read the same notes without trusting EmpowerFI.",
+  pt: "Uma transação blindada não mostra valor, memo nem endereços em um explorador — é exatamente esse o ponto dela. Um explorador só consegue dizer que uma transação existe, e exploradores de testnet costumam atrasar ou não indexar o pool blindado mais novo, então este link pode não achar nada. Quem prova o pagamento é a chave de visualização do tesouro, que o console de auditoria entrega com os comandos para ler as mesmas notas sem confiar na EmpowerFI.",
+});
+
+/** The same caution, short enough to sit on the link itself. */
+export const explorerCaveat = () => tr({
+  en: "An explorer can only say a transaction exists — never the amount, the memo or the addresses. Testnet explorers often lag, so it may find nothing.",
+  pt: "Um explorador só consegue dizer que a transação existe — nunca o valor, o memo ou os endereços. Exploradores de testnet costumam atrasar, então pode não achar nada.",
+});
+
 /** A shielded transaction on a Zcash explorer: that it exists and when — never amounts, memos or addresses. */
 export const zcashExplorerTx = (txid: string, network: "test" | "main" = "test") =>
   network === "test" ? `https://testnet.zcashexplorer.app/transactions/${txid}` : `https://mainnet.zcashexplorer.app/transactions/${txid}`;

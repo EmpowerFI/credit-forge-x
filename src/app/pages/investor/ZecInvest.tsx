@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import QrCode from "../../components/QrCode";
 import ExplorerLink from "../../components/product/ExplorerLink";
+import ZcashTx from "../../components/product/ZcashTx";
 import StatusPill from "../../components/product/StatusPill";
 import { describeError } from "../../lib/errors";
 import type { MarketRow } from "../../lib/investor";
 import { usdc } from "../../lib/solana";
 import {
   checkZcashNow, createZcashRequest, fetchZcashRequest, isShieldedTestAddress, LIVE, paymentUri, POOL_LABEL, setReturnAddress,
-  STATUS_LABEL, usdPerZec, zcashExplorerTx, ZCASH_FAUCET, zec, type ZcashRequest,
+  shieldedExplorerNote, STATUS_LABEL, usdPerZec, ZCASH_FAUCET, zec, type ZcashRequest,
 } from "../../lib/zcash";
 import { formatNumber, tr } from "../../i18n";
 
@@ -91,9 +92,8 @@ function Progress({ r }: { r: ZcashRequest }) {
           <>
             {tr({ en: "Block", pt: "Bloco" })} <span className="num">{formatNumber(r.mined_height)}</span> ·{" "}
             <span className="num">{Math.min(r.confirmations ?? 0, r.confirmations_needed)} {tr({ en: "of", pt: "de" })} {r.confirmations_needed}</span> {tr({ en: "confirmations", pt: "confirmações" })} ·{" "}
-            <a href={zcashExplorerTx(r.txid!, r.network)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 text-info hover:underline">
-              {tr({ en: "on the explorer", pt: "no explorer" })} <ExternalLink size={10} />
-            </a>
+            <ZcashTx txid={r.txid!} network={r.network} />
+            <span className="mt-1 block text-[11px] text-muted-foreground">{shieldedExplorerNote()}</span>
           </>
         )}
       </Step>
