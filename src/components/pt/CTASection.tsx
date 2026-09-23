@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTACT_EMAIL } from "@/config/links";
-import PlayStoreBadge from "@/components/PlayStoreBadge";
+import StoreBadges from "@/components/StoreBadges";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Informe seu nome").max(100, "Máximo de 100 caracteres"),
@@ -80,7 +80,7 @@ const CTASection = () => {
             ninguém enxerga. É gratuito.
           </p>
           <div className="flex justify-center">
-            <PlayStoreBadge eyebrow="Baixe agora no" justLaunched="Disponível no Brasil" />
+            <StoreBadges eyebrow="Baixe agora no" justLaunched="Disponível no Brasil" />
           </div>
         </div>
 

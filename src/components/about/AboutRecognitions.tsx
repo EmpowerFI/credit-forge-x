@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import SupportLogo from "@/components/SupportLogo";
+import StoreLinks from "@/components/StoreLinks";
 import type { AboutContent } from "@/content/about";
 
 const AboutRecognitions = ({ recognitions }: { recognitions: AboutContent["recognitions"] }) => (
@@ -15,13 +16,14 @@ const AboutRecognitions = ({ recognitions }: { recognitions: AboutContent["recog
       </div>
 
       <div className="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        {recognitions.items.map(({ icon: Icon, title, desc, href, linkLabel, logo }) => (
+        {recognitions.items.map(({ icon: Icon, title, desc, href, linkLabel, logo, stores }) => (
           <div key={title} className="glass rounded-2xl p-8 glow-border flex flex-col">
             <div className="w-12 h-12 rounded-lg gradient-primary flex items-center justify-center mb-4">
               <Icon className="text-primary-foreground" size={24} />
             </div>
             <h3 className="text-lg font-heading font-bold text-foreground mb-2">{title}</h3>
             <p className="text-muted-foreground leading-relaxed flex-1">{desc}</p>
+            {stores && <StoreLinks className="mt-4" />}
             {href && (
               <a
                 href={href}

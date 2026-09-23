@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CONTACT_EMAIL, PLAY_STORE_URL, SEBRAE_LOGO_SRC } from "@/config/links";
+import { CONTACT_EMAIL, SEBRAE_LOGO_SRC } from "@/config/links";
 import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
+import StoreLinks from "@/components/StoreLinks";
 import { HOME, type Lang, PATHS } from "./copy";
 
 type Interest = "sponsor" | "capital" | "community" | "other";
@@ -115,7 +116,8 @@ const HomeTraction = ({ lang }: { lang: Lang }) => {
     setInterest(id);
     document.getElementById("contact")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const links = [PLAY_STORE_URL, `/app?lang=${lang}`];
+  // The app card carries both stores; the rest carry one link each.
+  const links = [null, `/app?lang=${lang}`];
 
   return (
     <section id="traction" className="section-padding gradient-subtle">
@@ -130,10 +132,9 @@ const HomeTraction = ({ lang }: { lang: Lang }) => {
                 <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg gradient-primary"><Icon size={20} className="text-primary-foreground" aria-hidden /></span>
                 <h3 className="mb-2 font-heading text-base font-bold text-foreground">{item.title}</h3>
                 <p className="flex-1 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
+                {i === 0 && <StoreLinks />}
                 {href && "link" in item && item.link && (
-                  i === 0
-                    ? <a href={href} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-foreground">{item.link} <ExternalLink size={14} /></a>
-                    : <Link to={href} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-foreground">{item.link} <ArrowRight size={14} /></Link>
+                  <Link to={href} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-foreground">{item.link} <ArrowRight size={14} /></Link>
                 )}
                 {i === 2 && <SupportLogo src={SEBRAE_LOGO_SRC} alt="Sebrae" label={lang === "pt" ? "Apoio institucional" : "Institutional support"} />}
               </div>
@@ -165,11 +166,18 @@ const HomeTraction = ({ lang }: { lang: Lang }) => {
                 : <button key={c.id} type="button" onClick={() => choose(c.id as Interest)} className={style}>{body}</button>;
             })}
           </div>
-          <p className="text-center text-sm text-muted-foreground">
-            {lang === "pt"
-              ? <Link to={PATHS.pt.entrepreneurs} className="font-medium text-accent hover:text-foreground">{t.entrepreneur} →</Link>
-              : <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-accent hover:text-foreground">{t.entrepreneur} →</a>}
-          </p>
+          {lang === "pt" ? (
+            <p className="text-center text-sm text-muted-foreground">
+              <Link to={PATHS.pt.entrepreneurs} className="font-medium text-accent hover:text-foreground">{t.entrepreneur} →</Link>
+            </p>
+          ) : (
+            /* No English page for her yet, so the sentence names both stores and
+               both are linked — one of them would be choosing her phone for her. */
+            <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
+              <p className="text-center">{t.entrepreneur}</p>
+              <StoreLinks className="!mt-0 justify-center" />
+            </div>
+          )}
         </div>
 
         <Contact lang={lang} interest={interest} setInterest={setInterest} />

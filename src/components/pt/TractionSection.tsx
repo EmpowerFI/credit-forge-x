@@ -1,5 +1,6 @@
 import { Award, Blocks, Building2, ExternalLink, Smartphone } from "lucide-react";
-import { PLAY_STORE_URL, SEBRAE_LOGO_SRC } from "@/config/links";
+import { SEBRAE_LOGO_SRC } from "@/config/links";
+import StoreLinks from "@/components/StoreLinks";
 import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
 
@@ -15,14 +16,15 @@ const items: {
   desc: string;
   href?: string;
   linkLabel?: string;
+  /** The app card links to both stores instead of one. */
+  stores?: boolean;
   logo?: TractionLogo;
 }[] = [
   {
     icon: Smartphone,
     title: "O app está no ar",
-    desc: "Publicado na Google Play e funcionando. Não é demonstração: dá para baixar e usar hoje.",
-    href: PLAY_STORE_URL,
-    linkLabel: "Ver na Google Play",
+    desc: "Publicado na Google Play e na App Store, e funcionando. Não é demonstração: dá para baixar e usar hoje.",
+    stores: true,
   },
   {
     icon: Award,
@@ -55,13 +57,14 @@ const TractionSection = () => (
       />
 
       <div className="grid gap-6 md:grid-cols-2">
-        {items.map(({ icon: Icon, title, desc, href, linkLabel, logo }) => (
+        {items.map(({ icon: Icon, title, desc, href, linkLabel, logo, stores }) => (
           <div key={title} className="flex flex-col rounded-2xl p-8 glass glow-border">
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg gradient-primary">
               <Icon className="text-primary-foreground" size={24} />
             </div>
             <h3 className="mb-2 font-heading text-lg font-bold text-foreground">{title}</h3>
             <p className="flex-1 leading-relaxed text-muted-foreground">{desc}</p>
+            {stores && <StoreLinks className="mt-4" />}
             {href && (
               <a
                 href={href}

@@ -22,7 +22,7 @@ const EmpreendedorasPt = () => (
   <div className="min-h-screen bg-background">
     <Seo
       title="EmpowerFI para empreendedoras — organize o negócio e prepare-se para o crédito"
-      description="Organize o negócio, construa seu histórico e se prepare para o crédito produtivo. Você recebe e paga em reais, por Pix, e cada etapa é comprovada na Solana sem dados pessoais. App gratuito no Google Play."
+      description="Organize o negócio, construa seu histórico e se prepare para o crédito produtivo. Você recebe e paga em reais, por Pix, e cada etapa é comprovada na Solana sem dados pessoais. App gratuito no Google Play e na App Store."
       path="/pt/empreendedoras"
       lang="pt-BR"
       jsonLd={jsonLd}

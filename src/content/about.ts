@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import advisorFernando from "@/assets/advisor-fernando-blanco.webp";
 import advisorRoberta from "@/assets/advisor-roberta-stock.webp";
-import { PLAY_STORE_URL, SEBRAE_LOGO_SRC } from "@/config/links";
+import { SEBRAE_LOGO_SRC } from "@/config/links";
 
 const ROBERTA_LINKEDIN_URL = "https://www.linkedin.com/in/robertastock/";
 const ROBERTA_WEBSITE = { href: "https://www.triunna.com.br/", label: "triunna.com.br" };
@@ -139,6 +139,8 @@ export interface AboutContent {
       desc: string;
       href?: string;
       linkLabel?: string;
+      /** The app card links to both stores instead of a single one. */
+      stores?: boolean;
       /** Third-party mark evidencing institutional backing, from /public. */
       logo?: { src: string; alt: string; label: string };
     }[];
@@ -419,10 +421,9 @@ export const aboutPt: AboutContent = {
     items: [
       {
         icon: Smartphone,
-        title: "Aplicativo disponível na Google Play",
-        desc: "O aplicativo está publicado e em funcionamento. Não é demonstração: dá para baixar e usar hoje.",
-        href: PLAY_STORE_URL,
-        linkLabel: "Ver no Google Play",
+        title: "Aplicativo disponível na Google Play e na App Store",
+        desc: "O aplicativo está publicado e em funcionamento no Android e no iPhone. Não é demonstração: dá para baixar e usar hoje.",
+        stores: true,
       },
       {
         icon: BarChart3,
@@ -465,7 +466,7 @@ export const aboutPt: AboutContent = {
       },
       {
         q: "O aplicativo já está disponível?",
-        a: "Sim. O aplicativo EmpowerFI está publicado e disponível na Google Play para Android. A versão para iOS está em desenvolvimento.",
+        a: "Sim. O aplicativo EmpowerFI está publicado e disponível na Google Play, para Android, e na App Store, para iPhone e iPad. É gratuito nas duas.",
       },
       {
         q: "Quem financia os empréstimos?",
@@ -755,10 +756,9 @@ export const aboutEn: AboutContent = {
     items: [
       {
         icon: Smartphone,
-        title: "App available on Google Play",
-        desc: "The app is published and running. It is not a demo: you can download and use it today.",
-        href: PLAY_STORE_URL,
-        linkLabel: "View on Google Play",
+        title: "App available on Google Play and the App Store",
+        desc: "The app is published and running on Android and iPhone. It is not a demo: you can download and use it today.",
+        stores: true,
       },
       {
         icon: BarChart3,
@@ -801,7 +801,7 @@ export const aboutEn: AboutContent = {
       },
       {
         q: "Is the app already available?",
-        a: "Yes. The EmpowerFI app is published and available on Google Play for Android. The iOS version is in development.",
+        a: "Yes. The EmpowerFI app is published and available on Google Play, for Android, and on the App Store, for iPhone and iPad. It is free on both.",
       },
       {
         q: "Who funds the loans?",
