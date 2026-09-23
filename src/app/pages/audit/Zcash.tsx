@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { Check, Copy, ExternalLink, Eye, EyeOff, KeyRound } from "lucide-react";
+import { Check, Copy, Eye, EyeOff, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
 import ExplorerLink from "../../components/product/ExplorerLink";
 import Panel from "../../components/product/Panel";
+import ZcashTx from "../../components/product/ZcashTx";
 import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
 import { formatNumber, tr } from "../../i18n";
 import { usdc } from "../../lib/solana";
-import { POOL_LABEL, RETURN_LABEL, STATUS_LABEL, usdPerZec, zcashExplorerTx, zec } from "../../lib/zcash";
+import { POOL_LABEL, RETURN_LABEL, shieldedExplorerNote, STATUS_LABEL, usdPerZec, zec } from "../../lib/zcash";
 import { useZcashAudit, useZcashReturnsAudit } from "./queries";
 
 const ago = (iso: string | null) => {
@@ -163,10 +164,7 @@ zcash-devtool wallet -w ./audit-view list-tx`;
                 <tr key={`${r.txid}:${r.pool}:${r.index}`}>
                   <td className="num py-2.5 pr-4 text-muted-foreground">{formatNumber(r.height)}</td>
                   <td className="py-2.5 pr-4">
-                    <a href={zcashExplorerTx(r.txid, d.network)} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
-                      {r.txid.slice(0, 4)}…{r.txid.slice(-4)} <ExternalLink size={11} aria-hidden />
-                    </a>
+                    <ZcashTx txid={r.txid} network={d.network} />
                   </td>
                   <td className="py-2.5 pr-4 text-xs text-muted-foreground">{POOL_LABEL[r.pool]}</td>
                   <td className="num py-2.5 pr-4 text-right text-foreground">{zec(r.value_zat, d.network)}</td>
@@ -186,6 +184,7 @@ zcash-devtool wallet -w ./audit-view list-tx`;
               {d.receipts.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">{tr({ en: "Nothing received yet.", pt: "Nada recebido ainda." })}</td></tr>}
             </tbody>
           </table>
+          <p className="pt-3 text-xs text-muted-foreground">{shieldedExplorerNote()}</p>
         </div>
       </Panel>
 
@@ -232,9 +231,7 @@ function ReturnsPaid({ network }: { network: "test" | "main" }) {
                   </span>
                   <span className="flex items-center gap-2">
                     {x.txid && (
-                      <a href={zcashExplorerTx(x.txid, network)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
-                        {x.txid.slice(0, 4)}…{x.txid.slice(-4)} <ExternalLink size={11} aria-hidden />
-                      </a>
+                      <ZcashTx txid={x.txid} network={network} />
                     )}
                     <StatusPill tone={RETURN_LABEL[x.status].tone}>{RETURN_LABEL[x.status].label}</StatusPill>
                   </span>

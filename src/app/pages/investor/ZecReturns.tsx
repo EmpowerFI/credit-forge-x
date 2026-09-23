@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label";
 import LoadError from "../../components/LoadError";
 import Panel from "../../components/product/Panel";
 import StatusPill from "../../components/product/StatusPill";
+import ZcashTx from "../../components/product/ZcashTx";
 import { describeError } from "../../lib/errors";
 import { usdc } from "../../lib/solana";
 import {
-  fetchZecReturns, isShieldedTestAddress, RETURN_LABEL, setReturnAddress, usdPerZec, zcashExplorerTx, zec, zecReturnsKey,
+  fetchZecReturns, isShieldedTestAddress, RETURN_LABEL, setReturnAddress, usdPerZec, zec, zecReturnsKey,
 } from "../../lib/zcash";
 import { tr } from "../../i18n";
 
@@ -99,9 +100,7 @@ export default function ZecReturns({ investmentId, owed, readOnly }: { investmen
                   </span>
                   <span className="flex items-center gap-2">
                     {r.txid && (
-                      <a href={zcashExplorerTx(r.txid)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
-                        {r.txid.slice(0, 4)}…{r.txid.slice(-4)} <ExternalLink size={11} aria-hidden />
-                      </a>
+                      <ZcashTx txid={r.txid} />
                     )}
                     <StatusPill tone={RETURN_LABEL[r.status].tone}>{RETURN_LABEL[r.status].label}</StatusPill>
                   </span>

@@ -32,6 +32,16 @@ The bar at the top of the app numbers the three stories: 1 Impact Intelligence, 
 
 **Optional, after step 7 (40 s):** **Operating economics** on the engine page. "Can productive credit become cheaper to operate without becoming weaker credit? We don't claim the answer. We measure it: cost to serve beside eligibility discipline, time to decision beside affordability checks, follow-up, and portfolio quality. The rates are pilot assumptions and the data is simulated."
 
+**Optional, after step 9 (40 s) — the Zcash track:** the same investment, paid privately, and then handed to the auditor to check without us.
+
+*The payment.* In the invest panel choose **ZEC blindado** instead of **USDC da Devnet**. No wallet is connected and none is needed. The panel answers with EmpowerFI's shielded address, the amount in ZEC at the quote it just locked, a memo carrying a random reference, and a QR. Pay it from any Zcash wallet. The four steps then move on their own: *paid* → *seen in a Zcash block* → *converted to USDC and credited to the vault* → *allocated and proven on Solana*. "She has no Solana wallet, and she does not need one. She pays a shielded address on Zcash. The amount, the memo, the sender and the recipient are all encrypted — and what reaches Solana is the operator crediting the vault, so no investor wallet is ever linked to that inflow."
+
+*The check.* **Operations → Audit → Zcash**. The treasury's **viewing key**, with **Reveal** and **Copy**, and under it the three commands that import it into `zcash-devtool` and list the same payments. "We can read our own treasury because we hold its viewing key. So can an auditor — here it is, and here is how to list these same notes without trusting anything on this screen. It reads everything and can spend nothing. That is selective disclosure, not 'trust our dashboard'."
+
+*If a judge clicks the explorer link and lands on "Transaction Not Found",* that is the demonstration, not a fault, and the screen says so beside the link: a shielded transaction shows no amount, no memo and no addresses, an explorer can only say one exists, and testnet explorers often lag or skip the newest shielded pool. The block height beside it came from our own watcher, which reads blocks and never the mempool — a note it recorded is a note that was in a block.
+
+*Timing.* Testnet block intervals are irregular: a payment has taken 3 minutes and it can take longer. Pay ten minutes before recording and show the finished state, or pay live and cut to the audit console while it confirms. Do not stand in front of the four steps waiting.
+
 **Optional prelude:** `maria@demo.empowerfi.io` submits her September check-in and asks for capital, and it becomes a qualified opportunity (Operations → My business).
 
 ## Before recording
@@ -43,5 +53,6 @@ The bar at the top of the app numbers the three stories: 1 Impact Intelligence, 
   - Proofs take about half an hour to confirm on devnet after a reseed.
 - **Settlement cases** are seeded on global loans and appear in the demo investor's portfolio: two of the direct route, one of the stablecoin winning, one of the stablecoin unavailable. The seed prints them at the end of a run.
 - **Case codes** (Q-…) change with every reseed. The engine's picker searches by code, purpose and amount.
+- **For the Zcash optional:** a Zcash **testnet** wallet with a little TAZ (the faucet gives 0.1 TAZ a day), and the treasury's viewing key already set on the project. Check `Audit → Zcash` reads *up to* a block within a few of the chain tip before you record — if the watcher is behind, payments will not appear.
 - **Wallet:** have a devnet wallet with test SOL and at least USDC 5 ready for step 9, and pass its address to `seed-positions.mts`. The invest panel links to the faucets.
 - **Check the assets before recording:** open *Positions* as the demo investor. Every asset should show a mint address; if one says "ainda não criado", the mint cron has not reached it yet or the operator wallet is dry — the same wallet the anchor queue uses.

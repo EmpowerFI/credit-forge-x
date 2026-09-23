@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Check, Circle, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Circle, Loader2 } from "lucide-react";
 import LoadError from "../../components/LoadError";
 import { DataTag } from "../../components/product/DataLegend";
 import ExplorerLink from "../../components/product/ExplorerLink";
+import ZcashTx from "../../components/product/ZcashTx";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
 import PoolPill from "../../components/product/PoolPill";
@@ -16,7 +17,7 @@ import { type FundingStatus, type Grade, positionState, RISK, title } from "../.
 import { platform } from "../../lib/platform";
 import { money, type CreditPurpose } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
-import { fetchZecReturns, POOL_LABEL, usdPerZec, zcashExplorerTx, zec, type ZecReturn, zecReturnsKey } from "../../lib/zcash";
+import { fetchZecReturns, POOL_LABEL, usdPerZec, zec, type ZecReturn, zecReturnsKey } from "../../lib/zcash";
 import { useAuth } from "../../auth/useAuth";
 import ZecReturns from "./ZecReturns";
 import { type PayoutStatus, reaisAtRamp, reaisRate, REALITY, type Reality } from "../../lib/settlement";
@@ -49,9 +50,9 @@ function PayoutCell({ payout, simulated, zecReturn }: {
   if (!payout) return <span className="text-xs text-muted-foreground">—</span>;
   if (zecReturn?.status === "sent" && zecReturn.txid) {
     return (
-      <a href={zcashExplorerTx(zecReturn.txid)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
-        ZEC {zecReturn.txid.slice(0, 4)}…{zecReturn.txid.slice(-4)} <ExternalLink size={11} aria-hidden />
-      </a>
+      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+        ZEC <ZcashTx txid={zecReturn.txid} />
+      </span>
     );
   }
   if (zecReturn?.status === "failed") return <span className="text-xs text-alert">{tr({ en: "ZEC send needs a look", pt: "envio em ZEC precisa de atenção" })}</span>;
@@ -274,10 +275,7 @@ export default function Position() {
                     <span className="num text-foreground">{zec(zcash.received_zat ?? zcash.amount_zat)}</span>
                     {zcash.pool && <span className="text-xs text-muted-foreground"> · {POOL_LABEL[zcash.pool]}</span>}
                     {zcash.txid && (
-                      <a href={zcashExplorerTx(zcash.txid)} target="_blank" rel="noopener noreferrer"
-                        className="ml-2 inline-flex items-center gap-1 font-mono text-xs text-info hover:underline">
-                        {zcash.txid.slice(0, 4)}…{zcash.txid.slice(-4)} <ExternalLink size={11} aria-hidden />
-                      </a>
+                      <span className="ml-2"><ZcashTx txid={zcash.txid} /></span>
                     )}
                   </dd>
                 </div>
