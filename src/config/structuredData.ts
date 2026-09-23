@@ -15,6 +15,7 @@ import {
   SITE_URL,
 } from "@/config/company";
 import {
+  APP_STORE_URL,
   CONTACT_EMAIL,
   INSTAGRAM_URL,
   LINKEDIN_URL,
@@ -63,9 +64,10 @@ export const softwareApplicationSchema = (): Record<string, unknown> => ({
   "@id": `${SITE_URL}/#app`,
   name: "EmpowerFI",
   applicationCategory: "FinanceApplication",
-  operatingSystem: "Android",
+  operatingSystem: "Android, iOS",
   url: PLAY_STORE_URL,
   installUrl: PLAY_STORE_URL,
+  sameAs: [PLAY_STORE_URL, APP_STORE_URL],
   inLanguage: "pt-BR",
   description:
     "Marketplace que conecta microempreendedoras a novos clientes e constrói o histórico financeiro que abre acesso a crédito justo.",

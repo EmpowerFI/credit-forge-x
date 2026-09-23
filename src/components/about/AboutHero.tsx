@@ -1,6 +1,6 @@
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PLAY_STORE_URL } from "@/config/links";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/config/links";
 import type { AboutContent } from "@/content/about";
 
 const AboutHero = ({ hero }: { hero: AboutContent["hero"] }) => (
@@ -32,11 +32,15 @@ const AboutHero = ({ hero }: { hero: AboutContent["hero"] }) => (
               {hero.primaryCta} <ArrowRight size={18} />
             </a>
           </Button>
-          <Button asChild size="lg" variant="outline" className="border-primary/40 text-foreground hover:bg-primary/10 gap-2">
-            <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">
-              {hero.secondaryCta} <ExternalLink size={16} />
-            </a>
-          </Button>
+          {/* Two buttons, not one: a single "see the app" had to pick a store,
+              and it was picking Android for everyone who read it. */}
+          {[["Google Play", PLAY_STORE_URL], ["App Store", APP_STORE_URL]].map(([label, href]) => (
+            <Button key={label} asChild size="lg" variant="outline" className="border-primary/40 text-foreground hover:bg-primary/10 gap-2">
+              <a href={href} target="_blank" rel="noopener noreferrer">
+                {hero.secondaryCta} · {label} <ExternalLink size={16} />
+              </a>
+            </Button>
+          ))}
         </div>
       </div>
     </div>

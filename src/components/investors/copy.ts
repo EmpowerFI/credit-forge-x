@@ -173,7 +173,7 @@ const en: InvestorCopy = {
         {
           when: "Today",
           title: "A working prototype on Solana devnet",
-          desc: "The app runs the whole P2P model as a prototype: both pools, the engine, the desk and repayment by Pix. Investments, returns, FX and Pix are simulated; blockchain transactions use test assets. The Marketplace app is live on Google Play.",
+          desc: "The app runs the whole P2P model as a prototype: both pools, the engine, the desk and repayment by Pix. Investments, returns, FX and Pix are simulated; blockchain transactions use test assets. The Marketplace app is live on Google Play and the App Store.",
         },
         {
           when: "The pilot",
@@ -310,7 +310,7 @@ const pt: InvestorCopy = {
         {
           when: "Hoje",
           title: "Um protótipo funcionando na Solana devnet",
-          desc: "O app roda todo o modelo P2P como protótipo: os dois pools, o motor, a mesa e o pagamento por Pix. Investimentos, retornos, câmbio e Pix são simulados; as transações em blockchain usam ativos de teste. O app Marketplace está no ar no Google Play.",
+          desc: "O app roda todo o modelo P2P como protótipo: os dois pools, o motor, a mesa e o pagamento por Pix. Investimentos, retornos, câmbio e Pix são simulados; as transações em blockchain usam ativos de teste. O app Marketplace está no ar no Google Play e na App Store.",
         },
         {
           when: "O piloto",

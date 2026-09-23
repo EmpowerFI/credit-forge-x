@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import PlayStoreBadge from "@/components/PlayStoreBadge";
+import StoreBadges from "@/components/StoreBadges";
 
 const HeroSection = () => (
   <section className="relative flex min-h-screen items-center overflow-hidden gradient-subtle">
@@ -27,7 +27,7 @@ const HeroSection = () => (
         </p>
 
         <div className="space-y-5 pt-2 opacity-0 animate-fade-in-delay-3">
-          <PlayStoreBadge eyebrow="Baixe agora no" justLaunched="Disponível no Brasil" />
+          <StoreBadges eyebrow="Baixe agora no" justLaunched="Disponível no Brasil" />
 
           <div className="flex flex-wrap items-center gap-4">
             <Button

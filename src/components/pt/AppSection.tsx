@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import PlayStoreBadge from "@/components/PlayStoreBadge";
+import StoreBadges from "@/components/StoreBadges";
 import entrepreneursPhoto from "@/assets/entrepreneurs.webp";
 
 const features = [
@@ -19,8 +19,8 @@ const AppSection = () => (
             Já está no ar, e é <span className="text-gradient">de graça.</span>
           </h2>
           <p className="text-lg leading-relaxed text-muted-foreground">
-            O app da EmpowerFI está publicado na Google Play. Baixar e se cadastrar é
-            gratuito, e não cobramos comissão sobre o que você vende.
+            O app da EmpowerFI está publicado na Google Play e na App Store. Baixar e se
+            cadastrar é gratuito, e não cobramos comissão sobre o que você vende.
           </p>
 
           <ul className="space-y-3">
@@ -35,7 +35,7 @@ const AppSection = () => (
           </ul>
 
           <div className="pt-2">
-            <PlayStoreBadge eyebrow="Baixe agora no" justLaunched="Disponível no Brasil" />
+            <StoreBadges eyebrow="Baixe agora no" justLaunched="Disponível no Brasil" />
           </div>
         </div>
 

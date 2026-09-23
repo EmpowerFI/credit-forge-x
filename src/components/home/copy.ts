@@ -136,7 +136,7 @@ const en = {
     title: "What is real",
     accent: "today.",
     items: [
-      { title: "The app is live in Brazil", desc: "Published on Google Play: where the entrepreneur runs her business and the evidence begins.", link: "View on Google Play" },
+      { title: "The app is live in Brazil", desc: "Published on Google Play and the App Store: where the entrepreneur runs her business and the evidence begins." },
       { title: "The platform runs end to end on devnet", desc: "Impact Intelligence, the Credit & Capital Engine and the Investor Console. Investments, returns, FX and Pix are simulated; blockchain transactions use test assets.", link: "Open App - Devnet" },
       { title: "Built and refined with Sebrae", desc: "Ginga Prototipa produced the working prototype; PIER refines the business model with specialist consulting." },
       { title: "An operating company in Brazil", desc: "Incorporated in São Paulo, with its team, product and first market in Brazil." },
@@ -149,7 +149,7 @@ const en = {
       { id: "capital", label: "I deploy capital", desc: "Qualified opportunities matched to your mandate and risk appetite." },
       { id: "community", label: "I support entrepreneurs", desc: "Run programs with the tools that turn execution into evidence." },
     ],
-    entrepreneur: "Running a business yourself? The app is free on Google Play.",
+    entrepreneur: "Running a business yourself? The app is free on Google Play and the App Store.",
   },
   contact: {
     title: "Partner with",
@@ -304,7 +304,7 @@ const pt: typeof en = {
     title: "O que já é",
     accent: "real hoje.",
     items: [
-      { title: "O app está no ar no Brasil", desc: "Publicado no Google Play: onde a empreendedora organiza o negócio e a evidência começa.", link: "Ver no Google Play" },
+      { title: "O app está no ar no Brasil", desc: "Publicado no Google Play e na App Store: onde a empreendedora organiza o negócio e a evidência começa." },
       { title: "A plataforma roda de ponta a ponta na devnet", desc: "Inteligência de Impacto, Motor de Crédito e Capital e Console do Investidor. Investimentos, retornos, câmbio e Pix são simulados; as transações em blockchain usam ativos de teste.", link: "Abrir App - Devnet" },
       { title: "Construída e refinada com o Sebrae", desc: "O Ginga Prototipa gerou o protótipo funcional; o PIER refina o modelo de negócio com consultoria especializada." },
       { title: "Uma empresa brasileira em operação", desc: "Constituída em São Paulo, com equipe, produto e primeiro mercado no Brasil." },
