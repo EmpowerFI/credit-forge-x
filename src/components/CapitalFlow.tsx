@@ -29,7 +29,7 @@ interface CapitalFlowProps {
  */
 const CapitalFlow = ({ steps, loopLabel, caption }: CapitalFlowProps) => (
   <figure className="space-y-4">
-    <ol className="flex flex-col items-stretch justify-center gap-2 md:flex-row md:flex-wrap md:items-center md:gap-3">
+    <ol className="flex flex-col items-stretch gap-2 md:flex-row md:flex-wrap md:items-center md:gap-3">
       {/* Keyed by position: a cycle legitimately repeats a label (USDC out,
           USDC back), and these lists are static. */}
       {steps.map(({ label, sub, emphasis }, i) => (
@@ -44,29 +44,20 @@ const CapitalFlow = ({ steps, loopLabel, caption }: CapitalFlowProps) => (
             </span>
           )}
 
+          {/* The node the chain is for — her business — is the one that is
+              filled; every other node is an outline, so the eye lands on the
+              end of the chain rather than on the middle of it. */}
           <div
             className={[
-              "rounded-xl px-4 py-3 text-center md:px-5",
-              emphasis ? "gradient-primary shadow-glow" : "glass glow-border",
+              "flex min-h-[3.25rem] flex-col justify-center rounded-sm px-4 py-2.5 text-center md:px-5",
+              emphasis ? "border-[1.5px] border-gold bg-gold/14" : "border border-foreground/25",
             ].join(" ")}
           >
-            <span
-              className={[
-                "block font-heading text-sm font-semibold tracking-tight",
-                emphasis ? "text-primary-foreground" : "text-foreground",
-              ].join(" ")}
-            >
+            <span className="block font-heading text-[1.0625rem] leading-tight text-foreground">
               {label}
             </span>
             {sub && (
-              <span
-                className={[
-                  "mt-0.5 block text-xs",
-                  emphasis ? "text-primary-foreground/80" : "text-muted-foreground",
-                ].join(" ")}
-              >
-                {sub}
-              </span>
+              <span className="mt-0.5 block text-sm text-foreground/65">{sub}</span>
             )}
           </div>
         </li>

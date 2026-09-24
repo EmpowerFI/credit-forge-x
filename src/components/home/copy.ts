@@ -19,9 +19,65 @@ const en = {
       "EmpowerFI turns program execution into auditable evidence, credit intelligence and qualified opportunities for productive capital.",
     explore: "Explore the platform",
     partner: "Partner with us",
+    statusLabel: "Prototype",
     status: [
       "The platform runs today as a working prototype on Solana devnet: the money is simulated, the proofs are real test transactions.",
       "Our first pilot is being prepared in Brazil, with a regulated financial partner's capital.",
+    ],
+    // The diagram beside the headline: what the platform is made of, and what
+    // each of the three sides gets out of it.
+    panel: {
+      title: "One platform · two intelligences",
+      intelligences: [
+        { name: "Community intelligence", desc: "Program execution, check-ins and business progress, captured where the entrepreneur already works." },
+        { name: "Credit intelligence", desc: "Readiness, affordability and eligibility, computed by versioned engines and measured through repayment." },
+      ],
+      outputs: [
+        { who: "Sponsors", what: "Executive dashboard", future: false },
+        { who: "Women SMEs", what: "Productive credit", future: false },
+        { who: "Investors", what: "P2P lending", future: true },
+      ],
+      futureNote: "Dashed: future model, subject to regulation.",
+    },
+  },
+  audiences: {
+    eyebrow: "Who it is for",
+    title: "One platform, built for",
+    accent: "three sides of productive credit.",
+    statusLabel: "Status",
+    items: [
+      {
+        number: "01",
+        who: "ESG program sponsors",
+        title: "Evidence,",
+        accent: "not attendance lists.",
+        desc: "Companies, foundations and impact funds follow every business in their program through an executive dashboard: progress, readiness and outcomes, per program or cohort.",
+        points: ["Executive dashboard by program and cohort", "Auditable impact reporting", "Integration with your ESG data"],
+        status: "Demonstrated in the devnet prototype.",
+        cta: "Bring your program",
+      },
+      {
+        number: "02",
+        who: "Women microentrepreneurs",
+        title: "Credit sized to",
+        accent: "the business she runs.",
+        desc: "The app helps her organise the business and build a track record. When she is ready, she reaches productive credit she can afford — received and repaid in reais, by Pix.",
+        points: ["Free app to run the business", "Readiness before the loan request", "Affordability checks, not guesswork"],
+        status: "App live in Brazil. Credit in pilot preparation with a regulated partner.",
+        // Empty on purpose: her column ends on the two store listings rather
+        // than on a link that would pick a phone for her.
+        cta: "",
+      },
+      {
+        number: "03",
+        who: "Investors",
+        title: "Returns from loans",
+        accent: "you can audit.",
+        desc: "Peer-to-peer productive-credit opportunities matched to your mandate and risk appetite, with repayment, delinquency and outcome states you can verify.",
+        points: ["BRL pool for Brazilian investors", "USDC on Solana for global capital", "Proofs on-chain, zero PII"],
+        status: "Future model. EmpowerFI holds no lending or P2P licence today; no return is promised.",
+        cta: "Join the investor waitlist",
+      },
     ],
   },
   problem: {
@@ -39,8 +95,7 @@ const en = {
       {
         who: "Small businesses",
         title: "Small tickets cost too much to evaluate and serve.",
-        desc: "The fixed cost of origination, guidance, servicing and collection weighs most on small loans: a median of about US$14 in operating expense for every US$100 of microfinance loans outstanding.",
-        note: "World Bank WPS 8252, 2005–2009 — a historical, international benchmark, not EmpowerFI's cost.",
+        desc: "The fixed cost of origination, guidance, servicing and collection weighs most on small loans — and it barely falls as the ticket does.",
       },
       {
         who: "Investors",
@@ -48,8 +103,15 @@ const en = {
         desc: "Capital with an impact mandate exists. What is missing are opportunities that arrive qualified, with a longitudinal record of how the business actually runs.",
       },
     ],
+    benchmark: {
+      label: "Historical benchmark",
+      figure: "$14",
+      unit: "/ $100",
+      lead: "Median operating expense for every US$100 of microfinance loans outstanding.",
+      caveat: "International and historical — not EmpowerFI's or Brazil's current cost to serve.",
+      source: "Source: World Bank WPS 8252, 2005–2009.",
+    },
     measure: {
-      title: "What the pilot must show",
       note: "A hypothesis, not a result: the prototype measures these variables, and the pilot must show cost falling without weaker credit.",
       headers: ["Must improve", "Must not be sacrificed", "How the platform measures it"],
       rows: [
@@ -60,6 +122,11 @@ const en = {
       ],
     },
     sources: "Every number, with its source",
+  },
+  pilot: {
+    eyebrow: "Pilot",
+    title: "What the pilot must show:",
+    accent: "cost falling without weaker credit.",
   },
   how: {
     eyebrow: "How it works",
@@ -136,11 +203,12 @@ const en = {
     title: "What is real",
     accent: "today.",
     items: [
-      { title: "The app is live in Brazil", desc: "Published on Google Play and the App Store: where the entrepreneur runs her business and the evidence begins." },
-      { title: "The platform runs end to end on devnet", desc: "Impact Intelligence, the Credit & Capital Engine and the Investor Console. Investments, returns, FX and Pix are simulated; blockchain transactions use test assets.", link: "Open App - Devnet" },
-      { title: "Built and refined with Sebrae", desc: "Ginga Prototipa produced the working prototype; PIER refines the business model with specialist consulting." },
-      { title: "An operating company in Brazil", desc: "Incorporated in São Paulo, with its team, product and first market in Brazil." },
+      { tag: "Live", title: "The app is live in Brazil", desc: "Published on Google Play and the App Store: where the entrepreneur runs her business and the evidence begins." },
+      { tag: "Devnet", title: "The platform runs end to end on devnet", desc: "Impact Intelligence, the Credit & Capital Engine and the Investor Console. Investments, returns, FX and Pix are simulated; blockchain transactions use test assets.", link: "Open App - Devnet" },
+      { tag: "Institutional support", title: "Built and refined with Sebrae", desc: "Ginga Prototipa produced the working prototype; PIER refines the business model with specialist consulting." },
+      { tag: "São Paulo", title: "An operating company in Brazil", desc: "Incorporated in São Paulo, with its team, product and first market in Brazil." },
     ],
+    pilotLabel: "Pilot · next",
     pilot:
       "Pilot status: in preparation in Brazil, with a regulated financial partner's capital. No pilot results exist yet, and none are shown here.",
     fit: "Where do you fit?",
@@ -152,6 +220,7 @@ const en = {
     entrepreneur: "Running a business yourself? The app is free on Google Play and the App Store.",
   },
   contact: {
+    eyebrow: "Contact",
     title: "Partner with",
     accent: "EmpowerFI.",
     subtitle: "Tell us about your program, your capital or the entrepreneurs you support. We answer every message.",
@@ -187,9 +256,61 @@ const pt: typeof en = {
       "A EmpowerFI transforma a execução de programas em evidência auditável, inteligência de crédito e oportunidades qualificadas para capital produtivo.",
     explore: "Explore a plataforma",
     partner: "Seja parceiro",
+    statusLabel: "Protótipo",
     status: [
       "A plataforma roda hoje como protótipo na devnet da Solana: o dinheiro é simulado, e as provas são transações de teste reais.",
       "Nosso primeiro piloto está em preparação no Brasil, com capital de uma instituição financeira parceira regulada.",
+    ],
+    panel: {
+      title: "Uma plataforma · duas inteligências",
+      intelligences: [
+        { name: "Inteligência de comunidade", desc: "Execução dos programas, check-ins e progresso do negócio, captados onde a empreendedora já trabalha." },
+        { name: "Inteligência de crédito", desc: "Prontidão, capacidade de pagamento e elegibilidade, calculadas por motores versionados e medidas pelo pagamento." },
+      ],
+      outputs: [
+        { who: "Patrocinadores", what: "Painel executivo", future: false },
+        { who: "Pequenos negócios", what: "Crédito produtivo", future: false },
+        { who: "Investidores", what: "Crédito P2P", future: true },
+      ],
+      futureNote: "Tracejado: modelo futuro, sujeito à regulação.",
+    },
+  },
+  audiences: {
+    eyebrow: "Para quem é",
+    title: "Uma plataforma, feita para",
+    accent: "os três lados do crédito produtivo.",
+    statusLabel: "Situação",
+    items: [
+      {
+        number: "01",
+        who: "Patrocinadores de programas ESG",
+        title: "Evidência,",
+        accent: "não lista de presença.",
+        desc: "Empresas, fundações e fundos de impacto acompanham cada negócio do seu programa por um painel executivo: progresso, prontidão e resultados, por programa ou turma.",
+        points: ["Painel executivo por programa e turma", "Relatórios de impacto auditáveis", "Integração com os seus dados de ESG"],
+        status: "Demonstrado no protótipo na devnet.",
+        cta: "Traga o seu programa",
+      },
+      {
+        number: "02",
+        who: "Mulheres empreendedoras",
+        title: "Crédito no tamanho",
+        accent: "do negócio que ela toca.",
+        desc: "O app ajuda a organizar o negócio e a construir histórico. Quando ela está pronta, alcança um crédito produtivo que cabe no bolso — recebido e pago em reais, por Pix.",
+        points: ["App gratuito para tocar o negócio", "Prontidão antes do pedido de crédito", "Capacidade de pagamento verificada, não estimada"],
+        status: "App no ar no Brasil. Crédito em preparação de piloto com parceiro regulado.",
+        cta: "",
+      },
+      {
+        number: "03",
+        who: "Investidores",
+        title: "Retorno de empréstimos",
+        accent: "que você consegue auditar.",
+        desc: "Oportunidades de crédito produtivo entre pares, compatíveis com o seu mandato e apetite a risco, com estados de pagamento, atraso e resultado que você verifica.",
+        points: ["Pool em reais para investidores brasileiros", "USDC na Solana para capital global", "Provas on-chain, zero dado pessoal"],
+        status: "Modelo futuro. Hoje a EmpowerFI não tem licença de crédito nem de P2P; nenhum retorno é prometido.",
+        cta: "Entrar na lista de investidores",
+      },
     ],
   },
   problem: {
@@ -207,8 +328,7 @@ const pt: typeof en = {
       {
         who: "Pequenos negócios",
         title: "Tickets pequenos custam caro para avaliar e atender.",
-        desc: "O custo fixo de originação, orientação, acompanhamento e cobrança pesa mais nos empréstimos pequenos: uma mediana de cerca de US$ 14 de despesa operacional a cada US$ 100 de carteira em microfinanças.",
-        note: "Banco Mundial WPS 8252, 2005–2009 — referência histórica e internacional, não é o custo da EmpowerFI.",
+        desc: "O custo fixo de originação, orientação, acompanhamento e cobrança pesa mais nos empréstimos pequenos — e quase não cai quando o ticket cai.",
       },
       {
         who: "Investidores",
@@ -216,8 +336,15 @@ const pt: typeof en = {
         desc: "Existe capital com mandato de impacto. O que falta são oportunidades que cheguem qualificadas, com um histórico longitudinal de como o negócio realmente funciona.",
       },
     ],
+    benchmark: {
+      label: "Referência histórica",
+      figure: "US$ 14",
+      unit: "/ US$ 100",
+      lead: "Mediana da despesa operacional a cada US$ 100 de carteira em microfinanças.",
+      caveat: "Referência internacional e histórica — não é o custo de servir da EmpowerFI nem o do Brasil hoje.",
+      source: "Fonte: Banco Mundial WPS 8252, 2005–2009.",
+    },
     measure: {
-      title: "O que o piloto precisa mostrar",
       note: "Uma hipótese, não um resultado: o protótipo mede estas variáveis, e o piloto precisa mostrar o custo caindo sem piorar o crédito.",
       headers: ["Precisa melhorar", "Não pode ser sacrificado", "Como a plataforma mede"],
       rows: [
@@ -228,6 +355,11 @@ const pt: typeof en = {
       ],
     },
     sources: "Cada número, com a sua fonte",
+  },
+  pilot: {
+    eyebrow: "Piloto",
+    title: "O que o piloto precisa mostrar:",
+    accent: "custo caindo sem piorar o crédito.",
   },
   how: {
     eyebrow: "Como funciona",
@@ -304,11 +436,12 @@ const pt: typeof en = {
     title: "O que já é",
     accent: "real hoje.",
     items: [
-      { title: "O app está no ar no Brasil", desc: "Publicado no Google Play e na App Store: onde a empreendedora organiza o negócio e a evidência começa." },
-      { title: "A plataforma roda de ponta a ponta na devnet", desc: "Inteligência de Impacto, Motor de Crédito e Capital e Console do Investidor. Investimentos, retornos, câmbio e Pix são simulados; as transações em blockchain usam ativos de teste.", link: "Abrir App - Devnet" },
-      { title: "Construída e refinada com o Sebrae", desc: "O Ginga Prototipa gerou o protótipo funcional; o PIER refina o modelo de negócio com consultoria especializada." },
-      { title: "Uma empresa brasileira em operação", desc: "Constituída em São Paulo, com equipe, produto e primeiro mercado no Brasil." },
+      { tag: "No ar", title: "O app está no ar no Brasil", desc: "Publicado no Google Play e na App Store: onde a empreendedora organiza o negócio e a evidência começa." },
+      { tag: "Devnet", title: "A plataforma roda de ponta a ponta na devnet", desc: "Inteligência de Impacto, Motor de Crédito e Capital e Console do Investidor. Investimentos, retornos, câmbio e Pix são simulados; as transações em blockchain usam ativos de teste.", link: "Abrir App - Devnet" },
+      { tag: "Apoio institucional", title: "Construída e refinada com o Sebrae", desc: "O Ginga Prototipa gerou o protótipo funcional; o PIER refina o modelo de negócio com consultoria especializada." },
+      { tag: "São Paulo", title: "Uma empresa brasileira em operação", desc: "Constituída em São Paulo, com equipe, produto e primeiro mercado no Brasil." },
     ],
+    pilotLabel: "Piloto · a seguir",
     pilot:
       "Situação do piloto: em preparação no Brasil, com capital de uma instituição financeira parceira regulada. Ainda não há resultados de piloto, e nenhum é mostrado aqui.",
     fit: "Onde você se encaixa?",
@@ -320,6 +453,7 @@ const pt: typeof en = {
     entrepreneur: "Você tem um negócio? Conheça o app da EmpowerFI para empreendedoras.",
   },
   contact: {
+    eyebrow: "Contato",
     title: "Seja parceiro da",
     accent: "EmpowerFI.",
     subtitle: "Conte sobre o seu programa, o seu capital ou as empreendedoras que você apoia. Respondemos todas as mensagens.",

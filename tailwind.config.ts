@@ -14,9 +14,13 @@ export default {
       },
     },
     extend: {
+      // Families resolve through the CSS variables, so the site (serif) and the
+      // product (sans) can differ without either one importing the other's
+      // font names into its markup.
       fontFamily: {
-        heading: ['Space Grotesk', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
+        heading: ['var(--font-heading)'],
+        body: ['var(--font-body)'],
+        ui: ['var(--font-ui)'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -52,6 +56,9 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // The mark's own gold. Rules, fills and marks only — `accent` is the
+        // darker gold that text is allowed to use.
+        gold: "hsl(var(--gold))",
         positive: "hsl(var(--positive))",
         alert: "hsl(var(--alert))",
         caution: "hsl(var(--caution))",

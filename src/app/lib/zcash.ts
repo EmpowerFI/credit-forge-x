@@ -1,7 +1,7 @@
 import type { Tone } from "../components/product/StatusPill";
 import type { Database } from "./platform.types";
 import { platform } from "./platform";
-import { formatNumber, getLocale, localized } from "../i18n";
+import { formatNumber, getLocale, localized, tr } from "../i18n";
 
 // Investing with shielded ZEC (R5): the request an investor pays from any
 // Zcash wallet, and how its progress reads, from the payment on Zcash to the

@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { ArrowRight, Award, Blocks, Building2, ExternalLink, HandCoins, Mail, Send, Smartphone, Sprout, Users } from "lucide-react";
+import { ArrowRight, ExternalLink, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,15 +11,13 @@ import { CONTACT_EMAIL, SEBRAE_LOGO_SRC } from "@/config/links";
 import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
 import StoreLinks from "@/components/StoreLinks";
+import { GradedRule } from "@/components/site/editorial";
 import { HOME, type Lang, PATHS } from "./copy";
 
 type Interest = "sponsor" | "capital" | "community" | "other";
 
-const TRACTION_ICONS = [Smartphone, Blocks, Award, Building2];
-const CTA_ICONS = { sponsor: Sprout, capital: HandCoins, community: Users } as const;
-
 /** Contact, with who is writing: the founder reads it in the message's first line. */
-function Contact({ lang, interest, setInterest }: { lang: Lang; interest: Interest; setInterest: (i: Interest) => void }) {
+function ContactForm({ lang, interest, setInterest }: { lang: Lang; interest: Interest; setInterest: (i: Interest) => void }) {
   const t = HOME[lang].contact;
   const [form, setForm] = useState({ name: "", email: "", message: "" });
   const [sending, setSending] = useState(false);
@@ -62,127 +59,151 @@ function Contact({ lang, interest, setInterest }: { lang: Lang; interest: Intere
   };
 
   return (
-    <div id="contact" className="mx-auto max-w-3xl scroll-mt-24 space-y-8 rounded-2xl p-8 glass glow-border shadow-glow md:p-12">
-      <div className="space-y-3 text-center">
-        <h3 className="section-title !text-2xl md:!text-3xl">{t.title} <span className="text-gradient">{t.accent}</span></h3>
-        <p className="mx-auto max-w-xl text-muted-foreground">{t.subtitle}</p>
+    <form onSubmit={submit} className="space-y-7">
+      <fieldset className="border-0 p-0">
+        <legend className="eyebrow p-0">{t.interest}</legend>
+        <div className="mt-4 flex flex-wrap gap-2.5">
+          {(Object.keys(t.interests) as Interest[]).map((k) => (
+            <button key={k} type="button" onClick={() => setInterest(k)} aria-pressed={interest === k}
+              className={`min-h-[2.75rem] rounded-sm px-5 text-[1.0625rem] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                interest === k
+                  ? "border-[1.5px] border-gold bg-gold/14 text-foreground"
+                  : "border border-foreground/25 text-foreground/90 hover:bg-foreground/[0.04]"
+              }`}>
+              {t.interests[k]}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <div className="space-y-2.5">
+          <Label htmlFor="contact-name" className="label-ui text-foreground/90">{t.name}</Label>
+          <Input id="contact-name" required maxLength={100} autoComplete="name" value={form.name} placeholder={t.namePlaceholder}
+            className="h-[3.25rem] rounded-sm border-foreground/25 bg-transparent px-4 text-lg"
+            onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        </div>
+        <div className="space-y-2.5">
+          <Label htmlFor="contact-email" className="label-ui text-foreground/90">{t.email}</Label>
+          <Input id="contact-email" type="email" required maxLength={255} autoComplete="email" value={form.email} placeholder={t.emailPlaceholder}
+            className="h-[3.25rem] rounded-sm border-foreground/25 bg-transparent px-4 text-lg"
+            onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        </div>
       </div>
-      <form onSubmit={submit} className="space-y-4">
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-foreground">{t.interest}</legend>
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(t.interests) as Interest[]).map((k) => (
-              <button key={k} type="button" onClick={() => setInterest(k)} aria-pressed={interest === k}
-                className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${interest === k ? "border-accent bg-accent/15 font-medium text-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}>
-                {t.interests[k]}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="contact-name">{t.name}</Label>
-            <Input id="contact-name" required maxLength={100} value={form.name} placeholder={t.namePlaceholder}
-              onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="contact-email">{t.email}</Label>
-            <Input id="contact-email" type="email" required maxLength={255} value={form.email} placeholder={t.emailPlaceholder}
-              onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="contact-message">{t.message}</Label>
-          <Textarea id="contact-message" required rows={5} maxLength={1900} value={form.message} placeholder={t.messagePlaceholder}
-            onChange={(e) => setForm({ ...form, message: e.target.value })} />
-        </div>
-        <div className="flex flex-col items-center justify-center gap-3 pt-2 sm:flex-row">
-          <Button type="submit" size="lg" disabled={sending} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
-            {sending ? t.sending : <>{t.send} <Send size={16} /></>}
-          </Button>
-          <a href={`mailto:${CONTACT_EMAIL}?subject=EmpowerFI`} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            <Mail size={16} /> {t.orWrite} {CONTACT_EMAIL}
-          </a>
-        </div>
-      </form>
-    </div>
+
+      <div className="space-y-2.5">
+        <Label htmlFor="contact-message" className="label-ui text-foreground/90">{t.message}</Label>
+        <Textarea id="contact-message" required rows={6} maxLength={1900} value={form.message} placeholder={t.messagePlaceholder}
+          className="rounded-sm border-foreground/25 bg-transparent p-4 text-lg"
+          onChange={(e) => setForm({ ...form, message: e.target.value })} />
+      </div>
+
+      <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:gap-7">
+        <button type="submit" disabled={sending} className="btn-site btn-site-primary disabled:opacity-60">
+          {sending ? t.sending : <>{t.send} <Send size={16} className="text-accent" aria-hidden /></>}
+        </button>
+        <span className="text-[1.0625rem] text-foreground/85">
+          {t.orWrite}{" "}
+          <a href={`mailto:${CONTACT_EMAIL}?subject=EmpowerFI`} className="text-accent underline-offset-4 hover:underline">{CONTACT_EMAIL}</a>
+        </span>
+      </div>
+    </form>
   );
 }
 
+/** What is real today — each claim with the state it is in, and nothing more. */
 const HomeTraction = ({ lang }: { lang: Lang }) => {
   const t = HOME[lang].traction;
+  const c = HOME[lang].contact;
   const [interest, setInterest] = useState<Interest>("sponsor");
   const choose = (id: Interest) => {
     setInterest(id);
     document.getElementById("contact")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  // The app card carries both stores; the rest carry one link each.
-  const links = [null, `/app?lang=${lang}`];
 
   return (
-    <section id="traction" className="section-padding gradient-subtle">
-      <div className="container mx-auto space-y-12">
-        <SectionHeading eyebrow={t.eyebrow} title={t.title} accent={t.accent} />
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {t.items.map((item, i) => {
-            const Icon = TRACTION_ICONS[i];
-            const href = links[i];
-            return (
-              <div key={item.title} className="flex flex-col rounded-2xl p-6 glass glow-border">
-                <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg gradient-primary"><Icon size={20} className="text-primary-foreground" aria-hidden /></span>
-                <h3 className="mb-2 font-heading text-base font-bold text-foreground">{item.title}</h3>
-                <p className="flex-1 text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
+    <>
+      <section id="traction" className="section-padding">
+        <div className="container mx-auto">
+          <SectionHeading eyebrow={t.eyebrow} title={t.title} accent={t.accent} />
+          <div className="mt-14 grid gap-10 sm:grid-cols-2 xl:grid-cols-4 xl:gap-8">
+            {t.items.map((item, i) => (
+              <div key={item.title} className="flex flex-col">
+                {/* Four rules, fading across: they are one list, in order of how
+                    settled each item is, not four competing badges. */}
+                <GradedRule index={i} />
+                <p className="label-ui mt-4 text-foreground/90">{item.tag}</p>
+                <h3 className="mt-3 font-heading text-[1.4rem] leading-tight">{item.title}</h3>
+                <p className="mt-2.5 flex-1 leading-relaxed text-foreground/85">{item.desc}</p>
                 {i === 0 && <StoreLinks />}
-                {href && "link" in item && item.link && (
-                  <Link to={href} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:text-foreground">{item.link} <ArrowRight size={14} /></Link>
+                {i === 1 && "link" in item && item.link && (
+                  <Link to={`/app?lang=${lang}`} className="mt-3 inline-flex items-center gap-1.5 text-[1.0625rem] text-accent underline-offset-4 hover:underline">
+                    {item.link} <ExternalLink size={15} aria-hidden />
+                  </Link>
                 )}
-                {i === 2 && <SupportLogo src={SEBRAE_LOGO_SRC} alt="Sebrae" label={lang === "pt" ? "Apoio institucional" : "Institutional support"} />}
+                {/* The tag above already names the support, so the mark stands alone. */}
+                {i === 2 && <SupportLogo src={SEBRAE_LOGO_SRC} alt="Sebrae" />}
               </div>
-            );
-          })}
-        </div>
-        <p className="mx-auto max-w-3xl rounded-xl border border-accent/30 bg-background/60 px-5 py-3 text-center text-sm text-foreground">{t.pilot}</p>
-
-        <div className="space-y-5">
-          <h3 className="text-center font-heading text-2xl font-bold text-foreground">{t.fit}</h3>
-          <div className="grid gap-4 md:grid-cols-3">
-            {t.ctas.map((c) => {
-              const Icon = CTA_ICONS[c.id as keyof typeof CTA_ICONS];
-              const body = (
-                <>
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-3 font-heading text-lg font-bold text-foreground">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary"><Icon size={20} className="text-primary-foreground" aria-hidden /></span>
-                      {c.label}
-                    </span>
-                    <ArrowRight size={18} className="shrink-0 text-accent transition-transform group-hover:translate-x-1" aria-hidden />
-                  </span>
-                  <span className="block text-sm text-muted-foreground">{c.desc}</span>
-                </>
-              );
-              const style = "group flex flex-col gap-3 rounded-2xl p-6 text-left glass glow-border transition-shadow hover:shadow-glow";
-              return c.id === "capital"
-                ? <Link key={c.id} to={`${PATHS[lang].investors}#waitlist`} className={style}>{body}</Link>
-                : <button key={c.id} type="button" onClick={() => choose(c.id as Interest)} className={style}>{body}</button>;
-            })}
+            ))}
           </div>
-          {lang === "pt" ? (
-            <p className="text-center text-sm text-muted-foreground">
-              <Link to={PATHS.pt.entrepreneurs} className="font-medium text-accent hover:text-foreground">{t.entrepreneur} →</Link>
-            </p>
-          ) : (
-            /* No English page for her yet, so the sentence names both stores and
-               both are linked — one of them would be choosing her phone for her. */
-            <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground">
-              <p className="text-center">{t.entrepreneur}</p>
-              <StoreLinks className="!mt-0 justify-center" />
-            </div>
-          )}
-        </div>
 
-        <Contact lang={lang} interest={interest} setInterest={setInterest} />
-      </div>
-    </section>
+          <div className="mt-12 flex flex-col gap-4 rounded-sm border border-dashed border-gold/60 px-6 py-5 sm:flex-row sm:gap-7">
+            <span className="label-ui shrink-0 pt-1 text-accent">{t.pilotLabel}</span>
+            <p className="leading-relaxed text-foreground/90">{t.pilot}</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" className="section-padding scroll-mt-24">
+        <div className="container mx-auto grid gap-14 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] lg:gap-20">
+          <div>
+            <SectionHeading eyebrow={c.eyebrow} title={t.fit} />
+            <p className="mt-7 leading-relaxed text-foreground/85">{c.subtitle}</p>
+
+            {/* The three ways in, as rows rather than cards: choosing one sets
+                the form's first line, so the founder reads who is writing. */}
+            <ul className="mt-9 border-t border-foreground/15">
+              {t.ctas.map((cta) => {
+                const inner = (
+                  <>
+                    <span className="min-w-0">
+                      <span className="block text-xl leading-snug">{cta.label}</span>
+                      <span className="mt-1 block text-[0.95rem] leading-snug text-foreground/70">{cta.desc}</span>
+                    </span>
+                    <ArrowRight size={18} className="shrink-0 text-accent transition-transform group-hover:translate-x-1 motion-reduce:transition-none" aria-hidden />
+                  </>
+                );
+                const row = "group flex min-h-[3.5rem] w-full items-center justify-between gap-5 border-b border-foreground/15 py-5 text-left transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+                return (
+                  <li key={cta.id}>
+                    {cta.id === "capital"
+                      ? <Link to={`${PATHS[lang].investors}#waitlist`} className={row}>{inner}</Link>
+                      : <button type="button" onClick={() => choose(cta.id as Interest)} className={row}>{inner}</button>}
+                  </li>
+                );
+              })}
+            </ul>
+
+            {lang === "pt" ? (
+              <p className="mt-7 text-[1.0625rem] text-foreground/85">
+                <Link to={PATHS.pt.entrepreneurs} className="text-accent underline-offset-4 hover:underline">{t.entrepreneur} →</Link>
+              </p>
+            ) : (
+              /* No English page for her yet, so the sentence names both stores
+                 and both are linked — one of them would be choosing her phone. */
+              <div className="mt-7 text-[1.0625rem] text-foreground/85">
+                <p>{t.entrepreneur}</p>
+                <StoreLinks className="!mt-2" />
+              </div>
+            )}
+          </div>
+
+          <div className="lg:pt-2">
+            <ContactForm lang={lang} interest={interest} setInterest={setInterest} />
+          </div>
+        </div>
+      </section>
+    </>
   );
 };
 

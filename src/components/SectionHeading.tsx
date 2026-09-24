@@ -1,38 +1,48 @@
 import type { ReactNode } from "react";
+import { Eyebrow } from "@/components/site/editorial";
 
 interface SectionHeadingProps {
   eyebrow: string;
   /** Plain part of the headline. */
   title: string;
-  /** Trailing part rendered in the brand gradient — omit for a flat headline. */
+  /** Trailing part, set in gold italic — the phrase the sentence turns on. */
   accent?: string;
   subtitle?: ReactNode;
   align?: "center" | "left";
 }
 
-/** The eyebrow / headline / subtitle block every section on the home page opens with. */
+/**
+ * The eyebrow / headline / subtitle block every section opens with.
+ *
+ * Left-aligned by default: the reference sets the whole site flush left, which
+ * gives long Portuguese headlines a straight edge to hang from instead of a
+ * ragged centre. `align="center"` is still there for the pages that want it.
+ */
 const SectionHeading = ({
   eyebrow,
   title,
   accent,
   subtitle,
-  align = "center",
-}: SectionHeadingProps) => (
-  <div className={`space-y-4 ${align === "center" ? "text-center" : "text-left"}`}>
-    <p className="text-sm font-medium uppercase tracking-widest text-accent">{eyebrow}</p>
-    <h2 className="section-title">
-      {title}
-      {accent && (
-        <>
-          {" "}
-          <span className="text-gradient">{accent}</span>
-        </>
+  align = "left",
+}: SectionHeadingProps) => {
+  const centred = align === "center";
+  return (
+    <div className={centred ? "flex flex-col items-center text-center" : ""}>
+      <Eyebrow>{eyebrow}</Eyebrow>
+      <h2 className="section-title mt-5 max-w-4xl">
+        {title}
+        {accent && (
+          <>
+            {" "}
+            <em className="italic text-accent">{accent}</em>
+          </>
+        )}
+      </h2>
+      {subtitle && (
+        <p className={`section-subtitle mt-7 ${centred ? "" : "mx-0"}`}>{subtitle}</p>
       )}
-    </h2>
-    {subtitle && (
-      <p className={`section-subtitle ${align === "center" ? "" : "mx-0"}`}>{subtitle}</p>
-    )}
-  </div>
-);
+    </div>
+  );
+};
 
 export default SectionHeading;

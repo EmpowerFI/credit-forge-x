@@ -1,84 +1,31 @@
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
-import LaunchAppButton from "@/components/LaunchAppButton";
-import { Link } from "react-router-dom";
+import SiteHeader, { type HeaderLink } from "@/components/site/SiteHeader";
 
-const navLinks = [
-  { label: "O problema", href: "/pt#problem" },
-  { label: "Como funciona", href: "/pt#how-it-works" },
-  { label: "Modelo de negócio", href: "/pt#business-model" },
-  { label: "Capital", href: "/pt#capital" },
-  { label: "Auditabilidade", href: "/pt#auditability" },
-  { label: "Para empreendedoras", href: "/pt/empreendedoras" },
-  { label: "Contato", href: "/pt#contact" },
+// Os itens marcados com `top` aparecem também na fileira do desktop; os demais
+// ficam no painel. A fileira mostra o caminho da história — o problema, como
+// funciona, capital, auditabilidade — e não a lista inteira do site.
+const navLinks: HeaderLink[] = [
+  { label: "Para quem é", to: "/pt#who", top: true },
+  { label: "O problema", to: "/pt#problem", top: true },
+  { label: "Como funciona", to: "/pt#how-it-works", top: true },
+  { label: "Modelo de negócio", to: "/pt#business-model" },
+  { label: "Capital", to: "/pt#capital", top: true },
+  { label: "Auditabilidade", to: "/pt#auditability" },
+  { label: "Para empreendedoras", to: "/pt/empreendedoras" },
+  { label: "Sobre", to: "/pt/sobre" },
+  { label: "Investidores", to: "/pt/investidores" },
+  { label: "Contato", to: "/pt#contact" },
 ];
 
-// Botão de menu em qualquer largura, por escolha da fundadora: o painel fica
-// mais limpo que uma fileira de links no cabeçalho.
-const Navbar = () => {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <nav className="fixed left-0 right-0 top-0 z-50 glass">
-      <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
-        <Link to="/pt" className="font-heading text-xl font-bold text-gradient">
-          EmpowerFI
-        </Link>
-
-        <div className="flex items-center gap-3">
-          <LaunchAppButton lang="pt" />
-          <button
-            className="text-foreground"
-            onClick={() => setOpen(!open)}
-            aria-expanded={open}
-            aria-controls="menu-site"
-            aria-label="Menu"
-          >
-            {open ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-      </div>
-
-      {open && (
-        // O container interno alinha os itens com o logo em telas largas.
-        <div id="menu-site" className="border-t border-border glass">
-          <div className="container mx-auto px-4 pb-4">
-            {navLinks.map((l) => (
-              <Link
-                key={l.href}
-                to={l.href}
-                onClick={() => setOpen(false)}
-                className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {l.label}
-              </Link>
-            ))}
-            <Link
-              to="/pt/sobre"
-              onClick={() => setOpen(false)}
-              className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Sobre
-            </Link>
-            <Link
-              to="/pt/investidores"
-              onClick={() => setOpen(false)}
-              className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Investidores
-            </Link>
-            <Link
-              to="/"
-              onClick={() => setOpen(false)}
-              className="block py-3 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              English
-            </Link>
-          </div>
-        </div>
-      )}
-    </nav>
-  );
-};
+const Navbar = () => (
+  <SiteHeader
+    home="/pt"
+    lang="pt"
+    links={navLinks}
+    other={{ label: "EN · PT", panelLabel: "English", to: "/" }}
+    primary={{ label: "Seja parceiro", to: "/pt#contact" }}
+    appLabel="App · Devnet"
+    menuLabel="Menu"
+  />
+);
 
 export default Navbar;
