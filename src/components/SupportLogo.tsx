@@ -4,8 +4,9 @@ interface SupportLogoProps {
   /** Path under /public, e.g. "/sebrae.svg". */
   src: string;
   alt: string;
-  /** Small caption above the mark, e.g. "Apoio institucional". */
-  label: string;
+  /** Small caption above the mark, e.g. "Apoio institucional". Omit it where
+   *  the surrounding block already says the same thing. */
+  label?: string;
 }
 
 /**
@@ -27,10 +28,8 @@ const SupportLogo = ({ src, alt, label }: SupportLogoProps) => {
   if (status === "failed") return null;
 
   return (
-    <div className={status === "loaded" ? "mt-5 space-y-2.5 border-t border-border pt-4" : "hidden"}>
-      <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-        {label}
-      </p>
+    <div className={status === "loaded" ? "mt-5 space-y-2.5 border-t border-foreground/15 pt-4" : "hidden"}>
+      {label && <p className="label-ui text-foreground/70">{label}</p>}
       <img
         src={src}
         alt={alt}

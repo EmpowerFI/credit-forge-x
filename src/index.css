@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -58,6 +58,14 @@
 
     --font-heading: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
+    /* Eyebrows, labels, figures: a sans keeps wide-tracked capitals and
+       tabular numbers crisp at sizes where a serif would smear. */
+    --font-ui: 'Inter', system-ui, sans-serif;
+
+    /* The mark's own gold (#d4920a). It is a rule-and-fill colour: on the
+       cream field it reaches only 2.4:1, so it never carries text. Gold text
+       uses --accent, which is the darker gold that passes AA. */
+    --gold: 36 75% 47%;
 
     /* Semantic tones for states: verified/positive, alert, caution, neutral financial data. */
     --positive: 152 50% 30%;
@@ -116,7 +124,76 @@
     --info: 213 90% 68%;
 
     --shadow-card: 0 1px 0 hsl(222 32% 21%);
+    --gold: 39 86% 62%;
     color-scheme: dark;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The corporate site, in the brand's own colours (founder's reference, 24 Sep).
+
+   Scoped to `:root:not(.dark)` because the product puts `.dark` on <html> while
+   /app is mounted: the site gets the editorial treatment, the workspace keeps
+   the financial one, and neither file has to know about the other.
+
+   The palette is measured off the brand asset rather than approximated: the
+   mark's gold is #d4920a and the favicon's field is #f6f4ef, both exact.
+   --------------------------------------------------------------------------- */
+@layer base {
+  :root:not(.dark) {
+    --background: 43 28% 95%;      /* #f6f4ef — the favicon's field */
+    --foreground: 222 47% 11%;     /* #0f172a — navy ink, not neutral grey */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 222 47% 11%;
+    --primary-foreground: 43 28% 95%;
+
+    --secondary: 43 24% 91%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 43 20% 93%;
+    --muted-foreground: 222 20% 34%;   /* 7.0:1 on the cream field */
+
+    /* Gold that can carry text: #8f5c00, 5.2:1 on cream. Every `text-accent`
+       on the site was failing AA against the mark's own gold; this fixes them
+       all at once, and --gold keeps the bright tone for rules and fills. */
+    --accent: 39 100% 28%;
+    --accent-foreground: 43 28% 95%;
+    --gold: 40 91% 44%;            /* #d4920a — the mark, exactly */
+
+    --highlight: 40 60% 92%;
+    --highlight-foreground: 222 47% 11%;
+
+    --border: 43 12% 82%;
+    --input: 43 12% 78%;
+    --ring: 39 100% 28%;
+
+    /* 3px corners: the reference's radius. `rounded-md` lands on 3px, which is
+       what shadcn's inputs and buttons use. */
+    --radius: 0.3125rem;
+
+    --font-heading: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --font-body: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+
+    --gradient-primary: linear-gradient(135deg, hsl(39 100% 28%), hsl(38 92% 34%));
+    --gradient-subtle: none;
+    --gradient-glow: linear-gradient(135deg, hsl(40 91% 44% / 0.10), hsl(40 91% 44% / 0.02));
+    --shadow-glow: none;
+    --shadow-card: 0 1px 2px hsl(222 47% 11% / 0.05);
+  }
+
+  /* Serif at 700 reads heavy and web-page-ish; the reference sets its headlines
+     in the regular and near-regular weights. Higher specificity than the
+     `font-bold` utility, so it reaches the headings already written. */
+  :root:not(.dark) .font-heading.font-bold,
+  :root:not(.dark) h1.font-bold,
+  :root:not(.dark) h2.font-bold,
+  :root:not(.dark) h3.font-bold {
+    font-weight: 500;
   }
 }
 
@@ -209,6 +286,124 @@
   .section-subtitle {
     @apply text-lg md:text-xl max-w-3xl mx-auto;
     color: hsl(var(--muted-foreground));
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The site's editorial layer: hairlines and rules instead of glass and glow.
+
+   The first half re-points the utilities the existing pages already use, so
+   /about, /investors and /pt/empreendedoras pick up the new language without
+   being rewritten. The second half adds the devices the reference introduces.
+   --------------------------------------------------------------------------- */
+@layer utilities {
+  :root:not(.dark) .glass {
+    background: hsl(var(--card));
+    backdrop-filter: none;
+    border: 1px solid hsl(var(--foreground) / 0.13);
+  }
+  :root:not(.dark) .glow-border {
+    border: 1px solid hsl(var(--foreground) / 0.16);
+    box-shadow: none;
+  }
+  :root:not(.dark) .shadow-glow { box-shadow: none; }
+  /* Icon chips and emphasis nodes: a solid deep gold, so the cream glyph on
+     top keeps its 5.2:1. */
+  :root:not(.dark) .gradient-primary { background: hsl(var(--accent)); }
+  :root:not(.dark) .gradient-subtle { background: transparent; }
+  /* The gradient headline becomes one deep gold — a gradient inside a serif
+     phrase fights the letterforms. */
+  :root:not(.dark) .text-gradient {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: hsl(var(--accent));
+  }
+  /* 16px corners belong to the card era. Everything on the site squares off to
+     the reference's 3–4px, including the pages not rewritten by hand. */
+  :root:not(.dark) .rounded-2xl,
+  :root:not(.dark) .rounded-xl { border-radius: 0.25rem; }
+
+  /* The glow era's decorative blobs — a blurred circle floated behind the
+     content. The editorial field is flat, and on cream they only read as a
+     smudge, so the site drops them. The product keeps whatever it uses. */
+  :root:not(.dark) .absolute.blur-3xl,
+  :root:not(.dark) .absolute.blur-2xl { display: none; }
+  /* Nothing on the site pulses at the reader. */
+  :root:not(.dark) .animate-pulse-glow { animation: none; opacity: 1; }
+
+  /* An eyebrow: wide-tracked capitals in the sans, in gold that passes AA. */
+  .eyebrow {
+    font-family: var(--font-ui);
+    font-size: 0.8125rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: hsl(var(--accent));
+  }
+  /* Small caps for labels that are not gold — STATUS, column headers. */
+  .label-ui {
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  /* The rule above a column, at the weight its position in the sequence asks
+     for: the first column leads, the third only echoes. */
+  .rule-gold { height: 1.5px; background: hsl(var(--gold)); }
+  .rule-gold-2 { height: 1.5px; background: hsl(var(--gold) / 0.7); }
+  .rule-gold-3 { height: 1.5px; background: hsl(var(--gold) / 0.4); }
+  .hairline { border-color: hsl(var(--foreground) / 0.16); }
+}
+
+@layer components {
+  /* Every section opens against a hairline instead of a tinted band. */
+  :root:not(.dark) .section-padding {
+    border-top: 1px solid hsl(var(--foreground) / 0.14);
+  }
+  :root:not(.dark) .section-title {
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1.04;
+  }
+  :root:not(.dark) .section-subtitle {
+    color: hsl(var(--foreground) / 0.86);
+  }
+  /* The site's header is 96px from lg up, so an anchored section has to stop
+     further clear of it than the product's 80px navbar asks for. */
+  :root:not(.dark) section[id] {
+    scroll-margin-top: 7.5rem;
+  }
+
+  /* The two buttons the reference uses, and nothing else: a gold-ruled call to
+     action and a hairline-ruled alternative. Both are 54px, both square off at
+     3px, both keep a visible focus ring. */
+  .btn-site {
+    @apply inline-flex min-h-[3rem] items-center justify-center gap-2.5 whitespace-nowrap rounded-sm px-6 text-base;
+    @apply transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    border: 0.75px solid hsl(var(--foreground) / 0.25);
+    color: hsl(var(--foreground));
+  }
+  .btn-site:hover { background: hsl(var(--foreground) / 0.04); }
+  .btn-site-primary {
+    border: 1.5px solid hsl(var(--gold));
+    background: hsl(var(--gold) / 0.14);
+  }
+  .btn-site-primary:hover { background: hsl(var(--gold) / 0.24); }
+}
+
+/* Someone who asked for less motion gets none of ours. The entrance fades
+   start at opacity 0, so stopping the animation has to restore the opacity
+   too, or the content would simply never appear. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-in-delay-1,
+  .animate-fade-in-delay-2,
+  .animate-fade-in-delay-3,
+  .animate-fade-in-left,
+  .animate-pulse-glow,
+  .animate-float {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

@@ -59,7 +59,9 @@ const PilotMetrics = ({ lang }: { lang: InvestorLang }) => {
                       </div>
                       <dd>
                         <p
-                          className="font-heading text-4xl font-bold tracking-tight text-muted-foreground/40"
+                          // Faint enough to read as "no value yet", dark enough to
+                          // clear 3:1 against the cream field.
+                          className="font-heading text-4xl font-bold tracking-tight text-muted-foreground/70"
                           aria-label={t.noData}
                         >
                           —
