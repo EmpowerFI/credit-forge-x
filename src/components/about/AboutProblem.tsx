@@ -13,10 +13,14 @@ const AboutProblem = ({ problem }: { problem: AboutContent["problem"] }) => (
       </div>
 
       <div className="space-y-4">
-        <div className="grid sm:grid-cols-3 gap-6">
+        {/* Three across from md, not sm: at 640 each card was 176px wide
+            and "US$15.8B" in the serif does not fit inside one. */}
+        <div className="grid md:grid-cols-3 gap-6">
           {problem.stats.map(({ value, label }) => (
-            <div key={label} className="glass rounded-xl p-8 glow-border text-center">
-              <p className="text-4xl md:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
+            <div key={label} className="glass rounded-xl p-6 md:p-8 glow-border text-center">
+              {/* The largest step waits for lg: at md these sit three across,
+                  and "US$15.8B" set at 48px in the serif is wider than the card. */}
+              <p className="text-3xl lg:text-5xl font-heading font-bold text-gradient mb-2">{value}</p>
               <p className="text-sm text-muted-foreground">{label}</p>
             </div>
           ))}
