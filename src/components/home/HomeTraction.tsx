@@ -155,7 +155,9 @@ const HomeTraction = ({ lang }: { lang: Lang }) => {
       </section>
 
       <section id="contact" className="section-padding scroll-mt-24">
-        <div className="container mx-auto grid gap-14 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] lg:gap-20">
+        {/* The form sits beside the choices only from xl: at lg the 28rem
+            column plus a 5rem gutter left it 432px, and it needs more. */}
+        <div className="container mx-auto grid gap-14 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] xl:gap-20">
           <div>
             <SectionHeading eyebrow={c.eyebrow} title={t.fit} />
             <p className="mt-7 leading-relaxed text-foreground/85">{c.subtitle}</p>
@@ -198,7 +200,7 @@ const HomeTraction = ({ lang }: { lang: Lang }) => {
             )}
           </div>
 
-          <div className="lg:pt-2">
+          <div className="xl:pt-2">
             <ContactForm lang={lang} interest={interest} setInterest={setInterest} />
           </div>
         </div>

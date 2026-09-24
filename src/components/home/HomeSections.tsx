@@ -26,7 +26,9 @@ export const HomeAudiences = ({ lang }: { lang: Lang }) => {
           {t.items.map((item, i) => (
             <div key={item.number} className="flex flex-col">
               <GradedRule index={i} />
-              <p className="label-ui mt-4 text-accent">{item.number} · {item.who}</p>
+              {/* Its own tracking rather than `label-ui`: at 0.22em
+                  "MICROENTREPRENEURS" is wider than a third of the row. */}
+              <p className="mt-4 font-ui text-xs uppercase tracking-[0.16em] text-accent">{item.number} · {item.who}</p>
               <h3 className="mt-5 font-heading text-[1.75rem] leading-tight">
                 {item.title} <em className="italic text-accent">{item.accent}</em>
               </h3>
@@ -103,18 +105,20 @@ export const HomePilot = ({ lang }: { lang: Lang }) => {
       <div className="container mx-auto">
         <SectionHeading eyebrow={t.eyebrow} title={t.title} accent={t.accent} />
         <div className="mt-14">
-          <div className="hidden grid-cols-3 gap-10 border-b-[1.5px] border-gold pb-4 sm:grid">
+          {/* Three across only from md: at sm each column was 165px and
+              "Acompanhamento" alone is 176px. */}
+          <div className="hidden grid-cols-3 gap-10 border-b-[1.5px] border-gold pb-4 md:grid">
             {m.headers.map((h) => <span key={h} className="label-ui text-accent">{h}</span>)}
           </div>
           <ul className="divide-y divide-foreground/15">
             {m.rows.map(([improve, keep, how]) => (
-              <li key={improve} className="grid gap-x-10 gap-y-4 py-5 sm:grid-cols-3 sm:gap-y-1.5">
-                {/* Below sm the three headers repeat above each value: read
+              <li key={improve} className="grid gap-x-10 gap-y-4 py-5 md:grid-cols-3 md:gap-y-1.5">
+                {/* Below md the three headers repeat above each value: read
                     inline they tangled with it, and these labels are long in
                     Portuguese. */}
                 {([[m.headers[0], improve, "text-xl"], [m.headers[1], keep, "text-xl"], [m.headers[2], how, "text-foreground/85"]] as const).map(([header, value, tone]) => (
                   <span key={header} className="block">
-                    <span className="label-ui mb-1 block text-foreground/60 sm:hidden">{header}</span>
+                    <span className="label-ui mb-1 block text-foreground/60 md:hidden">{header}</span>
                     <span className={`block leading-snug ${tone}`}>{value}</span>
                   </span>
                 ))}
@@ -174,10 +178,13 @@ export const HomeRevenue = ({ lang }: { lang: Lang }) => {
             <div key={e.name}>
               <GradedRule index={i} />
               <h3 className="mt-5 font-heading text-[1.75rem] leading-tight">{e.name}</h3>
+              {/* The label/value split waits for lg. From md the two engines
+                  already sit side by side, and splitting again inside them left
+                  124px for the text — "empreendedorismo:" alone is 151px. */}
               <dl className="mt-6 divide-y divide-foreground/15 border-t border-foreground/15">
                 {([["customer", e.customer], ["pays", e.pays], ["status", e.status]] as const).map(([k, v]) => (
-                  <div key={k} className="grid gap-x-8 gap-y-2 py-4 sm:grid-cols-[minmax(0,9rem)_minmax(0,1fr)]">
-                    <dt className="label-ui pt-1 text-accent">{t.labels[k]}</dt>
+                  <div key={k} className="grid gap-x-8 gap-y-2 py-4 lg:grid-cols-[minmax(0,9rem)_minmax(0,1fr)]">
+                    <dt className="label-ui pt-1 text-accent lg:pt-1.5">{t.labels[k]}</dt>
                     <dd className="leading-relaxed text-foreground/85">{v}</dd>
                   </div>
                 ))}
@@ -224,14 +231,16 @@ export const HomeAuditability = ({ lang }: { lang: Lang }) => {
   const t = HOME[lang].audit;
   return (
     <section id="auditability" className="section-padding">
-      <div className="container mx-auto grid gap-12 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-20">
+      {/* Heading beside the layers only from xl. Splitting at lg and again
+          inside each layer left 192px for a Portuguese sentence. */}
+      <div className="container mx-auto grid gap-12 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] xl:gap-20">
         <SectionHeading eyebrow={t.eyebrow} title={t.title} accent={t.accent} />
         <ol className="space-y-3">
           {t.layers.map((l, i) => {
             const last = i === t.layers.length - 1;
             return (
               <li key={l.name}
-                className={`grid gap-x-8 gap-y-2 rounded-sm px-7 py-6 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] ${last
+                className={`grid gap-x-8 gap-y-2 rounded-sm px-7 py-6 xl:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] ${last
                   ? "border-[1.5px] border-gold bg-gold/10"
                   : "border border-foreground/18"}`}>
                 <div>

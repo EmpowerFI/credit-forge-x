@@ -451,7 +451,7 @@ const InvestorWaitlistForm = ({ lang }: InvestorWaitlistFormProps) => {
         type="submit"
         size="lg"
         disabled={sending}
-        className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+        className="h-auto w-full gap-2 whitespace-normal py-3 bg-primary text-primary-foreground hover:bg-primary/90"
       >
         {sending ? (
           <>

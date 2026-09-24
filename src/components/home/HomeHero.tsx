@@ -15,7 +15,7 @@ const HomeHero = ({ lang }: { lang: Lang }) => {
   const p = t.panel;
   return (
     <section className="px-4 pb-20 pt-28 md:px-8 lg:pb-28 lg:pt-36">
-      <div className="container mx-auto grid gap-14 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start lg:gap-16">
+      <div className="container mx-auto grid gap-14 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] xl:items-start xl:gap-16">
         <div>
           <p className="eyebrow leading-relaxed text-foreground/60">{t.badge}</p>
           <div className="mt-7 h-[1.5px] w-[5.5rem] bg-gold" aria-hidden />
@@ -42,7 +42,7 @@ const HomeHero = ({ lang }: { lang: Lang }) => {
           </div>
         </div>
 
-        <div className="lg:pt-1.5">
+        <div className="xl:pt-1.5">
           <p className="eyebrow">{p.title}</p>
           <div className="mt-5 space-y-3">
             {p.intelligences.map((it, i) => (
@@ -55,13 +55,18 @@ const HomeHero = ({ lang }: { lang: Lang }) => {
               </div>
             ))}
             <p className="py-1 text-center text-xl leading-none text-accent" aria-hidden>↓</p>
-            <ul className="grid grid-cols-3 gap-2.5">
+            {/* One column on a phone. "Patrocinadores" is a single 14-letter
+                word: as tracked capitals it is wider than a third of this
+                panel at every desktop width, so these three labels drop the
+                capitals the rest of the site uses. Inside a tile, above the
+                thing itself, they read as captions rather than as eyebrows. */}
+            <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
               {p.outputs.map((o) => (
                 <li key={o.who}
                   className={`rounded-sm px-3.5 py-4 ${o.future
                     ? "border border-dashed border-gold/60"
                     : "border-[1.5px] border-gold bg-gold/12"}`}>
-                  <span className="label-ui block text-foreground/90">{o.who}</span>
+                  <span className="block font-ui text-xs tracking-[0.02em] text-foreground/70">{o.who}</span>
                   <span className="mt-1.5 block font-heading text-[1.0625rem] leading-tight">{o.what}</span>
                 </li>
               ))}

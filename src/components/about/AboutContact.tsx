@@ -99,7 +99,11 @@ const AboutContact = ({ contact }: { contact: AboutContent["contact"] }) => {
               </div>
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground uppercase tracking-widest">{label}</p>
-                <p className="font-heading font-semibold text-foreground truncate">{value}</p>
+                {/* Wraps rather than truncates: "contato@empowerfi.io…" is not
+                    an address anyone can write to. `break-all` rather than
+                    `break-words` because only the former lets the card shrink
+                    below the width of "@empowerfi_community". */}
+                <p className="font-heading font-semibold text-foreground break-all">{value}</p>
               </div>
             </a>
           ))}
@@ -149,7 +153,7 @@ const AboutContact = ({ contact }: { contact: AboutContent["contact"] }) => {
                 type="submit"
                 size="lg"
                 disabled={sending}
-                className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="h-auto gap-2 whitespace-normal py-3 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {sending ? t.sending : (<>{t.submit} <Send size={16} /></>)}
               </Button>

@@ -383,7 +383,7 @@ const PilotSectionEn = () => (
         </ol>
       </div>
 
-      <div className="mx-auto max-w-3xl space-y-5 rounded-2xl p-10 text-center glass glow-border shadow-glow">
+      <div className="mx-auto max-w-3xl space-y-5 rounded-2xl p-6 text-center sm:p-10 glass glow-border shadow-glow">
         <p className="text-xs font-medium uppercase tracking-widest text-accent">
           Prepare · Originate · Allocate · Fund · Service · Measure
         </p>
@@ -396,7 +396,7 @@ const PilotSectionEn = () => (
           the P2P phase — people interested in building a more efficient way to
           prepare and finance small businesses.
         </p>
-        <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:justify-center">
+        <div className="flex flex-col items-center gap-3 pt-2 sm:flex-row sm:flex-wrap sm:justify-center">
           <Button
             asChild
             size="lg"

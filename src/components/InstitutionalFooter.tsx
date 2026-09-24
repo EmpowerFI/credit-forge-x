@@ -43,7 +43,9 @@ const InstitutionalFooter = ({ footer, homePath, lang }: InstitutionalFooterProp
   return (
   <footer className="border-t border-foreground/15 px-4 pb-14 pt-16 md:px-8">
     <div className="container mx-auto flex flex-col gap-10">
-      <div className="grid gap-10 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+      {/* Two columns at md, three only from lg: at 768 the third column
+          was 140px wide and the e-mail address did not fit in it. */}
+      <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-4">
           <Link to={homePath} className="inline-flex items-center gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background">
             <Mark size={34} className="shrink-0" />
@@ -84,7 +86,7 @@ const InstitutionalFooter = ({ footer, homePath, lang }: InstitutionalFooterProp
           </div>
         </div>
 
-        <address className="not-italic space-y-2 text-[1.0625rem] text-foreground/80">
+        <address className="not-italic space-y-2 break-words text-[1.0625rem] text-foreground/80">
           <p className="eyebrow">{footer.developedBy}</p>
           <p className="text-foreground font-medium leading-snug">{COMPANY_LEGAL_NAME}</p>
           {COMPANY_CNPJ && (
