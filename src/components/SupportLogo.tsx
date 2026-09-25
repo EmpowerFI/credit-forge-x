@@ -7,6 +7,12 @@ interface SupportLogoProps {
   /** Small caption above the mark, e.g. "Apoio institucional". Omit it where
    *  the surrounding block already says the same thing. */
   label?: string;
+  /**
+   * Taller rendering, for a mark carrying a second line of type that would be
+   * illegible at the default height — the Unicamp seal's "empresa-filha" sits
+   * under the wordmark and needs the room.
+   */
+  large?: boolean;
 }
 
 /**
@@ -23,7 +29,7 @@ interface SupportLogoProps {
  * had already landed — leaving the target ~90px off. Reserving space only for a
  * mark that exists keeps the page height honest from first paint.
  */
-const SupportLogo = ({ src, alt, label }: SupportLogoProps) => {
+const SupportLogo = ({ src, alt, label, large = false }: SupportLogoProps) => {
   const [status, setStatus] = useState<"pending" | "loaded" | "failed">("pending");
   if (status === "failed") return null;
 
@@ -38,7 +44,9 @@ const SupportLogo = ({ src, alt, label }: SupportLogoProps) => {
         decoding="async"
         onLoad={() => setStatus("loaded")}
         onError={() => setStatus("failed")}
-        className="h-12 w-auto max-w-[180px] object-contain object-left"
+        className={large
+          ? "h-[4.5rem] w-auto max-w-[220px] object-contain object-left"
+          : "h-12 w-auto max-w-[180px] object-contain object-left"}
       />
     </div>
   );

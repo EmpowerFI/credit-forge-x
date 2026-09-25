@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { CONTACT_EMAIL, SEBRAE_LOGO_SRC } from "@/config/links";
+import { CONTACT_EMAIL, SEBRAE_LOGO_SRC, UNICAMP_SEAL_SRC } from "@/config/links";
 import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
 import StoreLinks from "@/components/StoreLinks";
@@ -126,7 +126,7 @@ const HomeTraction = ({ lang }: { lang: Lang }) => {
       <section id="traction" className="section-padding">
         <div className="container mx-auto">
           <SectionHeading eyebrow={t.eyebrow} title={t.title} accent={t.accent} />
-          <div className="mt-14 grid gap-10 sm:grid-cols-2 xl:grid-cols-4 xl:gap-8">
+          <div className="mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 xl:gap-7">
             {t.items.map((item, i) => (
               <div key={item.title} className="flex flex-col">
                 {/* Four rules, fading across: they are one list, in order of how
@@ -141,8 +141,11 @@ const HomeTraction = ({ lang }: { lang: Lang }) => {
                     {item.link} <ExternalLink size={15} aria-hidden />
                   </Link>
                 )}
-                {/* The tag above already names the support, so the mark stands alone. */}
+                {/* The tag above already names the support, so the marks stand alone. */}
                 {i === 2 && <SupportLogo src={SEBRAE_LOGO_SRC} alt="Sebrae" />}
+                {/* The seal carries a second line of type under the wordmark,
+                    so it is rendered taller than the marks beside it. */}
+                {i === 3 && <SupportLogo large src={UNICAMP_SEAL_SRC} alt={lang === "pt" ? "Selo Empresa-filha da Unicamp" : "Unicamp empresa-filha seal"} />}
               </div>
             ))}
           </div>

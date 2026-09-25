@@ -53,6 +53,9 @@ export const organizationSchema = (): Record<string, unknown> => ({
     availableLanguage: ["Portuguese", "English"],
   },
   sameAs: [LINKEDIN_URL, INSTAGRAM_URL, X_URL],
+  // Unicamp's official recognition, so the distinction is machine-readable and
+  // not only a mark on a card.
+  award: "Selo Empresa-filha da Unicamp (Unicamp Ventures)",
   // Only advertise the tax ID once it is confirmed — a blank taxID is worse
   // than an absent one.
   ...(COMPANY_CNPJ ? { taxID: COMPANY_CNPJ } : {}),
