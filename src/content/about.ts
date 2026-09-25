@@ -5,6 +5,7 @@ import {
   Eye,
   FileQuestion,
   Gauge,
+  GraduationCap,
   Handshake,
   Heart,
   Landmark,
@@ -22,7 +23,7 @@ import {
 } from "lucide-react";
 import advisorFernando from "@/assets/advisor-fernando-blanco.webp";
 import advisorRoberta from "@/assets/advisor-roberta-stock.webp";
-import { SEBRAE_LOGO_SRC } from "@/config/links";
+import { SEBRAE_LOGO_SRC, UNICAMP_SEAL_SRC, UNICAMP_VENTURES_URL } from "@/config/links";
 
 const ROBERTA_LINKEDIN_URL = "https://www.linkedin.com/in/robertastock/";
 const ROBERTA_WEBSITE = { href: "https://www.triunna.com.br/", label: "triunna.com.br" };
@@ -142,7 +143,7 @@ export interface AboutContent {
       /** The app card links to both stores instead of a single one. */
       stores?: boolean;
       /** Third-party mark evidencing institutional backing, from /public. */
-      logo?: { src: string; alt: string; label: string };
+      logo?: { src: string; alt: string; label: string; large?: boolean };
     }[];
   };
   faq: {
@@ -430,6 +431,14 @@ export const aboutPt: AboutContent = {
         title: "Programas do Sebrae: Ginga Prototipa e PIER",
         desc: "Tese validada em campo junto ao Sebrae. O Ginga Prototipa foi concluído com a construção do protótipo, e a empresa segue agora no PIER, refinando o modelo de negócios com consultoria especializada.",
         logo: { src: SEBRAE_LOGO_SRC, alt: "Sebrae", label: "Apoio institucional" },
+      },
+      {
+        icon: GraduationCap,
+        title: "Empresa-filha da Unicamp",
+        desc: "A EmpowerFI foi cadastrada como empresa-filha da Unicamp e integra o Unicamp Ventures, a rede que conecta os empreendedores dessas empresas. O selo é o reconhecimento oficial da universidade, regido pela Resolução nº 30/2025.",
+        href: UNICAMP_VENTURES_URL,
+        linkLabel: "Unicamp Ventures",
+        logo: { src: UNICAMP_SEAL_SRC, alt: "Selo Empresa-filha da Unicamp", label: "Reconhecimento institucional", large: true },
       },
       {
         icon: Building2,
@@ -765,6 +774,14 @@ export const aboutEn: AboutContent = {
         title: "Sebrae programmes: Ginga Prototipa and PIER",
         desc: "Thesis validated in the field with Sebrae. Ginga Prototipa concluded with the prototype built, and the company is now in PIER, refining the business model with specialist consulting.",
         logo: { src: SEBRAE_LOGO_SRC, alt: "Sebrae", label: "Institutional support" },
+      },
+      {
+        icon: GraduationCap,
+        title: "An empresa-filha of Unicamp",
+        desc: "EmpowerFI is registered as an empresa-filha of Unicamp and joins Unicamp Ventures, the network that connects those companies' founders. The seal is the university's official recognition, governed by Resolution 30/2025.",
+        href: UNICAMP_VENTURES_URL,
+        linkLabel: "Unicamp Ventures",
+        logo: { src: UNICAMP_SEAL_SRC, alt: "Unicamp empresa-filha seal", label: "Institutional recognition", large: true },
       },
       {
         icon: Building2,

@@ -1,5 +1,5 @@
-import { Award, Blocks, Building2, ExternalLink, Smartphone } from "lucide-react";
-import { SEBRAE_LOGO_SRC } from "@/config/links";
+import { Award, Blocks, Building2, ExternalLink, GraduationCap, Smartphone } from "lucide-react";
+import { SEBRAE_LOGO_SRC, UNICAMP_SEAL_SRC } from "@/config/links";
 import StoreLinks from "@/components/StoreLinks";
 import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
@@ -8,6 +8,8 @@ interface TractionLogo {
   src: string;
   alt: string;
   label: string;
+  /** Taller, for a mark whose second line would not survive the default. */
+  large?: boolean;
 }
 
 const items: {
@@ -31,6 +33,12 @@ const items: {
     title: "Construído e refinado com o Sebrae",
     desc: "Tese validada em campo junto ao Sebrae, uma das principais referências de inovação do país. A EmpowerFI concluiu o Ginga Prototipa, que resultou no protótipo em funcionamento, e está agora no PIER — programa do Sebrae para refinar o modelo de negócios com consultoria especializada.",
     logo: { src: SEBRAE_LOGO_SRC, alt: "Sebrae", label: "Apoio institucional" },
+  },
+  {
+    icon: GraduationCap,
+    title: "Empresa-filha da Unicamp",
+    desc: "A EmpowerFI foi cadastrada como empresa-filha da Unicamp e integra o Unicamp Ventures, a rede que conecta os empreendedores dessas empresas.",
+    logo: { src: UNICAMP_SEAL_SRC, alt: "Selo Empresa-filha da Unicamp", label: "Reconhecimento institucional", large: true },
   },
   {
     icon: Building2,
