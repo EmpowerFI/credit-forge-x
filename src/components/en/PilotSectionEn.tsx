@@ -400,7 +400,7 @@ const PilotSectionEn = () => (
           <Button
             asChild
             size="lg"
-            className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+            className="h-auto gap-2 whitespace-normal py-3 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Link to="/#contact">
               Talk to EmpowerFI <ArrowRight size={18} />
@@ -410,7 +410,7 @@ const PilotSectionEn = () => (
             asChild
             size="lg"
             variant="outline"
-            className="border-primary/40 text-foreground hover:bg-primary/10"
+            className="h-auto whitespace-normal py-3 border-primary/40 text-foreground hover:bg-primary/10"
           >
             <Link to="/about">Get to know EmpowerFI</Link>
           </Button>
@@ -418,7 +418,7 @@ const PilotSectionEn = () => (
             asChild
             size="lg"
             variant="outline"
-            className="border-primary/40 text-foreground hover:bg-primary/10"
+            className="h-auto whitespace-normal py-3 border-primary/40 text-foreground hover:bg-primary/10"
           >
             <Link to="/investors#waitlist">Investor Waitlist</Link>
           </Button>

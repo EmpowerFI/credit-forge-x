@@ -60,8 +60,17 @@ the cream from reading as beige newsprint.
 
 - `editorial.tsx` — `Mark`, `Eyebrow`, `GradedRule`, `StatusNote`, `PullQuote`,
   `RingList`, `SiteLinkButton`, `SiteAnchorButton`
-- `SiteHeader.tsx` — both languages' header; `top: true` puts a link in the
-  desktop row, everything else lives in the panel
+- `SiteHeader.tsx` — both languages' header. `top: "lg"` puts a link in the
+  short row a 1024px laptop gets, `top: "xl"` joins it once there is room, and
+  everything else lives in the panel. The row starts at lg on purpose: below
+  that the bar was a wordmark and one square button, and nothing said what was
+  on the page.
+- `LanguageToggle.tsx` — which language you are reading and the other one, side
+  by side, in the bar at **every** width. It is never inside the menu: the
+  switch is the first thing a Brazilian visitor landing on the English root
+  looks for. The other language is set in gold, because gold means "clickable"
+  everywhere else on the site — leaving it quieter than the language you are
+  already reading pointed the eye at the wrong half of the control.
 - `SiteFooter.tsx` — both languages' footer; only the words differ
 
 Buttons are `.btn-site` (hairline) and `.btn-site` + `.btn-site-primary`
