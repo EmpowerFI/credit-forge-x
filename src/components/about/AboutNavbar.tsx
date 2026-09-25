@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ArrowUpRight, Languages, X } from "lucide-react";
+import { ArrowUpRight, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Mark } from "@/components/site/editorial";
+import LanguageToggle from "@/components/site/LanguageToggle";
 import type { AboutContent } from "@/content/about";
 
 interface AboutNavbarProps {
@@ -20,6 +21,7 @@ const itemClass = "flex min-h-[3rem] items-center text-[1.0625rem] text-foregrou
 // hairline — so moving between /about and the home page is not a jolt.
 const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
   const [open, setOpen] = useState(false);
+  const pt = homePath.startsWith("/pt");
   const close = () => setOpen(false);
 
   return (
@@ -34,6 +36,12 @@ const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
           <Link to={`/app?lang=${homePath.startsWith("/pt") ? "pt" : "en"}`} className="btn-site !hidden !min-h-[2.875rem] !px-5 sm:!inline-flex">
             App · Devnet <ArrowUpRight size={15} className="text-accent" aria-hidden />
           </Link>
+          {/* In the bar, not in the menu: the same reason the home header
+              carries it — the switch is what a Brazilian reader looks for
+              first, and it should not be behind anything. */}
+          <LanguageToggle language={pt
+            ? { current: "PT", other: "EN", otherName: "English", to: langSwitchPath }
+            : { current: "EN", other: "PT", otherName: "Português", to: langSwitchPath }} />
           <button
             type="button"
             className="flex h-11 w-11 flex-col items-center justify-center gap-[5px] rounded-sm border border-foreground/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -64,9 +72,6 @@ const AboutNavbar = ({ nav, homePath, langSwitchPath }: AboutNavbarProps) => {
             ))}
             <Link to={homePath} onClick={close} className={itemClass}>
               {nav.home}
-            </Link>
-            <Link to={langSwitchPath} onClick={close} className={`gap-2 ${itemClass}`}>
-              <Languages size={15} aria-hidden /> {nav.langSwitch}
             </Link>
             <Link to={`/app?lang=${homePath.startsWith("/pt") ? "pt" : "en"}`} onClick={close} className={`gap-2 sm:hidden ${itemClass}`}>
               App · Devnet <ArrowUpRight size={15} className="text-accent" aria-hidden />
