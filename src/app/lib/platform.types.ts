@@ -103,6 +103,241 @@ export type Database = {
           },
         ]
       }
+      capital_instruments: {
+        Row: {
+          active: boolean
+          business_age_min_months: number
+          capacity_cents: number | null
+          closed_network_rules: Json
+          code: string
+          created_at: string
+          currency: string
+          effective_from: string
+          effective_to: string | null
+          eligible_uf: string[]
+          estimated_cost_bps: number | null
+          id: string
+          impact_mandate: boolean
+          instrument_type: Database["public"]["Enums"]["capital_instrument_type"]
+          is_credit: boolean
+          is_domestic: boolean
+          is_global: boolean
+          is_simulated: boolean
+          max_instalment_share_bps: number | null
+          name: string
+          policy_version: number
+          pool: Database["public"]["Enums"]["funding_pool"] | null
+          provider_id: string
+          purposes: Database["public"]["Enums"]["credit_purpose"][]
+          required_documents: string[]
+          requires_partner_approval: boolean
+          ticket_max_cents: number | null
+          ticket_min_cents: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          business_age_min_months?: number
+          capacity_cents?: number | null
+          closed_network_rules?: Json
+          code: string
+          created_at?: string
+          currency?: string
+          effective_from?: string
+          effective_to?: string | null
+          eligible_uf?: string[]
+          estimated_cost_bps?: number | null
+          id?: string
+          impact_mandate?: boolean
+          instrument_type: Database["public"]["Enums"]["capital_instrument_type"]
+          is_credit?: boolean
+          is_domestic?: boolean
+          is_global?: boolean
+          is_simulated?: boolean
+          max_instalment_share_bps?: number | null
+          name: string
+          policy_version?: number
+          pool?: Database["public"]["Enums"]["funding_pool"] | null
+          provider_id: string
+          purposes?: Database["public"]["Enums"]["credit_purpose"][]
+          required_documents?: string[]
+          requires_partner_approval?: boolean
+          ticket_max_cents?: number | null
+          ticket_min_cents?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          business_age_min_months?: number
+          capacity_cents?: number | null
+          closed_network_rules?: Json
+          code?: string
+          created_at?: string
+          currency?: string
+          effective_from?: string
+          effective_to?: string | null
+          eligible_uf?: string[]
+          estimated_cost_bps?: number | null
+          id?: string
+          impact_mandate?: boolean
+          instrument_type?: Database["public"]["Enums"]["capital_instrument_type"]
+          is_credit?: boolean
+          is_domestic?: boolean
+          is_global?: boolean
+          is_simulated?: boolean
+          max_instalment_share_bps?: number | null
+          name?: string
+          policy_version?: number
+          pool?: Database["public"]["Enums"]["funding_pool"] | null
+          provider_id?: string
+          purposes?: Database["public"]["Enums"]["credit_purpose"][]
+          required_documents?: string[]
+          requires_partner_approval?: boolean
+          ticket_max_cents?: number | null
+          ticket_min_cents?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capital_instruments_pool_fkey"
+            columns: ["pool"]
+            isOneToOne: false
+            referencedRelation: "funding_pools"
+            referencedColumns: ["pool"]
+          },
+          {
+            foreignKeyName: "capital_instruments_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "capital_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      capital_providers: {
+        Row: {
+          active: boolean
+          code: string
+          commercial_model: Json
+          coverage_note: string | null
+          coverage_uf: string[]
+          created_at: string
+          display_name: string
+          id: string
+          is_simulated: boolean
+          legal_name: string | null
+          partner_id: string | null
+          provider_type: Database["public"]["Enums"]["capital_provider_type"]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          commercial_model?: Json
+          coverage_note?: string | null
+          coverage_uf?: string[]
+          created_at?: string
+          display_name: string
+          id?: string
+          is_simulated?: boolean
+          legal_name?: string | null
+          partner_id?: string | null
+          provider_type: Database["public"]["Enums"]["capital_provider_type"]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          commercial_model?: Json
+          coverage_note?: string | null
+          coverage_uf?: string[]
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_simulated?: boolean
+          legal_name?: string | null
+          partner_id?: string | null
+          provider_type?: Database["public"]["Enums"]["capital_provider_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capital_providers_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      capital_route_decisions: {
+        Row: {
+          allocations: Json
+          decided_at: string
+          decision_no: number
+          domestic_coverage_cents: number
+          engine_version: string
+          evaluated: Json
+          external_capital_gap_cents: number | null
+          global_coverage_cents: number
+          id: string
+          is_simulated: boolean
+          need: Json
+          opportunity_id: string
+          reason_codes: string[]
+          requested_cents: number
+          snapshot_hash: string | null
+          status: Database["public"]["Enums"]["capital_route_status"]
+          unfunded_cents: number
+        }
+        Insert: {
+          allocations: Json
+          decided_at?: string
+          decision_no: number
+          domestic_coverage_cents: number
+          engine_version: string
+          evaluated: Json
+          external_capital_gap_cents?: number | null
+          global_coverage_cents: number
+          id?: string
+          is_simulated?: boolean
+          need?: Json
+          opportunity_id: string
+          reason_codes: string[]
+          requested_cents: number
+          snapshot_hash?: string | null
+          status: Database["public"]["Enums"]["capital_route_status"]
+          unfunded_cents: number
+        }
+        Update: {
+          allocations?: Json
+          decided_at?: string
+          decision_no?: number
+          domestic_coverage_cents?: number
+          engine_version?: string
+          evaluated?: Json
+          external_capital_gap_cents?: number | null
+          global_coverage_cents?: number
+          id?: string
+          is_simulated?: boolean
+          need?: Json
+          opportunity_id?: string
+          reason_codes?: string[]
+          requested_cents?: number
+          snapshot_hash?: string | null
+          status?: Database["public"]["Enums"]["capital_route_status"]
+          unfunded_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capital_route_decisions_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "qualified_credit_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chain_anchors: {
         Row: {
           account_address: string | null
@@ -1904,6 +2139,8 @@ export type Database = {
           amount_cents: number
           confidence: Database["public"]["Enums"]["grade"]
           created_at: string
+          desired_date: string | null
+          documents_on_file: string[]
           eligibility_id: string
           entrepreneur_id: string
           funded_micro_usdc: number
@@ -1922,6 +2159,7 @@ export type Database = {
           risk_band: Database["public"]["Enums"]["grade"]
           status: Database["public"]["Enums"]["opportunity_status"]
           term_months: number
+          urgency: string | null
         }
         Insert: {
           allocated_at?: string | null
@@ -1931,6 +2169,8 @@ export type Database = {
           amount_cents: number
           confidence: Database["public"]["Enums"]["grade"]
           created_at?: string
+          desired_date?: string | null
+          documents_on_file?: string[]
           eligibility_id: string
           entrepreneur_id: string
           funded_micro_usdc?: number
@@ -1949,6 +2189,7 @@ export type Database = {
           risk_band: Database["public"]["Enums"]["grade"]
           status: Database["public"]["Enums"]["opportunity_status"]
           term_months: number
+          urgency?: string | null
         }
         Update: {
           allocated_at?: string | null
@@ -1958,6 +2199,8 @@ export type Database = {
           amount_cents?: number
           confidence?: Database["public"]["Enums"]["grade"]
           created_at?: string
+          desired_date?: string | null
+          documents_on_file?: string[]
           eligibility_id?: string
           entrepreneur_id?: string
           funded_micro_usdc?: number
@@ -1976,6 +2219,7 @@ export type Database = {
           risk_band?: Database["public"]["Enums"]["grade"]
           status?: Database["public"]["Enums"]["opportunity_status"]
           term_months?: number
+          urgency?: string | null
         }
         Relationships: [
           {
@@ -3168,6 +3412,10 @@ export type Database = {
       }
       reset_demo_data: { Args: { p_confirm: string }; Returns: Json }
       revoke_audit_report: { Args: { p_id: string }; Returns: undefined }
+      run_capital_engine: {
+        Args: { p_documents?: string[]; p_opportunity_id: string }
+        Returns: Json
+      }
       set_mandate: {
         Args: {
           p_impact_mandate?: boolean
@@ -3370,6 +3618,23 @@ export type Database = {
         | "auditor"
         | "admin"
         | "sponsor"
+      capital_instrument_type:
+        | "regional_credit_product"
+        | "microcredit"
+        | "commercial_credit"
+        | "productive_exchange_network"
+        | "sponsored_capital"
+        | "domestic_p2p"
+        | "global_impact_capital"
+      capital_provider_type:
+        | "credit_cooperative"
+        | "microcredit_operator"
+        | "commercial_partner"
+        | "community_network"
+        | "sponsor_programme"
+        | "p2p_pool"
+        | "other"
+      capital_route_status: "recommended" | "manual_review" | "no_route"
       capital_use:
         | "as_declared"
         | "partly_as_declared"
@@ -3640,6 +3905,25 @@ export const Constants = {
         "admin",
         "sponsor",
       ],
+      capital_instrument_type: [
+        "regional_credit_product",
+        "microcredit",
+        "commercial_credit",
+        "productive_exchange_network",
+        "sponsored_capital",
+        "domestic_p2p",
+        "global_impact_capital",
+      ],
+      capital_provider_type: [
+        "credit_cooperative",
+        "microcredit_operator",
+        "commercial_partner",
+        "community_network",
+        "sponsor_programme",
+        "p2p_pool",
+        "other",
+      ],
+      capital_route_status: ["recommended", "manual_review", "no_route"],
       capital_use: [
         "as_declared",
         "partly_as_declared",
