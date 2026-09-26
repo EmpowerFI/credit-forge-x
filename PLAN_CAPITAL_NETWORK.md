@@ -136,6 +136,51 @@ what the Global Impact Capital route then funds on Devnet. That is a better stor
 than today's — the global rail stops being an alternative and becomes the answer
 to a gap the audience just watched appear.
 
+### 5.1 · Build log — what each day actually shipped, and what it found
+
+**Day 1 · the registry** (`20261002000000_capital_network.sql`, 23 pgTAP assertions).
+Three tables, four providers and five instruments, all simulated, and nothing
+downstream touched. The two P2P routes are instruments that *point at*
+`funding_pools` rather than copying it, held there by a check constraint, so the
+network and the Investor Console cannot disagree about what a pool has left.
+
+Two of §12's guardrails went into the schema rather than into a screen, where a
+translation could lose them: `is_credit = false` on the productive exchange,
+whose unit of account is `unit` and not money, and `requires_partner_approval`
+true on every partner route.
+
+**Day 2 · the engine** (`packages/capital-allocation/src/network.ts`, 27 tests).
+Seven gates, each carrying both sides of its comparison; the seven-weight fit
+score of §6; domestic first and global for the residual.
+
+*Building it found a bug in day 1's schema.* `covered + gap = requested` is false
+the moment a global route fills part of the gap: R$3,000 domestic and R$2,000
+global against a R$5,000 need leaves coverage at R$5,000 and the gap still at
+R$2,000, because the gap measures the **domestic** network. Replaced with three
+independent numbers that sum to the request, and a generated
+`external_capital_gap_cents`, so the two definitions cannot drift.
+
+**Day 3 · the run** (`20261003000000_capital_engine_run.sql`, 21 more assertions).
+`private.match_capital()` mirrors the TypeScript engine, and
+`vectors/network.json` holds the two to one answer across six scenarios — every
+gate, every limit and every reason code identical, not just the headline figures.
+`public.run_capital_engine(opportunity)` is the operator's button: it refuses
+anyone who is not a capital operator, refuses an opportunity whose owner has
+withdrawn the `partner` consent scope, and is idempotent — the same engine over
+the same need reaching the same answer records no second row.
+`private.open_for_funding()` is untouched.
+
+*Two fields the addendum did not ask for, and one proxy it should know about.*
+The decision now stores the `need` it ran against, as `eligibility_assessments`
+stores its `inputs`; without that a recommendation could not be reproduced. And
+`documents_on_file` had to exist somewhere: nothing in this product records which
+papers a business has, so an operator states them when running the engine and the
+statement is kept rather than floated. Finally, **there is no incorporation date
+anywhere in the schema**, so `business_age_months` is the span of the check-in
+history she has actually reported — a proxy, and it must be labelled as one
+wherever the operator UI shows it, because it is what closes the regional
+product's six-month gate.
+
 ---
 
 ## 6 · Decisions needed before coding

@@ -8,6 +8,27 @@ import {
   type Instrument,
   matchCapital,
 } from "./network";
+import vectors from "../vectors/network.json";
+
+interface VectorScenario {
+  name: string;
+  input: {
+    instruments: string[];
+    overrides?: Record<string, Partial<Instrument>>;
+    need: CapitalNeed;
+  };
+  expect: {
+    status: string;
+    reason_codes: string[];
+    allocations: unknown[];
+    domestic_coverage_cents: number;
+    global_coverage_cents: number;
+    unfunded_cents: number;
+    external_capital_gap_cents: number;
+    eligible: string[];
+    fit_scores: Record<string, number>;
+  };
+}
 
 // The demo network of the migration, in the engine's shape.
 const regional: Instrument = {
@@ -186,5 +207,44 @@ describe("determinism", () => {
   it("refuses an amount that is not a positive integer", () => {
     expect(() => matchCapital({ ...rita, amount_cents: 0 }, NETWORK)).toThrow();
     expect(() => matchCapital({ ...rita, amount_cents: 1.5 }, NETWORK)).toThrow();
+  });
+});
+
+// The same expectations platform/supabase/tests/capital_network.test.sql holds
+// private.match_capital() to. A plan that differs between the browser and the
+// database is one of them being wrong, and neither is allowed to be.
+describe("the vectors", () => {
+  const byId = new Map(vectors.instruments.map((i) => [i.id, i as Instrument]));
+
+  it("are written for this model version", () =>
+    expect(vectors.model_version).toBe(CAPITAL_NETWORK_MODEL_VERSION));
+
+  for (const s of vectors.scenarios as VectorScenario[]) {
+    it(s.name, () => {
+      const set = s.input.instruments.map((id) => {
+        const base = byId.get(id);
+        if (!base) throw new Error(`unknown instrument ${id}`);
+        return { ...base, ...(s.input.overrides?.[id] ?? {}) };
+      });
+      const plan = matchCapital(s.input.need, set);
+      expect(plan.status).toBe(s.expect.status);
+      expect(plan.reason_codes).toEqual(s.expect.reason_codes);
+      expect(plan.allocations).toEqual(s.expect.allocations);
+      expect(plan.domestic_coverage_cents).toBe(s.expect.domestic_coverage_cents);
+      expect(plan.global_coverage_cents).toBe(s.expect.global_coverage_cents);
+      expect(plan.unfunded_cents).toBe(s.expect.unfunded_cents);
+      expect(plan.external_capital_gap_cents).toBe(s.expect.external_capital_gap_cents);
+      expect(plan.evaluated.filter((e) => e.eligible).map((e) => e.instrument_id)).toEqual(s.expect.eligible);
+      expect(Object.fromEntries(plan.evaluated.map((e) => [e.instrument_id, e.fit_score]))).toEqual(s.expect.fit_scores);
+    });
+  }
+
+  it("keep every centavo of the need accounted for", () => {
+    for (const s of vectors.scenarios as VectorScenario[]) {
+      const e = s.expect;
+      expect(e.domestic_coverage_cents + e.global_coverage_cents + e.unfunded_cents).toBe(s.input.need.amount_cents);
+      // The gap measures the domestic network, taken before global money hides it.
+      expect(e.external_capital_gap_cents).toBe(s.input.need.amount_cents - e.domestic_coverage_cents);
+    }
   });
 });

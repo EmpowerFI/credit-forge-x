@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(23);
+select plan(44);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -168,6 +168,209 @@ set local role postgres;
 select is(
   (select private.capital_network_model_version()),
   'capital-network-v1.0.0', 'the engine version is stated where the audit console can find it');
+
+-- ------------------------------------------------------------------ the vectors
+-- Generated from packages/capital-allocation/vectors/network.json. The package's
+-- own tests hold the TypeScript engine to the same expectations, so the browser
+-- and the database give one answer about a capital plan.
+
+select is(
+  (select jsonb_build_object(
+     'status', p -> 'status', 'reason_codes', p -> 'reason_codes', 'allocations', p -> 'allocations',
+     'domestic_coverage_cents', p -> 'domestic_coverage_cents', 'global_coverage_cents', p -> 'global_coverage_cents',
+     'unfunded_cents', p -> 'unfunded_cents', 'external_capital_gap_cents', p -> 'external_capital_gap_cents',
+     'eligible', coalesce((select jsonb_agg(e -> 'instrument_id') from jsonb_array_elements(p -> 'evaluated') as t(e)
+                           where (e ->> 'eligible')::boolean), '[]'::jsonb),
+     'fit_scores', (select jsonb_object_agg(e ->> 'instrument_id', e -> 'fit_score')
+                    from jsonb_array_elements(p -> 'evaluated') as t(e)))
+   from (select private.match_capital(
+     '{"amount_cents": 500000, "term_months": 12, "purpose": "inventory", "uf": "SP", "business_age_months": 18, "documents": ["cnpj_or_mei", "bank_statement_3m", "cpf", "proof_of_activity", "network_membership"], "max_instalment_cents": 90000, "impact_eligible": true, "readiness_ok": true, "manual_review_allowed": false}'::jsonb,
+     '[{"id": "credito_regional_capital_giro", "provider": "coop_regional_demo", "name": "Crédito produtivo regional · capital de giro", "type": "regional_credit_product", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 100000, "ticket_max_cents": 1500000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 6, "required_documents": ["cnpj_or_mei", "bank_statement_3m"], "max_instalment_share_bps": 6000, "estimated_cost_bps": 4800, "capacity_cents": 4000000, "impact_mandate": false, "is_domestic": true}, {"id": "microcredito_produtivo", "provider": "microcredito_demo", "name": "Microcrédito produtivo orientado", "type": "microcredit", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 50000, "ticket_max_cents": 500000, "eligible_uf": ["SP", "MG"], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": ["cpf", "proof_of_activity"], "max_instalment_share_bps": 4000, "estimated_cost_bps": 6600, "capacity_cents": 1500000, "impact_mandate": true, "is_domestic": true}, {"id": "troca_produtiva_rede", "provider": "rede_troca_demo", "name": "Troca produtiva em rede", "type": "productive_exchange_network", "is_credit": false, "requires_partner_approval": true, "ticket_min_cents": 10000, "ticket_max_cents": 200000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 0, "required_documents": ["network_membership"], "max_instalment_share_bps": null, "estimated_cost_bps": null, "capacity_cents": 600000, "impact_mandate": false, "is_domestic": true}, {"id": "pool_domestico_p2p", "provider": "empowerfi_pools", "name": "Pool doméstico P2P · investidores brasileiros", "type": "domestic_p2p", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 50000, "ticket_max_cents": 400000, "eligible_uf": [], "purposes": [], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2500, "capacity_cents": 2700000, "impact_mandate": false, "is_domestic": true}, {"id": "pool_global_impacto", "provider": "empowerfi_pools", "name": "Capital global de impacto · USDC na Solana", "type": "global_impact_capital", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 100000, "ticket_max_cents": 1000000, "eligible_uf": [], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2400, "capacity_cents": 9000000, "impact_mandate": true, "is_domestic": false}]'::jsonb) as p) q),
+  '{"status": "recommended", "reason_codes": ["DOMESTIC_COVERAGE_SUFFICIENT", "PURPOSE_MATCH", "CLOSED_NETWORK_PURPOSE_MATCH", "TICKET_MATCH", "REGION_MATCH", "PARTNER_CAPACITY_AVAILABLE", "LOWER_ESTIMATED_COST"], "allocations": [{"instrument_id": "credito_regional_capital_giro", "amount_cents": 437837, "fit_score": 8490, "reasons": ["PURPOSE_MATCH", "TICKET_MATCH", "REGION_MATCH", "PARTNER_CAPACITY_AVAILABLE"], "requires_partner_approval": true, "is_credit": true}, {"instrument_id": "troca_produtiva_rede", "amount_cents": 62163, "fit_score": 8400, "reasons": ["CLOSED_NETWORK_PURPOSE_MATCH", "TICKET_MATCH", "REGION_MATCH", "PARTNER_CAPACITY_AVAILABLE", "LOWER_ESTIMATED_COST"], "requires_partner_approval": true, "is_credit": false}], "domestic_coverage_cents": 500000, "global_coverage_cents": 0, "unfunded_cents": 0, "external_capital_gap_cents": 0, "eligible": ["credito_regional_capital_giro", "microcredito_produtivo", "troca_produtiva_rede", "pool_domestico_p2p", "pool_global_impacto"], "fit_scores": {"credito_regional_capital_giro": 8490, "microcredito_produtivo": 7740, "troca_produtiva_rede": 8400, "pool_domestico_p2p": 7650, "pool_global_impacto": 9300}}'::jsonb,
+  'vector: Rita''s R$5,000 for stock: a regional product for the bulk, the exchange network for the tail'
+);
+
+select is(
+  (select jsonb_build_object(
+     'status', p -> 'status', 'reason_codes', p -> 'reason_codes', 'allocations', p -> 'allocations',
+     'domestic_coverage_cents', p -> 'domestic_coverage_cents', 'global_coverage_cents', p -> 'global_coverage_cents',
+     'unfunded_cents', p -> 'unfunded_cents', 'external_capital_gap_cents', p -> 'external_capital_gap_cents',
+     'eligible', coalesce((select jsonb_agg(e -> 'instrument_id') from jsonb_array_elements(p -> 'evaluated') as t(e)
+                           where (e ->> 'eligible')::boolean), '[]'::jsonb),
+     'fit_scores', (select jsonb_object_agg(e ->> 'instrument_id', e -> 'fit_score')
+                    from jsonb_array_elements(p -> 'evaluated') as t(e)))
+   from (select private.match_capital(
+     '{"amount_cents": 500000, "term_months": 12, "purpose": "inventory", "uf": "SP", "business_age_months": 18, "documents": ["cnpj_or_mei", "bank_statement_3m", "cpf", "proof_of_activity", "network_membership"], "max_instalment_cents": 90000, "impact_eligible": true, "readiness_ok": true, "manual_review_allowed": false}'::jsonb,
+     '[{"id": "credito_regional_capital_giro", "provider": "coop_regional_demo", "name": "Crédito produtivo regional · capital de giro", "type": "regional_credit_product", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 100000, "ticket_max_cents": 1500000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 6, "required_documents": ["cnpj_or_mei", "bank_statement_3m"], "max_instalment_share_bps": 6000, "estimated_cost_bps": 4800, "capacity_cents": 150000, "impact_mandate": false, "is_domestic": true}, {"id": "microcredito_produtivo", "provider": "microcredito_demo", "name": "Microcrédito produtivo orientado", "type": "microcredit", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 50000, "ticket_max_cents": 500000, "eligible_uf": ["SP", "MG"], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": ["cpf", "proof_of_activity"], "max_instalment_share_bps": 4000, "estimated_cost_bps": 6600, "capacity_cents": 0, "impact_mandate": true, "is_domestic": true}, {"id": "troca_produtiva_rede", "provider": "rede_troca_demo", "name": "Troca produtiva em rede", "type": "productive_exchange_network", "is_credit": false, "requires_partner_approval": true, "ticket_min_cents": 10000, "ticket_max_cents": 200000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 0, "required_documents": ["network_membership"], "max_instalment_share_bps": null, "estimated_cost_bps": null, "capacity_cents": 0, "impact_mandate": false, "is_domestic": true}, {"id": "pool_domestico_p2p", "provider": "empowerfi_pools", "name": "Pool doméstico P2P · investidores brasileiros", "type": "domestic_p2p", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 50000, "ticket_max_cents": 400000, "eligible_uf": [], "purposes": [], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2500, "capacity_cents": 0, "impact_mandate": false, "is_domestic": true}, {"id": "pool_global_impacto", "provider": "empowerfi_pools", "name": "Capital global de impacto · USDC na Solana", "type": "global_impact_capital", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 100000, "ticket_max_cents": 1000000, "eligible_uf": [], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2400, "capacity_cents": 9000000, "impact_mandate": true, "is_domestic": false}]'::jsonb) as p) q),
+  '{"status": "recommended", "reason_codes": ["DOMESTIC_CAPACITY_PARTIAL", "PURPOSE_MATCH", "TICKET_MATCH", "REGION_MATCH", "PARTNER_CAPACITY_AVAILABLE", "LOWER_ESTIMATED_COST", "GLOBAL_EXPANDS_CAPACITY", "GLOBAL_IMPACT_MANDATE_MATCH", "PARTNER_CAPACITY_EXHAUSTED"], "allocations": [{"instrument_id": "credito_regional_capital_giro", "amount_cents": 150000, "fit_score": 6300, "reasons": ["PURPOSE_MATCH", "TICKET_MATCH", "REGION_MATCH", "PARTNER_CAPACITY_AVAILABLE", "LOWER_ESTIMATED_COST"], "requires_partner_approval": true, "is_credit": true}, {"instrument_id": "pool_global_impacto", "amount_cents": 350000, "fit_score": 9300, "reasons": ["PURPOSE_MATCH", "TICKET_MATCH", "PARTNER_CAPACITY_AVAILABLE", "LOWER_ESTIMATED_COST", "GLOBAL_EXPANDS_CAPACITY", "GLOBAL_IMPACT_MANDATE_MATCH"], "requires_partner_approval": false, "is_credit": true}], "domestic_coverage_cents": 150000, "global_coverage_cents": 350000, "unfunded_cents": 0, "external_capital_gap_cents": 350000, "eligible": ["credito_regional_capital_giro", "pool_global_impacto"], "fit_scores": {"credito_regional_capital_giro": 6300, "microcredito_produtivo": 0, "troca_produtiva_rede": 0, "pool_domestico_p2p": 0, "pool_global_impacto": 9300}}'::jsonb,
+  'vector: when local capacity runs dry, the gap is what global capital answers'
+);
+
+select is(
+  (select jsonb_build_object(
+     'status', p -> 'status', 'reason_codes', p -> 'reason_codes', 'allocations', p -> 'allocations',
+     'domestic_coverage_cents', p -> 'domestic_coverage_cents', 'global_coverage_cents', p -> 'global_coverage_cents',
+     'unfunded_cents', p -> 'unfunded_cents', 'external_capital_gap_cents', p -> 'external_capital_gap_cents',
+     'eligible', coalesce((select jsonb_agg(e -> 'instrument_id') from jsonb_array_elements(p -> 'evaluated') as t(e)
+                           where (e ->> 'eligible')::boolean), '[]'::jsonb),
+     'fit_scores', (select jsonb_object_agg(e ->> 'instrument_id', e -> 'fit_score')
+                    from jsonb_array_elements(p -> 'evaluated') as t(e)))
+   from (select private.match_capital(
+     '{"amount_cents": 5000, "term_months": 6, "purpose": "inventory", "uf": "SP", "business_age_months": 18, "documents": ["cnpj_or_mei", "bank_statement_3m", "cpf", "proof_of_activity", "network_membership"], "max_instalment_cents": 90000, "impact_eligible": true, "readiness_ok": true, "manual_review_allowed": false}'::jsonb,
+     '[{"id": "credito_regional_capital_giro", "provider": "coop_regional_demo", "name": "Crédito produtivo regional · capital de giro", "type": "regional_credit_product", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 100000, "ticket_max_cents": 1500000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 6, "required_documents": ["cnpj_or_mei", "bank_statement_3m"], "max_instalment_share_bps": 6000, "estimated_cost_bps": 4800, "capacity_cents": 4000000, "impact_mandate": false, "is_domestic": true}, {"id": "microcredito_produtivo", "provider": "microcredito_demo", "name": "Microcrédito produtivo orientado", "type": "microcredit", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 50000, "ticket_max_cents": 500000, "eligible_uf": ["SP", "MG"], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": ["cpf", "proof_of_activity"], "max_instalment_share_bps": 4000, "estimated_cost_bps": 6600, "capacity_cents": 1500000, "impact_mandate": true, "is_domestic": true}, {"id": "troca_produtiva_rede", "provider": "rede_troca_demo", "name": "Troca produtiva em rede", "type": "productive_exchange_network", "is_credit": false, "requires_partner_approval": true, "ticket_min_cents": 10000, "ticket_max_cents": 200000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 0, "required_documents": ["network_membership"], "max_instalment_share_bps": null, "estimated_cost_bps": null, "capacity_cents": 600000, "impact_mandate": false, "is_domestic": true}, {"id": "pool_domestico_p2p", "provider": "empowerfi_pools", "name": "Pool doméstico P2P · investidores brasileiros", "type": "domestic_p2p", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 50000, "ticket_max_cents": 400000, "eligible_uf": [], "purposes": [], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2500, "capacity_cents": 2700000, "impact_mandate": false, "is_domestic": true}, {"id": "pool_global_impacto", "provider": "empowerfi_pools", "name": "Capital global de impacto · USDC na Solana", "type": "global_impact_capital", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 100000, "ticket_max_cents": 1000000, "eligible_uf": [], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2400, "capacity_cents": 9000000, "impact_mandate": true, "is_domestic": false}]'::jsonb) as p) q),
+  '{"status": "no_route", "reason_codes": ["DOMESTIC_POOL_EXHAUSTED", "TICKET_OUTSIDE_POOL_POLICY", "NO_ROUTE_AVAILABLE"], "allocations": [], "domestic_coverage_cents": 0, "global_coverage_cents": 0, "unfunded_cents": 5000, "external_capital_gap_cents": 5000, "eligible": [], "fit_scores": {"credito_regional_capital_giro": 0, "microcredito_produtivo": 0, "troca_produtiva_rede": 0, "pool_domestico_p2p": 0, "pool_global_impacto": 0}}'::jsonb,
+  'vector: a need under every route''s floor is qualified demand nothing in the network can take'
+);
+
+select is(
+  (select jsonb_build_object(
+     'status', p -> 'status', 'reason_codes', p -> 'reason_codes', 'allocations', p -> 'allocations',
+     'domestic_coverage_cents', p -> 'domestic_coverage_cents', 'global_coverage_cents', p -> 'global_coverage_cents',
+     'unfunded_cents', p -> 'unfunded_cents', 'external_capital_gap_cents', p -> 'external_capital_gap_cents',
+     'eligible', coalesce((select jsonb_agg(e -> 'instrument_id') from jsonb_array_elements(p -> 'evaluated') as t(e)
+                           where (e ->> 'eligible')::boolean), '[]'::jsonb),
+     'fit_scores', (select jsonb_object_agg(e ->> 'instrument_id', e -> 'fit_score')
+                    from jsonb_array_elements(p -> 'evaluated') as t(e)))
+   from (select private.match_capital(
+     '{"amount_cents": 500000, "term_months": 12, "purpose": "inventory", "uf": "SP", "business_age_months": 18, "documents": ["cnpj_or_mei", "bank_statement_3m", "cpf", "proof_of_activity", "network_membership"], "max_instalment_cents": 90000, "impact_eligible": true, "readiness_ok": false, "manual_review_allowed": false}'::jsonb,
+     '[{"id": "credito_regional_capital_giro", "provider": "coop_regional_demo", "name": "Crédito produtivo regional · capital de giro", "type": "regional_credit_product", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 100000, "ticket_max_cents": 1500000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 6, "required_documents": ["cnpj_or_mei", "bank_statement_3m"], "max_instalment_share_bps": 6000, "estimated_cost_bps": 4800, "capacity_cents": 4000000, "impact_mandate": false, "is_domestic": true}, {"id": "microcredito_produtivo", "provider": "microcredito_demo", "name": "Microcrédito produtivo orientado", "type": "microcredit", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 50000, "ticket_max_cents": 500000, "eligible_uf": ["SP", "MG"], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": ["cpf", "proof_of_activity"], "max_instalment_share_bps": 4000, "estimated_cost_bps": 6600, "capacity_cents": 1500000, "impact_mandate": true, "is_domestic": true}, {"id": "troca_produtiva_rede", "provider": "rede_troca_demo", "name": "Troca produtiva em rede", "type": "productive_exchange_network", "is_credit": false, "requires_partner_approval": true, "ticket_min_cents": 10000, "ticket_max_cents": 200000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 0, "required_documents": ["network_membership"], "max_instalment_share_bps": null, "estimated_cost_bps": null, "capacity_cents": 600000, "impact_mandate": false, "is_domestic": true}, {"id": "pool_domestico_p2p", "provider": "empowerfi_pools", "name": "Pool doméstico P2P · investidores brasileiros", "type": "domestic_p2p", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 50000, "ticket_max_cents": 400000, "eligible_uf": [], "purposes": [], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2500, "capacity_cents": 2700000, "impact_mandate": false, "is_domestic": true}, {"id": "pool_global_impacto", "provider": "empowerfi_pools", "name": "Capital global de impacto · USDC na Solana", "type": "global_impact_capital", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 100000, "ticket_max_cents": 1000000, "eligible_uf": [], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2400, "capacity_cents": 9000000, "impact_mandate": true, "is_domestic": false}]'::jsonb) as p) q),
+  '{"status": "manual_review", "reason_codes": ["MANUAL_REVIEW_REQUIRED"], "allocations": [], "domestic_coverage_cents": 0, "global_coverage_cents": 0, "unfunded_cents": 500000, "external_capital_gap_cents": 500000, "eligible": ["credito_regional_capital_giro", "microcredito_produtivo", "troca_produtiva_rede", "pool_domestico_p2p", "pool_global_impacto"], "fit_scores": {"credito_regional_capital_giro": 8490, "microcredito_produtivo": 7740, "troca_produtiva_rede": 8400, "pool_domestico_p2p": 7650, "pool_global_impacto": 9300}}'::jsonb,
+  'vector: a need that never passed eligibility gets a review, not a recommendation'
+);
+
+select is(
+  (select jsonb_build_object(
+     'status', p -> 'status', 'reason_codes', p -> 'reason_codes', 'allocations', p -> 'allocations',
+     'domestic_coverage_cents', p -> 'domestic_coverage_cents', 'global_coverage_cents', p -> 'global_coverage_cents',
+     'unfunded_cents', p -> 'unfunded_cents', 'external_capital_gap_cents', p -> 'external_capital_gap_cents',
+     'eligible', coalesce((select jsonb_agg(e -> 'instrument_id') from jsonb_array_elements(p -> 'evaluated') as t(e)
+                           where (e ->> 'eligible')::boolean), '[]'::jsonb),
+     'fit_scores', (select jsonb_object_agg(e ->> 'instrument_id', e -> 'fit_score')
+                    from jsonb_array_elements(p -> 'evaluated') as t(e)))
+   from (select private.match_capital(
+     '{"amount_cents": 300000, "term_months": 12, "purpose": "inventory", "uf": "BA", "business_age_months": 18, "documents": ["cnpj_or_mei", "bank_statement_3m", "cpf", "proof_of_activity", "network_membership"], "max_instalment_cents": 90000, "impact_eligible": true, "readiness_ok": true, "manual_review_allowed": false}'::jsonb,
+     '[{"id": "credito_regional_capital_giro", "provider": "coop_regional_demo", "name": "Crédito produtivo regional · capital de giro", "type": "regional_credit_product", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 100000, "ticket_max_cents": 1500000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 6, "required_documents": ["cnpj_or_mei", "bank_statement_3m"], "max_instalment_share_bps": 6000, "estimated_cost_bps": 4800, "capacity_cents": 4000000, "impact_mandate": false, "is_domestic": true}, {"id": "microcredito_produtivo", "provider": "microcredito_demo", "name": "Microcrédito produtivo orientado", "type": "microcredit", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 50000, "ticket_max_cents": 500000, "eligible_uf": ["SP", "MG"], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": ["cpf", "proof_of_activity"], "max_instalment_share_bps": 4000, "estimated_cost_bps": 6600, "capacity_cents": 1500000, "impact_mandate": true, "is_domestic": true}, {"id": "troca_produtiva_rede", "provider": "rede_troca_demo", "name": "Troca produtiva em rede", "type": "productive_exchange_network", "is_credit": false, "requires_partner_approval": true, "ticket_min_cents": 10000, "ticket_max_cents": 200000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 0, "required_documents": ["network_membership"], "max_instalment_share_bps": null, "estimated_cost_bps": null, "capacity_cents": 600000, "impact_mandate": false, "is_domestic": true}, {"id": "pool_domestico_p2p", "provider": "empowerfi_pools", "name": "Pool doméstico P2P · investidores brasileiros", "type": "domestic_p2p", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 50000, "ticket_max_cents": 400000, "eligible_uf": [], "purposes": [], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2500, "capacity_cents": 2700000, "impact_mandate": false, "is_domestic": true}, {"id": "pool_global_impacto", "provider": "empowerfi_pools", "name": "Capital global de impacto · USDC na Solana", "type": "global_impact_capital", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 100000, "ticket_max_cents": 1000000, "eligible_uf": [], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2400, "capacity_cents": 9000000, "impact_mandate": true, "is_domestic": false}]'::jsonb) as p) q),
+  '{"status": "recommended", "reason_codes": ["DOMESTIC_COVERAGE_SUFFICIENT", "TICKET_MATCH", "PARTNER_CAPACITY_AVAILABLE", "LOWER_ESTIMATED_COST", "REGION_NOT_ELIGIBLE"], "allocations": [{"instrument_id": "pool_domestico_p2p", "amount_cents": 300000, "fit_score": 8050, "reasons": ["TICKET_MATCH", "PARTNER_CAPACITY_AVAILABLE", "LOWER_ESTIMATED_COST"], "requires_partner_approval": false, "is_credit": true}], "domestic_coverage_cents": 300000, "global_coverage_cents": 0, "unfunded_cents": 0, "external_capital_gap_cents": 0, "eligible": ["pool_domestico_p2p", "pool_global_impacto"], "fit_scores": {"credito_regional_capital_giro": 0, "microcredito_produtivo": 0, "troca_produtiva_rede": 0, "pool_domestico_p2p": 8050, "pool_global_impacto": 9300}}'::jsonb,
+  'vector: in a state no partner serves, the P2P pools are the network''s backstop'
+);
+
+select is(
+  (select jsonb_build_object(
+     'status', p -> 'status', 'reason_codes', p -> 'reason_codes', 'allocations', p -> 'allocations',
+     'domestic_coverage_cents', p -> 'domestic_coverage_cents', 'global_coverage_cents', p -> 'global_coverage_cents',
+     'unfunded_cents', p -> 'unfunded_cents', 'external_capital_gap_cents', p -> 'external_capital_gap_cents',
+     'eligible', coalesce((select jsonb_agg(e -> 'instrument_id') from jsonb_array_elements(p -> 'evaluated') as t(e)
+                           where (e ->> 'eligible')::boolean), '[]'::jsonb),
+     'fit_scores', (select jsonb_object_agg(e ->> 'instrument_id', e -> 'fit_score')
+                    from jsonb_array_elements(p -> 'evaluated') as t(e)))
+   from (select private.match_capital(
+     '{"amount_cents": 150000, "term_months": 6, "purpose": "inventory", "uf": "SP", "business_age_months": 18, "documents": ["network_membership"], "max_instalment_cents": 20000, "impact_eligible": false, "readiness_ok": true, "manual_review_allowed": false}'::jsonb,
+     '[{"id": "credito_regional_capital_giro", "provider": "coop_regional_demo", "name": "Crédito produtivo regional · capital de giro", "type": "regional_credit_product", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 100000, "ticket_max_cents": 1500000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 6, "required_documents": ["cnpj_or_mei", "bank_statement_3m"], "max_instalment_share_bps": 6000, "estimated_cost_bps": 4800, "capacity_cents": 4000000, "impact_mandate": false, "is_domestic": true}, {"id": "microcredito_produtivo", "provider": "microcredito_demo", "name": "Microcrédito produtivo orientado", "type": "microcredit", "is_credit": true, "requires_partner_approval": true, "ticket_min_cents": 50000, "ticket_max_cents": 500000, "eligible_uf": ["SP", "MG"], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": ["cpf", "proof_of_activity"], "max_instalment_share_bps": 4000, "estimated_cost_bps": 6600, "capacity_cents": 1500000, "impact_mandate": true, "is_domestic": true}, {"id": "troca_produtiva_rede", "provider": "rede_troca_demo", "name": "Troca produtiva em rede", "type": "productive_exchange_network", "is_credit": false, "requires_partner_approval": true, "ticket_min_cents": 10000, "ticket_max_cents": 200000, "eligible_uf": ["SP"], "purposes": ["working_capital", "inventory"], "business_age_min_months": 0, "required_documents": ["network_membership"], "max_instalment_share_bps": null, "estimated_cost_bps": null, "capacity_cents": 600000, "impact_mandate": false, "is_domestic": true}, {"id": "pool_domestico_p2p", "provider": "empowerfi_pools", "name": "Pool doméstico P2P · investidores brasileiros", "type": "domestic_p2p", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 50000, "ticket_max_cents": 400000, "eligible_uf": [], "purposes": [], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2500, "capacity_cents": 2700000, "impact_mandate": false, "is_domestic": true}, {"id": "pool_global_impacto", "provider": "empowerfi_pools", "name": "Capital global de impacto · USDC na Solana", "type": "global_impact_capital", "is_credit": true, "requires_partner_approval": false, "ticket_min_cents": 100000, "ticket_max_cents": 1000000, "eligible_uf": [], "purposes": ["working_capital", "inventory", "equipment"], "business_age_min_months": 0, "required_documents": [], "max_instalment_share_bps": 10000, "estimated_cost_bps": 2400, "capacity_cents": 9000000, "impact_mandate": true, "is_domestic": false}]'::jsonb) as p) q),
+  '{"status": "recommended", "reason_codes": ["DOMESTIC_COVERAGE_SUFFICIENT", "CLOSED_NETWORK_PURPOSE_MATCH", "TICKET_MATCH", "REGION_MATCH", "PARTNER_CAPACITY_AVAILABLE", "LOWER_ESTIMATED_COST", "AFFORDABILITY_LIMIT", "INSUFFICIENT_DOCUMENTATION"], "allocations": [{"instrument_id": "troca_produtiva_rede", "amount_cents": 150000, "fit_score": 9600, "reasons": ["CLOSED_NETWORK_PURPOSE_MATCH", "TICKET_MATCH", "REGION_MATCH", "PARTNER_CAPACITY_AVAILABLE", "LOWER_ESTIMATED_COST"], "requires_partner_approval": true, "is_credit": false}], "domestic_coverage_cents": 150000, "global_coverage_cents": 0, "unfunded_cents": 0, "external_capital_gap_cents": 0, "eligible": ["troca_produtiva_rede", "pool_domestico_p2p", "pool_global_impacto"], "fit_scores": {"credito_regional_capital_giro": 0, "microcredito_produtivo": 0, "troca_produtiva_rede": 9600, "pool_domestico_p2p": 7470, "pool_global_impacto": 8470}}'::jsonb,
+  'vector: with only her network membership on file, the one route left is not credit at all'
+);
+
+-- ------------------------------------------------------------- the engine's run
+
+-- She agreed to a partner being involved. Without that scope the engine refuses
+-- to look at third-party products at all.
+insert into consents (entrepreneur_id, consent_no, text_version, assessment, partner, investors, impact, channel)
+values ('00000000-0000-0000-0000-0000000009e1', 1, 'test', true, true, false, false, 'app');
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a2');
+select throws_ok(
+  $$ select public.run_capital_engine('00000000-0000-0000-0000-0000000009f1') $$,
+  '42501', null, 'routing capital is an operator act, not something she runs on herself');
+
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a1');
+
+select is(
+  (select public.run_capital_engine('00000000-0000-0000-0000-0000000009f1',
+     array['cpf', 'proof_of_activity', 'network_membership']) ->> 'recorded'),
+  'true', 'an admin runs the engine and the run is recorded');
+
+select is(
+  (select max(decision_no) from capital_route_decisions
+   where opportunity_id = '00000000-0000-0000-0000-0000000009f1'),
+  2, 'as the next decision for that opportunity, never overwriting the last');
+
+-- The business-age proxy, and what it costs her: with no check-ins on file there
+-- is no reported history, so the regional product's six-month minimum blocks it.
+select is(
+  (select need -> 'business_age_months' from capital_route_decisions
+   where opportunity_id = '00000000-0000-0000-0000-0000000009f1' and decision_no = 2),
+  '0'::jsonb, 'the decision records the need it ran against, history proxy included');
+
+select ok(
+  (select 'BUSINESS_TOO_YOUNG' = any(reason_codes) from capital_route_decisions
+   where opportunity_id = '00000000-0000-0000-0000-0000000009f1' and decision_no = 2),
+  'and says which gate that proxy closed');
+
+-- A route she can reach: the exchange network asked only for her membership.
+select ok(
+  (select exists (select 1 from jsonb_array_elements(allocations) as t(a)
+                  where a ->> 'instrument_id' = 'troca_produtiva_rede')
+   from capital_route_decisions
+   where opportunity_id = '00000000-0000-0000-0000-0000000009f1' and decision_no = 2),
+  'the exchange network is in the stack, on the one document she has');
+
+select is(
+  (select bool_and(not (a ->> 'is_credit')::boolean)
+   from capital_route_decisions d, jsonb_array_elements(d.allocations) as t(a)
+   where d.opportunity_id = '00000000-0000-0000-0000-0000000009f1' and d.decision_no = 2
+     and a ->> 'instrument_id' = 'troca_produtiva_rede'),
+  true, 'and it is carried as what it is: not credit');
+
+-- Idempotent: the same engine, the same need, the same answer, no second row.
+select is(
+  (select public.run_capital_engine('00000000-0000-0000-0000-0000000009f1') ->> 'recorded'),
+  'false', 'running it again on an unchanged need records nothing');
+
+select is(
+  (select count(*)::int from capital_route_decisions
+   where opportunity_id = '00000000-0000-0000-0000-0000000009f1'),
+  2, 'so the decision history stays as long as the number of real answers');
+
+-- Something moved: she found her papers.
+select is(
+  (select public.run_capital_engine('00000000-0000-0000-0000-0000000009f1',
+     array['cpf', 'proof_of_activity', 'network_membership', 'cnpj_or_mei', 'bank_statement_3m']) ->> 'recorded'),
+  'true', 'a changed need is a new decision');
+
+select is(
+  (select need -> 'documents' from capital_route_decisions
+   where opportunity_id = '00000000-0000-0000-0000-0000000009f1' and decision_no = 3),
+  '["cpf", "proof_of_activity", "network_membership", "cnpj_or_mei", "bank_statement_3m"]'::jsonb,
+  'with what she stated on file, kept rather than floated');
+
+-- The pools' policy is read, never copied: the domestic route's ticket range in
+-- the engine's input is funding_pools', to the centavo. Read as postgres, since
+-- an operator has no business selecting the pool table directly.
+set local role postgres;
+select is(
+  (select i -> 'ticket_max_cents'
+   from jsonb_array_elements(private.capital_network_instruments('00000000-0000-0000-0000-0000000009f1')) as t(i)
+   where i ->> 'id' = 'pool_domestico_p2p'),
+  to_jsonb((select max_ticket_cents from funding_pools where pool = 'domestic')),
+  'a pool-backed instrument takes its ticket ceiling from funding_pools');
+
+select is(
+  (select jsonb_typeof(private.capital_fit_weights())),
+  'object', 'the fit weights are named terms, not a positional list');
+
+select is(
+  (select sum(value::integer)::integer from jsonb_each_text(private.capital_fit_weights())),
+  10000, 'and they sum to one, as the TypeScript engine asserts of its own');
+
+-- Consent is load-bearing: withdraw the partner scope and the engine stops.
+insert into consents (entrepreneur_id, consent_no, text_version, assessment, partner, investors, impact, channel)
+values ('00000000-0000-0000-0000-0000000009e1', 2, 'test', true, false, false, false, 'app');
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a1');
+select throws_ok(
+  $$ select public.run_capital_engine('00000000-0000-0000-0000-0000000009f1') $$,
+  '42501', null, 'with the partner scope withdrawn, no third-party route may be recommended');
 
 select * from finish();
 rollback;
