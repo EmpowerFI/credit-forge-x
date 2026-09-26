@@ -172,16 +172,20 @@ create table public.capital_route_decisions (
   -- than one entry is the point of this table.
   allocations jsonb not null,
   reason_codes text[] not null,
-  covered_cents bigint not null check (covered_cents >= 0),
+  -- Three independent numbers, because the global route fills part of the gap
+  -- rather than reducing it: the External Capital Gap is a measurement of the
+  -- *domestic* network, taken before global money hides it (addendum §10).
   domestic_coverage_cents bigint not null check (domestic_coverage_cents >= 0),
-  external_capital_gap_cents bigint not null check (external_capital_gap_cents >= 0),
+  global_coverage_cents bigint not null check (global_coverage_cents >= 0),
+  unfunded_cents bigint not null check (unfunded_cents >= 0),
+  -- Generated, so the gap and the coverage can never drift apart.
+  external_capital_gap_cents bigint generated always as (requested_cents - domestic_coverage_cents) stored,
   status public.capital_route_status not null,
   -- sha-256 of the canonical decision, for the chain anchor added in P0 day 5.
   snapshot_hash text check (snapshot_hash ~ '^[0-9a-f]{64}$'),
   is_simulated boolean not null default true,
   unique (opportunity_id, decision_no),
-  constraint coverage_adds_up check (covered_cents + external_capital_gap_cents = requested_cents),
-  constraint domestic_is_part_of_covered check (domestic_coverage_cents <= covered_cents),
+  constraint coverage_adds_up check (domestic_coverage_cents + global_coverage_cents + unfunded_cents = requested_cents),
   constraint a_route_or_a_reason check (status <> 'recommended' or jsonb_array_length(allocations) > 0)
 );
 

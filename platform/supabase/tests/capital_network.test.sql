@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(22);
+select plan(23);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -121,22 +121,26 @@ select is(
 
 select lives_ok($$
   insert into capital_route_decisions (opportunity_id, decision_no, engine_version, requested_cents,
-    evaluated, allocations, reason_codes, covered_cents, domestic_coverage_cents, external_capital_gap_cents, status)
+    evaluated, allocations, reason_codes, domestic_coverage_cents, global_coverage_cents, unfunded_cents, status)
   values ('00000000-0000-0000-0000-0000000009f1', 1, 'capital-network-v1.0.0', 500000,
     '[]'::jsonb, '[{"instrument": "microcredito_produtivo", "amount_cents": 300000}]'::jsonb,
-    '{DOMESTIC_CAPACITY_PARTIAL}', 300000, 300000, 200000, 'recommended')
-$$, 'a partial plan with a residual gap is recordable');
+    '{DOMESTIC_CAPACITY_PARTIAL}', 300000, 120000, 80000, 'recommended')
+$$, 'a partial plan, a global top-up and a residue are recordable together');
+
+select is(
+  (select external_capital_gap_cents from capital_route_decisions where opportunity_id = '00000000-0000-0000-0000-0000000009f1'),
+  200000::bigint, 'the external capital gap measures what domestic could not absorb, global top-up included');
 
 select throws_ok($$
   insert into capital_route_decisions (opportunity_id, decision_no, engine_version, requested_cents,
-    evaluated, allocations, reason_codes, covered_cents, domestic_coverage_cents, external_capital_gap_cents, status)
+    evaluated, allocations, reason_codes, domestic_coverage_cents, global_coverage_cents, unfunded_cents, status)
   values ('00000000-0000-0000-0000-0000000009f1', 2, 'capital-network-v1.0.0', 500000,
-    '[]'::jsonb, '[]'::jsonb, '{}', 300000, 300000, 100000, 'no_route')
-$$, '23514', null, 'covered plus the gap must equal what she asked for');
+    '[]'::jsonb, '[]'::jsonb, '{}', 300000, 100000, 50000, 'no_route')
+$$, '23514', null, 'the three coverage numbers must account for every centavo she asked for');
 
 select throws_ok($$
   insert into capital_route_decisions (opportunity_id, decision_no, engine_version, requested_cents,
-    evaluated, allocations, reason_codes, covered_cents, domestic_coverage_cents, external_capital_gap_cents, status)
+    evaluated, allocations, reason_codes, domestic_coverage_cents, global_coverage_cents, unfunded_cents, status)
   values ('00000000-0000-0000-0000-0000000009f1', 3, 'capital-network-v1.0.0', 500000,
     '[]'::jsonb, '[]'::jsonb, '{}', 0, 0, 500000, 'recommended')
 $$, '23514', null, 'a recommendation with no route is not a recommendation');
