@@ -291,6 +291,58 @@ Verified: 674 pgTAP assertions across 21 files, 236 vitest tests across 21
 files, `tsc --noEmit` clean, 0 eslint errors, build clean. TS and SQL agree on
 all eight vectors across the whole answer, gate traces included.
 
+### Day 2 — CTM: what it costs to bring the money in
+
+`20261007000000_capital_mobilization.sql`, and 37 pgTAP assertions in
+`platform/supabase/tests/capital_mobilization.test.sql`. No TypeScript engine and
+no vectors, because CTM computes no model: it reads rates the card states and a
+quote `packages/settlement-route` already made. A vector would hold two copies of
+an addition to one answer.
+
+On a R$ 5.000 ticket from the global pool, by the pilot card: **R$ 51,75 to
+operate the mobilisation** (KYB 45 min, wallet operations R$ 3, reconciliation
+20 min, at the desk rate) and **R$ 91,29 to the rails** (FX spread R$ 61,10,
+provider fee R$ 30,19, network R$ 0) — **R$ 143,04 in all, 286 basis points**, or
+R$ 2,86 per R$ 100 mobilised. Beside it, never inside it: the pool's **500 basis
+points a year** of FX hedge, named as a required return on currency risk.
+
+**A deviation from §3.2, and the reason for it.** The plan said to put the
+mobilisation stages on `cost_stage` with `phase = 'mobilization'`, on the grounds
+that the schema already had the phase concept. It does not, in the way that
+mattered: `cost_rates.phase` is a reporting label, and both
+`public.operating_economics()` and `public.cost_sensitivity()` enumerate *every*
+rate on the card — the first even emits a zero line for stages nothing has
+reached yet. A mobilisation rate placed there would have appeared inside cost to
+serve by default, and every future reader would have had to remember to exclude
+it. §7's rule deserves better than a convention, so CTM's rates live in
+`public.capital_mobilization_rates`, versioned by the same `cost_rate_cards`.
+Cost to serve cannot absorb them because it cannot see them, and pgTAP asserts
+that the three stages are not `cost_stage` values, not `cost_rates` rows, and on
+no `cost_event`.
+
+**Where decision 3 landed.** The ramp's cost is in CTM and carries its own
+provenance mark — but no seeded provider is a sandbox for a loan-sized
+conversion, so today every market line reads `simulated`. MoneyGram's sandbox
+prices US$2–US$200 cash pickup in Brazil and a loan is larger;
+`private.quote_provenance()` marks a sandbox quote `partner_provided` the moment
+one can price a ticket. Nothing is blended: the card's assumption and a
+provider's answer never share a mark.
+
+**Two things the day found.**
+
+- *CTM was charging a ticket that never crossed a border.* With nothing
+  mobilised, the three operating stages were still summed, so a domestic ticket
+  came back with R$ 51,75 of mobilisation cost. Nothing mobilised is nothing
+  spent mobilising; the totals are now zero and the rate is null rather than a
+  division by nothing.
+- *A quote nobody can execute still says what a conversion costs.* An amount
+  outside every provider's ticket policy is priced and marked
+  `executable: false`, because reporting nothing there would read as free. The
+  first version of the test asserted the opposite, and the test was wrong.
+
+Verified: 711 pgTAP assertions across 22 files, 236 vitest tests, `tsc --noEmit`
+clean, 0 eslint errors, build clean.
+
 ---
 
 ## 7 · What this plan does not build

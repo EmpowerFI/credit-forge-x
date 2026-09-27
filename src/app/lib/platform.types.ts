@@ -214,6 +214,41 @@ export type Database = {
           },
         ]
       }
+      capital_mobilization_rates: {
+        Row: {
+          card_version: string
+          fixed_cents: number
+          hourly_rate_cents: number
+          note: string
+          staff_minutes: number
+          stage: string
+        }
+        Insert: {
+          card_version: string
+          fixed_cents: number
+          hourly_rate_cents: number
+          note: string
+          staff_minutes: number
+          stage: string
+        }
+        Update: {
+          card_version?: string
+          fixed_cents?: number
+          hourly_rate_cents?: number
+          note?: string
+          staff_minutes?: number
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "capital_mobilization_rates_card_version_fkey"
+            columns: ["card_version"]
+            isOneToOne: false
+            referencedRelation: "cost_rate_cards"
+            referencedColumns: ["version"]
+          },
+        ]
+      }
       capital_providers: {
         Row: {
           active: boolean
@@ -1585,6 +1620,9 @@ export type Database = {
           cost_total_cents: number
           created_at: string
           events: number
+          mobilization_cents: number | null
+          mobilization_rate_bps: number | null
+          mobilized_cents: number | null
           opportunity_id: string
           per_100_of_ticket_cents: number | null
           rate_card_version: string
@@ -1599,6 +1637,9 @@ export type Database = {
           cost_total_cents: number
           created_at?: string
           events: number
+          mobilization_cents?: number | null
+          mobilization_rate_bps?: number | null
+          mobilized_cents?: number | null
           opportunity_id: string
           per_100_of_ticket_cents?: number | null
           rate_card_version: string
@@ -1613,6 +1654,9 @@ export type Database = {
           cost_total_cents?: number
           created_at?: string
           events?: number
+          mobilization_cents?: number | null
+          mobilization_rate_bps?: number | null
+          mobilized_cents?: number | null
           opportunity_id?: string
           per_100_of_ticket_cents?: number | null
           rate_card_version?: string
@@ -3041,6 +3085,10 @@ export type Database = {
       audit_zcash_returns: { Args: never; Returns: Json }
       business_model: {
         Args: { p_pricing_version?: string; p_program_id?: string }
+        Returns: Json
+      }
+      capital_mobilization_summary: {
+        Args: { p_program_id?: string }
         Returns: Json
       }
       capital_overview: { Args: never; Returns: Json }
