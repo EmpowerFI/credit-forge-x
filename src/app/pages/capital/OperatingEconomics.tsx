@@ -234,8 +234,11 @@ function CostPair({ d, s }: { d: Data; s?: CostSensitivity }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
+                    {/* A stage is borne by more than one party — a check-in costs
+                        the community her time and EmpowerFI the record — so it
+                        appears once per bearer, and the stage alone is not a key. */}
                     {c.by_stage.map((s) => (
-                      <tr key={s.stage}>
+                      <tr key={`${s.stage}:${s.borne_by}`}>
                         <td className="py-1.5 pr-3 text-foreground">{STAGE_LABEL[s.stage] ?? s.stage}<span className="block text-[11px] text-muted-foreground">{PHASE_LABEL[s.phase]}</span></td>
                         <td className="py-1.5 pr-3 text-muted-foreground">{BEARER_LABEL[s.borne_by]}</td>
                         <td className="num py-1.5 pr-3 text-right">{formatNumber(s.events)}</td>

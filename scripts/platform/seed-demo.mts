@@ -892,6 +892,15 @@ async function finaleFits(id: string): Promise<boolean> {
   return data?.funding_pool === "global" && (data.funding_target_micro_usdc ?? 0) >= FINALE_REMAINDER * 10;
 }
 
+/**
+ * What the desk's own picker shows. engine_opportunities() names an opportunity
+ * by the borrower's reference to a partner and by the opportunity's code to
+ * everyone else, so the operator searching for one of these searches for P-…
+ * where an investor searches for Q-….
+ */
+const borrowerRef = (entrepreneurId: string) =>
+  "P-" + entrepreneurId.replace(/-/g, "").slice(0, 6).toUpperCase();
+
 /** The same Q-… code the app shows, so the run can name the one to open. */
 const opportunityCode = (id: string) =>
   "Q-" + createHash("sha256").update(`opportunity:${id}`).digest("hex").slice(0, 6).toUpperCase();
@@ -958,6 +967,85 @@ for (const [i, o] of toWorkOn.entries()) {
 for (const [k, o] of referred.slice(toWorkOn.length).entries()) {
   await fund(o.id, [0.15, 0.45, 0][k] ?? 0, 0, "2026-09-13T15:00:00-03:00");
 }
+
+// -------------------------------------------------------- the capital network
+// The routing decision, on the requests the desk is still working: the same RPC
+// the operator's button calls, over the need private.capital_need() assembles
+// from the opportunity, its eligibility assessment, her state and her check-in
+// history. Without this a fresh demo opens the Capital Network with a registry
+// and no decisions in it — the eligible external capital gap reads R$ 0,00 and
+// no plan carries the second question, which is what capital from outside Brazil
+// may do about what local capital could not reach.
+//
+// It runs after the desk, on purpose. The domestic pool's book is by then what
+// the raising opportunities have actually claimed, so a residual gap is one
+// local capital really cannot absorb today rather than an artefact of asking
+// every request against a full pool.
+//
+// And only over the requests the operator's picker offers, so every decision
+// recorded here can be opened on camera: engine_opportunities() lists what has
+// no disbursed loan and was either listed for funding or is waiting for it.
+
+/**
+ * What she has on file. Nothing in this product records a business's documents,
+ * so an operator states them and the decision keeps what was stated; here the
+ * seed states them. Everyone has the papers a person has. All but one also have
+ * the papers a business has — and that one is the point: a local route refused
+ * only for a paper she can still bring is a route to look at again before
+ * reaching abroad, and the second question refuses the gap for exactly that.
+ */
+const PERSONAL_PAPERS = ["cpf", "proof_of_activity", "network_membership"];
+const BUSINESS_PAPERS = ["cnpj_or_mei", "bank_statement_3m"];
+
+const { data: routable, error: routableError } = await db.from("qualified_credit_opportunities")
+  .select("id, entrepreneur_id, amount_cents, funding_status, allocation")
+  .in("status", ["open", "referred", "partner_approved"]).order("created_at").order("id");
+if (routableError) throw routableError;
+const { data: lentOn, error: lentError } = await db.from("loans")
+  .select("opportunity_id").in("status", ["DISBURSED", "ACTIVE", "PAID", "DEFAULTED", "CANCELLED"]);
+if (lentError) throw lentError;
+const alreadyLent = new Set(lentOn.map((l) => l.opportunity_id));
+const { data: ufRows, error: ufError } = await db.from("entrepreneurs").select("id, state");
+if (ufError) throw ufError;
+const ufOf = new Map(ufRows.map((e) => [e.id, e.state]));
+const routable_ = routable.filter((o) => !alreadyLent.has(o.id) && (o.funding_status !== null || o.allocation !== null));
+// One request is left unrouted, the way one opportunity is left USDC 5 short:
+// the largest of those the pool engine could fund from no pool at all, which is
+// the request this network exists for. The operator runs it in front of the
+// audience, the decision is recorded there, and the second question is answered
+// for the first time on camera rather than read back from the seed.
+const liveRun = routable_.filter((o) => o.funding_status === null)
+  .sort((a, b) => b.amount_cents - a.amount_cents || a.id.localeCompare(b.id))[0]?.id ?? null;
+const toRoute = routable_.filter((o) => o.id !== liveRun);
+// The smallest request in São Paulo: the regional product is on offer there, so
+// the only thing standing between her and a local route is the paper.
+const informal = toRoute.filter((o) => ufOf.get(o.entrepreneur_id) === "SP")
+  .sort((a, b) => a.amount_cents - b.amount_cents || a.id.localeCompare(b.id))[0]?.id ?? null;
+
+interface GlobalAnswer {
+  decision: string;
+  gap_cents: number;
+  eligible_gap_cents: number;
+  gates: { gate: string; passed: boolean; reason: string }[];
+}
+const answers: Record<string, number> = {};
+const withAGap: string[] = [];
+let eligibleGapCents = 0;
+for (const o of toRoute) {
+  const run = await must(`capital network ${o.id}`, asPartner.rpc("run_capital_engine", {
+    p_opportunity_id: o.id,
+    p_documents: o.id === informal ? PERSONAL_PAPERS : [...PERSONAL_PAPERS, ...BUSINESS_PAPERS],
+  })) as unknown as { global_eligibility: GlobalAnswer };
+  const g = run.global_eligibility;
+  answers[g.decision] = (answers[g.decision] ?? 0) + 1;
+  eligibleGapCents += g.eligible_gap_cents;
+  if (g.gap_cents > 0) {
+    const refusals = g.gates.filter((x) => !x.passed).map((x) => x.reason);
+    withAGap.push(`${borrowerRef(o.entrepreneur_id)} R$ ${(g.gap_cents / 100).toLocaleString("en-US")} ${
+      g.decision}${refusals.length > 0 ? ` (${refusals.join(", ")})` : ""}`);
+  }
+}
+
 const { data: overview } = await asPartner.rpc("capital_overview");
 await asPartner.auth.signOut();
 
@@ -992,6 +1080,14 @@ console.log(`desk: ${formalised} formalised, ${ready} funded and ready to formal
   }
 }
 console.log(`capital: ${investor ? "R$ 50,000 committed by the demo investor (simulated)" : "no capital provider account"}`);
+console.log(`capital network: ${toRoute.length} plans recorded, ${JSON.stringify(answers)}` +
+  `, R$ ${(eligibleGapCents / 100).toLocaleString("en-US")} of gap eligible for capital from outside Brazil`);
+console.log(`capital network, the second question: ${withAGap.join("; ") || "no request left a gap in this run"}`);
+// Named as the desk's picker names them, because the desk is who opens them.
+console.log(`capital network, left without the business papers: ${
+  informal ? borrowerRef(routable_.find((o) => o.id === informal)!.entrepreneur_id) : "none"}`);
+console.log(`capital network, left unrouted for the live run: ${
+  liveRun ? borrowerRef(routable_.find((o) => o.id === liveRun)!.entrepreneur_id) : "none — every request was routed"}`);
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
 console.log(`left USDC ${FINALE_REMAINDER / 1e6} short, for the live investment: ${
   finale ? opportunityCode(finale) : "none — no global opportunity was still raising"}`);
