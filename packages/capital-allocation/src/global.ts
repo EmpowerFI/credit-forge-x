@@ -32,7 +32,7 @@
 //
 // Deterministic, integers only (centavos, basis points).
 
-import { COST_CEILING_BPS, type CapitalPlan, type Instrument, type NetworkReason } from "./network";
+import { COST_CEILING_BPS, instalmentCents, type CapitalPlan, type Instrument, type NetworkReason } from "./network";
 
 export const GLOBAL_CAPITAL_MODEL_VERSION = "global-capital-v1.0.0";
 
@@ -132,16 +132,6 @@ export interface GlobalEligibility {
   /** The addendum's Eligible External Capital Gap: the gap global capital may actually take. */
   eligible_gap_cents: number;
   economics: GlobalEconomics;
-}
-
-/**
- * The flat instalment of a principal at an annual all-in rate, as the pool
- * engine sizes one and as eligibility sized hers. Mirrored, not reinvented: a
- * gap priced one way here and another way there would not add up.
- */
-export function instalmentCents(principalCents: number, allInBps: number, termMonths: number): number {
-  const monthly = Math.ceil(allInBps / 12);
-  return Math.ceil((principalCents * (10_000 + monthly * termMonths)) / (10_000 * termMonths));
 }
 
 /** Her economics on the gap, with the quote in place of the modelled constant. */

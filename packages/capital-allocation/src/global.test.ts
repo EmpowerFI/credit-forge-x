@@ -4,12 +4,11 @@ import {
   GLOBAL_EVIDENCE_MIN_SCORE,
   globalEconomics,
   globalEligibility,
-  instalmentCents,
   instalmentCommittedCents,
   recoverableDomestic,
   type GlobalGapContext,
 } from "./global";
-import { COST_CEILING_BPS, matchCapital, type CapitalNeed, type Instrument } from "./network";
+import { COST_CEILING_BPS, instalmentCents, matchCapital, type CapitalNeed, type Instrument } from "./network";
 import vectors from "../vectors/global.json";
 
 interface VectorScenario {

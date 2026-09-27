@@ -749,6 +749,105 @@
           "capital_impacto_global": 0
         }
       }
+    },
+    {
+      "name": "three routes that each fit alone are sized so the plan fits too",
+      "input": {
+        "instruments": [
+          "credito_regional_capital_giro",
+          "pool_domestico_p2p",
+          "pool_global_impacto"
+        ],
+        "need": {
+          "amount_cents": 1500000,
+          "term_months": 12,
+          "purpose": "inventory",
+          "uf": "SP",
+          "business_age_months": 24,
+          "documents": [
+            "cnpj_or_mei",
+            "bank_statement_3m",
+            "cpf",
+            "proof_of_activity",
+            "network_membership"
+          ],
+          "max_instalment_cents": 150000,
+          "impact_eligible": true,
+          "readiness_ok": true,
+          "manual_review_allowed": false
+        }
+      },
+      "expect": {
+        "status": "recommended",
+        "reason_codes": [
+          "DOMESTIC_CAPACITY_PARTIAL",
+          "PURPOSE_MATCH",
+          "TICKET_MATCH",
+          "REGION_MATCH",
+          "PARTNER_CAPACITY_AVAILABLE",
+          "LOWER_ESTIMATED_COST",
+          "AFFORDABILITY_BUDGET_SHARED",
+          "GLOBAL_EXPANDS_CAPACITY",
+          "GLOBAL_IMPACT_MANDATE_MATCH"
+        ],
+        "allocations": [
+          {
+            "instrument_id": "credito_regional_capital_giro",
+            "amount_cents": 729729,
+            "fit_score": 7710,
+            "reasons": [
+              "PURPOSE_MATCH",
+              "TICKET_MATCH",
+              "REGION_MATCH",
+              "PARTNER_CAPACITY_AVAILABLE"
+            ],
+            "requires_partner_approval": true,
+            "is_credit": true
+          },
+          {
+            "instrument_id": "pool_domestico_p2p",
+            "amount_cents": 400000,
+            "fit_score": 6570,
+            "reasons": [
+              "TICKET_MATCH",
+              "PARTNER_CAPACITY_AVAILABLE",
+              "LOWER_ESTIMATED_COST"
+            ],
+            "requires_partner_approval": false,
+            "is_credit": true
+          },
+          {
+            "instrument_id": "pool_global_impacto",
+            "amount_cents": 177154,
+            "fit_score": 8620,
+            "reasons": [
+              "PURPOSE_MATCH",
+              "TICKET_MATCH",
+              "PARTNER_CAPACITY_AVAILABLE",
+              "LOWER_ESTIMATED_COST",
+              "AFFORDABILITY_BUDGET_SHARED",
+              "GLOBAL_EXPANDS_CAPACITY",
+              "GLOBAL_IMPACT_MANDATE_MATCH"
+            ],
+            "requires_partner_approval": false,
+            "is_credit": true
+          }
+        ],
+        "domestic_coverage_cents": 1129729,
+        "global_coverage_cents": 177154,
+        "unfunded_cents": 193117,
+        "external_capital_gap_cents": 370271,
+        "eligible": [
+          "credito_regional_capital_giro",
+          "pool_domestico_p2p",
+          "pool_global_impacto"
+        ],
+        "fit_scores": {
+          "credito_regional_capital_giro": 7710,
+          "pool_domestico_p2p": 6570,
+          "pool_global_impacto": 8620
+        }
+      }
     }
   ]
 }

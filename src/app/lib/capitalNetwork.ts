@@ -198,6 +198,14 @@ const NETWORK_ONLY: Record<Exclude<NetworkReason, AllocationReason>, { label: st
     says: { en: "Of the routes that could take this slice, this one states the lowest annual cost to her.", pt: "Entre as rotas que poderiam tomar esta fatia, esta declara o menor custo anual para ela." },
     tone: "positive",
   },
+  AFFORDABILITY_BUDGET_SHARED: {
+    label: { en: "Sized against the rest of the plan", pt: "Dimensionada junto com o resto do plano" },
+    says: {
+      en: "This route took less than its own policy allowed, because the other routes in this plan had already taken part of what she can repay each month. Each slice fits on its own; the plan has to fit too.",
+      pt: "Esta rota tomou menos do que a política dela permitia, porque as outras rotas deste plano já tinham tomado parte do que ela consegue pagar por mês. Cada fatia cabe sozinha; o plano também precisa caber.",
+    },
+    tone: "caution",
+  },
   CLOSED_NETWORK_PURPOSE_MATCH: {
     label: { en: "Inside the network's rules", pt: "Dentro das regras da rede" },
     says: { en: "What she needs is what this network exchanges between its members. No money changes hands and nothing is repaid.", pt: "O que ela precisa é o que esta rede troca entre seus membros. Nenhum dinheiro troca de mãos e nada é pago de volta." },
