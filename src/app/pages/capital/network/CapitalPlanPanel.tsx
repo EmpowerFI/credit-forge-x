@@ -19,6 +19,25 @@ import { useCapitalPlan } from "./queries";
 // shorter on purpose — what was recommended, what is still missing, and the one
 // thing she can actually do about it. The engine's ranking is not her question.
 
+/**
+ * The policy versions a run used, said in a line. Almost always every route is
+ * on the same version, and listing five of them hides the one that moved.
+ */
+function policyLine(policy: Record<string, number>): string {
+  const versions = Object.values(policy);
+  if (versions.length === 0) return tr({ en: "no policy recorded", pt: "nenhuma política registrada" });
+  const commonest = [...versions].sort(
+    (a, b) => versions.filter((v) => v === b).length - versions.filter((v) => v === a).length || a - b,
+  )[0];
+  const others = Object.entries(policy).filter(([, v]) => v !== commonest);
+  const all = tr({
+    en: `policy v${commonest} on ${versions.length} routes`,
+    pt: `política v${commonest} em ${versions.length} rotas`,
+  });
+  if (others.length === 0) return all;
+  return `${all}, ${tr({ en: "except", pt: "exceto" })} ${others.map(([k, v]) => `${k} v${v}`).join(", ")}`;
+}
+
 /** The whole decision, for whoever routes or funds it. */
 export function CapitalPlanPanel({ opportunityId }: { opportunityId: string }) {
   const stored = useCapitalPlan(opportunityId);
@@ -39,11 +58,10 @@ export function CapitalPlanPanel({ opportunityId }: { opportunityId: string }) {
           {" · "}{tr({ en: "engine", pt: "motor" })} <span className="font-mono text-foreground">{plan.model_version}</span>
           {" · "}
           {/* What the routes' policies said when this ran, so a plan read weeks
-              later is not mistaken for one made under today's terms. */}
-          {tr({
-            en: `policy ${Object.entries(instrument_policy).map(([k, v]) => `${k} v${v}`).join(", ")}`,
-            pt: `política ${Object.entries(instrument_policy).map(([k, v]) => `${k} v${v}`).join(", ")}`,
-          })}
+              later is not mistaken for one made under today's terms. Naming all
+              of them buries the one that matters, so only the routes that were
+              not on the commonest version are spelled out. */}
+          {policyLine(instrument_policy)}
         </p>
       }
     />

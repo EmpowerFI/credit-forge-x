@@ -263,6 +263,18 @@ to see it can re-run to the same answer. `audit()` refuses the kind with that
 sentence rather than pretending. Wiring the proof is the one piece of P0 left,
 and it is a program change, not a schema one.
 
+*Three defects the screen found once it was in front of a real opportunity.*
+Gate 1 read `decision = 'ELIGIBLE'` where the credit engine's own
+`QUALIFYING_DECISIONS` reads two, so every opportunity qualified at a **smaller
+amount** — `ELIGIBLE_REDUCED`, which is most of them — came back "for a person
+to review" instead of getting a plan. `MANUAL_REVIEW` stays outside, and
+`manual_review_allowed` stays false: a request a person is still looking at gets
+a review, never route cards it has not earned. Four money tiles across lost
+their last digit in the narrow column of the investor's page, so they go two
+across until there is real room for four. And the policy line named all five
+routes, which buried the one that had moved; it now says "policy v1 on 5 routes"
+and spells out only the exceptions.
+
 
 ---
 

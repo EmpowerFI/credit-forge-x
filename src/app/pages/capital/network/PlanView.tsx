@@ -171,7 +171,10 @@ export default function PlanView({ plan, instruments, meta }: {
         actions={<StatusPill tone={status.tone}>{status.label}</StatusPill>}
       >
         {meta}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Four money tiles do not fit four across in the narrow column of the
+            investor's opportunity page: "R$ 1.500,00" loses its last digit long
+            before the grid wraps. Two across until there is real room for four. */}
+        <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
           <StatTile label={tr({ en: "What she asked for", pt: "O que ela pediu" })} value={money(plan.requested_cents)} />
           <StatTile
             label={tr({ en: "Covered by the plan", pt: "Coberto pelo plano" })}

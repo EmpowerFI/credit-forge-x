@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(63);
+select plan(66);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -505,6 +505,31 @@ select ok(
    from capital_route_decisions d
    where d.opportunity_id = '00000000-0000-0000-0000-0000000009f1' and d.decision_no = 4),
   'and to the policy versions that reproduce its trace');
+
+-- Gate 1 reads the same decisions the credit engine qualifies on: an amount
+-- reduced to what the business can repay is a qualified opportunity, not a
+-- request for someone to look at.
+set local role postgres;
+update eligibility_assessments set decision = 'ELIGIBLE_REDUCED'
+  where id = '00000000-0000-0000-0000-0000000009b1';
+select is(
+  (select private.capital_need('00000000-0000-0000-0000-0000000009f1') -> 'readiness_ok'),
+  'true'::jsonb, 'a smaller amount than she asked for still passes gate 1');
+
+update eligibility_assessments set decision = 'MANUAL_REVIEW'
+  where id = '00000000-0000-0000-0000-0000000009b1';
+select is(
+  (select private.capital_need('00000000-0000-0000-0000-0000000009f1') -> 'readiness_ok'),
+  'false'::jsonb, 'while a request a person is still looking at does not');
+
+select is(
+  (select private.match_capital(
+     private.capital_need('00000000-0000-0000-0000-0000000009f1'),
+     private.capital_network_instruments('00000000-0000-0000-0000-0000000009f1')) ->> 'status'),
+  'manual_review', 'and gets a review rather than route cards it has not earned');
+
+update eligibility_assessments set decision = 'ELIGIBLE'
+  where id = '00000000-0000-0000-0000-0000000009b1';
 
 select * from finish();
 rollback;
