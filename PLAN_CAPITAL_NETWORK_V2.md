@@ -392,6 +392,50 @@ clean, 0 eslint errors, build clean, and a browser pass over
 `/app/capital/network` at 390, 768 and 1280 — the fund's profile, the term line,
 the editor's new fields saved end to end, no console errors.
 
+### Day 4 — the two economics on one screen, and the answer on her plan
+
+`20261009000000_capital_economics_readers.sql`, eight more pgTAP assertions, a
+"Capital mobilization" section under cost to serve on `/app/capital/economics`,
+and the global answer on the recommended plan itself.
+
+**The screen §8 exists for.** Two measured numbers, per R$ 100, side by side and
+never added: **R$ 2,86 to bring the money in** against what it costs to make and
+follow the loan — two costs with **two denominators**, one dividing by capital
+that crossed the border and one by reais lent, and the copy says so. Beside them,
+under "the two costs stay apart", the **5% a year** FX hedge, named as a required
+return on currency risk and summed into neither. Capital efficiency, global
+funding coverage and §10's eligible external capital gap sit under it, and every
+figure carries a provenance mark — the fourth vocabulary the repository now runs,
+beside reality and the data legend, and it replaces neither.
+
+**Time to global funding** is derived from the last investment, as decision 4
+settled, and the metric says so on its own line rather than implying a column
+that does not exist.
+
+**And the second question now reaches the person it is about.** `capital_plan()`
+carries the global answer, so her own plan shows the gap local capital left, her
+cost as the pool engine estimated it, her cost with the conversion quoted, the
+distance between the two, and the instalment against what the local routes left
+of her month. On the seeded scenario: a **R$ 1.000** gap, **36.0% estimated
+against 36.8% quoted — 0.79 percentage points** — an instalment of R$ 114,04
+with R$ 483,06 of her month still free, and the route refused anyway, because two
+months of reported history is not enough for money that crosses a border. A
+decision recorded before the question existed comes back null, and the screen
+reads that as "not asked" rather than as "refused".
+
+**Three things the browser found.** "1 tickets", in a string of my own. A money
+tile clipping "R$ 5.000,00" at 390 — and, in the same audit, the *same* clipping
+on the licence tile that has been there since the business-model section
+shipped, fixed with it. And the side-by-side comparison labelled two different
+denominators as if they were one, which is the sort of thing that reads fine
+until someone divides.
+
+Verified: 745 pgTAP assertions across 23 files, 243 vitest tests, `tsc -b`
+clean, 0 eslint errors, build clean, and a browser pass over
+`/app/capital/economics` and `/app/capital/network` at 390, 768 and 1280 — the
+engine run end to end, no console errors, and no overflow left but the status
+dot's own ping and a table that is deliberately scrollable.
+
 ---
 
 ## 7 · What this plan does not build

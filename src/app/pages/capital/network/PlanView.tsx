@@ -1,13 +1,13 @@
 import { FIT_WEIGHTS, type FitBreakdown } from "@empowerfi/capital-allocation";
-import { ArrowRight, Ban, Globe2, Handshake, MapPin } from "lucide-react";
+import { ArrowRight, Ban, Globe2, Handshake, MapPin, Plane } from "lucide-react";
 import Panel from "../../../components/product/Panel";
 import StatTile from "../../../components/product/StatTile";
 import StatusPill from "../../../components/product/StatusPill";
 import type { Tone } from "../../../components/product/StatusPill";
 import { localized, tr } from "../../../i18n";
 import {
-  gateDetail, INSTRUMENT_TYPE, reasonOf,
-  type CapitalPlan, type Gate, type InstrumentAssessment, type RouteInstrument,
+  gateDetail, GLOBAL_DECISION, GLOBAL_GATE, globalGateDetail, INSTRUMENT_TYPE, reasonOf,
+  type CapitalPlan, type Gate, type GlobalEligibility, type InstrumentAssessment, type RouteInstrument,
 } from "../../../lib/capitalNetwork";
 import { money } from "../../../lib/readiness";
 
@@ -150,11 +150,93 @@ function Refused({ assessment, instrument }: { assessment: InstrumentAssessment;
   );
 }
 
-export default function PlanView({ plan, instruments, meta }: {
+/**
+ * The second question, asked of the residual gap: should international capital
+ * be the answer to it, and what does it cost her once the conversion is quoted
+ * rather than estimated?
+ *
+ * Her rate on a global route already carries a modelled cost of moving money,
+ * so the quote replaces that term instead of being added to it. On a
+ * twelve-month loan the swap has been moving her all-in cost by under a
+ * percentage point, which is worth showing rather than worth hiding.
+ */
+function GlobalAnswer({ g }: { g: GlobalEligibility }) {
+  const d = GLOBAL_DECISION[g.decision];
+  const e = g.economics;
+  const asked = g.decision !== "not_needed";
+  return (
+    <Panel
+      title={tr({ en: "Capital from outside Brazil", pt: "Capital de fora do Brasil" })}
+      description={d.says}
+      actions={<StatusPill tone={d.tone}>{d.label}</StatusPill>}
+    >
+      {asked && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+            <StatTile label={tr({ en: "Gap asked about", pt: "Lacuna perguntada" })} value={money(g.gap_cents)}
+              icon={<Plane size={14} aria-hidden />} />
+            <StatTile label={tr({ en: "Her cost, estimated", pt: "Custo dela, estimado" })} value={`${(e.route_cost_bps / 100).toFixed(1)}%`}
+              hint={tr({ en: "a year, as the pool engine priced it", pt: "ao ano, como o motor de pool precificou" })} />
+            <StatTile label={tr({ en: "Her cost, quoted", pt: "Custo dela, cotado" })} value={`${(e.total_cost_bps / 100).toFixed(1)}%`}
+              hint={e.delta_bps === 0
+                ? tr({ en: "the estimate was exact", pt: "a estimativa estava exata" })
+                : tr({
+                    en: `${e.delta_bps > 0 ? "+" : ""}${(e.delta_bps / 100).toFixed(2)} percentage points on the estimate`,
+                    pt: `${e.delta_bps > 0 ? "+" : ""}${(e.delta_bps / 100).toFixed(2)} ${Math.abs(e.delta_bps) < 200 ? "ponto percentual" : "pontos percentuais"} na estimativa`,
+                  })}
+              hintTone={e.delta_bps > 0 ? "caution" : "positive"} />
+            <StatTile label={tr({ en: "Instalment on this gap", pt: "Parcela desta lacuna" })} value={money(e.instalment_cents)}
+              hint={tr({ en: `${money(e.instalment_headroom_cents)} left of her month`, pt: `${money(e.instalment_headroom_cents)} do mês dela sobrando` })}
+              hintTone={e.instalment_cents <= e.instalment_headroom_cents ? "positive" : "alert"} />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {tr({
+              en: <>Her rate on a global route already carries a modelled cost of moving money, so the quote <span className="text-foreground">replaces</span> that term rather than being added to it — counting it twice would charge her twice for one conversion. The return leg stays modelled: nothing here prices reais back into dollars.</>,
+              pt: <>A taxa dela numa rota global já carrega um custo modelado de mover dinheiro, então a cotação <span className="text-foreground">substitui</span> esse termo em vez de ser somada a ele — contar duas vezes cobraria dela duas vezes por uma conversão. A perna de volta continua modelada: nada aqui precifica reais de volta em dólares.</>,
+            })}
+          </p>
+        </>
+      )}
+
+      <ul className="space-y-1.5 text-sm">
+        {g.reason_codes.map((code) => {
+          const r = reasonOf(code);
+          return (
+            <li key={code} className="flex flex-wrap items-baseline gap-x-2">
+              <StatusPill tone={r.tone} dot={false}>{r.label}</StatusPill>
+              <span className="min-w-0 text-xs text-muted-foreground">{r.says}</span>
+            </li>
+          );
+        })}
+      </ul>
+
+      {asked && (
+        <details className="rounded-lg border border-border">
+          <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-foreground">
+            {tr({ en: "Every question it was put to", pt: "Todas as perguntas que ela enfrentou" })}
+          </summary>
+          <ul className="space-y-1.5 px-3 pb-3 text-xs">
+            {g.gates.map((gate) => (
+              <li key={gate.gate} className="flex flex-wrap items-baseline gap-x-2">
+                <span className={gate.passed ? "text-positive" : "text-caution"} aria-hidden>{gate.passed ? "✓" : "✗"}</span>
+                <span className="text-foreground">{GLOBAL_GATE[gate.gate]}</span>
+                <span className="min-w-0 text-muted-foreground">— {globalGateDetail(gate, e)}.</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </Panel>
+  );
+}
+
+export default function PlanView({ plan, instruments, meta, global }: {
   plan: CapitalPlan;
   instruments: RouteInstrument[];
   /** What the caller wants to say about this run: when, by whom, which version. */
   meta?: React.ReactNode;
+  /** The global question's answer, where the run recorded one. */
+  global?: GlobalEligibility | null;
 }) {
   const byCode = new Map(instruments.map((i) => [i.code, i]));
   const assessmentOf = new Map(plan.evaluated.map((e) => [e.instrument_id, e]));
@@ -207,6 +289,8 @@ export default function PlanView({ plan, instruments, meta }: {
           })}
         </p>
       </Panel>
+
+      {global && <GlobalAnswer g={global} />}
 
       {plan.allocations.length > 0 && (
         <Panel

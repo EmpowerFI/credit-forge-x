@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(37);
+select plan(41);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -236,6 +236,25 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000012a1');
 select throws_ok(
   $$ select public.capital_mobilization_summary() $$,
   '42501', null, 'an entrepreneur does not read what it costs to fund her');
+
+-- §10's portfolio metrics, over the same scope, read by the desk again.
+select pg_temp.act_as('00000000-0000-0000-0000-0000000012a2');
+
+select is(
+  (public.capital_mobilization_summary() -> 'time_to_global_funding' ->> 'derived'),
+  'true', 'time to global funding says it is derived, because no column records it');
+
+select is(
+  (public.capital_mobilization_summary() -> 'time_to_global_funding' ->> 'n')::int,
+  0, 'and reports nothing where no global opportunity has filled');
+
+select is(
+  (public.capital_mobilization_summary() ->> 'global_funding_coverage_bps'),
+  null, 'global funding coverage needs something lent to be a share of');
+
+select is(
+  (public.capital_mobilization_summary() ->> 'eligible_gap_cents')::bigint,
+  0::bigint, 'and no plan has left an eligible gap in this scope');
 
 -- -------------------------------------------- CTS and CTM in one payload
 

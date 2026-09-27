@@ -167,6 +167,7 @@ export default function RunEngine({ opportunities, instruments, loading }: {
         <PlanView
           plan={run.plan as CapitalPlan}
           instruments={instruments}
+          global={run.global_eligibility}
           meta={
             <p className="text-xs text-muted-foreground">
               {tr({ en: "Engine", pt: "Motor" })} <span className="font-mono text-foreground">{run.plan.model_version}</span>

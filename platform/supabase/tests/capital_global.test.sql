@@ -13,7 +13,7 @@ select set_config(
   true
 );
 
-select plan(40);
+select plan(43);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -303,6 +303,30 @@ select is(
   (select count(*)::int from capital_route_decisions
    where opportunity_id = '00000000-0000-0000-0000-0000000010f1'),
   3, 'three decisions, none of them overwriting the last');
+
+-- ------------------------------------------------ where the people it concerns read it
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000010a1');
+
+select is(
+  (public.capital_plan('00000000-0000-0000-0000-0000000010f1') -> 'global_eligibility' ->> 'decision'),
+  'refused', 'she reads the answer about her own gap, in her own plan');
+
+select ok(
+  (public.capital_plan('00000000-0000-0000-0000-0000000010f1') -> 'global_eligibility' -> 'gates')
+    @> '[{"gate": "evidence"}]'::jsonb,
+  'with every question it was put to, both sides of each');
+
+-- A decision recorded before the question existed says nothing about it, and a
+-- screen has to read that as "not asked" rather than as "refused".
+set local role postgres;
+update capital_route_decisions set global_eligibility = '{}'::jsonb
+  where opportunity_id = '00000000-0000-0000-0000-0000000010f1' and decision_no = 3;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000010a1');
+
+select is(
+  (public.capital_plan('00000000-0000-0000-0000-0000000010f1') -> 'global_eligibility'),
+  'null'::jsonb, 'a decision made before the question existed carries no answer to it');
 
 -- --------------------------------------------------------------- who may ask
 

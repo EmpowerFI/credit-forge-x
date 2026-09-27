@@ -46,11 +46,12 @@ export function CapitalPlanPanel({ opportunityId }: { opportunityId: string }) {
   if (stored.error) return <LoadError error={stored.error} onRetry={() => void stored.refetch()} compact />;
   if (!stored.data) return null;
 
-  const { plan, instruments, decision_no, decided_at, instrument_policy } = stored.data;
+  const { plan, instruments, decision_no, decided_at, instrument_policy, global_eligibility } = stored.data;
   return (
     <PlanView
       plan={plan}
       instruments={instruments}
+      global={global_eligibility}
       meta={
         <p className="text-xs text-muted-foreground">
           {tr({ en: "Decision", pt: "Decisão" })} <span className="num text-foreground">{decision_no}</span>

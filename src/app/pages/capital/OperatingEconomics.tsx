@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, FlaskConical, Gauge, ShieldCheck } from "lucide-react";
+import { ArrowLeft, FlaskConical, Gauge, Plane, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,8 +14,10 @@ import { formatNumber, tr } from "../../i18n";
 import { REASON } from "../../lib/capital";
 import { ELIGIBILITY_REASON } from "../../lib/credit";
 import {
-  BEARER_LABEL, BEARER_SELLS, bps, CARD_SOURCE, type CostSensitivity, DECISION_LABEL, duration, fetchCostSensitivity, fetchOperatingEconomics,
-  type OperatingEconomics as Data, PHASE_LABEL, share, STAGE_LABEL, staffHours, STEP_LABEL,
+  BEARER_LABEL, BEARER_SELLS, bps, type CapitalMobilization, capitalMobilizationKey, CARD_SOURCE,
+  type CostSensitivity, DECISION_LABEL, duration, fetchCapitalMobilization, fetchCostSensitivity,
+  fetchOperatingEconomics, type OperatingEconomics as Data, PHASE_LABEL, PROVENANCE, type Provenance,
+  share, STAGE_LABEL, staffHours, STEP_LABEL,
 } from "../../lib/economics";
 import { fetchPrograms } from "../../lib/impact";
 import { money } from "../../lib/readiness";
@@ -286,6 +288,121 @@ function CostPair({ d, s }: { d: Data; s?: CostSensitivity }) {
   );
 }
 
+/** Where a figure came from: measured, given to us, assumed, or quoted elsewhere. */
+function Mark({ of }: { of: Provenance }) {
+  const p = PROVENANCE[of];
+  return (
+    <span className={cn("rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+      p.tone === "positive" ? "border-positive/35 text-positive"
+        : p.tone === "info" ? "border-info/35 text-info"
+          : p.tone === "caution" ? "border-caution/35 text-caution"
+            : "border-border text-muted-foreground")} title={p.says}>
+      {p.label}
+    </span>
+  );
+}
+
+/**
+ * Cost to Mobilize Capital, beside cost to serve rather than instead of it
+ * (addendum v2 §7, §8). The one thing §8 insists on is that a demo never imply
+ * that cheap settlement removes the operational cost of small loans, and two
+ * measured numbers on one page do that where one number cannot.
+ */
+function MobilizationPair({ d, m }: { d: Data; m: CapitalMobilization }) {
+  const efficiency = m.cost_cents > 0 ? m.mobilized_cents / m.cost_cents : null;
+  const hedge = m.cost_of_capital.fx_hedge_bps_year;
+  const serve = d.cost.credit_per_100_disbursed_cents;
+  return (
+    <Pair id="mobilization"
+      improve={{
+        title: tr({ en: "Cost to mobilize capital", pt: "Custo de mobilizar capital" }),
+        body: (
+          <>
+            {/* A money tile with an icon does not fit two across at 390:
+                "R$ 5.000,00" loses its last digit. One across until there is
+                room, as the investor's plan tiles already do. */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <StatTile label={tr({ en: "Mobilised from abroad", pt: "Mobilizado do exterior" })} value={money(m.mobilized_cents)}
+                hint={m.tickets === 1
+                  ? tr({ en: "one ticket", pt: "um ticket" })
+                  : tr({ en: `${formatNumber(m.tickets)} tickets`, pt: `${formatNumber(m.tickets)} tickets` })}
+                icon={<Plane size={14} aria-hidden />} />
+              <StatTile label={tr({ en: "What mobilising it cost", pt: "Quanto custou mobilizar" })} value={money(m.cost_cents)}
+                hint={tr({ en: "rails and operations, hedge excluded", pt: "trilhos e operação, sem o hedge" })} />
+              <StatTile label={tr({ en: "Per R$ 100 mobilised", pt: "Por R$ 100 mobilizados" })}
+                value={m.rate_bps === null ? "—" : money(m.rate_bps)} hint={tr({ en: "CTM rate", pt: "taxa CTM" })} />
+              <StatTile label={tr({ en: "Eligible external capital gap", pt: "Lacuna de capital externo elegível" })}
+                value={money(m.eligible_gap_cents)}
+                hint={m.eligible_gap_decisions === 0
+                  ? tr({ en: "no plan has left one", pt: "nenhum plano deixou uma" })
+                  : m.eligible_gap_decisions === 1
+                    ? tr({ en: "one plan, still unfunded", pt: "um plano, ainda sem financiamento" })
+                    : tr({ en: `${formatNumber(m.eligible_gap_decisions)} plans, still unfunded`, pt: `${formatNumber(m.eligible_gap_decisions)} planos, ainda sem financiamento` })}
+                hintTone={m.eligible_gap_cents > 0 ? "caution" : "positive"} />
+            </div>
+
+            {/* The comparison §8 exists for. Same denominator, two different
+                questions: what it costs to move the money in, and what it costs
+                to make and follow the loan. They are never added. */}
+            <div className="space-y-1.5 rounded-lg border border-border p-3">
+              <h3 className="text-sm font-semibold text-foreground">{tr({ en: "Per R$ 100, side by side", pt: "Por R$ 100, lado a lado" })}</h3>
+              <Line label={tr({ en: "To bring the money in", pt: "Para trazer o dinheiro" })}
+                hint={tr({ en: "per R$ 100 mobilised", pt: "por R$ 100 mobilizados" })}
+                value={<>{m.rate_bps === null ? "—" : money(m.rate_bps)} <Mark of={m.provenance} /></>} />
+              <Line label={tr({ en: "To make and follow the loan", pt: "Para fazer e acompanhar o empréstimo" })}
+                hint={tr({ en: "per R$ 100 lent", pt: "por R$ 100 emprestados" })}
+                value={<>{serve === null ? "—" : money(serve)} <Mark of={d.cost.rate_card.source === "observed" ? "observed" : "simulated"} /></>} />
+              <p className="pt-1 text-xs text-muted-foreground">{tr({
+                en: "Two costs, never one, and two denominators: one divides by the capital that crossed the border, the other by the reais lent. Nothing on this page adds them — they answer different questions, they are borne at different moments, and a settlement rail that costs little does not make a small loan cheap to operate.",
+                pt: "Dois custos, nunca um, e dois denominadores: um divide pelo capital que cruzou a fronteira, o outro pelos reais emprestados. Nada nesta página os soma — respondem a perguntas diferentes, são arcados em momentos diferentes, e um trilho de liquidação barato não torna barato operar um empréstimo pequeno.",
+              })}</p>
+            </div>
+
+            <Line label={tr({ en: "Capital efficiency", pt: "Eficiência de capital" })}
+              hint={tr({ en: "reais mobilised for each real spent mobilising", pt: "reais mobilizados para cada real gasto mobilizando" })}
+              value={efficiency === null ? "—" : `${formatNumber(efficiency, { maximumFractionDigits: 0 })}×`} />
+            <Line label={tr({ en: "Global funding coverage", pt: "Cobertura de capital global" })}
+              hint={tr({ en: "share of everything lent here that came from outside Brazil", pt: "parte de tudo emprestado aqui que veio de fora do Brasil" })}
+              value={bps(m.global_funding_coverage_bps)} />
+            <Line label={tr({ en: "Time to global funding", pt: "Tempo até o capital global" })}
+              hint={tr({ en: "derived from the last investment: no column records when an opportunity filled", pt: "derivado do último aporte: nenhuma coluna registra quando uma oportunidade encheu" })}
+              value={m.time_to_global_funding.n === 0 ? "—" : duration(m.time_to_global_funding.median_seconds)} />
+          </>
+        ),
+      }}
+      keep={{
+        id: "two-costs",
+        title: tr({ en: "The two costs stay apart", pt: "Os dois custos ficam separados" }),
+        body: (
+          <>
+            <p className="text-sm text-muted-foreground">{tr({
+              en: "Cost to mobilize is what is paid to move the money: the ramp, the network, the compliance check, the wallet, the settlement. Cost to serve is what is paid to make the loan and follow it. Neither absorbs the other, and the database is built so that it cannot: their rates live in different tables, and no cost event can carry a mobilisation stage.",
+              pt: "O custo de mobilizar é o que se paga para mover o dinheiro: a rampa, a rede, a verificação de compliance, a carteira, a liquidação. O custo de servir é o que se paga para fazer o empréstimo e acompanhá-lo. Nenhum absorve o outro, e o banco foi construído para que não possa: as tabelas de taxas são diferentes, e nenhum evento de custo pode carregar uma etapa de mobilização.",
+            })}</p>
+            <div className="space-y-1.5 rounded-lg border tone-caution p-3">
+              <h3 className="text-sm font-semibold">{tr({ en: "And the hedge is not in either", pt: "E o hedge não está em nenhum dos dois" })}</h3>
+              <Line label={tr({ en: "FX hedge on the global pool", pt: "Hedge cambial no pool global" })} value={bps(hedge)} />
+              <p className="text-xs">{tr({
+                en: "A hedge is a required return on currency risk carried over the loan's life, not a fee paid to a rail. It is priced into her rate by the pool engine and reported here beside the two costs — never summed into either, because a per-year figure added to a per-operation one gives a rate that means nothing.",
+                pt: "Um hedge é um retorno exigido por risco cambial carregado ao longo da vida do empréstimo, não uma taxa paga a um trilho. Ele entra na taxa dela pelo motor de pool e é reportado aqui ao lado dos dois custos — nunca somado a nenhum, porque um número por ano somado a um por operação dá uma taxa que não significa nada.",
+              })}</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {tr({
+                en: <>Priced by rate card <span className="text-foreground">{m.rate_card.version}</span>, {CARD_SOURCE[m.rate_card.source]}. Every figure above carries where it came from; nothing mixes a provider's answer with an assumption of this prototype.</>,
+                pt: <>Precificado pela tabela <span className="text-foreground">{m.rate_card.version}</span>, {CARD_SOURCE[m.rate_card.source]}. Cada número acima carrega de onde veio; nada mistura a resposta de um provedor com uma premissa deste protótipo.</>,
+              })}
+            </p>
+          </>
+        ),
+      }}
+      measured={tr({
+        en: "the mobilisation rate card, and the settlement comparator's own quote for each ticket that crossed the border — the one place in this product that prices a conversion.",
+        pt: "a tabela de custos de mobilização, e a cotação do próprio comparador de liquidação para cada ticket que cruzou a fronteira — o único lugar neste produto que precifica uma conversão.",
+      })} />
+  );
+}
+
 function TimePair({ d }: { d: Data }) {
   const reasons = Object.fromEntries(d.discipline.reasons.map((r) => [r.code, r.n]));
   return (
@@ -442,6 +559,13 @@ export default function OperatingEconomics() {
     queryFn: () => fetchCostSensitivity(programId),
     enabled: ready,
   });
+  // What it costs to bring capital in, which §8 insists is read beside what it
+  // costs to serve the loan rather than in place of it.
+  const mobilization = useQuery({
+    queryKey: capitalMobilizationKey(programId),
+    queryFn: () => fetchCapitalMobilization(programId),
+    enabled: ready,
+  });
   const d = economics.data;
 
   if (economics.isError) return <LoadError error={economics.error} onRetry={() => economics.refetch()} />;
@@ -495,6 +619,7 @@ export default function OperatingEconomics() {
               way round, preparation looks like a cost of lending. */}
           <BusinessModel programId={programId} />
           <CostPair d={d} s={sensitivity.data} />
+          {mobilization.data && <MobilizationPair d={d} m={mobilization.data} />}
           <TimePair d={d} />
           <ScalePair d={d} />
           <CapitalPair d={d} />

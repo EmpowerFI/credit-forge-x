@@ -130,8 +130,9 @@ export default function BusinessModel({ programId }: { programId: string | null 
       })}</p>
 
       {/* The licence against what it costs to serve, per month, at the size this
-          programme is now. */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          programme is now. Two across clips "R$ 1.500,00" at 390, so one across
+          until there is room — the same remedy the plan tiles already carry. */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile label={tr({ en: "Licence, per month", pt: "Licença, por mês" })} value={money(monthly.licence_cents)}
           hint={monthly.floor_applied
             ? tr({ en: "the floor, not the seats", pt: "o piso, não os assentos" })

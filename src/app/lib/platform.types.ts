@@ -3714,8 +3714,8 @@ export type Database = {
         | "community_network"
         | "sponsor_programme"
         | "p2p_pool"
-        | "impact_fund"
         | "other"
+        | "impact_fund"
       capital_route_status: "recommended" | "manual_review" | "no_route"
       capital_use:
         | "as_declared"
@@ -4005,8 +4005,8 @@ export const Constants = {
         "community_network",
         "sponsor_programme",
         "p2p_pool",
-        "impact_fund",
         "other",
+        "impact_fund",
       ],
       capital_route_status: ["recommended", "manual_review", "no_route"],
       capital_use: [

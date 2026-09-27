@@ -113,6 +113,58 @@ export async function fetchOperatingEconomics(programId: string | null): Promise
 }
 
 /**
+ * Cost to Mobilize Capital (addendum v2 §7, §8): what it costs to bring
+ * international capital into reais, beside what it costs to serve the loan.
+ *
+ * Two rules the shape carries. The hedge is reported under cost_of_capital with
+ * in_ctm false, because a required return on currency risk is not a fee paid to
+ * a rail — summing the two would give a rate whose unit is half per-operation
+ * and half per-year. And time to global funding is derived from the last
+ * investment rather than from a column, so the screen says so.
+ */
+export interface CapitalMobilization {
+  model_version: string;
+  tickets: number;
+  /** What actually crossed the border, in centavos. */
+  mobilized_cents: number;
+  /** Operating the mobilisation plus what the rails charged. Never the hedge. */
+  cost_cents: number;
+  /** cost over capital moved, in basis points — the same integer as centavos per R$ 100. */
+  rate_bps: number | null;
+  /** §10's Eligible External Capital Gap: gaps the global question allowed, still unfunded. */
+  eligible_gap_cents: number;
+  eligible_gap_decisions: number;
+  disbursed_cents: number;
+  /** What share of everything lent here was funded from outside Brazil. */
+  global_funding_coverage_bps: number | null;
+  time_to_global_funding: {
+    n: number;
+    median_seconds: number | null;
+    p90_seconds: number | null;
+    derived: boolean;
+  };
+  cost_of_capital: { fx_hedge_bps_year: number; in_ctm: boolean };
+  rate_card: RateCard;
+  provenance: Provenance;
+}
+
+export const capitalMobilizationKey = (programId: string | null) =>
+  ["platform", "capital-mobilization", programId ?? "all"] as const;
+
+export async function fetchCapitalMobilization(programId: string | null): Promise<CapitalMobilization> {
+  const { data, error } = await platform.rpc("capital_mobilization_summary", programId ? { p_program_id: programId } : {});
+  if (error) throw error;
+  return data as unknown as CapitalMobilization;
+}
+
+/**
+ * Was this measured, given to us, assumed, or quoted from a paper? A third
+ * question beside REALITY ("is this rail real?") and the data legend ("who may
+ * see this, and is it proven?"), and it replaces neither.
+ */
+export type Provenance = "observed" | "partner_provided" | "simulated" | "benchmark";
+
+/**
  * What the platform is sold for, what it costs to run, and what is left
  * (business_model). EmpowerFI licenses a tool; the community does the
  * fieldwork on its own budget; the desk lends. A sponsor either pays the three
@@ -218,6 +270,29 @@ export const PHASE_LABEL: Record<CostPhase, string> = localized({
   preparation: { en: "Preparation", pt: "Preparo" },
   origination: { en: "Origination", pt: "Originação" },
   servicing: { en: "Servicing", pt: "Acompanhamento" },
+});
+
+export const PROVENANCE: Record<Provenance, { label: string; says: string; tone: "positive" | "info" | "caution" | "neutral" }> = localized({
+  observed: {
+    label: { en: "Observed", pt: "Observado" },
+    says: { en: "Measured from what happened here.", pt: "Medido a partir do que aconteceu aqui." },
+    tone: "positive",
+  },
+  partner_provided: {
+    label: { en: "Partner-provided", pt: "Fornecido pelo parceiro" },
+    says: { en: "A number a provider returned, not one this product assumed.", pt: "Um número que um provedor devolveu, não um que este produto supôs." },
+    tone: "info",
+  },
+  simulated: {
+    label: { en: "Simulated", pt: "Simulado" },
+    says: { en: "An assumption of the prototype, stated on a versioned card.", pt: "Uma premissa do protótipo, declarada numa tabela versionada." },
+    tone: "caution",
+  },
+  benchmark: {
+    label: { en: "External benchmark", pt: "Referência externa" },
+    says: { en: "Published elsewhere, about someone else, and never EmpowerFI's own measurement.", pt: "Publicado em outro lugar, sobre outra pessoa, e nunca a medição da própria EmpowerFI." },
+    tone: "neutral",
+  },
 });
 
 /** What the numbers on a rate card are. */

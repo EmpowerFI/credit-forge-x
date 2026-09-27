@@ -2,6 +2,8 @@ import type {
   AllocationReason,
   CapitalPlan,
   Gate,
+  GlobalEligibility,
+  GlobalGate,
   InstrumentAssessment,
   InstrumentType,
   NetworkReason,
@@ -26,7 +28,7 @@ export type Instrument = Database["public"]["Tables"]["capital_instruments"]["Ro
 export type RouteDecision = Database["public"]["Tables"]["capital_route_decisions"]["Row"];
 export type ProviderType = Database["public"]["Enums"]["capital_provider_type"];
 
-export type { CapitalPlan, Gate, InstrumentAssessment, InstrumentType, NetworkReason };
+export type { CapitalPlan, Gate, GlobalEligibility, GlobalGate, InstrumentAssessment, InstrumentType, NetworkReason };
 
 /**
  * What a route card needs to name an instrument. public.capital_plan() returns
@@ -52,6 +54,12 @@ export interface StoredPlan {
   /** code → policy_version of every instrument the run evaluated. */
   instrument_policy: Record<string, number>;
   plan: CapitalPlan;
+  /**
+   * Whether international capital may take what local capital left, and why
+   * either way. Null on a decision recorded before the question existed, which
+   * a screen reads as "not asked", never as "refused".
+   */
+  global_eligibility: GlobalEligibility | null;
   instruments: RouteInstrument[];
 }
 
@@ -62,6 +70,7 @@ export interface EngineRun {
   /** False when the run reached the same answer as the last one: nothing was written. */
   recorded: boolean;
   plan: CapitalPlan;
+  global_eligibility: GlobalEligibility;
 }
 
 export const PROVIDER_TYPE: Record<ProviderType, string> = localized({
@@ -434,8 +443,84 @@ export const costLine = (bps: number | null): string =>
 
 const purposeLabel = (code: string) => PURPOSE_LABEL[code as keyof typeof PURPOSE_LABEL] ?? code;
 
+/** Basis points as a percentage, at one decimal: the unit her rate is quoted in. */
+const percent = (bps: number) => `${(bps / 100).toFixed(1)}%`;
+
 const months = (n: number) =>
   n === 0 ? tr({ en: "none", pt: "nenhum" }) : tr({ en: `${n} months`, pt: `${n} meses` });
+
+/** What the global question answered, in one line she can read. */
+export const GLOBAL_DECISION: Record<GlobalEligibility["decision"], { label: string; says: string; tone: Tone }> = localized({
+  eligible: {
+    label: { en: "Global capital may take it", pt: "O capital global pode assumir" },
+    says: { en: "What local capital could not reach passed every question asked of money that crosses a border.", pt: "O que o capital local não alcançou passou por todas as perguntas feitas a dinheiro que cruza fronteira." },
+    tone: "positive",
+  },
+  refused: {
+    label: { en: "Refused for global funding", pt: "Recusado para capital global" },
+    says: { en: "A gap local capital left, which international money is not the answer to. The reasons say which question it failed.", pt: "Uma lacuna que o capital local deixou, e para a qual dinheiro internacional não é a resposta. Os motivos dizem em qual pergunta parou." },
+    tone: "caution",
+  },
+  not_needed: {
+    label: { en: "Not needed", pt: "Não foi preciso" },
+    says: { en: "Local capital covered her whole request, so the question was never asked.", pt: "O capital local cobriu o pedido inteiro dela, então a pergunta nunca foi feita." },
+    tone: "positive",
+  },
+});
+
+/** The six gates of the global question, in the order it asks them. */
+export const GLOBAL_GATE: Record<GlobalGate["gate"], string> = localized({
+  gap: { en: "Is there a gap at all", pt: "Existe lacuna" },
+  domestic_reconsidered: { en: "Could a local route still take it", pt: "Uma rota local ainda poderia assumir" },
+  economics: { en: "What it costs her", pt: "Quanto custa para ela" },
+  affordability: { en: "What her month has left", pt: "O que sobra no mês dela" },
+  evidence: { en: "Reported history", pt: "Histórico reportado" },
+  regulatory_route: { en: "A rail that can settle it", pt: "Um trilho que consiga liquidar" },
+});
+
+/**
+ * A global gate's two sides, as gateDetail() does for the network's own. The
+ * units differ gate by gate — centavos, basis points, months, a route's
+ * reality — so each says its own comparison rather than printing a raw value.
+ */
+export function globalGateDetail(g: GlobalGate, e: GlobalEligibility["economics"]): string {
+  switch (g.gate) {
+    case "gap":
+      return tr({
+        en: `local capital left ${money(Number(g.value))}`,
+        pt: `o capital local deixou ${money(Number(g.value))}`,
+      });
+    case "domestic_reconsidered": {
+      const names = String(g.value).split(",").filter(Boolean);
+      return names.length === 0
+        ? tr({ en: "no local route refused this for anything she could fix", pt: "nenhuma rota local recusou isto por algo que ela possa resolver" })
+        : tr({
+            en: `${names.length} local route${names.length > 1 ? "s" : ""} refused this only for papers she could fetch`,
+            pt: `${names.length} rota${names.length > 1 ? "s locais recusaram" : " local recusou"} isto só por documentos que ela pode buscar`,
+          });
+    }
+    case "economics":
+      return tr({
+        en: `${percent(e.total_cost_bps)} a year with the conversion quoted, against a ceiling of ${percent(Number(g.limit))} — the estimate in her rate was ${percent(e.route_cost_bps)}`,
+        pt: `${percent(e.total_cost_bps)} ao ano com a conversão cotada, contra um teto de ${percent(Number(g.limit))} — a estimativa na taxa dela era ${percent(e.route_cost_bps)}`,
+      });
+    case "affordability":
+      return tr({
+        en: `${money(Number(g.value))} a month on this gap; the local routes left ${money(Number(g.limit))} of what she can pay`,
+        pt: `${money(Number(g.value))} por mês nesta lacuna; as rotas locais deixaram ${money(Number(g.limit))} do que ela pode pagar`,
+      });
+    case "evidence":
+      return tr({
+        en: `${g.value} months reported; a cross-border route asks ${g.limit}`,
+        pt: `${g.value} meses reportados; uma rota internacional pede ${g.limit}`,
+      });
+    case "regulatory_route":
+      return tr({
+        en: `${money(Number(g.limit))} to settle, on a rail that is ${g.value}`,
+        pt: `${money(Number(g.limit))} para liquidar, num trilho que é ${g.value}`,
+      });
+  }
+}
 
 /**
  * A gate's two sides, in the gate's own units and its own words. Both sides,
