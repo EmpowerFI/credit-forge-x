@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(66);
+select plan(70);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -354,6 +354,44 @@ select is(
    where i ->> 'id' = 'pool_domestico_p2p'),
   to_jsonb((select max_ticket_cents from funding_pools where pool = 'domestic')),
   'a pool-backed instrument takes its ticket ceiling from funding_pools');
+
+-- A pool is a route only where the allocation engine put this request. Offering
+-- the other one is not generosity: an opportunity raising in USDC cannot be
+-- funded by the domestic pool, however much liquidity that pool is holding.
+select is(
+  (select count(*)::int
+   from jsonb_array_elements(private.capital_network_instruments('00000000-0000-0000-0000-0000000009f1')) as t(i)
+   where i ->> 'id' in ('pool_domestico_p2p', 'pool_global_impacto')),
+  2, 'a request no pool has taken still sees both pools: which one could take it is the question');
+
+update qualified_credit_opportunities set funding_pool = 'global'
+  where id = '00000000-0000-0000-0000-0000000009f1';
+
+select is(
+  (select array_agg(i ->> 'id' order by i ->> 'id')
+   from jsonb_array_elements(private.capital_network_instruments('00000000-0000-0000-0000-0000000009f1')) as t(i)
+   where i ->> 'id' in ('pool_domestico_p2p', 'pool_global_impacto')),
+  array['pool_global_impacto'],
+  'listed on the global pool, the domestic pool stops being a route for it');
+
+select is(
+  (select count(*)::int
+   from jsonb_array_elements(private.capital_network_instruments('00000000-0000-0000-0000-0000000009f1')) as t(i)
+   where i ->> 'id' not in ('pool_domestico_p2p', 'pool_global_impacto')),
+  4, 'and every route that is not a pool is offered exactly as before');
+
+update qualified_credit_opportunities set funding_pool = 'domestic'
+  where id = '00000000-0000-0000-0000-0000000009f1';
+
+select is(
+  (select array_agg(i ->> 'id' order by i ->> 'id')
+   from jsonb_array_elements(private.capital_network_instruments('00000000-0000-0000-0000-0000000009f1')) as t(i)
+   where i ->> 'id' in ('pool_domestico_p2p', 'pool_global_impacto')),
+  array['pool_domestico_p2p'],
+  'and the same holds the other way round');
+
+update qualified_credit_opportunities set funding_pool = null
+  where id = '00000000-0000-0000-0000-0000000009f1';
 
 select is(
   (select jsonb_typeof(private.capital_fit_weights())),
