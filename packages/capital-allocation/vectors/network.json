@@ -18,6 +18,8 @@
         "working_capital",
         "inventory"
       ],
+      "term_min_months": null,
+      "term_max_months": null,
       "business_age_min_months": 6,
       "required_documents": [
         "cnpj_or_mei",
@@ -47,6 +49,8 @@
         "inventory",
         "equipment"
       ],
+      "term_min_months": null,
+      "term_max_months": null,
       "business_age_min_months": 0,
       "required_documents": [
         "cpf",
@@ -74,6 +78,8 @@
         "working_capital",
         "inventory"
       ],
+      "term_min_months": null,
+      "term_max_months": null,
       "business_age_min_months": 0,
       "required_documents": [
         "network_membership"
@@ -95,6 +101,8 @@
       "ticket_max_cents": 400000,
       "eligible_uf": [],
       "purposes": [],
+      "term_min_months": null,
+      "term_max_months": null,
       "business_age_min_months": 0,
       "required_documents": [],
       "max_instalment_share_bps": 10000,
@@ -118,11 +126,37 @@
         "inventory",
         "equipment"
       ],
+      "term_min_months": null,
+      "term_max_months": null,
       "business_age_min_months": 0,
       "required_documents": [],
       "max_instalment_share_bps": 10000,
       "estimated_cost_bps": 2400,
       "capacity_cents": 9000000,
+      "impact_mandate": true,
+      "is_domestic": false
+    },
+    {
+      "id": "capital_impacto_global",
+      "provider": "fundo_impacto_global_demo",
+      "name": "Capital de impacto internacional",
+      "type": "impact_fund_capital",
+      "is_credit": true,
+      "requires_partner_approval": true,
+      "ticket_min_cents": 100000,
+      "ticket_max_cents": 5000000,
+      "eligible_uf": [],
+      "purposes": [],
+      "term_min_months": 6,
+      "term_max_months": 36,
+      "business_age_min_months": 6,
+      "required_documents": [
+        "cnpj_or_mei",
+        "bank_statement_3m"
+      ],
+      "max_instalment_share_bps": 5000,
+      "estimated_cost_bps": 3600,
+      "capacity_cents": 2000000000,
       "impact_mandate": true,
       "is_domestic": false
     }
@@ -564,6 +598,155 @@
           "troca_produtiva_rede": 9600,
           "pool_domestico_p2p": 7470,
           "pool_global_impacto": 8470
+        }
+      }
+    },
+    {
+      "name": "the fund's capital takes the residual when the pool's has run out",
+      "input": {
+        "instruments": [
+          "credito_regional_capital_giro",
+          "troca_produtiva_rede",
+          "pool_global_impacto",
+          "capital_impacto_global"
+        ],
+        "overrides": {
+          "credito_regional_capital_giro": {
+            "capacity_cents": 200000
+          },
+          "troca_produtiva_rede": {
+            "capacity_cents": 0
+          },
+          "pool_global_impacto": {
+            "capacity_cents": 0
+          }
+        },
+        "need": {
+          "amount_cents": 500000,
+          "term_months": 12,
+          "purpose": "inventory",
+          "uf": "SP",
+          "business_age_months": 18,
+          "documents": [
+            "cnpj_or_mei",
+            "bank_statement_3m",
+            "cpf",
+            "proof_of_activity",
+            "network_membership"
+          ],
+          "max_instalment_cents": 90000,
+          "impact_eligible": true,
+          "readiness_ok": true,
+          "manual_review_allowed": false
+        }
+      },
+      "expect": {
+        "status": "recommended",
+        "reason_codes": [
+          "DOMESTIC_CAPACITY_PARTIAL",
+          "PURPOSE_MATCH",
+          "TICKET_MATCH",
+          "REGION_MATCH",
+          "PARTNER_CAPACITY_AVAILABLE",
+          "LOWER_ESTIMATED_COST",
+          "GLOBAL_EXPANDS_CAPACITY",
+          "GLOBAL_IMPACT_MANDATE_MATCH",
+          "PARTNER_CAPACITY_EXHAUSTED"
+        ],
+        "allocations": [
+          {
+            "instrument_id": "credito_regional_capital_giro",
+            "amount_cents": 200000,
+            "fit_score": 6650,
+            "reasons": [
+              "PURPOSE_MATCH",
+              "TICKET_MATCH",
+              "REGION_MATCH",
+              "PARTNER_CAPACITY_AVAILABLE",
+              "LOWER_ESTIMATED_COST"
+            ],
+            "requires_partner_approval": true,
+            "is_credit": true
+          },
+          {
+            "instrument_id": "capital_impacto_global",
+            "amount_cents": 300000,
+            "fit_score": 7480,
+            "reasons": [
+              "TICKET_MATCH",
+              "PARTNER_CAPACITY_AVAILABLE",
+              "LOWER_ESTIMATED_COST",
+              "GLOBAL_EXPANDS_CAPACITY",
+              "GLOBAL_IMPACT_MANDATE_MATCH"
+            ],
+            "requires_partner_approval": true,
+            "is_credit": true
+          }
+        ],
+        "domestic_coverage_cents": 200000,
+        "global_coverage_cents": 300000,
+        "unfunded_cents": 0,
+        "external_capital_gap_cents": 300000,
+        "eligible": [
+          "credito_regional_capital_giro",
+          "capital_impacto_global"
+        ],
+        "fit_scores": {
+          "credito_regional_capital_giro": 6650,
+          "troca_produtiva_rede": 0,
+          "pool_global_impacto": 0,
+          "capital_impacto_global": 7480
+        }
+      }
+    },
+    {
+      "name": "a fund that funds six months does not fund three, and says so",
+      "input": {
+        "instruments": [
+          "credito_regional_capital_giro",
+          "capital_impacto_global"
+        ],
+        "overrides": {
+          "credito_regional_capital_giro": {
+            "capacity_cents": 0
+          }
+        },
+        "need": {
+          "amount_cents": 500000,
+          "term_months": 3,
+          "purpose": "inventory",
+          "uf": "SP",
+          "business_age_months": 18,
+          "documents": [
+            "cnpj_or_mei",
+            "bank_statement_3m",
+            "cpf",
+            "proof_of_activity",
+            "network_membership"
+          ],
+          "max_instalment_cents": 90000,
+          "impact_eligible": true,
+          "readiness_ok": true,
+          "manual_review_allowed": false
+        }
+      },
+      "expect": {
+        "status": "no_route",
+        "reason_codes": [
+          "DOMESTIC_POOL_EXHAUSTED",
+          "TERM_OUTSIDE_POLICY",
+          "PARTNER_CAPACITY_EXHAUSTED",
+          "NO_ROUTE_AVAILABLE"
+        ],
+        "allocations": [],
+        "domestic_coverage_cents": 0,
+        "global_coverage_cents": 0,
+        "unfunded_cents": 500000,
+        "external_capital_gap_cents": 500000,
+        "eligible": [],
+        "fit_scores": {
+          "credito_regional_capital_giro": 0,
+          "capital_impacto_global": 0
         }
       }
     }

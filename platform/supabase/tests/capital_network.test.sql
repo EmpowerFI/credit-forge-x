@@ -32,7 +32,7 @@ update profiles set role = 'capital_provider' where id = '00000000-0000-0000-000
 
 select is(
   (select count(*)::int from capital_providers where is_simulated),
-  4, 'four demo providers ship with the migration, all simulated');
+  5, 'five demo providers ship with the migrations, all simulated');
 
 select is(
   (select count(*)::int from capital_providers where not is_simulated),
@@ -40,11 +40,11 @@ select is(
 
 select is(
   (select count(*)::int from capital_instruments),
-  5, 'five instruments: three partner routes and the two P2P pools');
+  6, 'six instruments: three partner routes, the two P2P pools and the impact fund''s capital');
 
 select is(
   (select count(distinct instrument_type)::int from capital_instruments),
-  5, 'five distinct instrument types without a code change');
+  6, 'six distinct instrument types without a code change');
 
 -- The guardrail of addendum §12, as data.
 select is(
@@ -159,10 +159,10 @@ set local role postgres;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000009a3');
 select is(
   (select count(*)::int from capital_instruments),
-  5, 'a capital operator reads the registry');
+  6, 'a capital operator reads the registry');
 select is(
   (select count(*)::int from capital_providers),
-  4, 'and the providers behind it');
+  5, 'and the providers behind it');
 
 set local role postgres;
 select is(
@@ -465,7 +465,7 @@ select pg_temp.act_as('00000000-0000-0000-0000-0000000009a2');
 
 select is(
   (select jsonb_array_length(public.capital_plan('00000000-0000-0000-0000-0000000009f1') -> 'instruments')),
-  5, 'she reads the names of the routes her own plan evaluated');
+  6, 'she reads the names of the routes her own plan evaluated');
 
 select is(
   (select count(*)::int from capital_instruments),

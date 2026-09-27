@@ -71,6 +71,7 @@ export const PROVIDER_TYPE: Record<ProviderType, string> = localized({
   community_network: { en: "Community network", pt: "Rede comunitária" },
   sponsor_programme: { en: "Sponsored programme", pt: "Programa patrocinado" },
   p2p_pool: { en: "P2P pool", pt: "Pool P2P" },
+  impact_fund: { en: "Impact fund", pt: "Fundo de impacto" },
   other: { en: "Other", pt: "Outro" },
 });
 
@@ -116,6 +117,11 @@ export const INSTRUMENT_TYPE: Record<InstrumentType, { label: string; what: stri
     what: { en: "Capital from outside Brazil, converted and paid out in reais. She never touches a token.", pt: "Capital de fora do Brasil, convertido e pago em reais. Ela nunca encosta em um token." },
     tone: "positive",
   },
+  impact_fund_capital: {
+    label: { en: "An impact fund's capital", pt: "Capital de um fundo de impacto" },
+    what: { en: "A fund outside Brazil lending on its own terms, with its own mandate. It has to say yes, and she receives and repays in reais.", pt: "Um fundo fora do Brasil emprestando nas condições dele, com mandato próprio. Ele precisa dizer sim, e ela recebe e paga em reais." },
+    tone: "positive",
+  },
 });
 
 /** The seven gates, in the order the engine asks them. */
@@ -131,6 +137,10 @@ export const GATE: Record<Gate["gate"], { label: string; asks: string }> = local
   purpose: {
     label: { en: "Purpose", pt: "Finalidade" },
     asks: { en: "Does this route fund what she is buying?", pt: "Esta rota financia o que ela vai comprar?" },
+  },
+  term: {
+    label: { en: "Term", pt: "Prazo" },
+    asks: { en: "Is the number of months she needs inside what this route will fund?", pt: "O número de meses que ela precisa está dentro do que esta rota financia?" },
   },
   business_age: {
     label: { en: "Reported history", pt: "Histórico reportado" },
@@ -219,6 +229,64 @@ const NETWORK_ONLY: Record<Exclude<NetworkReason, AllocationReason>, { label: st
     says: { en: "This route asks for documents she has not stated yet. It is the most fixable refusal on this list.", pt: "Esta rota pede documentos que ela ainda não declarou. É a recusa mais fácil de resolver desta lista." },
     tone: "caution",
   },
+  TERM_OUTSIDE_POLICY: {
+    label: { en: "Term outside this route", pt: "Prazo fora desta rota" },
+    says: { en: "This route funds a range of terms, and the number of months she needs is outside it.", pt: "Esta rota financia uma faixa de prazos, e o número de meses que ela precisa está fora dela." },
+    tone: "caution",
+  },
+  // The second question, asked of the residual gap. A gap refused for global
+  // funding is a decision someone has to be able to read, so each of these says
+  // what happened rather than naming the gate that happened.
+  GLOBAL_GAP_CONFIRMED: {
+    label: { en: "Local capital left a gap", pt: "O capital local deixou uma lacuna" },
+    says: { en: "Routes inside Brazil could not absorb the whole request, so international capital was asked about the rest.", pt: "Rotas dentro do Brasil não absorveram o pedido inteiro, então o capital internacional foi perguntado sobre o resto." },
+    tone: "caution",
+  },
+  GLOBAL_ECONOMICS_WITHIN_CEILING: {
+    label: { en: "Cost stays under the ceiling", pt: "O custo fica abaixo do teto" },
+    says: { en: "Her all-in cost through this route, with what it really costs to bring the money in, is inside what the engine allows and inside what her month has left.", pt: "O custo total para ela por esta rota, com o que custa de verdade trazer o dinheiro, está dentro do que o motor permite e dentro do que sobra no mês dela." },
+    tone: "positive",
+  },
+  GLOBAL_EVIDENCE_SUFFICIENT: {
+    label: { en: "Enough reported history", pt: "Histórico reportado suficiente" },
+    says: { en: "Money that crosses a border is reported on to people who will never meet her, and the history behind this request carries that.", pt: "Dinheiro que cruza uma fronteira é reportado a pessoas que nunca vão conhecê-la, e o histórico por trás deste pedido sustenta isso." },
+    tone: "positive",
+  },
+  GLOBAL_ROUTE_REGULATED: {
+    label: { en: "A regulated rail can settle it", pt: "Um trilho regulado consegue liquidar" },
+    says: { en: "A route exists today that can turn this amount into reais in her account, and the comparator priced it.", pt: "Existe hoje uma rota que consegue transformar este valor em reais na conta dela, e o comparador precificou." },
+    tone: "positive",
+  },
+  GLOBAL_GAP_ABSENT: {
+    label: { en: "Nothing left for global capital", pt: "Nada sobrou para o capital global" },
+    says: { en: "Local capital covered her whole request, so the question of international money was never asked. That is not a refusal.", pt: "O capital local cobriu o pedido inteiro dela, então a pergunta sobre dinheiro internacional nunca foi feita. Isso não é uma recusa." },
+    tone: "positive",
+  },
+  GLOBAL_DOMESTIC_ROUTE_RECOVERABLE: {
+    label: { en: "A local route could still take it", pt: "Uma rota local ainda pode assumir" },
+    says: { en: "A route inside Brazil refused this only for papers she could fetch. Demand a local route would take does not go abroad.", pt: "Uma rota dentro do Brasil recusou isto só por documentos que ela pode buscar. Demanda que uma rota local assumiria não vai para o exterior." },
+    tone: "caution",
+  },
+  GLOBAL_COST_EXCEEDS_CEILING: {
+    label: { en: "Costs more than the ceiling allows", pt: "Custa mais do que o teto permite" },
+    says: { en: "Her all-in cost through this route, once the real cost of bringing the money in replaces the estimate, passes the ceiling every route is held to.", pt: "O custo total para ela por esta rota, quando o custo real de trazer o dinheiro substitui a estimativa, passa do teto a que toda rota é submetida." },
+    tone: "caution",
+  },
+  GLOBAL_AFFORDABILITY_AFTER_MOBILIZATION: {
+    label: { en: "Beyond what her month has left", pt: "Além do que sobra no mês dela" },
+    says: { en: "The instalment on this gap, at the cost of bringing the money in, is more than the local routes left of what she can pay each month.", pt: "A parcela desta lacuna, ao custo de trazer o dinheiro, é mais do que as rotas locais deixaram do que ela pode pagar por mês." },
+    tone: "caution",
+  },
+  GLOBAL_EVIDENCE_INSUFFICIENT: {
+    label: { en: "Not enough reported history yet", pt: "Histórico reportado ainda insuficiente" },
+    says: { en: "A cross-border route asks for more months, and better quality, than she has reported so far. Check-ins are what change this.", pt: "Uma rota internacional pede mais meses, e de melhor qualidade, do que ela reportou até agora. Os check-ins são o que muda isso." },
+    tone: "caution",
+  },
+  GLOBAL_NO_REGULATED_ROUTE: {
+    label: { en: "No regulated rail can settle it now", pt: "Nenhum trilho regulado liquida agora" },
+    says: { en: "No route can turn this amount into reais today, whether for its size, its liquidity or an expired quote.", pt: "Nenhuma rota consegue transformar este valor em reais hoje, seja pelo tamanho, pela liquidez ou por uma cotação vencida." },
+    tone: "caution",
+  },
   PARTNER_CAPACITY_EXHAUSTED: {
     label: { en: "No capacity left", pt: "Sem capacidade restante" },
     says: { en: "What this route has left is less than its own smallest ticket.", pt: "O que resta nesta rota é menos do que o próprio ticket mínimo dela." },
@@ -264,7 +332,7 @@ export async function fetchInstruments(): Promise<Instrument[]> {
 export type InstrumentPolicy = Pick<Instrument,
   | "ticket_min_cents" | "ticket_max_cents" | "eligible_uf" | "purposes" | "business_age_min_months"
   | "required_documents" | "max_instalment_share_bps" | "estimated_cost_bps" | "capacity_cents"
-  | "impact_mandate" | "active">;
+  | "impact_mandate" | "active" | "term_min_months" | "term_max_months" | "target_population">;
 
 export async function saveInstrumentPolicy(id: string, policy: InstrumentPolicy): Promise<void> {
   const { error } = await platform.from("capital_instruments").update(policy).eq("id", id);
@@ -331,6 +399,35 @@ export const documentLabel = (code: string) => DOCUMENT_LABEL[code] ?? code;
 export const documentsAsked = (instruments: Instrument[]): string[] =>
   [...new Set(instruments.flatMap((i) => i.required_documents))].sort();
 
+/** §6's target population, in the words the impact mandate already uses. */
+export const POPULATION_LABEL: Record<string, string> = localized({
+  women_led: { en: "Women-led businesses", pt: "Negócios liderados por mulheres" },
+  verified_community: { en: "Verified communities", pt: "Comunidades verificadas" },
+  first_time_borrower: { en: "First-time borrowers", pt: "Quem nunca tomou crédito" },
+  rural: { en: "Rural businesses", pt: "Negócios rurais" },
+});
+
+export const populationLabel = (code: string) => POPULATION_LABEL[code] ?? code;
+
+/** What a fund wants back for its capital, as codes rather than prose. */
+export const REPORTING_LABEL: Record<string, string> = localized({
+  quarterly_impact_report: { en: "Quarterly impact report", pt: "Relatório de impacto trimestral" },
+  annual_audited_accounts: { en: "Annual audited accounts", pt: "Contas auditadas anuais" },
+  borrower_level_anonymised: { en: "Borrower-level data, anonymised", pt: "Dados por tomadora, anonimizados" },
+});
+
+export const reportingLabel = (code: string) => REPORTING_LABEL[code] ?? code;
+
+/** A term range a route will fund, or the fact that it states none. */
+export const termLine = (min: number | null, max: number | null): string =>
+  min !== null && max !== null
+    ? tr({ en: `${min} to ${max} months`, pt: `de ${min} a ${max} meses` })
+    : min !== null
+      ? tr({ en: `${min} months or more`, pt: `${min} meses ou mais` })
+      : max !== null
+        ? tr({ en: `up to ${max} months`, pt: `até ${max} meses` })
+        : tr({ en: "Any term", pt: "Qualquer prazo" });
+
 /** A basis-point cost as a percentage a year, or the fact that there is none. */
 export const costLine = (bps: number | null): string =>
   bps === null ? tr({ en: "No cost of capital", pt: "Sem custo de capital" }) : `${(bps / 100).toFixed(1)}% ${tr({ en: "a year", pt: "ao ano" })}`;
@@ -370,6 +467,20 @@ export function gateDetail(g: Gate): string {
         en: `she is buying ${purposeLabel(String(g.value))}; this route funds ${list(g.limit, purposeLabel)}`,
         pt: `ela vai comprar ${purposeLabel(String(g.value))}; esta rota financia ${list(g.limit, purposeLabel)}`,
       });
+    case "term": {
+      const [min, max] = g.limit as (number | null)[];
+      const range = min !== null && max !== null
+        ? tr({ en: `${min} to ${max} months`, pt: `de ${min} a ${max} meses` })
+        : min !== null
+          ? tr({ en: `${min} months or more`, pt: `${min} meses ou mais` })
+          : max !== null
+            ? tr({ en: `up to ${max} months`, pt: `até ${max} meses` })
+            : tr({ en: "any term", pt: "qualquer prazo" });
+      return tr({
+        en: `she needs ${months(Number(g.value))}; this route funds ${range}`,
+        pt: `ela precisa de ${months(Number(g.value))}; esta rota financia ${range}`,
+      });
+    }
     case "business_age":
       return tr({
         en: `${months(Number(g.value))} reported; this route asks ${months(Number(g.limit))} or more`,

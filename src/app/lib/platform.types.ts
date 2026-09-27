@@ -131,6 +131,9 @@ export type Database = {
           purposes: Database["public"]["Enums"]["credit_purpose"][]
           required_documents: string[]
           requires_partner_approval: boolean
+          target_population: string[]
+          term_max_months: number | null
+          term_min_months: number | null
           ticket_max_cents: number | null
           ticket_min_cents: number | null
           updated_at: string
@@ -162,6 +165,9 @@ export type Database = {
           purposes?: Database["public"]["Enums"]["credit_purpose"][]
           required_documents?: string[]
           requires_partner_approval?: boolean
+          target_population?: string[]
+          term_max_months?: number | null
+          term_min_months?: number | null
           ticket_max_cents?: number | null
           ticket_min_cents?: number | null
           updated_at?: string
@@ -193,6 +199,9 @@ export type Database = {
           purposes?: Database["public"]["Enums"]["credit_purpose"][]
           required_documents?: string[]
           requires_partner_approval?: boolean
+          target_population?: string[]
+          term_max_months?: number | null
+          term_min_months?: number | null
           ticket_max_cents?: number | null
           ticket_min_cents?: number | null
           updated_at?: string
@@ -258,11 +267,15 @@ export type Database = {
           coverage_uf: string[]
           created_at: string
           display_name: string
+          domicile: string | null
           id: string
           is_simulated: boolean
+          kyb: Json
           legal_name: string | null
           partner_id: string | null
           provider_type: Database["public"]["Enums"]["capital_provider_type"]
+          reporting_requirements: string[]
+          required_return_bps: number | null
           updated_at: string
         }
         Insert: {
@@ -273,11 +286,15 @@ export type Database = {
           coverage_uf?: string[]
           created_at?: string
           display_name: string
+          domicile?: string | null
           id?: string
           is_simulated?: boolean
+          kyb?: Json
           legal_name?: string | null
           partner_id?: string | null
           provider_type: Database["public"]["Enums"]["capital_provider_type"]
+          reporting_requirements?: string[]
+          required_return_bps?: number | null
           updated_at?: string
         }
         Update: {
@@ -288,11 +305,15 @@ export type Database = {
           coverage_uf?: string[]
           created_at?: string
           display_name?: string
+          domicile?: string | null
           id?: string
           is_simulated?: boolean
+          kyb?: Json
           legal_name?: string | null
           partner_id?: string | null
           provider_type?: Database["public"]["Enums"]["capital_provider_type"]
+          reporting_requirements?: string[]
+          required_return_bps?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -3685,6 +3706,7 @@ export type Database = {
         | "sponsored_capital"
         | "domestic_p2p"
         | "global_impact_capital"
+        | "impact_fund_capital"
       capital_provider_type:
         | "credit_cooperative"
         | "microcredit_operator"
@@ -3692,6 +3714,7 @@ export type Database = {
         | "community_network"
         | "sponsor_programme"
         | "p2p_pool"
+        | "impact_fund"
         | "other"
       capital_route_status: "recommended" | "manual_review" | "no_route"
       capital_use:
@@ -3973,6 +3996,7 @@ export const Constants = {
         "sponsored_capital",
         "domestic_p2p",
         "global_impact_capital",
+        "impact_fund_capital",
       ],
       capital_provider_type: [
         "credit_cooperative",
@@ -3981,6 +4005,7 @@ export const Constants = {
         "community_network",
         "sponsor_programme",
         "p2p_pool",
+        "impact_fund",
         "other",
       ],
       capital_route_status: ["recommended", "manual_review", "no_route"],

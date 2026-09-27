@@ -1,8 +1,8 @@
-import { Building2, Handshake } from "lucide-react";
+import { Building2, FileCheck2, Globe2, Handshake } from "lucide-react";
 import Panel from "../../../components/product/Panel";
 import StatusPill from "../../../components/product/StatusPill";
 import { localized, tr } from "../../../i18n";
-import { PROVIDER_TYPE, type Provider } from "../../../lib/capitalNetwork";
+import { PROVIDER_TYPE, reportingLabel, type Provider } from "../../../lib/capitalNetwork";
 
 // Who is in the network. A provider's regulated role, where it has one, is a
 // fact about that provider and not something this registry decides: partner_id
@@ -19,6 +19,27 @@ const modelOf = (p: Provider): string | null => {
   const model = (p.commercial_model as { model?: string } | null)?.model;
   return model ? COMMERCIAL_MODEL[model] ?? model : null;
 };
+
+/**
+ * A provider's counterparty checks (addendum v2 §6). Nothing here was verified:
+ * the fund is invented, and the object says so rather than a screen implying a
+ * check that never happened.
+ */
+const kybOf = (p: Provider): { status: string; note: string | null } => {
+  const kyb = (p.kyb as { status?: string; note?: string } | null) ?? {};
+  return { status: kyb.status ?? "unknown", note: kyb.note ?? null };
+};
+
+/** Whether the counterparty check says anything the "Simulated" pill has not. */
+const showKyb = (p: Provider): boolean =>
+  p.domicile !== null && !(p.is_simulated && kybOf(p).status === "simulated");
+
+const KYB_STATUS: Record<string, { label: string; tone: "positive" | "caution" | "neutral" }> = localized({
+  verified: { label: { en: "Counterparty verified", pt: "Contraparte verificada" }, tone: "positive" },
+  simulated: { label: { en: "No check performed", pt: "Nenhuma verificação feita" }, tone: "caution" },
+  pending: { label: { en: "Check pending", pt: "Verificação pendente" }, tone: "caution" },
+  unknown: { label: { en: "Nothing stated", pt: "Nada declarado" }, tone: "neutral" },
+});
 
 export default function Providers({ providers }: { providers: Provider[] }) {
   return (
@@ -54,6 +75,13 @@ export default function Providers({ providers }: { providers: Provider[] }) {
                     {!p.active && (
                       <StatusPill tone="neutral" dot={false}>{tr({ en: "Closed", pt: "Fechado" })}</StatusPill>
                     )}
+                    {/* A simulated provider has said it already: two pills saying
+                        "nothing was checked" is one pill too many. */}
+                    {showKyb(p) && (
+                      <StatusPill tone={KYB_STATUS[kybOf(p).status]?.tone ?? "neutral"} dot={false}>
+                        {KYB_STATUS[kybOf(p).status]?.label ?? kybOf(p).status}
+                      </StatusPill>
+                    )}
                   </div>
                 </div>
                 <dl className="space-y-1 text-xs">
@@ -70,6 +98,38 @@ export default function Providers({ providers }: { providers: Provider[] }) {
                       {/* Metadata. Nothing in this prototype bills anything, and
                           every arrangement would need its own validation first. */}
                       <dd className="text-foreground">{model} <span className="text-muted-foreground">{tr({ en: "· recorded, never billed", pt: "· registrado, nunca cobrado" })}</span></dd>
+                    </div>
+                  )}
+                  {/* §6's fund profile, for a provider that states one. Where the
+                      money is domiciled decides which rules reach it, and what it
+                      asks for its capital is not her rate: the engine adds
+                      expected loss, cost to serve and the cost of moving it. */}
+                  {p.domicile && (
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="flex items-center gap-1.5 text-muted-foreground">
+                        <Globe2 size={12} aria-hidden /> {tr({ en: "Domiciled in", pt: "Domiciliado em" })}
+                      </dt>
+                      <dd className="text-foreground">
+                        {p.domicile}
+                        {showKyb(p) && kybOf(p).note && <span className="text-muted-foreground"> · {kybOf(p).note}</span>}
+                      </dd>
+                    </div>
+                  )}
+                  {p.required_return_bps !== null && (
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="text-muted-foreground">{tr({ en: "Asks for its capital", pt: "Pede pelo capital dele" })}</dt>
+                      <dd className="num text-foreground">
+                        {(p.required_return_bps / 100).toFixed(1)}% {tr({ en: "a year", pt: "ao ano" })}
+                        <span className="text-muted-foreground"> {tr({ en: "· before expected loss, cost to serve and the cost of moving it", pt: "· antes da perda esperada, do custo de servir e do custo de mover" })}</span>
+                      </dd>
+                    </div>
+                  )}
+                  {p.reporting_requirements.length > 0 && (
+                    <div className="flex flex-wrap gap-x-2">
+                      <dt className="flex items-center gap-1.5 text-muted-foreground">
+                        <FileCheck2 size={12} aria-hidden /> {tr({ en: "Wants back", pt: "Quer de volta" })}
+                      </dt>
+                      <dd className="text-foreground">{p.reporting_requirements.map(reportingLabel).join(", ")}</dd>
                     </div>
                   )}
                   {p.partner_id && (

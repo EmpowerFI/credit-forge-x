@@ -343,6 +343,55 @@ provider's answer never share a mark.
 Verified: 711 pgTAP assertions across 22 files, 236 vitest tests, `tsc --noEmit`
 clean, 0 eslint errors, build clean.
 
+### Day 3 — the fund, its policy, and a gate that reads it
+
+`20261008000000_impact_fund_type.sql` and `20261008000100_impact_fund_provider.sql`,
+27 pgTAP assertions in `platform/supabase/tests/impact_fund.test.sql`, seven more
+in `packages/capital-allocation`, two new vectors, and the two screens that show
+any of it.
+
+The §6 profile went to whichever table the field is a fact about.
+`capital_providers` gained **domicile**, **required return**, **reporting
+requirements** and **KYB metadata**; `capital_instruments` gained **target
+population** and a **term range**. `investor_mandates` was not touched: it is one
+investor account's filter for the Investor Console, a different question with a
+different owner.
+
+The fund itself is invented, simulated, and unnamed — domiciled **NL**, asking
+**6% a year** for its capital, wanting a quarterly impact report, annual audited
+accounts and anonymised borrower-level data, with its counterparty checks marked
+as never performed. Its instrument funds **R$ 1.000 to R$ 50.000 over 6 to 36
+months**, for women-led businesses in verified communities, at **36% a year**
+all-in to her, with **R$ 20 million** stated. It expands what the pools can
+reach rather than competing with them, and it still has to say yes.
+
+**Two deviations, both stated in the migration.** There is no "required-return
+ceiling": a second ceiling beside `private.capital_cost_ceiling_bps()` would be
+two ceilings with no stated precedence. And there is no deployment currency on
+the provider, because `capital_instruments.currency` already says what a route
+is denominated in.
+
+**One thing the plan did not ask for.** A duration constraint the engine never
+read would be decoration on a screen, so the term range is a **gate** —
+`TERM_OUTSIDE_POLICY`, asked after purpose and before the papers, in both engines
+and in the vectors. Full gate traces agree between TypeScript and SQL across all
+eight network vectors, instrument by instrument.
+
+**And the day found that day 1 and day 2 were verified with a command that
+verifies nothing.** The repository's `tsconfig.json` carries `files: []` and only
+references, so `npx tsc --noEmit` type-checks an empty project and exits clean
+whatever the code says. The real check is `npx tsc -b`, and the moment it ran it
+found the ten `GLOBAL_*` reason codes of day 1 with **no label in either
+language** — a refused gap would have rendered `undefined` on the entrepreneur's
+own screen. All ten are written now, and so are the impact fund's provider type,
+its instrument type, the `term` gate and its two-sided trace. Every "tsc clean"
+reported on days 1 and 2 should be read as unverified; the code is verified now.
+
+Verified: 738 pgTAP assertions across 23 files, 243 vitest tests, `tsc -b`
+clean, 0 eslint errors, build clean, and a browser pass over
+`/app/capital/network` at 390, 768 and 1280 — the fund's profile, the term line,
+the editor's new fields saved end to end, no console errors.
+
 ---
 
 ## 7 · What this plan does not build

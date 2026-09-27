@@ -142,6 +142,7 @@ describe("reading the domestic pass", () => {
     type: "regional_credit_product", is_credit: true, requires_partner_approval: true,
     ticket_min_cents: 100_000, ticket_max_cents: 1_500_000, eligible_uf: ["SP"],
     purposes: ["working_capital", "inventory"], business_age_min_months: 6,
+    term_min_months: null, term_max_months: null,
     required_documents: ["cnpj_or_mei", "bank_statement_3m"], max_instalment_share_bps: 6000,
     estimated_cost_bps: 4800, capacity_cents: 4_000_000, impact_mandate: false, is_domestic: true,
   };
@@ -150,6 +151,7 @@ describe("reading the domestic pass", () => {
     type: "productive_exchange_network", is_credit: false, requires_partner_approval: true,
     ticket_min_cents: 10_000, ticket_max_cents: 200_000, eligible_uf: ["SP"],
     purposes: ["working_capital", "inventory"], business_age_min_months: 0,
+    term_min_months: null, term_max_months: null,
     required_documents: ["network_membership"], max_instalment_share_bps: null,
     estimated_cost_bps: null, capacity_cents: 600_000, impact_mandate: false, is_domestic: true,
   };
@@ -187,7 +189,7 @@ describe("reading the domestic pass", () => {
       id: "pool_global_impacto", provider: "empowerfi_pools", name: "Capital global de impacto",
       type: "global_impact_capital", is_credit: true, requires_partner_approval: false,
       ticket_min_cents: 10_000, ticket_max_cents: 5_000_000, eligible_uf: [], purposes: [],
-      business_age_min_months: 0, required_documents: [], max_instalment_share_bps: 10_000,
+      term_min_months: null, term_max_months: null, business_age_min_months: 0, required_documents: [], max_instalment_share_bps: 10_000,
       estimated_cost_bps: 2400, capacity_cents: 9_000_000, impact_mandate: true, is_domestic: false,
     };
     const plan = matchCapital(need, [globalRoute]);

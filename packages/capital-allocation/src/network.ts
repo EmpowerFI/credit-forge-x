@@ -32,7 +32,8 @@ export type InstrumentType =
   | "productive_exchange_network"
   | "sponsored_capital"
   | "domestic_p2p"
-  | "global_impact_capital";
+  | "global_impact_capital"
+  | "impact_fund_capital";
 
 /**
  * One vocabulary, not two. Where the addendum's §8 collides with a code the
@@ -58,6 +59,7 @@ export type NetworkReason =
   | "AFFORDABILITY_LIMIT"
   | "TICKET_OUTSIDE_POOL_POLICY"
   | "PURPOSE_OUTSIDE_POOL_MANDATE"
+  | "TERM_OUTSIDE_POLICY"
   | "REGION_NOT_ELIGIBLE"
   | "BUSINESS_TOO_YOUNG"
   | "INSUFFICIENT_DOCUMENTATION"
@@ -94,6 +96,9 @@ export interface Instrument {
   eligible_uf: string[];
   /** Empty funds any productive purpose. */
   purposes: string[];
+  /** The term range this route will go to. Null at either end is no stated restriction. */
+  term_min_months: number | null;
+  term_max_months: number | null;
   business_age_min_months: number;
   required_documents: string[];
   /** The share of her affordable instalment this route may take; null where it has no repayment. */
@@ -126,11 +131,11 @@ export interface CapitalNeed {
 
 /** One gate, with both sides of the comparison: the trace a person can read. */
 export interface Gate {
-  gate: "geography" | "ticket" | "purpose" | "business_age" | "documents" | "affordability" | "capacity";
+  gate: "geography" | "ticket" | "purpose" | "term" | "business_age" | "documents" | "affordability" | "capacity";
   passed: boolean;
   reason: NetworkReason;
   value: string | number;
-  limit: string[] | [number, number] | number;
+  limit: string[] | [number, number] | (number | null)[] | number;
 }
 
 /** A fit score's terms, each 0–100, so a ranking can be explained in one sentence. */
@@ -220,6 +225,7 @@ const REASON_ORDER: NetworkReason[] = [
   "AFFORDABILITY_LIMIT",
   "TICKET_OUTSIDE_POOL_POLICY",
   "PURPOSE_OUTSIDE_POOL_MANDATE",
+  "TERM_OUTSIDE_POLICY",
   "REGION_NOT_ELIGIBLE",
   "BUSINESS_TOO_YOUNG",
   "INSUFFICIENT_DOCUMENTATION",
@@ -255,6 +261,12 @@ export function gates(need: CapitalNeed, i: Instrument): Gate[] {
       reason: "TICKET_OUTSIDE_POOL_POLICY", value: need.amount_cents, limit: [i.ticket_min_cents, i.ticket_max_cents] },
     { gate: "purpose", passed: i.purposes.length === 0 || i.purposes.includes(need.purpose),
       reason: "PURPOSE_OUTSIDE_POOL_MANDATE", value: need.purpose, limit: [...i.purposes] },
+    // A fund that funds twelve months does not fund three, and §6 lets it say so.
+    { gate: "term",
+      passed: (i.term_min_months === null || need.term_months >= i.term_min_months)
+           && (i.term_max_months === null || need.term_months <= i.term_max_months),
+      reason: "TERM_OUTSIDE_POLICY", value: need.term_months,
+      limit: [i.term_min_months, i.term_max_months] },
     { gate: "business_age", passed: need.business_age_months >= i.business_age_min_months,
       reason: "BUSINESS_TOO_YOUNG", value: need.business_age_months, limit: i.business_age_min_months },
     { gate: "documents", passed: missing.length === 0,

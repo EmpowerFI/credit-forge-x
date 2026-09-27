@@ -12,7 +12,8 @@ import Panel from "../../../components/product/Panel";
 import StatusPill from "../../../components/product/StatusPill";
 import { tr } from "../../../i18n";
 import {
-  costLine, documentLabel, documentsAsked, INSTRUMENT_TYPE, saveInstrumentPolicy,
+  costLine, documentLabel, documentsAsked, INSTRUMENT_TYPE, populationLabel,
+  saveInstrumentPolicy, termLine,
   type Instrument, type InstrumentPolicy, type Provider,
 } from "../../../lib/capitalNetwork";
 import { describeError } from "../../../lib/errors";
@@ -43,6 +44,15 @@ const bpsOf = (value: string): number | null => {
 
 const PERCENT = (bps: number | null) => (bps === null ? "" : String(bps / 100));
 
+// Empty is no bound stated, which is not the same as a bound of zero: a route
+// that says nothing about the term refuses no term at all.
+const monthsOf = (value: string): number | null => {
+  const n = Number(value);
+  return value.trim() === "" || !Number.isFinite(n) || n < 1 ? null : Math.round(n);
+};
+
+const POPULATIONS = ["women_led", "verified_community", "first_time_borrower", "rural"];
+
 interface Form {
   active: boolean;
   ticketMin: string;
@@ -52,6 +62,9 @@ interface Form {
   share: string;
   repays: boolean;
   minMonths: string;
+  termMin: string;
+  termMax: string;
+  population: string[];
   mandate: boolean;
   uf: string;
   purposes: Purpose[];
@@ -67,6 +80,9 @@ const formOf = (i: Instrument): Form => ({
   share: PERCENT(i.max_instalment_share_bps),
   repays: i.max_instalment_share_bps !== null,
   minMonths: String(i.business_age_min_months),
+  termMin: i.term_min_months === null ? "" : String(i.term_min_months),
+  termMax: i.term_max_months === null ? "" : String(i.term_max_months),
+  population: [...i.target_population],
   mandate: i.impact_mandate,
   uf: i.eligible_uf.join(", "),
   purposes: i.purposes as Purpose[],
@@ -81,6 +97,9 @@ const policyOf = (f: Form): InstrumentPolicy => ({
   estimated_cost_bps: bpsOf(f.cost),
   max_instalment_share_bps: f.repays ? bpsOf(f.share) : null,
   business_age_min_months: Math.max(0, Math.round(Number(f.minMonths) || 0)),
+  term_min_months: monthsOf(f.termMin),
+  term_max_months: monthsOf(f.termMax),
+  target_population: f.population,
   impact_mandate: f.mandate,
   eligible_uf: f.uf.split(",").map((s) => s.trim().toUpperCase()).filter((s) => /^[A-Z]{2}$/.test(s)),
   purposes: f.purposes,
@@ -162,6 +181,14 @@ function Editor({ instrument, onClose }: { instrument: Instrument; onClose: () =
             hint={tr({ en: "Counted from her check-ins: this product records no incorporation date.", pt: "Contados pelos check-ins dela: este produto não registra data de constituição." })}>
             <Input id="min-months" type="number" min={0} max={240} value={form.minMonths} onChange={(e) => set("minMonths")(e.target.value)} />
           </Field>
+          <Field id="term-min" label={tr({ en: "Term from, months", pt: "Prazo mínimo, meses" })}
+            hint={tr({ en: "Empty means no bound stated, which is not a bound of zero.", pt: "Vazio significa nenhum limite declarado, o que não é um limite de zero." })}>
+            <Input id="term-min" type="number" min={1} max={240} value={form.termMin} onChange={(e) => set("termMin")(e.target.value)} />
+          </Field>
+          <Field id="term-max" label={tr({ en: "Term up to, months", pt: "Prazo máximo, meses" })}
+            hint={tr({ en: "A route that funds twelve months does not fund three, and the engine says so.", pt: "Uma rota que financia doze meses não financia três, e o motor diz isso." })}>
+            <Input id="term-max" type="number" min={1} max={240} value={form.termMax} onChange={(e) => set("termMax")(e.target.value)} />
+          </Field>
           <Field id="uf" label={tr({ en: "States served", pt: "Estados atendidos" })}
             hint={tr({ en: "Two letters each, comma separated. Empty means no restriction stated.", pt: "Duas letras cada, separados por vírgula. Vazio significa nenhuma restrição declarada." })}>
             <Input id="uf" value={form.uf} onChange={(e) => set("uf")(e.target.value)} placeholder="SP, MG" autoComplete="off" />
@@ -196,6 +223,29 @@ function Editor({ instrument, onClose }: { instrument: Instrument; onClose: () =
               <label key={p} className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Checkbox checked={form.purposes.includes(p)} onCheckedChange={() => set("purposes")(toggle(form.purposes, p))} />
                 {PURPOSE_LABEL[p]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="space-y-2">
+          <legend className="text-xs font-medium text-foreground">
+            {tr({ en: "Population this route is for", pt: "População a que esta rota se destina" })}{" "}
+            {form.population.length === 0 && (
+              <span className="font-normal text-muted-foreground">{tr({ en: "(none stated)", pt: "(nenhuma declarada)" })}</span>
+            )}
+          </legend>
+          <p className="text-xs text-muted-foreground">
+            {tr({
+              en: "What a provider's mandate names. It is recorded and shown; the impact mandate above is what the engine scores on.",
+              pt: "O que o mandato de um provedor nomeia. É registrado e mostrado; o mandato de impacto acima é o que o motor pontua.",
+            })}
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {POPULATIONS.map((code) => (
+              <label key={code} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Checkbox checked={form.population.includes(code)} onCheckedChange={() => set("population")(toggle(form.population, code))} />
+                {populationLabel(code)}
               </label>
             ))}
           </div>
@@ -314,6 +364,16 @@ function Row({ instrument, provider, canEdit, onEdit }: {
               : tr({ en: "Any productive purpose", pt: "Qualquer finalidade produtiva" })}
           </dd>
         </div>
+        <div className="flex flex-wrap gap-x-2">
+          <dt className="text-muted-foreground">{tr({ en: "Term", pt: "Prazo" })}</dt>
+          <dd className="num text-foreground">{termLine(i.term_min_months, i.term_max_months)}</dd>
+        </div>
+        {i.target_population.length > 0 && (
+          <div className="flex flex-wrap gap-x-2">
+            <dt className="text-muted-foreground">{tr({ en: "For", pt: "Para" })}</dt>
+            <dd className="text-foreground">{i.target_population.map(populationLabel).join(", ")}</dd>
+          </div>
+        )}
         <div className="flex flex-wrap gap-x-2">
           <dt className="text-muted-foreground">{tr({ en: "Reported history", pt: "Histórico reportado" })}</dt>
           <dd className="num text-foreground">
