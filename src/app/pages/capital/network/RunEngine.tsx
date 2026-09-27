@@ -29,10 +29,18 @@ import { useDecisions } from "./queries";
 // is idempotent, so pressing it again on a need that has not moved records
 // nothing and says so.
 
-/** The documents a previous run was told she has, so a second run starts where the last one left off. */
-const documentsOf = (decision: RouteDecision | undefined): string[] => {
+/**
+ * What she has on file, as this run should start from it: the documents the
+ * last run was told about, so a second run picks up where the last left off —
+ * and, where there is no last run, whatever is already recorded against the
+ * opportunity. An opportunity nobody has routed yet is not an opportunity whose
+ * papers nobody knows, and starting it from five empty boxes made an operator
+ * restate what the record already held.
+ */
+const documentsOf = (decision: RouteDecision | undefined, opportunity: EngineOpportunity | null): string[] => {
   const need = decision?.need as { documents?: unknown } | null;
-  return Array.isArray(need?.documents) ? (need!.documents as string[]).filter((d): d is string => typeof d === "string") : [];
+  const stated = decision ? need?.documents : opportunity?.documents;
+  return Array.isArray(stated) ? (stated as unknown[]).filter((d): d is string => typeof d === "string") : [];
 };
 
 function Documents({ asked, value, onChange }: { asked: string[]; value: string[]; onChange: (v: string[]) => void }) {
@@ -88,8 +96,8 @@ export default function RunEngine({ opportunities, instruments, loading }: {
     if (seeded.current === id || decisions.isLoading) return;
     seeded.current = id;
     setRun(null);
-    setDocuments(documentsOf(decisions.data?.[0]));
-  }, [selected?.opportunity_id, decisions.data, decisions.isLoading]);
+    setDocuments(documentsOf(decisions.data?.[0], selected));
+  }, [selected, decisions.data, decisions.isLoading]);
 
   const engine = useMutation({
     mutationFn: () => runCapitalEngine(selected!.opportunity_id, documents),

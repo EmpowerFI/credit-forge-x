@@ -15,6 +15,7 @@ const GLOBAL: PoolPolicy = {
 const opportunity = (over: Partial<EngineOpportunity> = {}): EngineOpportunity => ({
   opportunity_id: "o", code: "Q-7ABFD2", queued: "0", created_at: "2026-09-10T12:00:00Z", status: "open",
   purpose: "inventory", business_sector: "food", community: "Grajaú", community_city: "São Paulo", community_state: "SP",
+  documents: ["cpf", "proof_of_activity"],
   amount_cents: 220_000, term_months: 6, instalment_cents: 41_000, risk_band: "LOW", confidence: "HIGH", impact_eligible: true,
   funding_status: "open", funding_pool: "domestic", allocation: null, allocation_reason_codes: ["DOMESTIC_LIQUIDITY_AVAILABLE"],
   allocation_model_version: "capital-allocation-v1.0.0", allocated_at: null,
