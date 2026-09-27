@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(41);
+select plan(44);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -255,6 +255,47 @@ select is(
 select is(
   (public.capital_mobilization_summary() ->> 'eligible_gap_cents')::bigint,
   0::bigint, 'and no plan has left an eligible gap in this scope');
+
+-- Coverage is a share, and the two sides of it must come from the same rows.
+-- The first reader divided what was mobilised by what was lent: mobilized_cents
+-- is stamped the moment an opportunity is allocated to the global pool, so an
+-- opportunity that never disbursed still counted in the numerator and never in
+-- the denominator. Here the global ticket is allocated and the domestic one is
+-- the only loan on the books — the arrangement that read 188% on the demo.
+set local role postgres;
+insert into partner_decisions (id, opportunity_id, partner_id, verdict, approved_amount_cents, rate_bps, term_months) values
+  ('00000000-0000-0000-0000-0000000012c9', '00000000-0000-0000-0000-0000000012f1',
+   '00000000-0000-0000-0000-0000000012ab', 'approved', 500000, 300, 12),
+  ('00000000-0000-0000-0000-0000000012ca', '00000000-0000-0000-0000-0000000012f2',
+   '00000000-0000-0000-0000-0000000012ab', 'approved', 300000, 300, 12);
+insert into loans (id, opportunity_id, entrepreneur_id, partner_id, decision_id,
+  principal_cents, term_months, rate_bps, instalment_cents, status, disbursed_at) values
+  ('00000000-0000-0000-0000-0000000012d9', '00000000-0000-0000-0000-0000000012f2',
+   '00000000-0000-0000-0000-0000000012e2', '00000000-0000-0000-0000-0000000012ab',
+   '00000000-0000-0000-0000-0000000012ca', 300000, 12, 300, 30000, 'ACTIVE', now());
+select pg_temp.act_as('00000000-0000-0000-0000-0000000012a2');
+
+select is(
+  (public.capital_mobilization_summary() ->> 'global_funding_coverage_bps')::integer,
+  0, 'a ticket allocated abroad that has not disbursed is not a share of what was lent');
+
+select ok(
+  (public.capital_mobilization_summary() ->> 'mobilized_cents')::bigint
+    > (public.capital_mobilization_summary() ->> 'disbursed_cents')::bigint
+  and (public.capital_mobilization_summary() ->> 'global_funding_coverage_bps')::integer <= 10000,
+  'so more may be mobilised than is lent, and the share still cannot pass 100%');
+
+set local role postgres;
+insert into loans (id, opportunity_id, entrepreneur_id, partner_id, decision_id,
+  principal_cents, term_months, rate_bps, instalment_cents, status, disbursed_at) values
+  ('00000000-0000-0000-0000-0000000012da', '00000000-0000-0000-0000-0000000012f1',
+   '00000000-0000-0000-0000-0000000012e1', '00000000-0000-0000-0000-0000000012ab',
+   '00000000-0000-0000-0000-0000000012c9', 500000, 12, 300, 50000, 'ACTIVE', now());
+select pg_temp.act_as('00000000-0000-0000-0000-0000000012a2');
+
+select is(
+  (public.capital_mobilization_summary() ->> 'global_funding_coverage_bps')::integer,
+  6250, 'and once it disburses, coverage is R$ 5.000 of R$ 8.000 lent: 62,5%');
 
 -- -------------------------------------------- CTS and CTM in one payload
 
