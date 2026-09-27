@@ -250,6 +250,19 @@ const MESSAGES: Record<string, string> = localized({
     en: "Say why. Investors and the audit trail will see the reason.",
     pt: "Diga o motivo. Os investidores e a trilha de auditoria vão ver.",
   },
+  not_a_capital_operator: {
+    en: "Routing capital is for capital providers and EmpowerFI.",
+    pt: "Encaminhar capital é para provedores de capital e a EmpowerFI.",
+  },
+  partner_consent_missing: {
+    en: "She has not agreed to a partner being involved, so no third-party route can be recommended for her.",
+    pt: "Ela não concordou com o envolvimento de um parceiro, então nenhuma rota de terceiros pode ser recomendada para ela.",
+  },
+  capital_network_disabled: {
+    en: "The capital network is switched off.",
+    pt: "A rede de capital está desligada.",
+  },
+  opportunity_not_found: { en: "Opportunity not found.", pt: "Oportunidade não encontrada." },
 });
 
 export function describeError(error: unknown): string {

@@ -1,6 +1,6 @@
 import {
   ArrowLeftRight, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardCheck, Coins, Cpu, FileCheck2, Gavel, Gem, History, KeyRound,
-  LayoutDashboard, PieChart, Route as RouteIcon, ServerCog, Share2, ShieldCheck, Split, Sprout, Store, Users, Wallet,
+  LayoutDashboard, Network, PieChart, Route as RouteIcon, ServerCog, Share2, ShieldCheck, Split, Sprout, Store, Users, Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { localized } from "../i18n";
@@ -125,6 +125,7 @@ export const SUBNAV: Partial<Record<AreaId, NavItem[]>> = localized({
   // landed there with no way on except the header menu.
   engine: [
     { to: "/app/capital", label: { en: "Engine", pt: "Motor" }, icon: Split, end: true },
+    { to: "/app/capital/network", label: { en: "Capital Network", pt: "Rede de Capital" }, icon: Network },
     { to: "/app/capital/economics", label: { en: "Operating economics", pt: "Economia operacional" }, icon: BarChart3 },
   ],
   business: [

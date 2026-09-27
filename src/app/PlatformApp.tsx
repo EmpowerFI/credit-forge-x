@@ -20,6 +20,7 @@ import { useLocale } from "./i18n/useLocale";
 // The Solana client is heavy and only the audit screens need it in the browser.
 const AuditPage = lazy(() => import("./pages/AuditPage"));
 const AllocationEngine = lazy(() => import("./pages/capital/AllocationEngine"));
+const CapitalNetwork = lazy(() => import("./pages/capital/network/CapitalNetwork"));
 const AuditLayout = lazy(() => import("./pages/audit/AuditLayout"));
 const AuditAttestations = lazy(() => import("./pages/audit/Attestations"));
 const AuditEvents = lazy(() => import("./pages/audit/Events"));
@@ -164,6 +165,10 @@ function Pages() {
         <Route path="investor/audit" element={investor(<InvestorAuditTrail />)} />
         <Route path="impact" element={<RequireAuth roles={["sponsor", "admin", "auditor"]}><Suspense fallback={loading}><ImpactIntelligence /></Suspense></RequireAuth>} />
         <Route path="capital" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
+        {/* Reading the registry is as wide as its row-level policy; running the
+            engine is for the desk and capital operators, and setting a policy is
+            narrower still. The page gates those itself. */}
+        <Route path="capital/network" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><CapitalNetwork /></Suspense></RequireAuth>} />
         <Route path="capital/economics" element={<RequireAuth roles={["sponsor", "partner", "admin", "auditor"]}><Suspense fallback={loading}><OperatingEconomics /></Suspense></RequireAuth>} />
         <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/app" replace />} />

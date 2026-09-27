@@ -43,11 +43,23 @@ export type Localized<T> =
   : T;
 
 /**
+ * A single { en, pt } is a leaf, not a structure, and localized() cannot make
+ * one read in the current language: there is no object left to hang a getter
+ * on, so it would hand back the pair itself and React would refuse to render
+ * it. tr() is what reads one label. Rejecting it here turns a blank screen into
+ * a compile error.
+ */
+type NotOneLabel<T> = T extends L<unknown>
+  ? "localized() takes a structure whose { en, pt } leaves read in the current language; for a single label use tr()"
+  : T;
+
+/**
  * Labels kept in a module-level constant, written in both languages, that read
  * in the current one wherever they are used: POOL.domestic.name is a string,
  * and a switch of language changes it. Only plain objects and arrays are
  * walked; icons, components and functions are kept as they are.
  */
+export function localized<const T>(value: NotOneLabel<T>): Localized<T>;
 export function localized<const T>(value: T): Localized<T> {
   if (Array.isArray(value)) {
     const out: unknown[] = [];

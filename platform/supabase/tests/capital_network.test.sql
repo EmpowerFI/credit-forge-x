@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(44);
+select plan(53);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -372,5 +372,67 @@ select throws_ok(
   $$ select public.run_capital_engine('00000000-0000-0000-0000-0000000009f1') $$,
   '42501', null, 'with the partner scope withdrawn, no third-party route may be recommended');
 
+-- ------------------------------------------------------- who may edit a policy
+
+-- Commercial terms an operator owns, and the kind of thing a route is, which a
+-- migration owns. The line between them is the guardrail of addendum §12.
+
+set local role postgres;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000009a4', 'cn-auditor@test');
+update profiles set role = 'auditor' where id = '00000000-0000-0000-0000-0000000009a4';
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a3');
+
+select lives_ok($$
+  update capital_instruments set capacity_cents = 5000000 where code = 'credito_regional_capital_giro'
+$$, 'an operator moves a partner route''s capacity');
+
+select is(
+  (select policy_version from capital_instruments where code = 'credito_regional_capital_giro'),
+  2, 'and the policy version moves with it, so a stored decision can be read against the policy that made it');
+
+select throws_ok($$
+  update capital_instruments set is_credit = true where code = 'troca_produtiva_rede'
+$$, '42501', null, 'a route that must never be called credit cannot be turned into credit from a screen');
+
+select throws_ok($$
+  update capital_instruments set name = 'Crédito rápido' where code = 'troca_produtiva_rede'
+$$, '42501', null, 'nor reworded into one: the name she reads is not an operator''s field');
+
+select throws_ok($$
+  update capital_instruments set max_instalment_share_bps = null where code = 'microcredito_produtivo'
+$$, '23514', null, 'a credit route may not drop the share of her instalment it is allowed to take');
+
+select throws_ok($$
+  update capital_instruments set active = false where code = 'pool_domestico_p2p'
+$$, '42501', null, 'a P2P route is closed in funding_pools, not here, or the network would hide what still funds');
+
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a4');
+-- No error: row-level security simply leaves the row alone.
+update capital_instruments set capacity_cents = 1 where code = 'microcredito_produtivo';
+select is(
+  (select capacity_cents from capital_instruments where code = 'microcredito_produtivo'),
+  1500000::bigint, 'an auditor reads every policy in the network and sets none');
+
+-- The P2P desk is the role that routes capital day to day, and the engine knows
+-- it by name rather than by a list repeated in every screen.
+set local role postgres;
+insert into partners (id, name, kind, min_ticket_cents, max_ticket_cents, is_simulated)
+values ('00000000-0000-0000-0000-0000000009ab', 'Mesa P2P (teste)', 'fintech', 10000, 2000000, true);
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000009a5', 'cn-desk@test');
+update profiles set role = 'partner', partner_id = '00000000-0000-0000-0000-0000000009ab'
+  where id = '00000000-0000-0000-0000-0000000009a5';
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a5');
+select ok(
+  (select private.is_capital_operator()),
+  'the EmpowerFI P2P desk is a capital operator');
+
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a2');
+select ok(
+  not (select private.is_capital_operator()),
+  'and an entrepreneur is not');
+
+set local role postgres;
 select * from finish();
 rollback;

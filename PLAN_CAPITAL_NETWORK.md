@@ -181,6 +181,46 @@ history she has actually reported — a proxy, and it must be labelled as one
 wherever the operator UI shows it, because it is what closes the regional
 product's six-month gate.
 
+**Day 4 · the operator's screen** (`/app/capital/network`, two more migrations, 9
+more assertions). The registry, the instrument editor and the run, in the
+workspace's own idiom. Verified in a browser against the hackathon project:
+plan rendered, engine run recorded, a second run recorded nothing, PT and EN,
+390px through 1280px, no overflow the app shell did not already have.
+
+*Who may change what, settled in the schema rather than on the screen.* An
+operator moves commercial terms — ticket, capacity, cost, mandate, states,
+purposes, papers, instalment share, open or closed. An operator may not change
+`instrument_type`, `pool`, `currency`, `is_domestic`, `is_global`,
+`requires_partner_approval`, `is_credit`, the provider, the code or **the name**:
+the words a woman reads on a route card are not a field to be reworded into
+"quick credit". Column-level grants enforce it, so the database refuses the
+screen rather than trusting it. Nothing grants `insert`, because creating an
+instrument declares all of those at once; a new route arrives by migration, as a
+funding pool does. A new structural check makes it stick: a credit route must
+always state the share of her instalment it may take, since leaving it null is
+how the affordability gate gets skipped.
+
+*Two deviations from §5.* "Test Match" is called **Run the engine**, because it
+is the recorded run: the need is assembled by `private.capital_need()` from the
+opportunity, the eligibility assessment, her state and her check-in history, and
+rebuilding that in the browser would be a second place for the same rules to
+disagree from. Idempotency is what makes pressing it safe. And §6.4's "narrower"
+turned out to be about **editing**, not about the page: reading the registry
+matches its row-level policy, running the engine is the desk and capital
+operators (`partner` had to be added — it is EmpowerFI's own P2P desk, and
+routing is its work), and setting a policy is narrower still.
+
+*Three defects the browser found that the type checker and the tests did not.*
+A single `{ en, pt }` passed to `localized()` rendered as an object and took the
+whole app down with a blank page — the runtime returns the pair while the type
+says `string`. `localized()` now rejects a lone label at compile time, and the
+guard found exactly one call site: mine. Every gate's refusal printed raw
+enum values and centavos ("hers renovation · asked working_capital"); they are
+now phrased in her language and her currency, on both sides of the comparison.
+And every number field in the editor had a step coarser than its own precision,
+so a share of 60% failed the browser's validity check and the form refused to
+submit **without saying why**.
+
 ---
 
 ## 6 · Decisions needed before coding
