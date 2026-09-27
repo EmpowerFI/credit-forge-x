@@ -84,6 +84,7 @@ export const KIND_TITLE: Record<AnchorKind, string> = localized({
   allocation: { en: "Capital allocation", pt: "Alocação de capital" },
   consent: { en: "Consent record", pt: "Registro de consentimento" },
   settlement_route: { en: "Settlement route", pt: "Rota de liquidação" },
+  capital_route: { en: "Capital plan", pt: "Plano de capital" },
 });
 
 const ELIGIBILITY_FIELDS = ELIGIBILITY_RESULT_FIELDS;
@@ -149,6 +150,18 @@ export interface Check {
 export type Verdict = "VERIFIED" | "MISMATCH" | "MISSING" | "PENDING";
 
 export async function audit(kind: AnchorKind, entityId: string) {
+  // A capital plan has a domain tag and a payload, and no proof: anchoring one
+  // needs its own instruction in programs/empowerfi-audit and an upgrade of the
+  // devnet program, so nothing queues it and there is nothing to verify against
+  // the chain. It is auditable by re-running the engine over the need, the
+  // engine version and the policy versions the decision recorded. When the
+  // program instruction lands, this guard is the line to delete.
+  if (kind === "capital_route") {
+    throw new Error(tr({
+      en: "A capital plan is not anchored on Solana yet. Re-run the engine over the decision to check it.",
+      pt: "Um plano de capital ainda não é registrado na Solana. Rode o motor de novo sobre a decisão para conferi-lo.",
+    }));
+  }
   const { data, error } = await platform.rpc("audit_record", { p_kind: kind, p_entity_id: entityId });
   if (error) throw error;
   const record = data as unknown as AuditRecord;

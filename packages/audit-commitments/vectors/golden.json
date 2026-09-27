@@ -144,6 +144,89 @@
       },
       "canonical": "{\"compared_gross_micro_usdc\":704000000,\"decided_at\":\"2026-09-18T13:34:13.828Z\",\"loan_id\":\"01a0fec7-200f-45c2-a92c-2dac849cd7be\",\"model_version\":\"settlement-route-v1.0.0\",\"net_brl_delta_cents\":2254,\"opportunity_no\":7,\"principal_cents\":380000,\"quotes\":[{\"blocks\":[],\"cost_bps\":179,\"execution_eta_sec\":900,\"expires_at\":\"2026-09-18T13:44:13.828Z\",\"feasible\":true,\"fx_cost_cents\":4562,\"fx_rate_milli\":5400,\"fx_spread_bps\":120,\"fx_struck\":\"payout\",\"gross_brl_cents\":380160,\"hops\":1,\"liquidity_ok\":true,\"net_brl_cents\":373344,\"network_fee_cents\":0,\"provider\":\"regulated_offramp\",\"provider_fee_cents\":2254,\"quoted_at\":\"2026-09-18T13:34:13.828Z\",\"reality\":\"simulated\",\"route\":\"direct_usdc_pix\",\"total_cost_cents\":6816},{\"blocks\":[\"ROUTE_PROVIDER_UNAVAILABLE\"],\"cost_bps\":239,\"execution_eta_sec\":300,\"expires_at\":\"2026-09-14T01:00:00.000Z\",\"feasible\":false,\"fx_cost_cents\":4562,\"fx_rate_milli\":5400,\"fx_spread_bps\":120,\"fx_struck\":\"allocation\",\"gross_brl_cents\":380160,\"hops\":2,\"liquidity_ok\":true,\"net_brl_cents\":371090,\"network_fee_cents\":0,\"provider\":\"brl_stablecoin\",\"provider_fee_cents\":4508,\"quoted_at\":\"2026-09-13T01:00:00.000Z\",\"reality\":\"simulated\",\"route\":\"brl_stable_pix\",\"total_cost_cents\":9070}],\"reason_codes\":[\"DIRECT_LOWEST_COST\",\"EXTRA_CONVERSION_ADDS_COST\"],\"selected_route\":\"direct_usdc_pix\"}",
       "commitment": "7d13f768c6111653a482427132cc2d795ed8f399a7075b11590c7954f895c885"
+    },
+    {
+      "name": "capital plan",
+      "domain": "EMPOWERFI:CAPITAL_ROUTE:v1",
+      "payload": {
+        "allocations": [
+          {
+            "amount_cents": 437837,
+            "fit_score": 8490,
+            "instrument_id": "credito_regional_capital_giro",
+            "is_credit": true,
+            "reasons": [
+              "PURPOSE_MATCH",
+              "TICKET_MATCH",
+              "REGION_MATCH",
+              "PARTNER_CAPACITY_AVAILABLE"
+            ],
+            "requires_partner_approval": true
+          },
+          {
+            "amount_cents": 62163,
+            "fit_score": 8400,
+            "instrument_id": "troca_produtiva_rede",
+            "is_credit": false,
+            "reasons": [
+              "CLOSED_NETWORK_PURPOSE_MATCH",
+              "TICKET_MATCH",
+              "REGION_MATCH",
+              "PARTNER_CAPACITY_AVAILABLE",
+              "LOWER_ESTIMATED_COST"
+            ],
+            "requires_partner_approval": true
+          }
+        ],
+        "decided_at": "2026-10-02T14:05:00.000Z",
+        "decision_id": "6b2f4d11-9e0a-4c3b-8f57-1a2b3c4d5e6f",
+        "decision_no": 1,
+        "domestic_coverage_cents": 500000,
+        "engine_version": "capital-network-v1.0.0",
+        "external_capital_gap_cents": 0,
+        "global_coverage_cents": 0,
+        "instrument_policy": {
+          "credito_regional_capital_giro": 1,
+          "microcredito_produtivo": 1,
+          "pool_domestico_p2p": 1,
+          "pool_global_impacto": 1,
+          "troca_produtiva_rede": 1
+        },
+        "need": {
+          "amount_cents": 500000,
+          "business_age_months": 18,
+          "documents": [
+            "cnpj_or_mei",
+            "bank_statement_3m",
+            "cpf",
+            "proof_of_activity",
+            "network_membership"
+          ],
+          "impact_eligible": true,
+          "manual_review_allowed": false,
+          "max_instalment_cents": 90000,
+          "purpose": "inventory",
+          "readiness_ok": true,
+          "term_months": 12,
+          "uf": "SP"
+        },
+        "opportunity_id": "b9d3f2a1-4c5e-4a7b-8d9e-0f1a2b3c4d5e",
+        "opportunity_no": 3,
+        "reason_codes": [
+          "DOMESTIC_COVERAGE_SUFFICIENT",
+          "PURPOSE_MATCH",
+          "CLOSED_NETWORK_PURPOSE_MATCH",
+          "TICKET_MATCH",
+          "REGION_MATCH",
+          "PARTNER_CAPACITY_AVAILABLE",
+          "LOWER_ESTIMATED_COST"
+        ],
+        "requested_cents": 500000,
+        "status": "recommended",
+        "unfunded_cents": 0
+      },
+      "canonical": "{\"allocations\":[{\"amount_cents\":437837,\"fit_score\":8490,\"instrument_id\":\"credito_regional_capital_giro\",\"is_credit\":true,\"reasons\":[\"PURPOSE_MATCH\",\"TICKET_MATCH\",\"REGION_MATCH\",\"PARTNER_CAPACITY_AVAILABLE\"],\"requires_partner_approval\":true},{\"amount_cents\":62163,\"fit_score\":8400,\"instrument_id\":\"troca_produtiva_rede\",\"is_credit\":false,\"reasons\":[\"CLOSED_NETWORK_PURPOSE_MATCH\",\"TICKET_MATCH\",\"REGION_MATCH\",\"PARTNER_CAPACITY_AVAILABLE\",\"LOWER_ESTIMATED_COST\"],\"requires_partner_approval\":true}],\"decided_at\":\"2026-10-02T14:05:00.000Z\",\"decision_id\":\"6b2f4d11-9e0a-4c3b-8f57-1a2b3c4d5e6f\",\"decision_no\":1,\"domestic_coverage_cents\":500000,\"engine_version\":\"capital-network-v1.0.0\",\"external_capital_gap_cents\":0,\"global_coverage_cents\":0,\"instrument_policy\":{\"credito_regional_capital_giro\":1,\"microcredito_produtivo\":1,\"pool_domestico_p2p\":1,\"pool_global_impacto\":1,\"troca_produtiva_rede\":1},\"need\":{\"amount_cents\":500000,\"business_age_months\":18,\"documents\":[\"cnpj_or_mei\",\"bank_statement_3m\",\"cpf\",\"proof_of_activity\",\"network_membership\"],\"impact_eligible\":true,\"manual_review_allowed\":false,\"max_instalment_cents\":90000,\"purpose\":\"inventory\",\"readiness_ok\":true,\"term_months\":12,\"uf\":\"SP\"},\"opportunity_id\":\"b9d3f2a1-4c5e-4a7b-8d9e-0f1a2b3c4d5e\",\"opportunity_no\":3,\"reason_codes\":[\"DOMESTIC_COVERAGE_SUFFICIENT\",\"PURPOSE_MATCH\",\"CLOSED_NETWORK_PURPOSE_MATCH\",\"TICKET_MATCH\",\"REGION_MATCH\",\"PARTNER_CAPACITY_AVAILABLE\",\"LOWER_ESTIMATED_COST\"],\"requested_cents\":500000,\"status\":\"recommended\",\"unfunded_cents\":0}",
+      "commitment": "d4f343be5b499f3a22f7a57e27e0a0dfbab7f51c025ce44e6f8ffbb05721838e"
     }
   ],
   "borrower_ref_hashes": [

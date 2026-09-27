@@ -20,6 +20,7 @@ import FundingBar from "./FundingBar";
 import DomesticInvest from "./DomesticInvest";
 import FundingRoute from "./FundingRoute";
 import InvestPanel from "./InvestPanel";
+import { CapitalPlanPanel } from "../capital/network/CapitalPlanPanel";
 import { useMarket } from "./queries";
 
 // What an investor needs to decide, and nothing more: the purpose, the size,
@@ -239,6 +240,12 @@ export default function OpportunityDetail() {
               {consent?.signature && <ExplorerLink tx={consent.signature} label={tr({ en: "Her consent, on Solana", pt: "O consentimento dela, na Solana" })} />}
             </div>
           </PrivacyBoundaries>
+
+          {/* Why this opportunity is here at all. A plan shows what local routes
+              could take and what they could not, and the residual is what an
+              investor in this pool is being asked to fund. It renders only once
+              an operator has run the engine over it. */}
+          <CapitalPlanPanel opportunityId={row.opportunity_id} />
         </div>
 
         <div className="space-y-6">

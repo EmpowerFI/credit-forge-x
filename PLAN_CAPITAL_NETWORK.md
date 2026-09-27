@@ -221,6 +221,49 @@ And every number field in the editor had a step coarser than its own precision,
 so a share of 60% failed the browser's validity check and the form refused to
 submit **without saying why**.
 
+**Day 5 · the plan where the people it concerns read it** (two migrations, 10
+more assertions). The woman whose request it is, her community's leader, the
+desk, an investor deciding whether to fund what local capital could not, the
+sponsor, the auditor.
+
+*It could not be a table read.* The decision holds instrument **codes**, and an
+entrepreneur may not read `capital_instruments` — the registry is every
+provider's policy, and she is shown the routes recommended for her, not that. A
+snapshot nobody is allowed to resolve is a broken snapshot, so
+`public.capital_plan()` resolves exactly the instruments her decision names, and
+nothing else about the network.
+
+*Two readings of one decision.* The full one, on the investor's opportunity
+page, is every route and every refusal with both sides of every gate — it
+answers why this opportunity is asking for global capital at all. Hers, on
+`/app/me`, is shorter on purpose: what was recommended, what is still without a
+route, and the papers that would open another one. The engine's ranking is not
+her question, and putting it in front of her would have meant a second
+vocabulary in the second person.
+
+*A gap day 5 found in day 3's table.* The decision recorded the engine version
+and the need, and **not** the policy version of each instrument it evaluated, so
+a recommendation read six weeks later could not be told apart from one made
+under a ticket range that has since moved. `instrument_policy` fixes it, and it
+joins the idempotency test: re-running under a policy that has moved records a
+new decision even when the answer is identical, because "re-confirmed under
+policy 2" is a different fact from "decided under policy 1".
+
+*The anchor, and why it does not ship queued.* `anchor_kind` gains
+`capital_route`, `private.capital_route_payload()` says exactly what a plan
+would commit to, and `EMPOWERFI:CAPITAL_ROUTE:v1` is pinned by a golden vector
+generated from an independent Python implementation. Nothing queues it. A proof
+kind needs its own instruction in `programs/empowerfi-audit` and an upgrade of
+the devnet program — the settlement route's own file records how deliberate that
+was — and queueing an anchor no program can accept would put a job that fails
+for good behind every plan. Until that work is done a plan is auditable the way
+it already is, and not weakly: a versioned decision holding the need, the engine
+version, the policy versions and the whole evaluated trace, which anyone allowed
+to see it can re-run to the same answer. `audit()` refuses the kind with that
+sentence rather than pretending. Wiring the proof is the one piece of P0 left,
+and it is a program change, not a schema one.
+
+
 ---
 
 ## 6 · Decisions needed before coding

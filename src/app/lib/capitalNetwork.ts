@@ -28,6 +28,33 @@ export type ProviderType = Database["public"]["Enums"]["capital_provider_type"];
 
 export type { CapitalPlan, Gate, InstrumentAssessment, InstrumentType, NetworkReason };
 
+/**
+ * What a route card needs to name an instrument. public.capital_plan() returns
+ * exactly this for the instruments one decision mentions, and no more: an
+ * entrepreneur is shown the routes recommended for her, never the policy of
+ * every provider in the network. The registry row satisfies it, so one
+ * component renders a stored plan and a fresh run.
+ */
+export interface RouteInstrument {
+  code: string;
+  name: string;
+  instrument_type: InstrumentType;
+  is_domestic: boolean;
+  is_credit: boolean;
+}
+
+/** One stored decision, as public.capital_plan() returns it. Null where the engine has not run. */
+export interface StoredPlan {
+  decision_id: string;
+  decision_no: number;
+  decided_at: string;
+  is_simulated: boolean;
+  /** code → policy_version of every instrument the run evaluated. */
+  instrument_policy: Record<string, number>;
+  plan: CapitalPlan;
+  instruments: RouteInstrument[];
+}
+
 /** What one run of the engine returned, as public.run_capital_engine gives it. */
 export interface EngineRun {
   decision_id: string;
@@ -255,6 +282,24 @@ export async function runCapitalEngine(opportunityId: string, documents: string[
   });
   if (error) throw error;
   return data as unknown as EngineRun;
+}
+
+export const capitalPlanKey = (opportunityId: string) => ["platform", "capital-plan", opportunityId] as const;
+
+export async function fetchCapitalPlan(opportunityId: string): Promise<StoredPlan | null> {
+  const { data, error } = await platform.rpc("capital_plan", { p_opportunity_id: opportunityId });
+  if (error) throw error;
+  return (data as unknown as StoredPlan | null) ?? null;
+}
+
+/** The papers that would open a route she cannot reach yet: her most fixable refusal. */
+export function missingDocuments(plan: CapitalPlan): string[] {
+  const out = new Set<string>();
+  for (const e of plan.evaluated) {
+    const gate = e.gates.find((g) => g.gate === "documents" && !g.passed);
+    for (const d of String(gate?.value ?? "").split(",")) if (d) out.add(d);
+  }
+  return [...out].sort();
 }
 
 export const decisionsKey = (opportunityId: string) => ["platform", "capital-route-decisions", opportunityId] as const;

@@ -29,6 +29,7 @@ export const DOMAINS = {
   ALLOCATION_REF: "EMPOWERFI:ALLOCATION_REF:v1",
   CONSENT: "EMPOWERFI:CONSENT:v1",
   SETTLEMENT_ROUTE: "EMPOWERFI:SETTLEMENT_ROUTE:v1",
+  CAPITAL_ROUTE: "EMPOWERFI:CAPITAL_ROUTE:v1",
 } as const;
 
 export type Domain = (typeof DOMAINS)[keyof typeof DOMAINS];
@@ -53,6 +54,11 @@ export const ANCHOR_DOMAINS = {
   allocation: DOMAINS.ALLOCATION,
   consent: DOMAINS.CONSENT,
   settlement_route: DOMAINS.SETTLEMENT_ROUTE,
+  // Defined, pinned by a golden vector, and not yet queued by anything: a
+  // capital plan gets a proof once programs/empowerfi-audit has an instruction
+  // for it and the devnet program is upgraded. The tag is here so the payload
+  // and the domain are settled before that work, not after it.
+  capital_route: DOMAINS.CAPITAL_ROUTE,
 } as const satisfies Record<string, Domain>;
 
 export type AnchorKind = keyof typeof ANCHOR_DOMAINS;

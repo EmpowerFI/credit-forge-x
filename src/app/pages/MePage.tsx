@@ -34,6 +34,7 @@ import {
   type CreditPurpose,
 } from "../lib/readiness";
 import LoadError from "../components/LoadError";
+import { MyCapitalPlan } from "./capital/network/CapitalPlanPanel";
 import { formatNumber, tr } from "../i18n";
 
 type Credit = {
@@ -45,6 +46,7 @@ type Credit = {
     reason_codes: string[];
   } | null;
   opportunity: {
+    id: string;
     status: keyof typeof OPPORTUNITY_LABEL;
     amount_cents: number;
     funding_pool: "domestic" | "global" | null;
@@ -648,6 +650,11 @@ export default function MePage() {
           </p>
         </section>
       )}
+
+      {/* The routes a person found for her: not only the P2P pool, and not only
+          credit. It sits under Capital because that is where she looks, and it
+          appears only once someone has run the engine over her request. */}
+      {opportunity && <MyCapitalPlan opportunityId={opportunity.id} />}
 
       {/* ------------------------------------------------------ cash flow */}
       <section className="space-y-4">

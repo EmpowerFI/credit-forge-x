@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(53);
+select plan(63);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -434,5 +434,77 @@ select ok(
   'and an entrepreneur is not');
 
 set local role postgres;
+-- --------------------------------------------------- the plan, where she reads it
+
+-- She agrees to a partner again, after the withdrawal above.
+set local role postgres;
+insert into consents (entrepreneur_id, consent_no, text_version, assessment, partner, investors, impact, channel)
+values ('00000000-0000-0000-0000-0000000009e1', 3, 'test', true, true, false, false, 'app');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a1');
+
+-- The operator moved a policy a few assertions ago, so the same answer under a
+-- moved policy is a new decision: "re-confirmed under policy 2" is a different
+-- fact from "decided under policy 1".
+select is(
+  (select public.run_capital_engine('00000000-0000-0000-0000-0000000009f1') ->> 'recorded'),
+  'true', 'a policy that moved records a new decision, even reaching the same answer');
+
+select is(
+  (select instrument_policy -> 'credito_regional_capital_giro' from capital_route_decisions
+   where opportunity_id = '00000000-0000-0000-0000-0000000009f1' and decision_no = 4),
+  '2'::jsonb, 'and the decision records which version of each policy it ran under');
+
+select is(
+  (select public.run_capital_engine('00000000-0000-0000-0000-0000000009f1') ->> 'recorded'),
+  'false', 'while an unchanged policy and an unchanged need still record nothing');
+
+-- She may not read capital_instruments — the registry is every provider's
+-- policy — so the plan resolves the routes it names, and only those.
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a2');
+
+select is(
+  (select jsonb_array_length(public.capital_plan('00000000-0000-0000-0000-0000000009f1') -> 'instruments')),
+  5, 'she reads the names of the routes her own plan evaluated');
+
+select is(
+  (select count(*)::int from capital_instruments),
+  0, 'without the registry those names live in');
+
+select is(
+  (select public.capital_plan('00000000-0000-0000-0000-0000000009f1') -> 'plan' ->> 'requested_cents'),
+  '500000', 'and the plan itself, in the engine''s own shape');
+
+-- An account with no entrepreneur behind it is nobody this plan concerns.
+set local role postgres;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000009a6', 'cn-stranger@test');
+update profiles set role = 'entrepreneur' where id = '00000000-0000-0000-0000-0000000009a6';
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a6');
+select throws_ok(
+  $$ select public.capital_plan('00000000-0000-0000-0000-0000000009f1') $$,
+  '42501', null, 'and nobody else reads a plan that is not theirs');
+
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a1');
+select is(
+  (select public.capital_plan(gen_random_uuid())),
+  null, 'an opportunity the engine never ran over has no plan, and that is not an error');
+
+-- What a plan would commit to, if a program instruction existed to accept it.
+set local role postgres;
+select is(
+  (select private.capital_route_payload(d.id) ->> 'external_capital_gap_cents'
+   from capital_route_decisions d
+   where d.opportunity_id = '00000000-0000-0000-0000-0000000009f1' and d.decision_no = 4),
+  (select external_capital_gap_cents::text from capital_route_decisions
+   where opportunity_id = '00000000-0000-0000-0000-0000000009f1' and decision_no = 4),
+  'the anchor payload commits to the gap the decision recorded');
+
+select ok(
+  (select private.capital_route_payload(d.id) ? 'instrument_policy'
+   from capital_route_decisions d
+   where d.opportunity_id = '00000000-0000-0000-0000-0000000009f1' and d.decision_no = 4),
+  'and to the policy versions that reproduce its trace');
+
 select * from finish();
 rollback;

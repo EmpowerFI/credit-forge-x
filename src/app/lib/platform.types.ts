@@ -282,6 +282,7 @@ export type Database = {
           global_coverage_cents: number
           id: string
           is_simulated: boolean
+          instrument_policy: Json
           need: Json
           opportunity_id: string
           reason_codes: string[]
@@ -301,6 +302,7 @@ export type Database = {
           global_coverage_cents: number
           id?: string
           is_simulated?: boolean
+          instrument_policy?: Json
           need?: Json
           opportunity_id: string
           reason_codes: string[]
@@ -320,6 +322,7 @@ export type Database = {
           global_coverage_cents?: number
           id?: string
           is_simulated?: boolean
+          instrument_policy?: Json
           need?: Json
           opportunity_id?: string
           reason_codes?: string[]
@@ -3034,6 +3037,10 @@ export type Database = {
         Args: { p_pricing_version?: string; p_program_id?: string }
         Returns: Json
       }
+      capital_plan: {
+        Args: { p_opportunity_id: string }
+        Returns: Json
+      }
       capital_overview: { Args: never; Returns: Json }
       capital_portfolio: { Args: never; Returns: Json }
       claim_anchor_jobs: {
@@ -3609,6 +3616,7 @@ export type Database = {
         | "allocation"
         | "consent"
         | "settlement_route"
+        | "capital_route"
       anchor_status: "pending" | "submitted" | "confirmed" | "failed"
       app_role:
         | "entrepreneur"

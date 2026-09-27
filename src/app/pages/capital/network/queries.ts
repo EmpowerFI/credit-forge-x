@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  fetchDecisions, fetchInstruments, fetchProviders, decisionsKey, instrumentsKey, providersKey,
+  capitalPlanKey, decisionsKey, fetchCapitalPlan, fetchDecisions, fetchInstruments, fetchProviders,
+  instrumentsKey, providersKey,
 } from "../../../lib/capitalNetwork";
 
 /** The providers behind the network, as the caller may see them. */
@@ -18,6 +19,15 @@ export function useDecisions(opportunityId: string | null) {
   return useQuery({
     queryKey: decisionsKey(opportunityId ?? "none"),
     queryFn: () => fetchDecisions(opportunityId!),
+    enabled: Boolean(opportunityId),
+  });
+}
+
+/** The latest plan recorded for one opportunity, with the routes it names resolved. */
+export function useCapitalPlan(opportunityId: string | null | undefined) {
+  return useQuery({
+    queryKey: capitalPlanKey(opportunityId ?? "none"),
+    queryFn: () => fetchCapitalPlan(opportunityId!),
     enabled: Boolean(opportunityId),
   });
 }

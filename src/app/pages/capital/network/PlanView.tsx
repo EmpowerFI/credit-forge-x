@@ -7,7 +7,7 @@ import type { Tone } from "../../../components/product/StatusPill";
 import { localized, tr } from "../../../i18n";
 import {
   gateDetail, INSTRUMENT_TYPE, reasonOf,
-  type CapitalPlan, type Gate, type Instrument, type InstrumentAssessment,
+  type CapitalPlan, type Gate, type InstrumentAssessment, type RouteInstrument,
 } from "../../../lib/capitalNetwork";
 import { money } from "../../../lib/readiness";
 
@@ -60,7 +60,7 @@ const weighed = (fit: FitBreakdown) =>
 
 function RouteCard({ allocation, instrument, assessment }: {
   allocation: CapitalPlan["allocations"][number];
-  instrument: Instrument | undefined;
+  instrument: RouteInstrument | undefined;
   assessment: InstrumentAssessment | undefined;
 }) {
   const kind = instrument ? INSTRUMENT_TYPE[instrument.instrument_type] : null;
@@ -125,7 +125,7 @@ function RouteCard({ allocation, instrument, assessment }: {
   );
 }
 
-function Refused({ assessment, instrument }: { assessment: InstrumentAssessment; instrument: Instrument | undefined }) {
+function Refused({ assessment, instrument }: { assessment: InstrumentAssessment; instrument: RouteInstrument | undefined }) {
   const blocked = assessment.gates.filter((g) => !g.passed);
   return (
     <li className="min-w-0 space-y-1.5 border-l-2 border-border pl-3">
@@ -152,7 +152,7 @@ function Refused({ assessment, instrument }: { assessment: InstrumentAssessment;
 
 export default function PlanView({ plan, instruments, meta }: {
   plan: CapitalPlan;
-  instruments: Instrument[];
+  instruments: RouteInstrument[];
   /** What the caller wants to say about this run: when, by whom, which version. */
   meta?: React.ReactNode;
 }) {
