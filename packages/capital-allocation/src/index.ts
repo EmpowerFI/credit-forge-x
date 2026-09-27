@@ -259,3 +259,12 @@ export function allocatePortfolio(opportunities: AllocationOpportunity[], domest
     global_left_cents: both.gLeft,
   };
 }
+
+// v2 — the Capital Network. allocate() above still decides the two P2P pools
+// and nothing about it changed; matchCapital() asks the wider question of
+// which instrument, or which combination of them, fits a need at all.
+export * from "./network";
+
+// And the second question, asked of the residual gap the network left: should
+// international capital be the answer to it, and what does that cost her?
+export * from "./global";
