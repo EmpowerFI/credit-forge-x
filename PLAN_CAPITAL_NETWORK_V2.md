@@ -190,10 +190,29 @@ number.
 1. **Is the pilot fund named or invented?** §6 wants a fund profile. Every
    provider in v1 is simulated and unnamed for a reason. Recommend: invented,
    `is_simulated`, until a real fund consents — as with the advisory board.
-2. **Where does affordability-after-mobilisation bite?** If the global route's
-   total cost is added to her rate, some opportunities the pool engine approved
-   become unaffordable. That is the honest answer and it will make the demo
-   *smaller*. Recommend: show it, and let the gap widen on camera.
+2. **What goes inside CTM, and what stays beside it.** §7's formula sums
+   *"On/off-ramp + FX + Hedge"*, and those are two different kinds of number.
+   The ramp is what is actually paid to move the money once: the seeded
+   providers charge 120 bps of spread plus 60 or 120 bps of fee, about **1.8%
+   of the principal, one time**, and `packages/settlement-route` already
+   itemises it. The hedge is `funding_pools.fx_hedge_bps` — **5% a year** the
+   global pool charges for carrying BRL exposure over the loan's life. Summing
+   them gives a figure whose unit is half per-operation and half per-year, and
+   dividing that by capital deployed produces a CTM Rate that means nothing.
+   §7 itself says to keep *"investor required return / cost of capital"* out of
+   CTM, and a hedge is a required return on currency risk, not a fee paid to a
+   rail. Recommend: **CTM is what is paid to move the money** — ramp, network,
+   compliance, wallet, settlement — and the hedge is reported beside it, named,
+   under cost of capital.
+
+   *A note on affordability, since it is the same arithmetic.* She already pays
+   a modelled mobilisation cost: her rate on the global pool carries the hedge
+   and `ramp_bps` spread over the term. For a twelve-month loan the model
+   charges about 200 bps of ramp against roughly 180 bps of real conversion
+   cost, so **replacing the constant with a real quote at decision time moves
+   her instalment very little**. That is worth showing rather than worth
+   fearing, and it is a smaller change than it looked: the estimate the engine
+   has been using is close to right.
 3. **Does CTM include the ramp's cost when the ramp is a sandbox?** MoneyGram is
    sandbox-only. Recommend: yes, marked `sandbox` provenance, never blended with
    simulated assumptions.
