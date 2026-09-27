@@ -1,5 +1,16 @@
 # Terms and Privacy — points for counsel
 
+> **Out of the MVP's scope, by the founder's decision of 27 Sep 2026.** Nothing
+> in this document is a blocker for the hackathon submission: no capital moves,
+> no credit is granted, every provider and instrument is invented, and the
+> prototype states that on every screen that shows a number. This file is kept
+> as the standing list for the day something here runs in the real world — the
+> questions do not expire, they are simply not due now. The one constraint that
+> survives the decision is the one the network's own section already carries: it
+> is a hackathon demonstration, and it is not to be presented as a live
+> marketplace of capital until counsel has answered.
+
+
 The Terms of Use and Privacy Policy (`src/content/legal.ts`, last updated 14 July 2026) are good-faith drafts that describe only the Marketplace. By the founder's decision S4 (PLAN_SITE.md, 16 Sep 2026) they stay unchanged until counsel reviews them. The site has since added an investor waitlist and a platform prototype, and the business has moved to a P2P model. This list is what the drafts do not yet cover. The Portuguese versions are binding.
 
 ## Terms of Use
