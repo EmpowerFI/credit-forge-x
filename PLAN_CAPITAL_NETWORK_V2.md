@@ -222,6 +222,77 @@ number.
 
 ---
 
+## 6.1 · Decisions taken, 26 Sep 2026
+
+The founder accepted all four recommendations:
+
+1. The pilot fund is **invented and `is_simulated`**, as every other provider in
+   v1 is, until a real fund consents.
+2. **CTM is what is paid to move the money** — ramp, network, compliance,
+   wallet, settlement. The hedge is reported beside it, named, under cost of
+   capital. No figure sums a per-operation cost with a per-year one.
+3. The ramp's cost enters CTM **even while MoneyGram is sandbox**, marked
+   `sandbox`, never blended with a simulated assumption.
+4. Time to Global Funding is **derived from the last investment**, and the
+   metric says so rather than implying a column that does not exist.
+
+---
+
+## 6.2 · Build log
+
+### Day 1 — the second question, asked separately
+
+`packages/capital-allocation/src/global.ts`, its SQL mirror in
+`20261006000000_capital_global_eligibility.sql`, eight vectors in
+`vectors/global.json`, and forty pgTAP assertions in
+`platform/supabase/tests/capital_global.test.sql`. One decision row, two
+answers: `capital_route_decisions.global_eligibility` holds the object v2 §5.1
+asks for, and `eligible_gap_cents` is a column because §10 aggregates it.
+
+Six gates, in the order the engine asks them: `gap`, `domestic_reconsidered`,
+`economics`, `affordability`, `evidence`, `regulatory_route`. Four are new
+questions; `affordability` is the network engine's own gate asked a second time,
+and `gap` is a precondition stated rather than assumed. `domestic_reconsidered`
+is asked **before** the economics on purpose: demand a local route would take
+once she brings a bank statement does not go abroad, however cheap the global
+route is. That is §17's criterion working in the direction §17 points it — a
+residual gap refused for global funding *while domestic coverage is zero*, which
+the pgTAP file now proves end to end.
+
+**What the economics gate actually settled.** Her rate on the global pool
+already carries a modelled cost of moving money — the pool engine's
+`ramp_bps_year`. So the quote from `packages/settlement-route` **replaces** that
+term; it is never added to it. On a twelve-month loan at the seeded rate cards
+the swap costs her **79 basis points**, which is R$ 1,40 a month on a R$ 2.000
+slice and R$ 3,50 on a whole R$ 5.000. The estimate the engine has been using
+was close to right, and the honest number is now the one on the screen. The
+return leg stays modelled, because nothing in this product prices BRL → USDC and
+inventing a quote for it would have been the third place this repository computes
+a spread.
+
+**Three defects, two of them mine and one of them v1's.**
+
+- *The global route's own instalment was charged against its own headroom.*
+  `instalmentCommittedCents()` summed every allocation in the plan, so on a
+  network where only the global route was left it refused the very gap it was
+  offered. Found by the database, not by the TypeScript: the TS fixture happened
+  to be all domestic. Fixed on both sides, with a test on both sides.
+- *The gates answered questions nobody asked.* With no gap there is no quote to
+  request and no evidence to weigh, yet the settlement gate was still returning
+  "no" and the reason codes read like a refusal. A covered need now carries one
+  gate and one code. Found by pgTAP, because the vector had politely passed
+  `settlement_feasible: true` for a scenario where nothing was ever asked.
+- *v1 never summed instalments across a stack.* Each route was capped at its own
+  `max_instalment_share_bps` and nothing added them up, so two credit routes
+  could in principle commit more of her month than eligibility allowed. The
+  global question is where that sum first had to be honest, and it now is.
+
+Verified: 674 pgTAP assertions across 21 files, 236 vitest tests across 21
+files, `tsc --noEmit` clean, 0 eslint errors, build clean. TS and SQL agree on
+all eight vectors across the whole answer, gate traces included.
+
+---
+
 ## 7 · What this plan does not build
 
 - Live custody, live FX, production remittance, automated partner underwriting,

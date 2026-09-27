@@ -1,0 +1,348 @@
+{
+  "model_version": "global-capital-v1.0.0",
+  "note": "The second question of PLAN_CAPITAL_NETWORK_V2 \u00a73.1, asked of the residual gap after the domestic pass. src/global.test.ts runs globalEligibility() against these; platform/supabase/tests/capital_global.test.sql runs private.global_eligibility() against the same ones. Both must give one answer. The quoted mobilisation cost is an input here because packages/settlement-route is the only place in this project allowed to price a conversion: these vectors hold the decision to one answer, not the quote.",
+  "scenarios": [
+    {
+      "name": "the residual domestic capacity left, and what a real quote costs her",
+      "input": {
+        "gap_cents": 200000,
+        "term_months": 12,
+        "max_instalment_cents": 90000,
+        "instalment_committed_cents": 54000,
+        "route_cost_bps": 5400,
+        "modelled_ramp_annual_bps": 200,
+        "quoted_mobilization_bps": 179,
+        "modelled_return_ramp_bps": 100,
+        "evidence_score": 18,
+        "months_reported": 12,
+        "settlement_feasible": true,
+        "settlement_reality": "simulated",
+        "recoverable_domestic": []
+      },
+      "expect": {
+        "decision": "eligible",
+        "reason_codes": [
+          "GLOBAL_GAP_CONFIRMED",
+          "GLOBAL_ECONOMICS_WITHIN_CEILING",
+          "GLOBAL_EVIDENCE_SUFFICIENT",
+          "GLOBAL_ROUTE_REGULATED"
+        ],
+        "eligible_gap_cents": 200000,
+        "failed_gates": [],
+        "economics": {
+          "route_cost_bps": 5400,
+          "modelled_ramp_annual_bps": 200,
+          "quoted_mobilization_bps": 179,
+          "modelled_return_ramp_bps": 100,
+          "mobilization_total_bps": 279,
+          "mobilization_annual_bps": 279,
+          "total_cost_bps": 5479,
+          "delta_bps": 79,
+          "instalment_cents": 25807,
+          "instalment_headroom_cents": 36000
+        }
+      }
+    },
+    {
+      "name": "a gap that never existed is not a refusal",
+      "input": {
+        "gap_cents": 0,
+        "term_months": 12,
+        "max_instalment_cents": 90000,
+        "instalment_committed_cents": 54000,
+        "route_cost_bps": 5400,
+        "modelled_ramp_annual_bps": 200,
+        "quoted_mobilization_bps": 179,
+        "modelled_return_ramp_bps": 100,
+        "evidence_score": 0,
+        "months_reported": 0,
+        "settlement_feasible": false,
+        "settlement_reality": "simulated",
+        "recoverable_domestic": []
+      },
+      "expect": {
+        "decision": "not_needed",
+        "reason_codes": [
+          "GLOBAL_GAP_ABSENT"
+        ],
+        "eligible_gap_cents": 0,
+        "failed_gates": [
+          "gap"
+        ],
+        "economics": {
+          "route_cost_bps": 5400,
+          "modelled_ramp_annual_bps": 200,
+          "quoted_mobilization_bps": 179,
+          "modelled_return_ramp_bps": 100,
+          "mobilization_total_bps": 279,
+          "mobilization_annual_bps": 279,
+          "total_cost_bps": 5479,
+          "delta_bps": 79,
+          "instalment_cents": 0,
+          "instalment_headroom_cents": 36000
+        }
+      }
+    },
+    {
+      "name": "a paper she could fetch keeps the money at home",
+      "input": {
+        "gap_cents": 200000,
+        "term_months": 12,
+        "max_instalment_cents": 90000,
+        "instalment_committed_cents": 54000,
+        "route_cost_bps": 5400,
+        "modelled_ramp_annual_bps": 200,
+        "quoted_mobilization_bps": 179,
+        "modelled_return_ramp_bps": 100,
+        "evidence_score": 18,
+        "months_reported": 12,
+        "settlement_feasible": true,
+        "settlement_reality": "simulated",
+        "recoverable_domestic": [
+          "credito_regional_capital_giro"
+        ]
+      },
+      "expect": {
+        "decision": "refused",
+        "reason_codes": [
+          "GLOBAL_GAP_CONFIRMED",
+          "GLOBAL_ECONOMICS_WITHIN_CEILING",
+          "GLOBAL_EVIDENCE_SUFFICIENT",
+          "GLOBAL_ROUTE_REGULATED",
+          "GLOBAL_DOMESTIC_ROUTE_RECOVERABLE"
+        ],
+        "eligible_gap_cents": 0,
+        "failed_gates": [
+          "domestic_reconsidered"
+        ],
+        "economics": {
+          "route_cost_bps": 5400,
+          "modelled_ramp_annual_bps": 200,
+          "quoted_mobilization_bps": 179,
+          "modelled_return_ramp_bps": 100,
+          "mobilization_total_bps": 279,
+          "mobilization_annual_bps": 279,
+          "total_cost_bps": 5479,
+          "delta_bps": 79,
+          "instalment_cents": 25807,
+          "instalment_headroom_cents": 36000
+        }
+      }
+    },
+    {
+      "name": "too little reported history for money that crosses a border",
+      "input": {
+        "gap_cents": 200000,
+        "term_months": 12,
+        "max_instalment_cents": 90000,
+        "instalment_committed_cents": 54000,
+        "route_cost_bps": 5400,
+        "modelled_ramp_annual_bps": 200,
+        "quoted_mobilization_bps": 179,
+        "modelled_return_ramp_bps": 100,
+        "evidence_score": 8,
+        "months_reported": 2,
+        "settlement_feasible": true,
+        "settlement_reality": "simulated",
+        "recoverable_domestic": []
+      },
+      "expect": {
+        "decision": "refused",
+        "reason_codes": [
+          "GLOBAL_GAP_CONFIRMED",
+          "GLOBAL_ECONOMICS_WITHIN_CEILING",
+          "GLOBAL_ROUTE_REGULATED",
+          "GLOBAL_EVIDENCE_INSUFFICIENT"
+        ],
+        "eligible_gap_cents": 0,
+        "failed_gates": [
+          "evidence"
+        ],
+        "economics": {
+          "route_cost_bps": 5400,
+          "modelled_ramp_annual_bps": 200,
+          "quoted_mobilization_bps": 179,
+          "modelled_return_ramp_bps": 100,
+          "mobilization_total_bps": 279,
+          "mobilization_annual_bps": 279,
+          "total_cost_bps": 5479,
+          "delta_bps": 79,
+          "instalment_cents": 25807,
+          "instalment_headroom_cents": 36000
+        }
+      }
+    },
+    {
+      "name": "her month is already committed to the domestic routes",
+      "input": {
+        "gap_cents": 200000,
+        "term_months": 12,
+        "max_instalment_cents": 90000,
+        "instalment_committed_cents": 88000,
+        "route_cost_bps": 5400,
+        "modelled_ramp_annual_bps": 200,
+        "quoted_mobilization_bps": 179,
+        "modelled_return_ramp_bps": 100,
+        "evidence_score": 18,
+        "months_reported": 12,
+        "settlement_feasible": true,
+        "settlement_reality": "simulated",
+        "recoverable_domestic": []
+      },
+      "expect": {
+        "decision": "refused",
+        "reason_codes": [
+          "GLOBAL_GAP_CONFIRMED",
+          "GLOBAL_EVIDENCE_SUFFICIENT",
+          "GLOBAL_ROUTE_REGULATED",
+          "GLOBAL_AFFORDABILITY_AFTER_MOBILIZATION"
+        ],
+        "eligible_gap_cents": 0,
+        "failed_gates": [
+          "affordability"
+        ],
+        "economics": {
+          "route_cost_bps": 5400,
+          "modelled_ramp_annual_bps": 200,
+          "quoted_mobilization_bps": 179,
+          "modelled_return_ramp_bps": 100,
+          "mobilization_total_bps": 279,
+          "mobilization_annual_bps": 279,
+          "total_cost_bps": 5479,
+          "delta_bps": 79,
+          "instalment_cents": 25807,
+          "instalment_headroom_cents": 2000
+        }
+      }
+    },
+    {
+      "name": "no regulated rail can settle it now",
+      "input": {
+        "gap_cents": 200000,
+        "term_months": 12,
+        "max_instalment_cents": 90000,
+        "instalment_committed_cents": 54000,
+        "route_cost_bps": 5400,
+        "modelled_ramp_annual_bps": 200,
+        "quoted_mobilization_bps": 179,
+        "modelled_return_ramp_bps": 100,
+        "evidence_score": 18,
+        "months_reported": 12,
+        "settlement_feasible": false,
+        "settlement_reality": "simulated",
+        "recoverable_domestic": []
+      },
+      "expect": {
+        "decision": "refused",
+        "reason_codes": [
+          "GLOBAL_GAP_CONFIRMED",
+          "GLOBAL_ECONOMICS_WITHIN_CEILING",
+          "GLOBAL_EVIDENCE_SUFFICIENT",
+          "GLOBAL_NO_REGULATED_ROUTE"
+        ],
+        "eligible_gap_cents": 0,
+        "failed_gates": [
+          "regulatory_route"
+        ],
+        "economics": {
+          "route_cost_bps": 5400,
+          "modelled_ramp_annual_bps": 200,
+          "quoted_mobilization_bps": 179,
+          "modelled_return_ramp_bps": 100,
+          "mobilization_total_bps": 279,
+          "mobilization_annual_bps": 279,
+          "total_cost_bps": 5479,
+          "delta_bps": 79,
+          "instalment_cents": 25807,
+          "instalment_headroom_cents": 36000
+        }
+      }
+    },
+    {
+      "name": "a quote so expensive the ceiling refuses the route",
+      "input": {
+        "gap_cents": 200000,
+        "term_months": 12,
+        "max_instalment_cents": 90000,
+        "instalment_committed_cents": 54000,
+        "route_cost_bps": 5400,
+        "modelled_ramp_annual_bps": 200,
+        "quoted_mobilization_bps": 7000,
+        "modelled_return_ramp_bps": 100,
+        "evidence_score": 18,
+        "months_reported": 12,
+        "settlement_feasible": true,
+        "settlement_reality": "simulated",
+        "recoverable_domestic": []
+      },
+      "expect": {
+        "decision": "refused",
+        "reason_codes": [
+          "GLOBAL_GAP_CONFIRMED",
+          "GLOBAL_EVIDENCE_SUFFICIENT",
+          "GLOBAL_ROUTE_REGULATED",
+          "GLOBAL_COST_EXCEEDS_CEILING",
+          "GLOBAL_AFFORDABILITY_AFTER_MOBILIZATION"
+        ],
+        "eligible_gap_cents": 0,
+        "failed_gates": [
+          "economics",
+          "affordability"
+        ],
+        "economics": {
+          "route_cost_bps": 5400,
+          "modelled_ramp_annual_bps": 200,
+          "quoted_mobilization_bps": 7000,
+          "modelled_return_ramp_bps": 100,
+          "mobilization_total_bps": 7100,
+          "mobilization_annual_bps": 7100,
+          "total_cost_bps": 12300,
+          "delta_bps": 6900,
+          "instalment_cents": 37167,
+          "instalment_headroom_cents": 36000
+        }
+      }
+    },
+    {
+      "name": "a short term concentrates the conversion into three months",
+      "input": {
+        "gap_cents": 200000,
+        "term_months": 3,
+        "max_instalment_cents": 90000,
+        "instalment_committed_cents": 0,
+        "route_cost_bps": 6000,
+        "modelled_ramp_annual_bps": 800,
+        "quoted_mobilization_bps": 179,
+        "modelled_return_ramp_bps": 100,
+        "evidence_score": 18,
+        "months_reported": 12,
+        "settlement_feasible": true,
+        "settlement_reality": "simulated",
+        "recoverable_domestic": []
+      },
+      "expect": {
+        "decision": "eligible",
+        "reason_codes": [
+          "GLOBAL_GAP_CONFIRMED",
+          "GLOBAL_ECONOMICS_WITHIN_CEILING",
+          "GLOBAL_EVIDENCE_SUFFICIENT",
+          "GLOBAL_ROUTE_REGULATED"
+        ],
+        "eligible_gap_cents": 200000,
+        "failed_gates": [],
+        "economics": {
+          "route_cost_bps": 6000,
+          "modelled_ramp_annual_bps": 800,
+          "quoted_mobilization_bps": 179,
+          "modelled_return_ramp_bps": 100,
+          "mobilization_total_bps": 279,
+          "mobilization_annual_bps": 1116,
+          "total_cost_bps": 6316,
+          "delta_bps": 316,
+          "instalment_cents": 77207,
+          "instalment_headroom_cents": 90000
+        }
+      }
+    }
+  ]
+}

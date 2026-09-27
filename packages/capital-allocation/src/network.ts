@@ -63,7 +63,19 @@ export type NetworkReason =
   | "INSUFFICIENT_DOCUMENTATION"
   | "PARTNER_CAPACITY_EXHAUSTED"
   | "MANUAL_REVIEW_REQUIRED"
-  | "NO_ROUTE_AVAILABLE";
+  | "NO_ROUTE_AVAILABLE"
+  // the second question, asked of the residual gap by ./global.ts. One
+  // vocabulary for one audit console, so these live here with the rest.
+  | "GLOBAL_GAP_CONFIRMED"
+  | "GLOBAL_ECONOMICS_WITHIN_CEILING"
+  | "GLOBAL_EVIDENCE_SUFFICIENT"
+  | "GLOBAL_ROUTE_REGULATED"
+  | "GLOBAL_GAP_ABSENT"
+  | "GLOBAL_DOMESTIC_ROUTE_RECOVERABLE"
+  | "GLOBAL_COST_EXCEEDS_CEILING"
+  | "GLOBAL_AFFORDABILITY_AFTER_MOBILIZATION"
+  | "GLOBAL_EVIDENCE_INSUFFICIENT"
+  | "GLOBAL_NO_REGULATED_ROUTE";
 
 /** A product a provider offers, with the policy it is offered under. */
 export interface Instrument {

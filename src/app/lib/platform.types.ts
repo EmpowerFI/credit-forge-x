@@ -276,10 +276,12 @@ export type Database = {
           decided_at: string
           decision_no: number
           domestic_coverage_cents: number
+          eligible_gap_cents: number
           engine_version: string
           evaluated: Json
           external_capital_gap_cents: number | null
           global_coverage_cents: number
+          global_eligibility: Json
           id: string
           instrument_policy: Json
           is_simulated: boolean
@@ -296,10 +298,12 @@ export type Database = {
           decided_at?: string
           decision_no: number
           domestic_coverage_cents: number
+          eligible_gap_cents?: number
           engine_version: string
           evaluated: Json
           external_capital_gap_cents?: number | null
           global_coverage_cents: number
+          global_eligibility?: Json
           id?: string
           instrument_policy?: Json
           is_simulated?: boolean
@@ -316,10 +320,12 @@ export type Database = {
           decided_at?: string
           decision_no?: number
           domestic_coverage_cents?: number
+          eligible_gap_cents?: number
           engine_version?: string
           evaluated?: Json
           external_capital_gap_cents?: number | null
           global_coverage_cents?: number
+          global_eligibility?: Json
           id?: string
           instrument_policy?: Json
           is_simulated?: boolean
