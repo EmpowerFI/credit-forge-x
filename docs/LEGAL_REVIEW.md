@@ -70,3 +70,55 @@ The word *liquidez* is never used for these assets. A position is labelled **tra
 
 - **Footer.** The legal pages use the institutional footer. It now carries the prototype disclaimer and the not-an-offer line, which counsel may want to review with the documents.
 - **Last updated.** When the documents are revised, update `LAST_UPDATED_PT` and `LAST_UPDATED_EN`.
+
+## The Capital Network (added 26 Sep 2026)
+
+The platform prototype now answers a wider question than "which of our two pools funds this?". For a qualified opportunity, a **Capital Network** of registered instruments is matched against the need and produces a **Recommended Capital Plan**: one route, or several together, each with an amount, the reasons it was chosen, and what it still depends on. `PLAN_CAPITAL_NETWORK.md` is the build record; `platform/supabase/migrations/20261002000000_capital_network.sql` onward is the code.
+
+**What it actually does, so the questions below are read against the facts:**
+
+- **Seven instrument types exist** in the schema: regional credit product, microcredit, commercial credit, *productive exchange within a network*, sponsored capital, and the two P2P pools the prototype already had.
+- **All four providers and all five seeded instruments are invented for the prototype** and carry `is_simulated`. No real institution is named. A real one would appear only after it agreed to, as with the advisory board.
+- **Nothing is created downstream.** The routes that are not pools never produce an investment, never mint a position and never touch a loan. They produce a recommendation and a status. The two P2P routes behave exactly as before this feature existed.
+- **`requires_partner_approval` is a column, not a label.** It defaults to true and is true for every partner route; the operator screen cannot change it, because a column-level grant withholds it. Only the two P2P routes, which EmpowerFI's own desk closes, are false.
+- **`is_credit` is a column too**, and false for the productive-exchange route, whose `currency` is `unit` rather than `BRL`. The operator screen cannot change that, or the route's name, for the same reason.
+- **Consent gates the run.** `public.run_capital_engine()` refuses an opportunity whose owner has not granted the `partner` consent scope, and refuses again the moment she withdraws it.
+- **The engine is deterministic and versioned.** Each decision records the need it ran against, the engine version and the policy version of every instrument it evaluated, so a recommendation can be reproduced rather than asserted.
+- **She does not see the registry.** Row-level security keeps every provider's policy away from her; she sees the routes recommended for her, their amounts, whether each is credit, and whether it still needs someone's approval.
+
+### Questions for counsel
+
+1. **Is presenting a ranked list of third-party credit products to a qualified business *correspondente bancário* activity, intermediation, or neither** under the current structure, where EmpowerFI takes no fee on any route, transmits no proposal, and the partner's own approval process is untouched? If the answer turns on the fee, say so: `commercial_model` is stored as metadata today and nothing acts on it, and it can stay that way.
+2. **What wording keeps the productive-exchange route outside the definitions of credit, foreign exchange and payment arrangement?** The route is goods and services exchanged between members of a network, in that network's own unit of account, with nothing repaid. The schema refuses to call it credit and refuses to price it in reais. The shipped Portuguese is below; counsel should say whether it is enough, and what a *real* network of this kind would have to be — an association, a cooperative, a barter club under a specific arrangement — before it could appear here unsimulated.
+3. **May a sponsored-capital route linked to a programme be shown beside credit routes** without the sponsor becoming a party to a credit offer, and without the programme's own rules turning into terms EmpowerFI is responsible for?
+4. **What must a route card say so that a recommendation is not an offer, and is "Requer aprovação do parceiro" enough?** The cards also carry "Uma recomendação, não uma oferta" and, on the entrepreneur's own screen, "a EmpowerFI não empresta e não aprova crédito". Counsel should say which of these is load-bearing and what else must appear, in Portuguese, on the card itself rather than in a footnote.
+5. **Do the `commercial_model` fields need per-partner validation before being stored at all**, even as metadata that nothing bills from? They record whether an arrangement would be a referral fee, a success fee, a platform fee or none.
+
+Two further questions the build raised, which were not in the original list:
+
+6. **The business-age proxy.** No incorporation date is recorded anywhere in this product, so "months of reported history" — the span of her own check-ins — stands in for the age of the business, and it is what closes a route's minimum-history requirement. The screens label it as a proxy. Counsel should say whether a refusal resting on a proxy needs to be disclosed differently, and whether the entrepreneur has a right to see and contest the figure. Every refusal is already shown to her with both sides of the comparison.
+7. **The documents an operator states on her behalf.** Nothing in the product records which papers a business holds, so an operator states them when running the engine and the statement is kept with the decision. Counsel should say what that makes the operator's statement, and whether it must be confirmed by her before a refusal is recorded against it.
+
+### The fixed wording, as shipped
+
+On every route that is not a loan (`src/app/lib/capitalNetwork.ts`, both locales; the Portuguese is binding):
+
+> *"Bens e serviços trocados entre membros de uma rede, na unidade de conta da própria rede. Não é crédito, não é moeda e não é dinheiro que ela paga de volta."*
+
+On its card, as a marker rather than a sentence: **"Não é crédito"**. On every route whose owner still decides: **"Requer aprovação do parceiro"**.
+
+On the plan itself:
+
+> *"Uma recomendação, não uma oferta: o dono de cada rota ainda decide."*
+
+On the entrepreneur's own screen:
+
+> *"De onde pode vir o capital que você pediu. Cada uma ainda precisa ser combinada com quem a oferece — nada aqui está aprovado, e nada é dívida ainda."*
+>
+> *"Uma recomendação, não uma oferta: a EmpowerFI não empresta e não aprova crédito."*
+
+And on the operator's screen, under "O que isto não faz":
+
+> *"Não faz análise de crédito, não aprova e não promete crédito. Toda rota de parceiro carrega 'Requer aprovação do parceiro'. Não cobra taxa de parceiro. O modelo comercial de um provedor é registrado como metadado e nada age sobre ele. Não muda como funciona um empréstimo, um investimento, uma liquidação ou uma posição tokenizada."*
+
+**Until counsel has answered questions 1, 2 and 4, the Capital Network should not be shown outside a hackathon demo**, and every provider in it must stay simulated.

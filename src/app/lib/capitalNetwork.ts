@@ -108,12 +108,12 @@ export const INSTRUMENT_TYPE: Record<InstrumentType, { label: string; what: stri
   },
   domestic_p2p: {
     label: { en: "Domestic P2P pool", pt: "Pool P2P doméstico" },
-    what: { en: "Brazilian investors' capital through EmpowerFI's own desk. Its policy lives in funding_pools.", pt: "Capital de investidores brasileiros pela mesa da própria EmpowerFI. Sua política fica em funding_pools." },
+    what: { en: "People in Brazil lending through EmpowerFI's own desk. She receives and repays in reais, by Pix.", pt: "Pessoas no Brasil emprestando pela mesa da própria EmpowerFI. Ela recebe e paga em reais, por Pix." },
     tone: "positive",
   },
   global_impact_capital: {
     label: { en: "Global impact capital", pt: "Capital global de impacto" },
-    what: { en: "International capital in USDC on Solana, settled to reais. Its policy lives in funding_pools.", pt: "Capital internacional em USDC na Solana, liquidado em reais. Sua política fica em funding_pools." },
+    what: { en: "Capital from outside Brazil, converted and paid out in reais. She never touches a token.", pt: "Capital de fora do Brasil, convertido e pago em reais. Ela nunca encosta em um token." },
     tone: "positive",
   },
 });
