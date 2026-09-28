@@ -21,7 +21,12 @@ const reaisToCents = (v: string) => Math.round(num(v) * 100);
 
 export function formFor(p: CapitalOverview["pools"][number]): PoolForm {
   return {
-    available: p.pool === "domestic" ? String(p.liquidity_cents / 100) : String((p.liquidity_micro_usdc ?? 0) / 1e6),
+    // What the pool may still put into the next request: capital, less what it
+    // has lent, less what requests already listed on it are holding while they
+    // raise. The same figure the database's allocation trigger decides on —
+    // starting this page from "not lent" instead made it answer "Global P2P
+    // selected" for a request the database had recorded as waiting for capital.
+    available: p.pool === "domestic" ? String(p.available_cents / 100) : String((p.available_micro_usdc ?? 0) / 1e6),
     requiredReturn: String(p.policy.required_return_bps / 100),
     bands: p.policy.eligible_risk_bands,
     minTicket: String(p.policy.min_ticket_cents / 100),
