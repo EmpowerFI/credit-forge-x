@@ -796,13 +796,21 @@ const intents = memberships
     is_simulated: true,
     created_at: iso(new Date(Date.UTC(2026, 8, 12, 16) + Math.floor(random() * 36) * 3_600_000)),
   }));
-// The engine page's third case: a qualified request no pool can fund. The
-// business most able to carry it wants R$ 4,800 to improve her workspace:
-// above the domestic pool's ticket, outside the global pool's productive-purpose
-// mandate. Set after the draws, so nothing else in the scenario changes.
+// The engine page's third case, and the capital network's widest plan. The
+// business most able to carry it wants R$ 9,000 to improve her workspace: above
+// the domestic pool's ticket, and outside the global pool's productive-purpose
+// mandate, so no pool can fund it and the allocation engine says so.
+//
+// The network can, and it takes all six routes to say how: the domestic pool up
+// to its ticket ceiling, and an impact fund — whose mandate does not stop at
+// three purposes — for the rest. A renovation is exactly the demand a fund with
+// a broad mandate exists for, and until this request was large enough to leave a
+// residual above every global route's floor, the fund never funded anything.
+//
+// Set after the draws, so nothing else in the scenario changes.
 const renovation = [...intents].filter((i) => i.entrepreneur_id !== recent)
   .sort((a, b) => (capacityOf.get(b.entrepreneur_id) ?? 0) - (capacityOf.get(a.entrepreneur_id) ?? 0))[0];
-if (renovation) Object.assign(renovation, { purpose: "renovation", requested_amount_cents: 480_000 });
+if (renovation) Object.assign(renovation, { purpose: "renovation", requested_amount_cents: 900000 });
 if (intents.length) await must("intents", db.from("credit_intents").insert(intents));
 
 // Two of them, one in Grajaú, let the partner see the request but keep it
@@ -917,12 +925,15 @@ const routable_ = routable.filter((o) => !alreadyLent.has(o.id) && (o.funding_st
 const informal = routable_.filter((o) => ufOf.get(o.entrepreneur_id) === "SP")
   .sort((a, b) => a.amount_cents - b.amount_cents || a.id.localeCompare(b.id))[0]?.id ?? null;
 const papersOf = (id: string) => id === informal ? PERSONAL_PAPERS : [...PERSONAL_PAPERS, ...BUSINESS_PAPERS];
-// One request is left unrouted, the way one opportunity is left USDC 5 short:
-// the largest of those no pool could fund at all, which is the request this
-// network exists for. The operator runs it in front of the audience — one press,
-// because her papers are already on the record.
+// One request is left unrouted, the way one opportunity is left USDC 5 short.
+// It is drawn from the requests no pool could fund at all, which is what this
+// network exists for — and it is the smaller of them, because the larger one is
+// the widest plan in the book: a purpose no pool's mandate covers, local capital
+// for part of it and an impact fund for the rest. That plan should be there to
+// read without anyone having pressed a button. The operator runs the other one
+// in front of the audience, in one press, because her papers are on the record.
 const liveRun = routable_.filter((o) => o.funding_status === null)
-  .sort((a, b) => b.amount_cents - a.amount_cents || a.id.localeCompare(b.id))[0]?.id ?? null;
+  .sort((a, b) => a.amount_cents - b.amount_cents || a.id.localeCompare(b.id))[0]?.id ?? null;
 const toRoute = routable_.filter((o) => o.id !== liveRun);
 
 interface GlobalAnswer {
