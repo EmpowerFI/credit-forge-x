@@ -114,7 +114,7 @@
     {
       "id": "pool_global_impacto",
       "provider": "empowerfi_pools",
-      "name": "Capital global de impacto · USDC na Solana",
+      "name": "Pool global P2P · investidores no exterior",
       "type": "global_impact_capital",
       "is_credit": true,
       "requires_partner_approval": false,
@@ -139,7 +139,7 @@
     {
       "id": "capital_impacto_global",
       "provider": "fundo_impacto_global_demo",
-      "name": "Capital de impacto internacional",
+      "name": "Fundo de impacto internacional · capital próprio",
       "type": "impact_fund_capital",
       "is_credit": true,
       "requires_partner_approval": true,

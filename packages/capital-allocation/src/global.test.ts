@@ -185,7 +185,7 @@ describe("reading the domestic pass", () => {
   // left: its own instalment was being charged against its own headroom.
   it("does not count the global route's own instalment against its own headroom", () => {
     const globalRoute: Instrument = {
-      id: "pool_global_impacto", provider: "empowerfi_pools", name: "Capital global de impacto",
+      id: "pool_global_impacto", provider: "empowerfi_pools", name: "Pool global P2P · investidores no exterior",
       type: "global_impact_capital", is_credit: true, requires_partner_approval: false,
       ticket_min_cents: 10_000, ticket_max_cents: 5_000_000, eligible_uf: [], purposes: [],
       term_min_months: null, term_max_months: null, business_age_min_months: 0, required_documents: [], max_instalment_share_bps: 10_000,

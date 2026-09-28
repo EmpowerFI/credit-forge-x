@@ -121,14 +121,17 @@ export const INSTRUMENT_TYPE: Record<InstrumentType, { label: string; what: stri
     what: { en: "People in Brazil lending through EmpowerFI's own desk. She receives and repays in reais, by Pix.", pt: "Pessoas no Brasil emprestando pela mesa da própria EmpowerFI. Ela recebe e paga em reais, por Pix." },
     tone: "positive",
   },
+  // The two routes from abroad, told apart. Many lenders with no veto, against
+  // one lender with a mandate: that difference is what "capital from outside
+  // Brazil" actually means here, and it belongs on the card.
   global_impact_capital: {
-    label: { en: "Global impact capital", pt: "Capital global de impacto" },
-    what: { en: "Capital from outside Brazil, converted and paid out in reais. She never touches a token.", pt: "Capital de fora do Brasil, convertido e pago em reais. Ela nunca encosta em um token." },
+    label: { en: "Investors abroad, share by share", pt: "Investidores no exterior, cota a cota" },
+    what: { en: "People and funds outside Brazil each funding a share of one loan, in USDC on Solana or in shielded ZEC. Nobody has to approve it: the raise closes when enough of them have said yes. She receives and repays in reais, and never touches a token.", pt: "Pessoas e fundos fora do Brasil financiando cada um uma cota de um mesmo empréstimo, em USDC na Solana ou em ZEC blindado. Ninguém precisa aprovar: a captação fecha quando gente suficiente disse sim. Ela recebe e paga em reais, e nunca encosta em um token." },
     tone: "positive",
   },
   impact_fund_capital: {
-    label: { en: "An impact fund's capital", pt: "Capital de um fundo de impacto" },
-    what: { en: "A fund outside Brazil lending on its own terms, with its own mandate. It has to say yes, and she receives and repays in reais.", pt: "Um fundo fora do Brasil emprestando nas condições dele, com mandato próprio. Ele precisa dizer sim, e ela recebe e paga em reais." },
+    label: { en: "One fund, on its own mandate", pt: "Um fundo, com mandato próprio" },
+    what: { en: "A single fund outside Brazil lending from its own balance sheet, on terms and a mandate it wrote. It has to say yes, and it asks for reports back. She receives and repays in reais.", pt: "Um único fundo fora do Brasil emprestando do próprio balanço, em condições e mandato que ele escreveu. Ele precisa dizer sim, e pede relatórios de volta. Ela recebe e paga em reais." },
     tone: "positive",
   },
 });
