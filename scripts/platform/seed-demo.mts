@@ -1212,6 +1212,24 @@ const railShare = (lo: number, hi: number) => lo + railRandom() * (hi - lo);
   }
 }
 
+// ------------------------------------------------- the book says it is a demo
+// Investments and positions were marked simulated when they were created,
+// because record_investment takes the flag. Loans, their events and their
+// instalments were not: formalise_loan, transition_loan and record_payment are
+// the product's own functions and in a real deployment a loan is not a
+// simulation, so their default is false and nothing in the seed said otherwise.
+//
+// The result was eight loans, twenty-four transitions and twelve instalments in
+// a demonstration book claiming to be real, and the Capital Journey read that
+// claim and printed "Observed" over the disbursal. A screen for judges is the
+// worst possible place to discover that flag means different things in
+// different tables, so the seed now says what its own rows are. The cost events
+// the triggers already copied the old flag onto are corrected with them.
+await must("mark the loans simulated", db.from("loans").update({ is_simulated: true }).eq("is_simulated", false));
+await must("mark the loan events simulated", db.from("loan_events").update({ is_simulated: true }).eq("is_simulated", false));
+await must("mark the instalments simulated", db.from("payments").update({ is_simulated: true }).eq("is_simulated", false));
+await must("mark the cost events simulated", db.from("cost_events").update({ is_simulated: true }).eq("is_simulated", false));
+
 const { data: overview } = await asPartner.rpc("capital_overview");
 const rail = await must("local economy dashboard", asPartner.rpc("local_economy_dashboard", { p_economy_id: economy.id })) as Record<string, number>;
 await asPartner.auth.signOut();

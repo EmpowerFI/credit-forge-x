@@ -22,6 +22,7 @@ const AuditPage = lazy(() => import("./pages/AuditPage"));
 const AllocationEngine = lazy(() => import("./pages/capital/AllocationEngine"));
 const CapitalNetwork = lazy(() => import("./pages/capital/network/CapitalNetwork"));
 const LocalEconomy = lazy(() => import("./pages/capital/local/LocalEconomy"));
+const CapitalJourney = lazy(() => import("./pages/capital/journey/CapitalJourney"));
 const AuditLayout = lazy(() => import("./pages/audit/AuditLayout"));
 const AuditAttestations = lazy(() => import("./pages/audit/Attestations"));
 const AuditEvents = lazy(() => import("./pages/audit/Events"));
@@ -170,6 +171,8 @@ function Pages() {
             engine is for the desk and capital operators, and setting a policy is
             narrower still. The page gates those itself. */}
         <Route path="capital/network" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><CapitalNetwork /></Suspense></RequireAuth>} />
+        {/* The arc the other screens only ever show a slice of. */}
+        <Route path="capital/journey" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><CapitalJourney /></Suspense></RequireAuth>} />
         {/* What happened after the capital landed. The same reach as the rest
             of the engine's area; the reader itself checks each economy against
             the row-level policy, so a narrower account sees only its own. */}
