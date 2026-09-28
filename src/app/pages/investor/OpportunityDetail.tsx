@@ -17,7 +17,6 @@ import { reaisRate } from "../../lib/settlement";
 import { usdc } from "../../lib/solana";
 import Lifecycle, { type LifecycleStage, type StageState } from "./Lifecycle";
 import FundingBar from "./FundingBar";
-import DomesticInvest from "./DomesticInvest";
 import FundingRoute from "./FundingRoute";
 import InvestPanel from "./InvestPanel";
 import { CapitalPlanPanel } from "../capital/network/CapitalPlanPanel";
@@ -56,6 +55,31 @@ const LEVEL: Record<string, string> = localized({
   MEDIUM: { en: "medium", pt: "média" },
   HIGH: { en: "high", pt: "alta" },
 });
+
+/**
+ * A request the engine routed to the domestic desk. This console funds in USDC
+ * and has no rail to send reais on, so there is nothing to allocate here — only
+ * the reason, and the way back to a position if this investor already holds one
+ * from before. Saying it beats a button that would be refused.
+ */
+function FundedElsewhere({ hasPosition }: { hasPosition: boolean }) {
+  return (
+    <Panel title={tr({ en: "Funded in reais", pt: "Financiada em reais" })}
+      actions={<StatusPill tone="neutral">{tr({ en: "Not this console", pt: "Fora deste console" })}</StatusPill>}>
+      <p className="text-sm text-muted-foreground">
+        {tr({
+          en: "The allocation engine routed this one to Brazilian capital: a domestic desk funds it in reais, at a lower all-in cost to her than the global pool could offer. This console allocates in USDC, so it is not raising here.",
+          pt: "O motor de alocação roteou esta para o capital brasileiro: uma mesa doméstica financia em reais, a um custo total menor para ela do que o pool global conseguiria oferecer. Este console aloca em USDC, então ela não está captando aqui.",
+        })}
+      </p>
+      {hasPosition && (
+        <p className="text-sm text-foreground">
+          {tr({ en: "You hold a position in it from before, and it is in your portfolio.", pt: "Você tem uma posição nela de antes, e ela está na sua carteira." })}
+        </p>
+      )}
+    </Panel>
+  );
+}
 
 function Field({ label, children, kind }: { label: string; children: React.ReactNode; kind: "derived" | "proven" | "private" }) {
   return (
@@ -157,7 +181,7 @@ export default function OpportunityDetail() {
                       en: `${usdc(row.funding_target_micro_usdc, 0)} at ${reaisRate(row.fx_brl_per_usdc_milli ?? 0, 3)}/USDC, simulated quote`,
                       pt: `${usdc(row.funding_target_micro_usdc, 0)} a ${reaisRate(row.fx_brl_per_usdc_milli ?? 0, 3)}/USDC, cotação simulada`,
                     })
-                    : tr({ en: "in reais, from the domestic pool", pt: "em reais, do pool doméstico" })}
+                    : tr({ en: "in reais, funded by Brazilian capital", pt: "em reais, financiada por capital brasileiro" })}
                 </p>
               </div>
               <div>
@@ -249,7 +273,7 @@ export default function OpportunityDetail() {
         </div>
 
         <div className="space-y-6">
-          {pool === "domestic" ? <DomesticInvest row={row} /> : <InvestPanel row={row} />}
+          {pool === "domestic" ? <FundedElsewhere hasPosition={row.my_micro_usdc > 0} /> : <InvestPanel row={row} />}
           <Panel title={tr({ en: "Expected return · simulated", pt: "Retorno esperado · simulado" })}>
             <p className="num font-heading text-3xl font-bold text-foreground">
               {percent(row.indicative_yield_bps)} <span className="text-sm font-normal text-muted-foreground">{tr({ en: "a year", pt: "ao ano" })}</span>

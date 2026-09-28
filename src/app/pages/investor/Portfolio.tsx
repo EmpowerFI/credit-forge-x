@@ -64,8 +64,15 @@ export default function Portfolio() {
             <dl className="num grid grid-cols-2 gap-3 text-sm">
               <dt className="text-muted-foreground">{POOL.global.route}</dt>
               <dd className="text-right text-foreground">{usdc(globalRows.reduce((n, r) => n + r.amount_micro_usdc, 0))}</dd>
-              <dt className="text-muted-foreground">{POOL.domestic.route} · {tr({ en: "simulated", pt: "simulado" })}</dt>
-              <dd className="text-right text-foreground">{money(domesticRows.reduce((n, r) => n + reaisOf(r), 0))}</dd>
+              {/* This console allocates in USDC. A position in reais can only
+                  be one held from before the route closed here, so the line
+                  appears when there is one and not as a permanent zero. */}
+              {domesticRows.length > 0 && (
+                <>
+                  <dt className="text-muted-foreground">{POOL.domestic.route} · {tr({ en: "simulated", pt: "simulado" })}</dt>
+                  <dd className="text-right text-foreground">{money(domesticRows.reduce((n, r) => n + reaisOf(r), 0))}</dd>
+                </>
+              )}
               <dt className="text-muted-foreground">{tr({ en: "Invested, in USDC terms", pt: "Investido, em USDC" })}</dt><dd className="text-right text-foreground">{usdc(p.invested_micro_usdc)}</dd>
               <dt className="text-muted-foreground">{tr({ en: "Deployed", pt: "Aplicado" })}</dt><dd className="text-right text-foreground">{usdc(p.deployed_micro_usdc)}</dd>
               <dt className="text-muted-foreground">{tr({ en: "Repaid to you", pt: "Pago a você" })}</dt><dd className="text-right text-positive">{usdc(p.repaid_micro_usdc)}</dd>

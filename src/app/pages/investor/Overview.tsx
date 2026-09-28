@@ -21,7 +21,6 @@ import { ACTIVITY_LABEL, type Grade, RISK, title } from "../../lib/investor";
 import { PURPOSE_LABEL } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
 import { useBalances } from "../../wallet/useBalances";
-import CapitalPools from "./CapitalPools";
 import MandatePanel from "./Mandate";
 import FundingBar from "./FundingBar";
 import { useActivity, useMandate, useMarket, usePortfolio } from "./queries";
@@ -78,8 +77,8 @@ export default function Overview() {
           pt: "O que está captando agora, e o que o seu capital está fazendo.",
         })}
         about={tr({
-          en: "Qualified productive-credit demand is funded by two pools of P2P capital: domestic investors in reais, and global investors in USDC on Solana. She receives and repays in reais, by Pix, either way, and EmpowerFI's P2P desk formalises and services the loan. Returns are simulated; nothing here is a promise of return.",
-          pt: "A demanda qualificada de crédito produtivo é financiada por dois pools de capital P2P: investidores domésticos em reais e investidores globais em USDC na Solana. Nos dois casos ela recebe e paga em reais, por Pix, e a mesa P2P da EmpowerFI formaliza o empréstimo e acompanha os pagamentos. Os retornos são simulados; nada aqui é promessa de retorno.",
+          en: "You allocate USDC on Solana. It reaches a Brazilian entrepreneur as local currency, she repays in local currency, and it is converted back to USDC to repay you. She never holds a dollar and never owes one; the currency effect stays with the pool, priced into the hedge. Returns are simulated; nothing here is a promise of return.",
+          pt: "Você aloca USDC na Solana. O dinheiro chega a uma empreendedora brasileira em moeda local, ela paga em moeda local, e é convertido de volta para USDC para pagar você. Ela nunca tem dólar nem deve em dólar; o efeito cambial fica com o pool, precificado no hedge. Os retornos são simulados; nada aqui é promessa de retorno.",
         })} />
 
       {/* The first line answers what to do next, including when the answer is "nothing". */}
@@ -141,8 +140,8 @@ export default function Overview() {
         <p className="text-xs text-muted-foreground">
           {wallet
             ? tr({
-              en: "Global positions from your wallet on Solana devnet; domestic positions in reais, simulated.",
-              pt: "Posições globais da sua carteira na devnet da Solana; posições domésticas em reais, simuladas.",
+              en: "Positions from your wallet on Solana devnet, in USDC.",
+              pt: "Posições da sua carteira na devnet da Solana, em USDC.",
             })
             : tr({
               en: "Exploring as the demo investor: simulated positions, no wallet. Connect your own wallet from the top bar to invest in USDC.",
@@ -206,7 +205,7 @@ export default function Overview() {
       <details className="space-y-4 [&[open]>summary>svg]:rotate-90">
         <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-sm font-medium text-accent hover:text-foreground">
           <ChevronRight size={15} className="transition-transform" aria-hidden />
-          {tr({ en: "How your capital moved, and where the two pools stand", pt: "Como seu capital se moveu, e como estão os dois pools" })}
+          {tr({ en: "How your capital moved", pt: "Como seu capital se moveu" })}
         </summary>
 
         <div className="space-y-6 pt-4">
@@ -258,14 +257,12 @@ export default function Overview() {
               </ul>
               <p className="text-xs text-muted-foreground">
                 {tr({
-                  en: "EmpowerFI's band at eligibility, which each pool's risk appetite is checked against.",
-                  pt: "A faixa definida pela EmpowerFI na elegibilidade, comparada com o apetite a risco de cada pool.",
+                  en: "EmpowerFI's band at eligibility, which the pool's risk appetite is checked against.",
+                  pt: "A faixa definida pela EmpowerFI na elegibilidade, comparada com o apetite a risco do pool.",
                 })}
               </p>
             </Panel>
           </div>
-
-          <CapitalPools />
         </div>
       </details>
     </div>

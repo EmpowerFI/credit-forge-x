@@ -16,16 +16,15 @@ import { FUNDING_LABEL, type MarketRow, RISK, title } from "../../lib/investor";
 import { money, PURPOSE_LABEL } from "../../lib/readiness";
 import { usdc } from "../../lib/solana";
 import FundingBar from "./FundingBar";
-import { useMandate, useMarket } from "./queries";
+import { useMandate, useMarket, useMarketElsewhere } from "./queries";
 import { MANDATE_CHECK_LABEL, mandateChecks, matchesMandate } from "../../lib/mandate";
 
-type Filter = { mandate: string; route: string; risk: string; purpose: string; term: string; amount: string; status: string };
-const ALL: Filter = { mandate: "fit", route: "all", risk: "all", purpose: "all", term: "all", amount: "all", status: "raising" };
+type Filter = { mandate: string; risk: string; purpose: string; term: string; amount: string; status: string };
+const ALL: Filter = { mandate: "fit", risk: "all", purpose: "all", term: "all", amount: "all", status: "raising" };
 
 const matches = (o: MarketRow, f: Filter) => {
   const reais = o.amount_cents / 100;
   return (
-    (f.route === "all" || o.funding_pool === f.route) &&
     (f.risk === "all" || o.risk_band === f.risk) &&
     (f.purpose === "all" || o.purpose === f.purpose) &&
     (f.term === "all" || (f.term === "short" ? o.term_months <= 6 : f.term === "mid" ? o.term_months > 6 && o.term_months <= 12 : o.term_months > 12)) &&
@@ -42,8 +41,10 @@ function FilterSelect({ label, value, onChange, options }: {
 }) {
   return (
     <Select value={value} onValueChange={onChange}>
+      {/* The label says what is being filtered and must stay whole; the chosen
+          value is the part that may run out of room, so it truncates. */}
       <SelectTrigger className="h-9 w-auto min-w-[9rem] gap-2 border-border bg-secondary text-sm" aria-label={label}>
-        <span className="text-muted-foreground">{label}:</span> <SelectValue />
+        <span className="shrink-0 text-muted-foreground">{label}:</span> <span className="truncate"><SelectValue /></span>
       </SelectTrigger>
       <SelectContent>
         {options.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
@@ -54,10 +55,11 @@ function FilterSelect({ label, value, onChange, options }: {
 
 export default function Opportunities() {
   const market = useMarket();
+  const elsewhere = useMarketElsewhere();
   const [filter, setFilter] = useState<Filter>(ALL);
   const [moreFilters, setMoreFilters] = useState(false);
   // What the button has to answer: how many of the folded filters are on.
-  const narrowed = (["route", "risk", "purpose", "term", "amount"] as const).filter((k) => filter[k] !== ALL[k]).length;
+  const narrowed = (["risk", "purpose", "term", "amount"] as const).filter((k) => filter[k] !== ALL[k]).length;
   const set = (k: keyof Filter) => (v: string) => setFilter((f) => ({ ...f, [k]: v }));
   const mandate = useMandate();
   const m = mandate.data ?? null;
@@ -73,20 +75,20 @@ export default function Opportunities() {
         eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })}
         title={tr({ en: "Opportunities", pt: "Oportunidades" })}
         description={tr({
-          en: "Qualified requests raising capital now. Returns are simulated; nothing here is a promise of return.",
-          pt: "Pedidos qualificados captando agora. Os retornos são simulados; nada aqui é promessa de retorno.",
+          en: "Qualified requests raising in USDC now. Returns are simulated; nothing here is a promise of return.",
+          pt: "Pedidos qualificados captando em USDC agora. Os retornos são simulados; nada aqui é promessa de retorno.",
         })}
         about={tr({
           en: (
             <>
-              <p>Each opportunity exists only after readiness, her own request for capital and EmpowerFI's eligibility check. The Capital Allocation Engine then assigns it a route: domestic P2P in reais, or global P2P in USDC, by cost, availability, mandate and risk appetite.</p>
-              <p>Either way she receives and repays in reais, by Pix, and EmpowerFI's P2P desk formalises and services the loan. Businesses appear by code, and only when she agreed to be shown to investors.</p>
+              <p>Each opportunity exists only after readiness, her own request for capital and EmpowerFI's eligibility check. You commit USDC; it reaches her as local currency, she repays in local currency, and it comes back to you as USDC. You never hold reais and she never holds a dollar: the currency effect sits with the pool, priced into the hedge.</p>
+              <p>Businesses appear by code, and only when she agreed to be shown to investors. Requests the engine routed to Brazilian capital are funded in reais by a domestic desk and are not offered here.</p>
             </>
           ),
           pt: (
             <>
-              <p>Cada oportunidade só existe depois da prontidão, do pedido de crédito feito por ela e da verificação de elegibilidade da EmpowerFI. O Motor de Alocação de Capital define então a rota: P2P doméstico em reais ou P2P global em USDC, por custo, disponibilidade, mandato e apetite a risco.</p>
-              <p>Nos dois casos ela recebe e paga em reais, por Pix, e a mesa P2P da EmpowerFI formaliza o empréstimo e acompanha os pagamentos. Os negócios aparecem por código, e só quando ela concordou em ser mostrada a investidores.</p>
+              <p>Cada oportunidade só existe depois da prontidão, do pedido de crédito feito por ela e da verificação de elegibilidade da EmpowerFI. Você aporta USDC; o dinheiro chega a ela em moeda local, ela paga em moeda local, e volta para você em USDC. Você nunca tem reais e ela nunca tem dólar: o efeito cambial fica com o pool, precificado no hedge.</p>
+              <p>Os negócios aparecem por código, e só quando ela concordou em ser mostrada a investidores. Os pedidos que o motor roteou para capital brasileiro são financiados em reais por uma mesa doméstica e não são ofertados aqui.</p>
             </>
           ),
         })} />
@@ -117,8 +119,6 @@ export default function Opportunities() {
         </div>
         {moreFilters && (
           <div className="flex flex-wrap gap-2 rounded-xl border border-border p-3">
-            <FilterSelect label={tr({ en: "Route", pt: "Rota" })} value={filter.route} onChange={set("route")}
-              options={[["all", tr({ en: "Both", pt: "As duas" })], ["domestic", tr({ en: "Domestic / Pix", pt: "Doméstica / Pix" })], ["global", tr({ en: "Global / USDC", pt: "Global / USDC" })]]} />
             <FilterSelect label={tr({ en: "Risk", pt: "Risco" })} value={filter.risk} onChange={set("risk")}
               options={[["all", tr({ en: "All", pt: "Todos" })], ["LOW", tr({ en: "A · lower", pt: "A · menor" })], ["MEDIUM", tr({ en: "B · moderate", pt: "B · moderado" })], ["HIGH", tr({ en: "C · higher", pt: "C · maior" })]]} />
             <FilterSelect label={tr({ en: "Purpose", pt: "Finalidade" })} value={filter.purpose} onChange={set("purpose")}
@@ -207,6 +207,18 @@ export default function Opportunities() {
         })}
       </ul>
 
+      {/* What this console does not carry. An investor who counts eight
+          requests should be able to learn that the engine qualified ten, and
+          where the other two went — otherwise the market looks like the whole
+          of qualified demand, which it is not. */}
+      {elsewhere.data && elsewhere.data.count > 0 && (
+        <p className="px-1 text-xs text-muted-foreground">
+          {tr({
+            en: `${elsewhere.data.count} more qualified ${elsewhere.data.count === 1 ? "request" : "requests"}, ${money(elsewhere.data.amount_cents)} in all, ${elsewhere.data.count === 1 ? "is" : "are"} raising in reais on the domestic desk. Brazilian capital funds those, so they are not offered here.`,
+            pt: `Mais ${elsewhere.data.count} ${elsewhere.data.count === 1 ? "pedido qualificado está captando" : "pedidos qualificados estão captando"} em reais na mesa doméstica, ${money(elsewhere.data.amount_cents)} ao todo. Quem financia esses é o capital brasileiro, então não são ofertados aqui.`,
+          })}
+        </p>
+      )}
     </div>
   );
 }

@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import Panel from "../../components/product/Panel";
 import StatusPill from "../../components/product/StatusPill";
 import { tr } from "../../i18n";
-import { POOL, type PoolId } from "../../lib/capital";
 import { describeError } from "../../lib/errors";
 import { type Grade, RISK } from "../../lib/investor";
 import { type Mandate, matchesMandate } from "../../lib/mandate";
@@ -58,7 +57,6 @@ function EditMandate({ mandate, open, onOpenChange }: { mandate: Mandate | null;
   const [purposes, setPurposes] = useState<CreditPurpose[]>((mandate?.purposes ?? []) as CreditPurpose[]);
   const [sectors, setSectors] = useState<string[]>(mandate?.sectors ?? []);
   const [risk, setRisk] = useState<Grade[]>((mandate?.risk_bands ?? []) as Grade[]);
-  const [pools, setPools] = useState<PoolId[]>((mandate?.pools ?? []) as PoolId[]);
   const [states, setStates] = useState((mandate?.states ?? []).join(", "));
   const [min, setMin] = useState(mandate?.min_ticket_cents != null ? String(mandate.min_ticket_cents / 100) : "");
   const [max, setMax] = useState(mandate?.max_ticket_cents != null ? String(mandate.max_ticket_cents / 100) : "");
@@ -67,7 +65,7 @@ function EditMandate({ mandate, open, onOpenChange }: { mandate: Mandate | null;
     mutationFn: async () => {
       const cents = (v: string) => (v.trim() ? Math.round(Number(v.replace(",", ".")) * 100) : null);
       const { error } = await platform.rpc("set_mandate", {
-        p_kind: kind, p_label: label, p_impact_mandate: impact, p_purposes: purposes, p_sectors: sectors, p_risk_bands: risk, p_pools: pools,
+        p_kind: kind, p_label: label, p_impact_mandate: impact, p_purposes: purposes, p_sectors: sectors, p_risk_bands: risk, p_pools: [],
         p_states: states.split(/[,\s]+/).map((s) => s.trim().toUpperCase()).filter(Boolean),
         p_min_ticket_cents: cents(min) ?? undefined, p_max_ticket_cents: cents(max) ?? undefined,
       });
@@ -121,8 +119,6 @@ function EditMandate({ mandate, open, onOpenChange }: { mandate: Mandate | null;
           <Toggles label={tr({ en: "Sector", pt: "Setor" })} values={sectors} onChange={setSectors} options={SECTORS.map((s) => [s, sectorLabel(s)])} />
           <Toggles label={tr({ en: "Risk appetite", pt: "Apetite a risco" })} values={risk} onChange={setRisk}
             options={(["LOW", "MEDIUM", "HIGH"] as Grade[]).map((g) => [g, RISK[g].label])} />
-          <Toggles label={tr({ en: "Route", pt: "Rota" })} values={pools} onChange={setPools}
-            options={(["domestic", "global"] as PoolId[]).map((p) => [p, POOL[p].route])} />
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="mandate-states">{tr({ en: "States (UF)", pt: "Estados (UF)" })}</Label>
@@ -184,7 +180,6 @@ export default function MandatePanel() {
             {m.min_ticket_cents === null && m.max_ticket_cents === null ? any() : `${money(m.min_ticket_cents ?? 0)} – ${m.max_ticket_cents === null ? "…" : money(m.max_ticket_cents)}`}
           </Row>
           <Row label={tr({ en: "Risk appetite", pt: "Apetite a risco" })}>{list(m.risk_bands, (g) => RISK[g as Grade].grade)}</Row>
-          <Row label={tr({ en: "Route", pt: "Rota" })}>{list(m.pools, (p) => POOL[p as PoolId].route)}</Row>
         </dl>
       )}
       {editing && <EditMandate mandate={m} open={editing} onOpenChange={setEditing} />}

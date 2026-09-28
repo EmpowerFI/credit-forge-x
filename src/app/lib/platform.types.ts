@@ -3653,6 +3653,7 @@ export type Database = {
         }
         Returns: Json
       }
+      market_funded_elsewhere: { Args: never; Returns: Json }
       measure_outcome: {
         Args: {
           p_capital_use?: Database["public"]["Enums"]["capital_use"]

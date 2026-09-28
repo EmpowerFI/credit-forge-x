@@ -166,7 +166,7 @@ const CASE_B_FX_MILLI = 5500;
 const locksBetterFx = new Set<string>();
 async function fund(opportunityId: string, fill: number, ireneShare: number, at: string, leaveMicro = 0) {
   const { data: o, error } = await db.from("qualified_credit_opportunities")
-    .select("id, amount_cents, created_at, funding_pool, funding_target_micro_usdc, funding_status").eq("id", opportunityId).single();
+    .select("id, amount_cents, created_at, funding_pool, funding_target_micro_usdc, funding_status, fx_brl_per_usdc_milli").eq("id", opportunityId).single();
   if (error) throw error;
   // Not offered to investors, by her choice, or no pool could take it: it waits.
   if (!o.funding_status) return;
@@ -182,7 +182,13 @@ async function fund(opportunityId: string, fill: number, ireneShare: number, at:
   const whole = (micro: number) => Math.floor(micro / 1_000_000) * 1_000_000;
   const goal = fill >= 1 ? target - leaveMicro : whole(target * fill);
   const parts: [string, number][] = [];
-  const mine = Math.min(goal, whole(target * ireneShare));
+  // The demo investor is an external stablecoin fund, and that is the whole
+  // thesis: capital that exists abroad as USDC becomes credit in local currency
+  // here. So she funds what the engine routed to the global pool and nothing
+  // else. Domestic P2P is Brazilian capital funding Brazilian entrepreneurs —
+  // a good route, and the seed investors carry it.
+  const global = o.funding_pool === "global";
+  const mine = global ? Math.min(goal, whole(target * ireneShare)) : 0;
   if (mine > 0) parts.push([irene!.id, mine]);
   let rest = goal - mine;
   for (const [k, id] of seedInvestorIds.entries()) {
@@ -191,10 +197,18 @@ async function fund(opportunityId: string, fill: number, ireneShare: number, at:
     rest -= take;
   }
   for (const [investorId, micro] of parts) {
-    await must("fund", db.rpc("record_investment", {
+    const rec = await must("fund", db.rpc("record_investment", {
       p_investor_id: investorId, p_opportunity_id: opportunityId, p_amount_micro_usdc: micro,
       p_mode: "simulated", p_is_simulated: true, p_created_at: at,
-    }));
+    })) as { id: string };
+    // A domestic allocation is made in reais. record_investment speaks micro
+    // USDC, so the reais are written back exactly as allocate_domestic writes
+    // them, and a domestic position is reais in the data rather than stablecoin
+    // converted for display.
+    if (!global) {
+      await must("domestic reais", db.from("investments")
+        .update({ amount_cents: Math.round((micro * (o.fx_brl_per_usdc_milli as number)) / 10_000_000) }).eq("id", rec.id));
+    }
   }
 }
 
