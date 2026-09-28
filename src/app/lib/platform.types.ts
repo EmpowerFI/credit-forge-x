@@ -108,6 +108,7 @@ export type Database = {
           active: boolean
           business_age_min_months: number
           capacity_cents: number | null
+          capital_scope: Database["public"]["Enums"]["capital_scope"]
           closed_network_rules: Json
           code: string
           created_at: string
@@ -131,6 +132,7 @@ export type Database = {
           purposes: Database["public"]["Enums"]["credit_purpose"][]
           required_documents: string[]
           requires_partner_approval: boolean
+          settlement_rail: Database["public"]["Enums"]["settlement_rail"]
           target_population: string[]
           term_max_months: number | null
           term_min_months: number | null
@@ -142,6 +144,7 @@ export type Database = {
           active?: boolean
           business_age_min_months?: number
           capacity_cents?: number | null
+          capital_scope?: Database["public"]["Enums"]["capital_scope"]
           closed_network_rules?: Json
           code: string
           created_at?: string
@@ -165,6 +168,7 @@ export type Database = {
           purposes?: Database["public"]["Enums"]["credit_purpose"][]
           required_documents?: string[]
           requires_partner_approval?: boolean
+          settlement_rail?: Database["public"]["Enums"]["settlement_rail"]
           target_population?: string[]
           term_max_months?: number | null
           term_min_months?: number | null
@@ -176,6 +180,7 @@ export type Database = {
           active?: boolean
           business_age_min_months?: number
           capacity_cents?: number | null
+          capital_scope?: Database["public"]["Enums"]["capital_scope"]
           closed_network_rules?: Json
           code?: string
           created_at?: string
@@ -199,6 +204,7 @@ export type Database = {
           purposes?: Database["public"]["Enums"]["credit_purpose"][]
           required_documents?: string[]
           requires_partner_approval?: boolean
+          settlement_rail?: Database["public"]["Enums"]["settlement_rail"]
           target_population?: string[]
           term_max_months?: number | null
           term_min_months?: number | null
@@ -857,6 +863,9 @@ export type Database = {
           purpose: Database["public"]["Enums"]["credit_purpose"]
           requested_amount_cents: number
           status: Database["public"]["Enums"]["credit_intent_status"]
+          supplier_geography:
+            | Database["public"]["Enums"]["supplier_geography"]
+            | null
           withdrawn_at: string | null
         }
         Insert: {
@@ -869,6 +878,9 @@ export type Database = {
           purpose: Database["public"]["Enums"]["credit_purpose"]
           requested_amount_cents: number
           status?: Database["public"]["Enums"]["credit_intent_status"]
+          supplier_geography?:
+            | Database["public"]["Enums"]["supplier_geography"]
+            | null
           withdrawn_at?: string | null
         }
         Update: {
@@ -881,6 +893,9 @@ export type Database = {
           purpose?: Database["public"]["Enums"]["credit_purpose"]
           requested_amount_cents?: number
           status?: Database["public"]["Enums"]["credit_intent_status"]
+          supplier_geography?:
+            | Database["public"]["Enums"]["supplier_geography"]
+            | null
           withdrawn_at?: string | null
         }
         Relationships: [
@@ -1629,6 +1644,302 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_accounts: {
+        Row: {
+          balance_units: number
+          created_at: string
+          economy_id: string
+          id: string
+          owner_id: string | null
+          owner_type: Database["public"]["Enums"]["local_owner_type"]
+        }
+        Insert: {
+          balance_units?: number
+          created_at?: string
+          economy_id: string
+          id?: string
+          owner_id?: string | null
+          owner_type: Database["public"]["Enums"]["local_owner_type"]
+        }
+        Update: {
+          balance_units?: number
+          created_at?: string
+          economy_id?: string
+          id?: string
+          owner_id?: string | null
+          owner_type?: Database["public"]["Enums"]["local_owner_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_accounts_economy_id_fkey"
+            columns: ["economy_id"]
+            isOneToOne: false
+            referencedRelation: "local_economies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_economies: {
+        Row: {
+          code: string
+          community_id: string | null
+          created_at: string
+          currency_code: string
+          id: string
+          is_simulated: boolean
+          name: string
+          parity_bps: number
+          parity_reference: string
+          status: Database["public"]["Enums"]["local_economy_status"]
+          territory: string
+          uf: string
+        }
+        Insert: {
+          code: string
+          community_id?: string | null
+          created_at?: string
+          currency_code: string
+          id?: string
+          is_simulated?: boolean
+          name: string
+          parity_bps?: number
+          parity_reference: string
+          status?: Database["public"]["Enums"]["local_economy_status"]
+          territory: string
+          uf: string
+        }
+        Update: {
+          code?: string
+          community_id?: string | null
+          created_at?: string
+          currency_code?: string
+          id?: string
+          is_simulated?: boolean
+          name?: string
+          parity_bps?: number
+          parity_reference?: string
+          status?: Database["public"]["Enums"]["local_economy_status"]
+          territory?: string
+          uf?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_economies_community_id_fkey"
+            columns: ["community_id"]
+            isOneToOne: false
+            referencedRelation: "communities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_merchants: {
+        Row: {
+          city: string
+          code: string
+          created_at: string
+          economy_id: string
+          eligible: boolean
+          id: string
+          is_simulated: boolean
+          name: string
+          neighbourhood: string | null
+          sector: string
+          uf: string
+        }
+        Insert: {
+          city: string
+          code: string
+          created_at?: string
+          economy_id: string
+          eligible?: boolean
+          id?: string
+          is_simulated?: boolean
+          name: string
+          neighbourhood?: string | null
+          sector: string
+          uf: string
+        }
+        Update: {
+          city?: string
+          code?: string
+          created_at?: string
+          economy_id?: string
+          eligible?: boolean
+          id?: string
+          is_simulated?: boolean
+          name?: string
+          neighbourhood?: string | null
+          sector?: string
+          uf?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_merchants_economy_id_fkey"
+            columns: ["economy_id"]
+            isOneToOne: false
+            referencedRelation: "local_economies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_redemptions: {
+        Row: {
+          amount_brl_cents: number
+          amount_units: number
+          economy_id: string
+          evidence_status: Database["public"]["Enums"]["evidence_label"]
+          id: string
+          merchant_id: string
+          requested_at: string
+          settled_at: string | null
+          status: Database["public"]["Enums"]["local_redemption_status"]
+          transaction_id: string | null
+        }
+        Insert: {
+          amount_brl_cents: number
+          amount_units: number
+          economy_id: string
+          evidence_status?: Database["public"]["Enums"]["evidence_label"]
+          id?: string
+          merchant_id: string
+          requested_at?: string
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["local_redemption_status"]
+          transaction_id?: string | null
+        }
+        Update: {
+          amount_brl_cents?: number
+          amount_units?: number
+          economy_id?: string
+          evidence_status?: Database["public"]["Enums"]["evidence_label"]
+          id?: string
+          merchant_id?: string
+          requested_at?: string
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["local_redemption_status"]
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_redemptions_economy_id_fkey"
+            columns: ["economy_id"]
+            isOneToOne: false
+            referencedRelation: "local_economies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_redemptions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "local_merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_redemptions_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "local_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_transactions: {
+        Row: {
+          amount_units: number
+          created_at: string
+          economy_id: string
+          evidence_status: Database["public"]["Enums"]["evidence_label"]
+          from_account_id: string
+          id: string
+          loan_id: string | null
+          merchant_id: string | null
+          note: string | null
+          occurred_at: string
+          opportunity_id: string | null
+          purpose: Database["public"]["Enums"]["credit_purpose"] | null
+          to_account_id: string
+          transaction_no: number
+          tx_type: Database["public"]["Enums"]["local_transaction_type"]
+        }
+        Insert: {
+          amount_units: number
+          created_at?: string
+          economy_id: string
+          evidence_status?: Database["public"]["Enums"]["evidence_label"]
+          from_account_id: string
+          id?: string
+          loan_id?: string | null
+          merchant_id?: string | null
+          note?: string | null
+          occurred_at?: string
+          opportunity_id?: string | null
+          purpose?: Database["public"]["Enums"]["credit_purpose"] | null
+          to_account_id: string
+          transaction_no: number
+          tx_type: Database["public"]["Enums"]["local_transaction_type"]
+        }
+        Update: {
+          amount_units?: number
+          created_at?: string
+          economy_id?: string
+          evidence_status?: Database["public"]["Enums"]["evidence_label"]
+          from_account_id?: string
+          id?: string
+          loan_id?: string | null
+          merchant_id?: string | null
+          note?: string | null
+          occurred_at?: string
+          opportunity_id?: string | null
+          purpose?: Database["public"]["Enums"]["credit_purpose"] | null
+          to_account_id?: string
+          transaction_no?: number
+          tx_type?: Database["public"]["Enums"]["local_transaction_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_transactions_economy_id_fkey"
+            columns: ["economy_id"]
+            isOneToOne: false
+            referencedRelation: "local_economies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_transactions_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "local_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_transactions_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "local_merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_transactions_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "qualified_credit_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_transactions_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "local_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -3108,11 +3419,11 @@ export type Database = {
         Args: { p_pricing_version?: string; p_program_id?: string }
         Returns: Json
       }
+      capital_journey: { Args: { p_opportunity_id?: string }; Returns: Json }
       capital_mobilization_summary: {
         Args: { p_program_id?: string }
         Returns: Json
       }
-      capital_journey: { Args: { p_opportunity_id?: string }; Returns: Json }
       capital_network_origin: { Args: never; Returns: Json }
       capital_overview: { Args: never; Returns: Json }
       capital_plan: { Args: { p_opportunity_id: string }; Returns: Json }
@@ -3205,7 +3516,6 @@ export type Database = {
       }
       eligibility_inputs: { Args: { p_entrepreneur_id: string }; Returns: Json }
       engine_opportunities: { Args: never; Returns: Json }
-      evidence_ledger: { Args: never; Returns: Json }
       enroll_entrepreneur: {
         Args: {
           p_business_name?: string
@@ -3218,6 +3528,7 @@ export type Database = {
         }
         Returns: string
       }
+      evidence_ledger: { Args: never; Returns: Json }
       fail_anchor_job: {
         Args: { p_error: string; p_id: number; p_retryable?: boolean }
         Returns: undefined
@@ -3298,7 +3609,50 @@ export type Database = {
         }[]
       }
       local_economies_listed: { Args: never; Returns: Json }
-      local_economy_dashboard: { Args: { p_economy_id?: string }; Returns: Json }
+      local_economy_dashboard: {
+        Args: { p_economy_id?: string }
+        Returns: Json
+      }
+      local_inject_capital: {
+        Args: { p_economy_id?: string; p_loan_id: string }
+        Returns: Json
+      }
+      local_merchant_payment: {
+        Args: {
+          p_from_merchant_id: string
+          p_note?: string
+          p_to_merchant_id: string
+          p_units: number
+        }
+        Returns: Json
+      }
+      local_redeem: {
+        Args: { p_merchant_id: string; p_units: number }
+        Returns: Json
+      }
+      local_repay: {
+        Args: { p_entrepreneur_id?: string; p_loan_id: string; p_units: number }
+        Returns: Json
+      }
+      local_sale: {
+        Args: {
+          p_entrepreneur_id: string
+          p_merchant_id: string
+          p_note?: string
+          p_units: number
+        }
+        Returns: Json
+      }
+      local_spend: {
+        Args: {
+          p_entrepreneur_id?: string
+          p_merchant_id: string
+          p_note?: string
+          p_purpose?: Database["public"]["Enums"]["credit_purpose"]
+          p_units: number
+        }
+        Returns: Json
+      }
       measure_outcome: {
         Args: {
           p_capital_use?: Database["public"]["Enums"]["capital_use"]
@@ -3722,6 +4076,7 @@ export type Database = {
         | "other"
         | "impact_fund"
       capital_route_status: "recommended" | "manual_review" | "no_route"
+      capital_scope: "territorial" | "regional" | "national" | "global"
       capital_use:
         | "as_declared"
         | "partly_as_declared"
@@ -3766,6 +4121,11 @@ export type Database = {
         | "ELIGIBLE_REDUCED"
         | "MANUAL_REVIEW"
         | "NOT_ELIGIBLE"
+      evidence_label:
+        | "observed_pilot_data"
+        | "partner_provided"
+        | "simulated_assumption"
+        | "external_benchmark"
       funding_pool: "domestic" | "global"
       funding_status:
         | "open"
@@ -3785,6 +4145,16 @@ export type Database = {
         | "PAID"
         | "DEFAULTED"
         | "CANCELLED"
+      local_economy_status: "demo"
+      local_owner_type: "treasury" | "entrepreneur" | "merchant"
+      local_redemption_status: "requested" | "settled" | "failed"
+      local_transaction_type:
+        | "capital_injection"
+        | "productive_purchase"
+        | "merchant_payment"
+        | "transfer"
+        | "repayment"
+        | "redemption"
       membership_status: "active" | "left"
       opportunity_status:
         | "in_review"
@@ -3826,8 +4196,19 @@ export type Database = {
         | "done"
         | "failed"
         | "mock"
+      settlement_rail:
+        | "local_currency"
+        | "brl_pix"
+        | "partner_card"
+        | "usdc_solana"
       settlement_route: "direct_usdc_pix" | "brl_stable_pix"
       sponsor_kind: "company" | "foundation" | "impact_fund"
+      supplier_geography:
+        | "same_neighbourhood"
+        | "municipality"
+        | "state"
+        | "other_brazil"
+        | "international"
       vault_transfer_kind: "release" | "payout"
       vault_transfer_status: "pending" | "confirmed" | "failed"
       zcash_request_status:
@@ -4014,6 +4395,7 @@ export const Constants = {
         "impact_fund",
       ],
       capital_route_status: ["recommended", "manual_review", "no_route"],
+      capital_scope: ["territorial", "regional", "national", "global"],
       capital_use: [
         "as_declared",
         "partly_as_declared",
@@ -4063,6 +4445,12 @@ export const Constants = {
         "MANUAL_REVIEW",
         "NOT_ELIGIBLE",
       ],
+      evidence_label: [
+        "observed_pilot_data",
+        "partner_provided",
+        "simulated_assumption",
+        "external_benchmark",
+      ],
       funding_pool: ["domestic", "global"],
       funding_status: [
         "open",
@@ -4083,6 +4471,17 @@ export const Constants = {
         "PAID",
         "DEFAULTED",
         "CANCELLED",
+      ],
+      local_economy_status: ["demo"],
+      local_owner_type: ["treasury", "entrepreneur", "merchant"],
+      local_redemption_status: ["requested", "settled", "failed"],
+      local_transaction_type: [
+        "capital_injection",
+        "productive_purchase",
+        "merchant_payment",
+        "transfer",
+        "repayment",
+        "redemption",
       ],
       membership_status: ["active", "left"],
       opportunity_status: [
@@ -4130,8 +4529,21 @@ export const Constants = {
         "failed",
         "mock",
       ],
+      settlement_rail: [
+        "local_currency",
+        "brl_pix",
+        "partner_card",
+        "usdc_solana",
+      ],
       settlement_route: ["direct_usdc_pix", "brl_stable_pix"],
       sponsor_kind: ["company", "foundation", "impact_fund"],
+      supplier_geography: [
+        "same_neighbourhood",
+        "municipality",
+        "state",
+        "other_brazil",
+        "international",
+      ],
       vault_transfer_kind: ["release", "payout"],
       vault_transfer_status: ["pending", "confirmed", "failed"],
       zcash_request_status: [
