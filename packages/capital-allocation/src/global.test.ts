@@ -29,6 +29,7 @@ const base: GlobalGapContext = {
   route_cost_bps: 5400, modelled_ramp_annual_bps: 200, quoted_mobilization_bps: 179,
   modelled_return_ramp_bps: 100, evidence_score: 18, months_reported: 12,
   settlement_feasible: true, settlement_reality: "simulated", recoverable_domestic: [],
+  global_ticket_min_cents: 100_000,
 };
 
 describe("her economics once the quote replaces the constant", () => {
@@ -107,9 +108,27 @@ describe("the gates", () => {
   it("measures her instalment against what the domestic routes left, not against all of it", () => {
     const tight = globalEligibility({ ...base, instalment_committed_cents: 88_000 });
     expect(tight.economics.instalment_headroom_cents).toBe(2000);
+    // R$ 20 a month reaches a few hundred reais of a R$ 2,000 gap, which is
+    // under every global route's floor: nobody could take it, so nobody is told
+    // they could.
+    expect(tight.economics.affordable_gap_cents).toBeLessThan(base.global_ticket_min_cents);
     expect(tight.reason_codes).toContain("GLOBAL_AFFORDABILITY_AFTER_MOBILIZATION");
     // The same gap, with nothing committed, fits.
     expect(globalEligibility({ ...base, instalment_committed_cents: 0 }).decision).toBe("eligible");
+  });
+
+  it("answers with an amount, so a gap she can carry half of is half a gap", () => {
+    // Enough headroom for part of the R$ 2,000 gap, and well over the floor.
+    const part = globalEligibility({ ...base, instalment_committed_cents: 74_000 });
+    expect(part.decision).toBe("eligible");
+    expect(part.economics.affordable_gap_cents).toBeGreaterThanOrEqual(base.global_ticket_min_cents);
+    expect(part.economics.affordable_gap_cents).toBeLessThan(part.gap_cents);
+    expect(part.eligible_gap_cents).toBe(part.economics.affordable_gap_cents);
+    expect(part.reason_codes).toContain("GLOBAL_GAP_PARTLY_AFFORDABLE");
+    // All of it, when her month reaches all of it.
+    const whole = globalEligibility({ ...base, instalment_committed_cents: 0 });
+    expect(whole.eligible_gap_cents).toBe(whole.gap_cents);
+    expect(whole.reason_codes).not.toContain("GLOBAL_GAP_PARTLY_AFFORDABLE");
   });
 
   it("says why it said yes, not only that it did", () => {
@@ -227,7 +246,14 @@ describe("the vectors", () => {
     for (const s of vectors.scenarios as VectorScenario[]) {
       const eligible = s.expect.decision === "eligible";
       expect(s.expect.failed_gates.length === 0).toBe(eligible);
-      expect(s.expect.eligible_gap_cents).toBe(eligible ? s.input.gap_cents : 0);
+      // An eligible gap is an amount, never more than the gap itself and never
+      // less than the smallest ticket a global route would take. A gap that is
+      // not eligible is nothing at all.
+      if (!eligible) expect(s.expect.eligible_gap_cents).toBe(0);
+      else {
+        expect(s.expect.eligible_gap_cents).toBeLessThanOrEqual(s.input.gap_cents);
+        expect(s.expect.eligible_gap_cents).toBeGreaterThanOrEqual(s.input.global_ticket_min_cents);
+      }
     }
   });
 });

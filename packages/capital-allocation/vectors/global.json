@@ -1,6 +1,6 @@
 {
   "model_version": "global-capital-v1.0.0",
-  "note": "The second question of PLAN_CAPITAL_NETWORK_V2 \u00a73.1, asked of the residual gap after the domestic pass. src/global.test.ts runs globalEligibility() against these; platform/supabase/tests/capital_global.test.sql runs private.global_eligibility() against the same ones. Both must give one answer. The quoted mobilisation cost is an input here because packages/settlement-route is the only place in this project allowed to price a conversion: these vectors hold the decision to one answer, not the quote.",
+  "note": "The second question of PLAN_CAPITAL_NETWORK_V2 §3.1, asked of the residual gap after the domestic pass. src/global.test.ts runs globalEligibility() against these; platform/supabase/tests/capital_global.test.sql runs private.global_eligibility() against the same ones. Both must give one answer. The quoted mobilisation cost is an input here because packages/settlement-route is the only place in this project allowed to price a conversion: these vectors hold the decision to one answer, not the quote.",
   "scenarios": [
     {
       "name": "the residual domestic capacity left, and what a real quote costs her",
@@ -17,7 +17,8 @@
         "months_reported": 12,
         "settlement_feasible": true,
         "settlement_reality": "simulated",
-        "recoverable_domestic": []
+        "recoverable_domestic": [],
+        "global_ticket_min_cents": 100000
       },
       "expect": {
         "decision": "eligible",
@@ -39,7 +40,8 @@
           "total_cost_bps": 5479,
           "delta_bps": 79,
           "instalment_cents": 25807,
-          "instalment_headroom_cents": 36000
+          "instalment_headroom_cents": 36000,
+          "affordable_gap_cents": 200000
         }
       }
     },
@@ -58,7 +60,8 @@
         "months_reported": 0,
         "settlement_feasible": false,
         "settlement_reality": "simulated",
-        "recoverable_domestic": []
+        "recoverable_domestic": [],
+        "global_ticket_min_cents": 100000
       },
       "expect": {
         "decision": "not_needed",
@@ -79,7 +82,8 @@
           "total_cost_bps": 5479,
           "delta_bps": 79,
           "instalment_cents": 0,
-          "instalment_headroom_cents": 36000
+          "instalment_headroom_cents": 36000,
+          "affordable_gap_cents": 0
         }
       }
     },
@@ -100,7 +104,8 @@
         "settlement_reality": "simulated",
         "recoverable_domestic": [
           "credito_regional_capital_giro"
-        ]
+        ],
+        "global_ticket_min_cents": 100000
       },
       "expect": {
         "decision": "refused",
@@ -125,7 +130,8 @@
           "total_cost_bps": 5479,
           "delta_bps": 79,
           "instalment_cents": 25807,
-          "instalment_headroom_cents": 36000
+          "instalment_headroom_cents": 36000,
+          "affordable_gap_cents": 200000
         }
       }
     },
@@ -144,7 +150,8 @@
         "months_reported": 2,
         "settlement_feasible": true,
         "settlement_reality": "simulated",
-        "recoverable_domestic": []
+        "recoverable_domestic": [],
+        "global_ticket_min_cents": 100000
       },
       "expect": {
         "decision": "refused",
@@ -168,7 +175,8 @@
           "total_cost_bps": 5479,
           "delta_bps": 79,
           "instalment_cents": 25807,
-          "instalment_headroom_cents": 36000
+          "instalment_headroom_cents": 36000,
+          "affordable_gap_cents": 200000
         }
       }
     },
@@ -187,7 +195,8 @@
         "months_reported": 12,
         "settlement_feasible": true,
         "settlement_reality": "simulated",
-        "recoverable_domestic": []
+        "recoverable_domestic": [],
+        "global_ticket_min_cents": 100000
       },
       "expect": {
         "decision": "refused",
@@ -211,7 +220,8 @@
           "total_cost_bps": 5479,
           "delta_bps": 79,
           "instalment_cents": 25807,
-          "instalment_headroom_cents": 2000
+          "instalment_headroom_cents": 2000,
+          "affordable_gap_cents": 15499
         }
       }
     },
@@ -230,7 +240,8 @@
         "months_reported": 12,
         "settlement_feasible": false,
         "settlement_reality": "simulated",
-        "recoverable_domestic": []
+        "recoverable_domestic": [],
+        "global_ticket_min_cents": 100000
       },
       "expect": {
         "decision": "refused",
@@ -254,7 +265,8 @@
           "total_cost_bps": 5479,
           "delta_bps": 79,
           "instalment_cents": 25807,
-          "instalment_headroom_cents": 36000
+          "instalment_headroom_cents": 36000,
+          "affordable_gap_cents": 200000
         }
       }
     },
@@ -273,21 +285,21 @@
         "months_reported": 12,
         "settlement_feasible": true,
         "settlement_reality": "simulated",
-        "recoverable_domestic": []
+        "recoverable_domestic": [],
+        "global_ticket_min_cents": 100000
       },
       "expect": {
         "decision": "refused",
         "reason_codes": [
           "GLOBAL_GAP_CONFIRMED",
+          "GLOBAL_GAP_PARTLY_AFFORDABLE",
           "GLOBAL_EVIDENCE_SUFFICIENT",
           "GLOBAL_ROUTE_REGULATED",
-          "GLOBAL_COST_EXCEEDS_CEILING",
-          "GLOBAL_AFFORDABILITY_AFTER_MOBILIZATION"
+          "GLOBAL_COST_EXCEEDS_CEILING"
         ],
         "eligible_gap_cents": 0,
         "failed_gates": [
-          "economics",
-          "affordability"
+          "economics"
         ],
         "economics": {
           "route_cost_bps": 5400,
@@ -299,7 +311,8 @@
           "total_cost_bps": 12300,
           "delta_bps": 6900,
           "instalment_cents": 37167,
-          "instalment_headroom_cents": 36000
+          "instalment_headroom_cents": 36000,
+          "affordable_gap_cents": 193721
         }
       }
     },
@@ -318,7 +331,8 @@
         "months_reported": 12,
         "settlement_feasible": true,
         "settlement_reality": "simulated",
-        "recoverable_domestic": []
+        "recoverable_domestic": [],
+        "global_ticket_min_cents": 100000
       },
       "expect": {
         "decision": "eligible",
@@ -340,7 +354,8 @@
           "total_cost_bps": 6316,
           "delta_bps": 316,
           "instalment_cents": 77207,
-          "instalment_headroom_cents": 90000
+          "instalment_headroom_cents": 90000,
+          "affordable_gap_cents": 200000
         }
       }
     }

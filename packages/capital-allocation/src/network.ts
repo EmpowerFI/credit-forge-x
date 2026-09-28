@@ -72,6 +72,8 @@ export type NetworkReason =
   // vocabulary for one audit console, so these live here with the rest.
   | "GLOBAL_GAP_CONFIRMED"
   | "GLOBAL_ECONOMICS_WITHIN_CEILING"
+  /** Her month reaches part of the gap at the quoted price, not all of it. */
+  | "GLOBAL_GAP_PARTLY_AFFORDABLE"
   | "GLOBAL_EVIDENCE_SUFFICIENT"
   | "GLOBAL_ROUTE_REGULATED"
   | "GLOBAL_GAP_ABSENT"

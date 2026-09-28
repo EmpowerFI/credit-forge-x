@@ -267,6 +267,14 @@ const NETWORK_ONLY: Record<Exclude<NetworkReason, AllocationReason>, { label: st
     says: { en: "Her all-in cost through this route, with what it really costs to bring the money in, is inside what the engine allows and inside what her month has left.", pt: "O custo total para ela por esta rota, com o que custa de verdade trazer o dinheiro, está dentro do que o motor permite e dentro do que sobra no mês dela." },
     tone: "positive",
   },
+  GLOBAL_GAP_PARTLY_AFFORDABLE: {
+    label: { en: "Part of the gap, not all of it", pt: "Parte da lacuna, não toda ela" },
+    says: {
+      en: "At the price a rail actually quoted, her month reaches some of what local capital could not — so that much of the gap is what capital from outside Brazil may take, and the rest waits.",
+      pt: "Ao preço que um trilho de fato cotou, o mês dela alcança parte do que o capital local não alcançou — então essa parte é o que o capital de fora do Brasil pode tomar, e o resto espera.",
+    },
+    tone: "caution",
+  },
   GLOBAL_EVIDENCE_SUFFICIENT: {
     label: { en: "Enough reported history", pt: "Histórico reportado suficiente" },
     says: { en: "Money that crosses a border is reported on to people who will never meet her, and the history behind this request carries that.", pt: "Dinheiro que cruza uma fronteira é reportado a pessoas que nunca vão conhecê-la, e o histórico por trás deste pedido sustenta isso." },
