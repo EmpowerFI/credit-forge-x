@@ -16,7 +16,7 @@ select set_config(
   true
 );
 
-select plan(30);
+select plan(37);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -158,10 +158,20 @@ select is(pg_temp.n('circulating_units'), 122000::bigint,
 
 -- ---------------------------------------------------------------- the metrics
 
--- 95.000 ÷ 150.000. Under 1×, because this capital has not finished moving —
--- which the dashboard reports rather than rounding up to a rosier story.
-select is(pg_temp.n('multiplier_bps'), 6333::bigint,
-  'the multiplier is local circulation over capital injected, and may be under 1x');
+-- LM3's three rounds, published beside the ratio so the division can be done by
+-- hand: 150.000 entered, 60.000 spent inside the territory, and 35.000 spent
+-- locally in turn — 25.000 between two merchants and 10.000 back to her.
+select is(pg_temp.n('round_1_units'), 150000::bigint, 'round one is the capital that entered the territory');
+select is(pg_temp.n('round_2_units'), 60000::bigint, 'round two is what she spent with merchants inside it');
+select is(pg_temp.n('round_3_units'), 35000::bigint,
+  'round three is what those merchants spent locally in turn, including back to her');
+
+-- (150.000 + 60.000 + 35.000) ÷ 150.000 = 1,633.
+select is(pg_temp.n('lm3_bps'), 16333::bigint,
+  'LM3 is all three rounds over the first, the way the field has measured this for twenty years');
+
+select cmp_ok(pg_temp.n('lm3_bps'), '<=', 30000::bigint,
+  'and it cannot exceed three, because it counts three rounds and stops');
 
 -- (150.000 − 8.000) ÷ 150.000.
 select is(pg_temp.n('retention_bps'), 9467::bigint,
@@ -181,12 +191,32 @@ select is(pg_temp.n('loans_landed'), 2::bigint, 'over the loans that actually la
 -- Each metric against the ledger again, without the dashboard's own totals in
 -- between: a reader with SQL and no trust should get the same four numbers.
 select is(
-  pg_temp.n('multiplier_bps'),
+  pg_temp.n('lm3_bps'),
   (select round(
-     sum(amount_units) filter (where tx_type in ('productive_purchase', 'merchant_payment', 'transfer'))
+     (sum(amount_units) filter (where tx_type = 'capital_injection')
+      + sum(amount_units) filter (where tx_type = 'productive_purchase')
+      + coalesce(sum(amount_units) filter (where tx_type in ('merchant_payment', 'transfer')), 0))
      * 10000.0 / sum(amount_units) filter (where tx_type = 'capital_injection'))::bigint
    from local_transactions where economy_id = '00000000-0000-0000-0000-0000000015f1'),
-  'and the multiplier recomputed straight from the rows agrees with the reader');
+  'and LM3 recomputed straight from the rows agrees with the reader');
+
+-- A figure with nothing to compare it to is an assertion however honestly it
+-- was derived, so the reading carries what it is being measured against.
+select is(
+  (select count(*)::int from jsonb_array_elements(pg_temp.dash() -> 'benchmarks')), 3,
+  'the reading carries the published figures it is compared against');
+
+select is(
+  (select b ->> 'evidence_status' from jsonb_array_elements(pg_temp.dash() -> 'benchmarks') as t(b)
+    where b ->> 'key' = 'mumbuca_retention'),
+  'external_benchmark',
+  'and they are labelled as somebody else''s work, not as ours');
+
+select cmp_ok(
+  (select (b ->> 'value_bps')::int from jsonb_array_elements(pg_temp.dash() -> 'benchmarks') as t(b)
+    where b ->> 'key' = 'mumbuca_retention'),
+  '<', pg_temp.n('retention_bps')::int,
+  'a demonstration loop retains more than the largest real one does, which is the caveat rather than the boast');
 
 -- --------------------------------------------------------------- the counting
 

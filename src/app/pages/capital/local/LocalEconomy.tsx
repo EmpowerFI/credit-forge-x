@@ -28,6 +28,11 @@ import { useLocalEconomies, useLocalEconomy } from "./queries";
 // multiplier would be two multipliers. If the ledger recorded a shorter loop the
 // numbers come out smaller, and the screen reports the smaller numbers.
 //
+// The headline is LM3, the New Economics Foundation's Local Multiplier 3, and
+// not a ratio of our own. A number nobody can compare to anything is an
+// assertion however honestly it was derived, and this field has measured itself
+// the same way for twenty years.
+//
 // The guardrail below is not decoration. §8 says in the addendum's own words
 // that these measure network activity and prove nothing causal about
 // prosperity, and a dashboard that shows a multiplier without saying so is
@@ -122,8 +127,8 @@ function Body({ d }: { d: LocalEconomyDashboard }) {
       >
         <ul className="space-y-1.5 text-sm text-muted-foreground">
           <li>{tr({
-            en: "The multiplier, the retention rate and the velocity measure network activity. They do not by themselves prove causal economic impact.",
-            pt: "O multiplicador, a taxa de retenção e a velocidade medem atividade de rede. Sozinhos, eles não provam impacto econômico causal.",
+            en: "LM3, the retention rate and the velocity measure network activity. They do not by themselves prove causal economic impact.",
+            pt: "O LM3, a taxa de retenção e a velocidade medem atividade de rede. Sozinhos, eles não provam impacto econômico causal.",
           })}</li>
           <li>{tr({
             en: `${d.economy.name} is a clearly labelled sandbox. It is not a municipal or community currency, in production or in intent: nothing is issued, nothing is custodied, and ${code} cannot be spent outside this demonstration.`,
@@ -133,9 +138,13 @@ function Body({ d }: { d: LocalEconomyDashboard }) {
             en: "A redemption sends no Pix and no institution converts anything. The row exists so that retention has a denominator that is not a guess.",
             pt: "Um resgate não envia Pix e nenhuma instituição converte nada. A linha existe para que a retenção tenha um denominador que não seja um chute.",
           })}</li>
+          <li>{tr({
+            en: "Brazil has been doing this since 1998. Banco Palmas, in Fortaleza, created the first social currency because residents were buying almost everything outside the neighbourhood, and today more than a hundred community development banks run the same idea. This product does not invent that rail — it finances it, and the issuer here is the community, not EmpowerFI.",
+            pt: "O Brasil faz isto desde 1998. O Banco Palmas, em Fortaleza, criou a primeira moeda social porque os moradores compravam quase tudo fora do bairro, e hoje mais de cem bancos comunitários de desenvolvimento tocam a mesma ideia. Este produto não inventa esse trilho — ele o financia, e o emissor aqui é a comunidade, não a EmpowerFI.",
+          })}</li>
           <li className="num">{tr({
-            en: `Parity: ${d.economy.parity_reference}. Model ${d.model_version}.`,
-            pt: `Paridade: ${d.economy.parity_reference}. Modelo ${d.model_version}.`,
+            en: `Measure: ${d.measure}. Parity: ${d.economy.parity_reference}. Model ${d.model_version}.`,
+            pt: `Medida: ${d.measure}. Paridade: ${d.economy.parity_reference}. Modelo ${d.model_version}.`,
           })}</li>
         </ul>
       </Panel>
@@ -172,8 +181,8 @@ export default function LocalEconomy() {
             </p>
             <p>
               {tr({
-                en: "Local circulation counts purchases, payments between merchants and sales back to the business — movements between participants inside the territory. It excludes redemption, which is capital leaving the rail, and repayment, which returns it to the issuer. Counting a redemption as circulation would inflate the multiplier with the exact movement that is leakage.",
-                pt: "A circulação local conta compras, pagamentos entre comerciantes e vendas de volta para o negócio — movimentos entre participantes dentro do território. Ela exclui o resgate, que é capital saindo do trilho, e o pagamento da parcela, que o devolve ao emissor. Contar um resgate como circulação inflaria o multiplicador justamente com o movimento que é vazamento.",
+                en: "LM3 counts three rounds of spending: the capital that entered the territory, what she spent with merchants inside it, and what those merchants spent locally in turn. It counts neither redemption, which is capital leaving the rail, nor repayment, which returns it to the issuer — and a redemption counted as circulation would inflate the measure with the exact movement that is leakage.",
+                pt: "O LM3 conta três rodadas de gasto: o capital que entrou no território, o que ela gastou com comerciantes de dentro, e o que aqueles comerciantes gastaram localmente em seguida. Não conta o resgate, que é capital saindo do trilho, nem a parcela, que o devolve ao emissor — e um resgate contado como circulação inflaria a medida justamente com o movimento que é vazamento.",
               })}
             </p>
             <p>

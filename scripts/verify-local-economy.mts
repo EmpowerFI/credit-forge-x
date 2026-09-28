@@ -35,10 +35,10 @@ await settle(page, 2500);
 
 const body = await page.locator("body").innerText();
 for (const probe of PT
-  ? ["Economia Local", "Multiplicador de capital local", "Taxa de retenção local", "Velocidade do capital",
+  ? ["Economia Local", "Multiplicador Local 3 (LM3)", "A Mumbuca, em Maricá, reteve", "Taxa de retenção local", "Velocidade do capital",
      "Adicionalidade do capital global", "O que o razão guarda", "Saldos somam zero",
      "Como o capital se moveu", "Os últimos movimentos", "O que estes números não provam"]
-  : ["Local Economy", "Local capital multiplier", "Local retention rate", "Capital velocity",
+  : ["Local Economy", "Local Multiplier 3", "Mumbuca, in Maricá, retained", "Local retention rate", "Capital velocity",
      "Global capital additionality", "What the ledger holds", "Balances sum to zero",
      "How the capital moved", "The last movements", "What these numbers do not prove"])
   console.log(`${body.includes(probe) ? "ok  " : "MISS"} ${probe}`);

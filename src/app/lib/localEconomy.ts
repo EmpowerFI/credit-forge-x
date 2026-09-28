@@ -45,10 +45,31 @@ export interface LocalMovement {
   note: string | null;
 }
 
+/** A figure this product did not measure, carried with its source. */
+export interface Benchmark {
+  key: string;
+  label: string;
+  value_bps: number | null;
+  value_cents: number | null;
+  value_count: number | null;
+  source: string;
+  source_url: string;
+  observed_period: string | null;
+  note: string | null;
+  evidence_status: EvidenceLabel;
+}
+
 export interface LocalEconomyDashboard {
   economy: Omit<LocalEconomyListed, "movements">;
   model_version: string;
+  /** The method the headline figure is computed by, named so it can be checked. */
+  measure: string;
   evidence_status: EvidenceLabel;
+
+  /** LM3's three rounds: capital in, what she spent locally, what they re-spent. */
+  round_1_units: number;
+  round_2_units: number;
+  round_3_units: number;
 
   injected_units: number;
   injected_brl_cents: number;
@@ -65,8 +86,8 @@ export interface LocalEconomyDashboard {
   first_movement_at: string | null;
   last_movement_at: string | null;
 
-  /** Local Capital Multiplier: circulation per unit injected. */
-  multiplier_bps: number;
+  /** Local Multiplier 3 (New Economics Foundation): all three rounds over the first. */
+  lm3_bps: number;
   /** What has not been taken off the rail for reais. */
   retention_bps: number;
   /** Turns of the units still in circulation. */
@@ -90,6 +111,8 @@ export interface LocalEconomyDashboard {
   /** What the accounts hold equals what the movements say is circulating. */
   supply_matches_balances: boolean;
 
+  /** What these figures are compared against, so the flattering one cannot stand alone. */
+  benchmarks: Benchmark[];
   by_type: { tx_type: LocalTxType; movements: number; units: number }[];
   recent: LocalMovement[];
 }
@@ -173,6 +196,10 @@ export const units = (n: number, code: string) =>
 
 /** A ratio held in basis points, as the multiple it is. */
 export const times = (bps: number) => `${(bps / 10000).toFixed(2)}×`;
+
+/** The benchmark under a key, where the reading carried one. */
+export const benchmark = (d: { benchmarks: Benchmark[] }, key: string) =>
+  d.benchmarks.find((b) => b.key === key);
 
 /** A share held in basis points. */
 export const share = (bps: number) => `${(bps / 100).toFixed(1)}%`;

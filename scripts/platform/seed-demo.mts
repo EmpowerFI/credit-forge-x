@@ -1124,15 +1124,18 @@ for (const [k, o] of referred.slice(toWorkOn.length).entries()) {
 // merchants in the territory, one of them pays a third for a service, and the
 // third buys from her. Then a merchant redeems to reais and leaves the network.
 //
-// The multiplier the Local Economy Dashboard reports is whatever these
-// movements come to divided by what was injected. It is not set here and it is
-// not a target: if the loop were shorter the number would be smaller, and the
-// dashboard would say so — and the report at the end of this script reads it
-// back from the dashboard rather than dividing anything itself, because two
-// places dividing the same ledger is two multipliers.
+// The LM3 the Local Economy Dashboard reports is whatever these movements come
+// to. It is not set here and it is not a target: three rounds is what the loop
+// below has, and a shorter loop would print a smaller number. The report at the
+// end of this script reads it back from the dashboard rather than dividing
+// anything itself, because two places dividing the same ledger is two measures.
+//
+// Three rounds, deliberately, because LM3 counts three: capital arrives, she
+// buys from suppliers inside the territory, and those suppliers spend locally
+// in turn — one paying a third merchant, one buying from her.
 //
 // The shares below are drawn rather than fixed. With one set of constants for
-// every business the multiplier comes out the same whatever the loans are —
+// every business the measure comes out the same whatever the loans are —
 // 0.45 + 0.22 + 0.18 + 0.108 and nothing else — and a measurement that cannot
 // vary is a constant wearing a measurement's clothes. Businesses do not all
 // spend the same fraction of a loan on the same day, so they do not here
@@ -1187,7 +1190,7 @@ const railShare = (lo: number, hi: number) => lo + railRandom() * (hi - lo);
     // rather than in reais. From the merchant her supplier paid, so the loop is
     // three hops of the same capital and not a transfer out of thin air — a
     // merchant can only pay her with units it actually holds, which is the
-    // constraint that makes the multiplier mean something. Less than it
+    // constraint that makes the measure mean something. Less than it
     // received: a loop, not a rebate.
     const sale = Math.floor(onward * railShare(0.50, 0.70));
     await must("local sale", asPartner.rpc("local_sale", {
@@ -1313,6 +1316,7 @@ const { count: queued } = await db.from("chain_anchors").select("id", { count: "
 console.log(`local rail: ${economy.currency_code} ${rail.injected_units / 100} injected in ${COMMUNITIES[0].city}, ` +
   `${economy.currency_code} ${rail.circulated_units / 100} traded inside the territory across ${merchants.length} merchants ` +
   `(one outside the eligible set), ${economy.currency_code} ${rail.redeemed_units / 100} cashed out; ` +
-  `multiplier ${(rail.multiplier_bps / 10000).toFixed(2)}x, retention ${(rail.retention_bps / 100).toFixed(1)}%, ` +
+  `LM3 ${(rail.lm3_bps / 10000).toFixed(2)} (rounds ${rail.round_1_units / 100}/${rail.round_2_units / 100}/${rail.round_3_units / 100}), ` +
+  `retention ${(rail.retention_bps / 100).toFixed(1)}% against Maricá's 46%, ` +
   `velocity ${(rail.velocity_bps / 10000).toFixed(2)}x — all read back from the dashboard`);
 console.log(`anchors queued: ${queued}`);
