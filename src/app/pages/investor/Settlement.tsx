@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
 import MarketRate from "../../components/product/MarketRate";
 import ExplorerLink from "../../components/product/ExplorerLink";
+import PageEvidence from "../../components/product/PageEvidence";
 import PageHeader from "../../components/product/PageHeader";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
@@ -245,7 +246,9 @@ export default function Settlement() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Investor console", pt: "Console do investidor" })} title={tr({ en: "Settlement", pt: "Liquidação" })}
+      <PageHeader
+        meta={<PageEvidence family="settlement_quotes" />}
+        eyebrow={tr({ en: "Investor console", pt: "Console do investidor" })} title={tr({ en: "Settlement", pt: "Liquidação" })}
         description={tr({
           en: "How capital reaches her business and comes back, by either route. Global P2P: deposits, releases and payouts are real transactions on Solana devnet, the conversion to reais is simulated (with a live MoneyGram sandbox quote in the simulator), and Pix is a mock. Domestic P2P: a simulated BRL pool and a mock Pix. Every screen says which is which.",
           pt: "Como o capital chega ao negócio dela e volta, pelas duas rotas. P2P Global: depósitos, liberações e repasses são transações reais na Solana devnet, a conversão para reais é simulada (com uma cotação ao vivo do sandbox da MoneyGram no simulador) e o Pix é fictício. P2P Doméstico: um pool em reais simulado e um Pix fictício. Cada tela diz o que é o quê.",

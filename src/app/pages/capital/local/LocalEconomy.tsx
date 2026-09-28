@@ -3,13 +3,13 @@ import { Building2, Coins, ShieldCheck, Sprout, TrendingDown } from "lucide-reac
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../../components/LoadError";
+import PageEvidence from "../../../components/product/PageEvidence";
 import PageHeader from "../../../components/product/PageHeader";
 import Panel from "../../../components/product/Panel";
 import StatTile from "../../../components/product/StatTile";
 import StatusPill from "../../../components/product/StatusPill";
 import { tr } from "../../../i18n";
 import { prototypeNotice } from "../../../lib/capital";
-import { EVIDENCE } from "../../../lib/evidence";
 import { units, type LocalEconomyDashboard } from "../../../lib/localEconomy";
 import { money } from "../../../lib/readiness";
 import Ledger from "./Ledger";
@@ -37,7 +37,6 @@ const CIRCULATING = ["productive_purchase", "merchant_payment", "transfer"];
 
 function Body({ d }: { d: LocalEconomyDashboard }) {
   const code = d.economy.currency_code;
-  const label = EVIDENCE[d.evidence_status];
   // The movements behind this tile's own figure, not every movement the ledger
   // holds: an injection and a redemption are not trade inside the territory,
   // and counting them here would put a number beside an amount it did not make.
@@ -56,7 +55,6 @@ function Body({ d }: { d: LocalEconomyDashboard }) {
         })}
         actions={
           <>
-            <StatusPill tone={label.tone} dot={false}>{label.label}</StatusPill>
             {d.conserved && d.supply_matches_balances ? (
               <StatusPill tone="positive" dot={false}>
                 <ShieldCheck size={11} className="mr-0.5" aria-hidden />
@@ -163,7 +161,7 @@ export default function LocalEconomy() {
           en: "Capital reached a business, and then what? What each unit produced inside the territory, how much of it stayed, and how much of it came from abroad.",
           pt: "O capital chegou a um negócio, e depois? O que cada unidade produziu dentro do território, quanto disso ficou, e quanto veio de fora.",
         })}
-        meta={<StatusPill tone="caution" dot={false}>{tr({ en: "Simulated rail", pt: "Trilho simulado" })}</StatusPill>}
+        meta={<PageEvidence family="local_rail" />}
         about={
           <>
             <p>

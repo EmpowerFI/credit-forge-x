@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { tr } from "../../i18n";
 import LoadError from "../../components/LoadError";
+import PageEvidence from "../../components/product/PageEvidence";
 import PageHeader from "../../components/product/PageHeader";
 import PoolPill from "../../components/product/PoolPill";
 import StatusPill from "../../components/product/StatusPill";
@@ -67,7 +68,9 @@ export default function Opportunities() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })}
+      <PageHeader
+        meta={<PageEvidence family="readiness_and_eligibility" />}
+        eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })}
         title={tr({ en: "Opportunities", pt: "Oportunidades" })}
         description={tr({
           en: "Qualified requests raising capital now. Returns are simulated; nothing here is a promise of return.",

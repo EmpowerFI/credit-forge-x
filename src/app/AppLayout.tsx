@@ -52,7 +52,7 @@ function SubNav({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => vo
 function Footnote() {
   return (
     <div className="space-y-4 border-t border-border pt-4">
-      <DataLegend compact />
+      <DataLegend compact withEvidence />
       <p className="text-xs leading-relaxed text-muted-foreground">{prototypeNotice()}</p>
       <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
         empowerfi.io <ArrowUpRight size={12} aria-hidden />

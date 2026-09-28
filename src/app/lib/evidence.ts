@@ -1,4 +1,5 @@
 import { localized } from "../i18n";
+import type { Reality } from "./settlement";
 import type { Tone } from "../components/product/StatusPill";
 
 // The four words every number in this product is allowed to carry (addendum
@@ -65,3 +66,26 @@ export function weakest(labels: EvidenceLabel[]): EvidenceLabel {
     labels[0] ?? "simulated_assumption",
   );
 }
+
+// The settlement vocabulary is finer than the addendum's and describes rails
+// rather than figures, so it narrows onto the four words rather than mapping
+// one to one. A devnet transaction happened and was recorded; a partner's
+// sandbox is that institution's own figure; an indicative quote is a reference
+// taken from outside this program.
+export function fromReality(r: Reality): EvidenceLabel {
+  switch (r) {
+    case "real":
+    case "zcash":
+      return "observed_pilot_data";
+    case "sandbox":
+      return "partner_provided";
+    case "indicative":
+      return "external_benchmark";
+    default:
+      return "simulated_assumption";
+  }
+}
+
+/** The label a figure carries when all the product says about it is a flag. */
+export const fromSimulated = (isSimulated: boolean): EvidenceLabel =>
+  isSimulated ? "simulated_assumption" : "observed_pilot_data";

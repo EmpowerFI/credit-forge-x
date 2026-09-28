@@ -3,10 +3,10 @@ import { Banknote, Globe2, Sprout } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../../components/LoadError";
+import PageEvidence from "../../../components/product/PageEvidence";
 import PageHeader from "../../../components/product/PageHeader";
 import Panel from "../../../components/product/Panel";
 import StatTile from "../../../components/product/StatTile";
-import StatusPill from "../../../components/product/StatusPill";
 import { tr } from "../../../i18n";
 import { prototypeNotice } from "../../../lib/capital";
 import type { Journey } from "../../../lib/capitalJourney";
@@ -87,7 +87,7 @@ export default function CapitalJourney() {
           en: "Where a dollar committed abroad ends up, and what it did on the way. Nine stages, each read from the records that stage wrote.",
           pt: "Onde um dólar comprometido lá fora vai parar, e o que ele fez no caminho. Nove etapas, cada uma lida dos registros que aquela etapa escreveu.",
         })}
-        meta={<StatusPill tone="caution" dot={false}>{tr({ en: "Simulated book", pt: "Livro simulado" })}</StatusPill>}
+        meta={<PageEvidence />}
         about={
           <>
             <p>

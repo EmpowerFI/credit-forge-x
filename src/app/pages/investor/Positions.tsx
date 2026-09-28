@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
 import ExplorerLink from "../../components/product/ExplorerLink";
+import PageEvidence from "../../components/product/PageEvidence";
 import PageHeader from "../../components/product/PageHeader";
 import Panel from "../../components/product/Panel";
 import StatusPill from "../../components/product/StatusPill";
@@ -121,7 +122,9 @@ export default function Positions() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })}
+      <PageHeader
+        meta={<PageEvidence family="solana_anchors" />}
+        eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })}
         title={tr({ en: "Tokenised positions", pt: "Posições tokenizadas" })}
         description={tr({
           en: "The borrower gets a loan. The investor gets a programmable credit asset.",

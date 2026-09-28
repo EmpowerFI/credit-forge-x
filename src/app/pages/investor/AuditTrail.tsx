@@ -3,6 +3,7 @@ import { formatDateTime, tr } from "../../i18n";
 import LoadError from "../../components/LoadError";
 import DataLegend from "../../components/product/DataLegend";
 import ExplorerLink from "../../components/product/ExplorerLink";
+import PageEvidence from "../../components/product/PageEvidence";
 import PageHeader from "../../components/product/PageHeader";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
@@ -26,7 +27,9 @@ export default function AuditTrail() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Investor console", pt: "Console do investidor" })} title={tr({ en: "Audit trail", pt: "Trilha de auditoria" })}
+      <PageHeader
+        meta={<PageEvidence family="solana_anchors" />}
+        eyebrow={tr({ en: "Investor console", pt: "Console do investidor" })} title={tr({ en: "Audit trail", pt: "Trilha de auditoria" })}
         description={tr({
           en: "Your allocations, and the loans they fund — terms, status changes, payments. Each proof holds a hash of the record, never the record; open one and your browser recomputes it.",
           pt: "Suas alocações e os empréstimos que elas financiam: condições, mudanças de status, pagamentos. Cada prova guarda um hash do registro, nunca o registro; abra uma e o seu navegador refaz o cálculo.",

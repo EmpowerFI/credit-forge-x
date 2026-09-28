@@ -1,7 +1,5 @@
 import { ArrowLeftRight, Gauge, Globe2, Repeat } from "lucide-react";
-import StatusPill from "../../../components/product/StatusPill";
 import { tr } from "../../../i18n";
-import { EVIDENCE } from "../../../lib/evidence";
 import { share, times, units, type LocalEconomyDashboard } from "../../../lib/localEconomy";
 
 // The four questions the addendum asks of a local rail (v3 §7.2, §8), each with
@@ -9,13 +7,12 @@ import { share, times, units, type LocalEconomyDashboard } from "../../../lib/lo
 // hidden is a metric a reader has to trust; this product's whole argument is
 // that nobody should have to.
 
-function Metric({ icon, label, value, formula, reading, evidence }: {
+function Metric({ icon, label, value, formula, reading }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   formula: string;
   reading: string;
-  evidence: React.ReactNode;
 }) {
   return (
     <div className="panel flex min-w-0 flex-col gap-3 p-4">
@@ -30,7 +27,6 @@ function Metric({ icon, label, value, formula, reading, evidence }: {
         <p className="num text-xs text-muted-foreground">{formula}</p>
         <p className="text-xs text-muted-foreground">{reading}</p>
       </div>
-      <div>{evidence}</div>
     </div>
   );
 }
@@ -41,11 +37,6 @@ export default function Metrics({ d }: { d: LocalEconomyDashboard }) {
   // division on a tile can be checked against a figure in the ledger below
   // without the reader first deciding whether 8.700 and 8.700,00 are the same.
   const u = (n: number) => units(n, code);
-  const label = EVIDENCE[d.evidence_status];
-  const pill = (
-    <StatusPill tone={label.tone} dot={false}>{label.label}</StatusPill>
-  );
-
   return (
     <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
       <Metric
@@ -62,7 +53,6 @@ export default function Metrics({ d }: { d: LocalEconomyDashboard }) {
             en: "Circulation per unit injected. Below 1× means the capital has not finished moving — an ordinary state, not a failure.",
             pt: "Circulação por unidade injetada. Abaixo de 1× significa que o capital ainda não terminou de se mover — um estado comum, não uma falha.",
           })}
-        evidence={pill}
       />
       <Metric
         icon={<ArrowLeftRight size={14} aria-hidden />}
@@ -73,7 +63,6 @@ export default function Metrics({ d }: { d: LocalEconomyDashboard }) {
           en: "Of the capital placed on the rail, the share that has not been cashed out for reais. Redemption is the only way out.",
           pt: "Do capital colocado no trilho, a parte que não foi sacada em reais. O resgate é a única saída.",
         })}
-        evidence={pill}
       />
       <Metric
         icon={<Gauge size={14} aria-hidden />}
@@ -84,7 +73,6 @@ export default function Metrics({ d }: { d: LocalEconomyDashboard }) {
           en: "Turns of the units still in circulation, read at this instant rather than averaged over a period.",
           pt: "Giros das unidades ainda em circulação, lidos neste instante e não como média de um período.",
         })}
-        evidence={pill}
       />
       <Metric
         icon={<Globe2 size={14} aria-hidden />}
@@ -97,7 +85,6 @@ export default function Metrics({ d }: { d: LocalEconomyDashboard }) {
           en: "The share of what arrived on this rail that was funded from abroad — capital this territory would not otherwise have had.",
           pt: "A parte do que chegou neste trilho que foi financiada de fora — capital que este território não teria de outro modo.",
         })}
-        evidence={pill}
       />
     </div>
   );

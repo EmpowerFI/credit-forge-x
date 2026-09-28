@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber, tr } from "../../i18n";
 import LoadError from "../../components/LoadError";
+import PageEvidence from "../../components/product/PageEvidence";
 import PageHeader from "../../components/product/PageHeader";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
@@ -33,7 +34,9 @@ export default function Portfolio() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })} title={tr({ en: "Portfolio", pt: "Carteira" })}
+      <PageHeader
+        meta={<PageEvidence family="loans_and_instalments" />}
+        eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })} title={tr({ en: "Portfolio", pt: "Carteira" })}
         description={tr({
           en: "Every position you hold, by funding route: what it funds, where the loan stands, what has come back to you, and the proof of each step. Returns are simulated.",
           pt: "Todas as suas posições, por rota de captação: o que cada uma financia, em que pé está o empréstimo, o que já voltou para você e a prova de cada etapa. Os retornos são simulados.",

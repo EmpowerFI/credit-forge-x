@@ -34,6 +34,7 @@ const AuditReports = lazy(() => import("./pages/audit/Reports"));
 // A shared audit report opens without an account.
 const ReportPage = lazy(() => import("./pages/ReportPage"));
 const ConsentPage = lazy(() => import("./pages/ConsentPage"));
+const EvidencePage = lazy(() => import("./pages/EvidencePage"));
 // The investor console: wallet, Solana client and charts, loaded when opened.
 const InvestorOverview = lazy(() => import("./pages/investor/Overview"));
 const InvestorOpportunities = lazy(() => import("./pages/investor/Opportunities"));
@@ -165,6 +166,9 @@ function Pages() {
         <Route path="investor/assets" element={investor(<InvestorPositions />)} />
         <Route path="investor/assets/:id" element={investor(<InvestorAsset />)} />
         <Route path="investor/audit" element={investor(<InvestorAuditTrail />)} />
+        {/* What every number here is made of. Open to anyone signed in:
+            whoever may read a figure may read what kind of claim it is. */}
+        <Route path="evidence" element={<Suspense fallback={loading}><EvidencePage /></Suspense>} />
         <Route path="impact" element={<RequireAuth roles={["sponsor", "admin", "auditor"]}><Suspense fallback={loading}><ImpactIntelligence /></Suspense></RequireAuth>} />
         <Route path="capital" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
         {/* Reading the registry is as wide as its row-level policy; running the

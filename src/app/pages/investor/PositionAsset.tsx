@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
 import ExplorerLink from "../../components/product/ExplorerLink";
+import PageEvidence from "../../components/product/PageEvidence";
 import PageHeader from "../../components/product/PageHeader";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
@@ -229,7 +230,9 @@ export default function PositionAsset() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Tokenised position", pt: "Posição tokenizada" })}
+      <PageHeader
+        meta={<PageEvidence family="solana_anchors" />}
+        eyebrow={tr({ en: "Tokenised position", pt: "Posição tokenizada" })}
         title={p.asset}
         description={tr({
           en: "One investor's economic position in one funded loan, as an asset on Solana Devnet.",

@@ -1,4 +1,5 @@
 import { BadgeCheck, Lock, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { localized, tr } from "../../i18n";
 
 export type DataKind = "private" | "derived" | "proven";
@@ -36,15 +37,30 @@ export function DataTag({ kind, withLabel = false }: { kind: DataKind; withLabel
   );
 }
 
-/** The three kinds of data, explained once so every screen can use the marks. */
-export default function DataLegend({ compact = false }: { compact?: boolean }) {
+/** The three kinds of data, explained once so every screen can use the marks.
+ *
+ * This axis answers who may see a number and whether its commitment is on
+ * chain. How strong a claim the number makes is a different question with four
+ * words of its own, and `withEvidence` offers the way through to them rather
+ * than crowding a second vocabulary into the same row. */
+export default function DataLegend({ compact = false, withEvidence = false }: { compact?: boolean; withEvidence?: boolean }) {
   return (
-    <ul className={compact ? "space-y-1.5" : "flex flex-wrap gap-x-5 gap-y-2"} aria-label={tr({ en: "How data is marked", pt: "Como os dados são marcados" })}>
-      {(Object.keys(DATA_KIND) as DataKind[]).map((k) => (
-        <li key={k} className="flex items-center gap-2 text-xs text-muted-foreground" title={DATA_TEXT[k].hint}>
-          <DataTag kind={k} /> {DATA_TEXT[k].label}
-        </li>
-      ))}
-    </ul>
+    <div className={compact ? "space-y-2" : "flex flex-wrap items-center gap-x-5 gap-y-2"}>
+      <ul className={compact ? "space-y-1.5" : "flex flex-wrap gap-x-5 gap-y-2"} aria-label={tr({ en: "How data is marked", pt: "Como os dados são marcados" })}>
+        {(Object.keys(DATA_KIND) as DataKind[]).map((k) => (
+          <li key={k} className="flex items-center gap-2 text-xs text-muted-foreground" title={DATA_TEXT[k].hint}>
+            <DataTag kind={k} /> {DATA_TEXT[k].label}
+          </li>
+        ))}
+      </ul>
+      {withEvidence && (
+        <Link
+          to="/app/evidence"
+          className="inline-block rounded text-xs font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          {tr({ en: "What every number here is made of", pt: "De que é feito cada número daqui" })}
+        </Link>
+      )}
+    </div>
   );
 }
