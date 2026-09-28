@@ -3724,6 +3724,7 @@ export type Database = {
           status: Database["public"]["Enums"]["anchor_status"]
         }[]
       }
+      journey_opportunities: { Args: never; Returns: Json }
       local_economies_listed: { Args: never; Returns: Json }
       local_economy_dashboard: {
         Args: { p_economy_id?: string }

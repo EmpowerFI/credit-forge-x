@@ -1278,7 +1278,22 @@ await must("mark the instalments simulated", db.from("payments").update({ is_sim
 await must("mark the cost events simulated", db.from("cost_events").update({ is_simulated: true }).eq("is_simulated", false));
 
 const { data: overview } = await asPartner.rpc("capital_overview");
-const rail = await must("local economy dashboard", asPartner.rpc("local_economy_dashboard", { p_economy_id: economy.id })) as Record<string, number>;
+const dashboard = await must("local economy dashboard", asPartner.rpc("local_economy_dashboard", { p_economy_id: economy.id })) as Record<string, unknown>;
+const rail = dashboard as unknown as Record<string, number>;
+/** What the units in circulation are a claim on, as the backing panel reports it. */
+const backing = dashboard.backing as {
+  issued_cents: number; released_to_investors_cents: number; cashed_out_by_merchants_cents: number;
+  backing_cents: number; circulating_cents: number; covered: boolean;
+};
+// Which requests actually crossed onto the rail. The journey's focused reading
+// narrows every movement to one request, and a request that never reached the
+// rail reads zero through movements two, three and four — a true answer to the
+// wrong question, and a bad twelve seconds on camera. The picker now leads with
+// the ones that travelled furthest, so this line is the run's own check that
+// there is something for it to lead with, by the P- reference the desk sees.
+const toFollow = (await must("what to follow", asPartner.rpc("journey_opportunities")) as
+  { code: string; amount_cents: number; reached: string }[])
+  .filter((o) => o.reached === "looped" || o.reached === "rail");
 await asPartner.auth.signOut();
 
 // ----------------------------------------------------------------- capital
@@ -1372,24 +1387,39 @@ console.log(`local rail: ${economy.currency_code} ${rail.injected_units / 100} i
   `LM3 ${dec(rail.lm3_bps, 10000, 2)} (rounds ${rail.round_1_units / 100}/${rail.round_2_units / 100}/${rail.round_3_units / 100}), ` +
   `retention ${dec(rail.retention_bps, 100, 1)}% against Maricá's 46%, ` +
   `velocity ${dec(rail.velocity_bps, 10000, 2)}x — all read back from the dashboard`);
+// The subtraction the ninety-second script reads out loud. It moves with the
+// book, and a rehearsed figure that has quietly drifted is worse on camera than
+// no figure at all, so the run prints its own.
+const brl = (cents: number) => (cents / 100).toFixed(2);
+console.log(`backing: R$ ${brl(backing.issued_cents)} in, less R$ ${brl(backing.released_to_investors_cents)} released to investors `
+  + `and R$ ${brl(backing.cashed_out_by_merchants_cents)} cashed out by merchants, leaves R$ ${brl(backing.backing_cents)} `
+  + `— against R$ ${brl(backing.circulating_cents)} still circulating: ${backing.covered ? "covered" : "NOT COVERED"}`);
+console.log(`followed the rail, for the journey's focused reading: `
+  + (toFollow.length > 0
+    ? toFollow.map((o) => `${o.code} R$ ${(o.amount_cents / 100).toLocaleString("en-US")} (${o.reached})`).join("; ")
+    : "none — no request crossed onto the rail on this run"));
 console.log(`anchors queued: ${queued}`);
 
 // ------------------------------------------------- the run checks its own book
 //
-// Some runs land two loans on the Grajaú rail and some land one, from the same
-// seed and the same generators. Ordering the intents that drive pool allocation
-// narrowed it and did not close it, and the remaining difference has not been
-// found — it is not in which loans the desk formalises, which is identical
-// across runs, but in which of them reach the territory that has a rail.
+// Runs used to land two loans on the Grajaú rail and sometimes one, from the
+// same seed and the same generators. Two things caused it: an unordered select
+// driving pool allocation, and — the part that actually mattered — the desk
+// formalising whichever requests came first, so whether either of them sat in
+// the one territory with a rail was luck. Both are closed: the intents are
+// ordered, and `ordered` above sorts Grajaú's members to the front, which makes
+// the demo territory a deliberate hook rather than a coincidence.
 //
-// Until it is found, the run says so out loud. A thin book is not broken and it
-// is a weaker demonstration: one funded business instead of two, and an
-// additionality reading over a single loan. Better to see that here than to
-// find it on camera.
+// The check stays anyway. A guard is worth keeping after its cause is known,
+// because the next change to how the desk picks will not announce itself, and a
+// thin book is not broken — it is a weaker demonstration: one funded business
+// instead of two, and an additionality reading over a single loan. Better to
+// see that here than to find it on camera.
 if (rail.loans_landed < 2) {
   console.log("");
   console.log(`  !  Only ${rail.loans_landed} loan landed on the local rail, where a full run lands two.`);
   console.log("     Nothing is broken; the demonstration is just thinner — one funded business,");
-  console.log("     and additionality measured over a single loan. Run this script again.");
+  console.log("     and additionality measured over a single loan. Check how the desk picked");
+  console.log("     before reseeding: the run is meant to be deterministic now.");
   console.log("");
 }

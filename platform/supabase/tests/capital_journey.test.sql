@@ -24,7 +24,7 @@ select set_config(
   true
 );
 
-select plan(28);
+select plan(33);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -208,8 +208,33 @@ select is(
   (private.anchor_tally('loan', array['00000000-0000-0000-0000-000000016cb1'::uuid]) ->> 'confirmed')::int,
   1, 'and a confirmed anchor is counted as confirmed, not merely as present');
 
+-- ------------------------------------------------------------- what to follow
+
+-- The picker offers what travelled. This request was disbursed, crossed onto a
+-- rail and had an instalment redeemed back into reais, so it is the one a
+-- reading should open on — and it is exactly the kind the desk's pipeline drops,
+-- which is why the journey needed a reader of its own rather than borrowing one.
+select pg_temp.act_as('00000000-0000-0000-0000-0000000016a5');
+select is(
+  (select jsonb_build_object('code', x ->> 'code', 'reached', x ->> 'reached')
+   from jsonb_array_elements(public.journey_opportunities()) x
+   where x ->> 'opportunity_id' = '00000000-0000-0000-0000-000000016fa1'),
+  jsonb_build_object('code', private.partner_code('00000000-0000-0000-0000-0000000016e1'), 'reached', 'looped'),
+  'the picker offers the disbursed request, by the desk''s own reference, and says it closed the loop');
+select is(
+  (select count(*)::int from jsonb_array_elements(public.engine_opportunities()) x
+   where x ->> 'opportunity_id' = '00000000-0000-0000-0000-000000016fa1'), 0,
+  'while the desk''s pipeline drops it, because it is already a loan: a journey with nothing left to queue');
+set local role postgres;
+
+set local role anon;
+select throws_ok(
+  $$ select public.journey_opportunities() $$,
+  '42501', null, 'and a signed-out visitor is offered nothing to follow');
+
 -- ------------------------------------------------------------------- who reads
 
+set local role postgres;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000016a3');
 select throws_ok(
   $$ select public.capital_journey() $$,
@@ -219,6 +244,24 @@ set local role anon;
 select throws_ok(
   $$ select public.capital_journey() $$,
   '42501', null, 'and a signed-out visitor cannot ask at all');
+
+-- --------------------------------------------------------------- the rate
+
+-- The whole book converts at one demo rate because many requests locked many
+-- rates and no single one of them is the rate. One request has exactly one, and
+-- it is the rate she was actually paid at — reading her investors' dollars at
+-- the book's rate instead put the same dollars on two screens as two amounts.
+set local role postgres;
+update qualified_credit_opportunities set fx_brl_per_usdc_milli = 6000
+ where id = '00000000-0000-0000-0000-000000016fa1';
+-- Read as postgres: the demo rate's own function is not granted to a caller.
+create temp table demo_rate as select private.demo_brl_per_usdc_milli() as milli;
+grant select on demo_rate to authenticated, service_role;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000016a5');
+select is((public.capital_journey('00000000-0000-0000-0000-000000016fa1') ->> 'fx_brl_per_usdc_milli')::int, 6000,
+  'a focused reading converts at the quote that request struck');
+select is((public.capital_journey() ->> 'fx_brl_per_usdc_milli')::int, (select milli from demo_rate),
+  'and the whole book at the demo rate, which it reports so a reader knows which one it used');
 
 set local role postgres;
 select * from finish();

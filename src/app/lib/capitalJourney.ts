@@ -246,6 +246,38 @@ export const MOVEMENT = localized({
 
 export const MOVEMENTS: MovementKey[] = ["comes_in", "becomes_credit", "circulates", "comes_back"];
 
+// ------------------------------------------------------------- the picker
+
+/** How far a request actually got, which is what orders the picker. */
+export type Reached = "looped" | "rail" | "disbursed" | "funded" | "raising" | "waiting";
+
+export interface JourneyOpportunity {
+  opportunity_id: string;
+  code: string;
+  amount_cents: number;
+  purpose: string;
+  reached: Reached;
+}
+
+/** Said on the option itself, because a picker that hides how far a request got
+ * invites following one that never left the first movement. */
+export const REACHED: Record<Reached, string> = localized({
+  looped: { en: "the whole loop", pt: "o laço inteiro" },
+  rail: { en: "on the local rail", pt: "no trilho local" },
+  disbursed: { en: "disbursed", pt: "desembolsado" },
+  funded: { en: "funded, not yet disbursed", pt: "captada, ainda não desembolsada" },
+  raising: { en: "still raising", pt: "ainda captando" },
+  waiting: { en: "waiting for capital", pt: "aguardando capital" },
+});
+
+export const journeyOpportunitiesKey = ["platform", "journey-opportunities"] as const;
+
+export async function fetchJourneyOpportunities(): Promise<JourneyOpportunity[]> {
+  const { data, error } = await platform.rpc("journey_opportunities");
+  if (error) throw error;
+  return data as unknown as JourneyOpportunity[];
+}
+
 export const journeyKey = (opportunityId: string | null) =>
   ["platform", "capital-journey", opportunityId ?? "all"] as const;
 

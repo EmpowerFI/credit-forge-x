@@ -8,13 +8,12 @@ import Panel from "../../../components/product/Panel";
 import StatusPill from "../../../components/product/StatusPill";
 import { tr } from "../../../i18n";
 import { prototypeNotice } from "../../../lib/capital";
-import { MOVEMENT, MOVEMENTS, type Journey, type MovementKey, type Stage } from "../../../lib/capitalJourney";
+import { MOVEMENT, MOVEMENTS, REACHED, type Journey, type MovementKey, type Stage } from "../../../lib/capitalJourney";
 import { EVIDENCE, weakest } from "../../../lib/evidence";
 import { money } from "../../../lib/readiness";
 import Positioning from "./Positioning";
 import StageCard from "./StageCard";
-import { useJourney } from "./queries";
-import { useEngineOpportunities } from "../queries";
+import { useJourney, useJourneyOpportunities } from "./queries";
 
 // The Capital Journey (addendum v3 §7.3).
 //
@@ -108,7 +107,7 @@ function Movement({ j, k }: { j: Journey; k: MovementKey }) {
 
 export default function CapitalJourney() {
   const [chosen, setChosen] = useState<string>(ALL);
-  const opportunities = useEngineOpportunities();
+  const opportunities = useJourneyOpportunities();
   const journey = useJourney(chosen === ALL ? null : chosen);
 
   const rows = opportunities.data ?? [];
@@ -156,13 +155,20 @@ export default function CapitalJourney() {
         }
         actions={
           <Select value={chosen} onValueChange={setChosen}>
-            <SelectTrigger className="w-64" aria-label={tr({ en: "What to follow", pt: "O que seguir" })}>
-              <SelectValue />
+            {/* The option now carries a code, an amount and how far the request
+                got, and "captada, ainda não desembolsada" is longer than any
+                trigger worth putting in a header. The code leads, so what the
+                collapsed trigger clips is the least of it; the open list shows
+                every option whole. */}
+            <SelectTrigger className="w-72 max-w-full" aria-label={tr({ en: "What to follow", pt: "O que seguir" })}>
+              <span className="truncate"><SelectValue /></span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>{tr({ en: "The whole book", pt: "O livro inteiro" })}</SelectItem>
               {rows.map((o) => (
-                <SelectItem key={o.opportunity_id} value={o.opportunity_id}>{o.code} · {money(o.amount_cents)}</SelectItem>
+                <SelectItem key={o.opportunity_id} value={o.opportunity_id}>
+                  {o.code} · {money(o.amount_cents)} · {REACHED[o.reached]}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
