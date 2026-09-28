@@ -85,6 +85,8 @@ for (const code of CODES) {
     "Routed abroad in this plan",
   ]) console.log(`  ${body.includes(probe) ? "ok  " : "MISS"} ${probe}`);
   for (const re of [
+    /(Domestic P2P selected|Global P2P selected|Waiting for capital|Not qualified)/,
+    /(ROUTE SELECTED|WAITING FOR CAPITAL)[\s\S]{0,120}/,
     /A rede foi perguntada sobre o pool [^\n]*/,
     /Nenhum pool assumiu este pedido ainda[^\n]*/,
     /As premissas mudaram[^\n]*/,
