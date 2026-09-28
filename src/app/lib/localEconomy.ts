@@ -59,6 +59,31 @@ export interface Benchmark {
   evidence_status: EvidenceLabel;
 }
 
+/** What the units in circulation are a claim on. */
+export interface Backing {
+  issued_cents: number;
+  released_to_investors_cents: number;
+  cashed_out_by_merchants_cents: number;
+  /** Issued, less what left through a repayment and what a merchant cashed out. */
+  backing_cents: number;
+  circulating_units: number;
+  circulating_cents: number;
+  /** Whether the reais still held cover the units still circulating. */
+  covered: boolean;
+}
+
+/** One crossing of the border between reais and local units. */
+export interface Crossing {
+  id: string;
+  direction: "issue" | "redeem";
+  units: number;
+  brl_cents: number;
+  parity_bps: number;
+  note: string | null;
+  occurred_at: string;
+  evidence_status: EvidenceLabel;
+}
+
 export interface LocalEconomyDashboard {
   economy: Omit<LocalEconomyListed, "movements">;
   model_version: string;
@@ -113,6 +138,8 @@ export interface LocalEconomyDashboard {
 
   /** What these figures are compared against, so the flattering one cannot stand alone. */
   benchmarks: Benchmark[];
+  backing: Backing;
+  crossings: Crossing[];
   by_type: { tx_type: LocalTxType; movements: number; units: number }[];
   recent: LocalMovement[];
 }

@@ -47,6 +47,8 @@ export interface Stage {
   injected_cents?: number;
   /** Stage 9 only. */
   on_the_rail?: number;
+  /** Stage 9 only: what those instalments released, on its way to the investor. */
+  from_the_rail_cents?: number;
 }
 
 export interface Journey {
@@ -157,10 +159,10 @@ export const STAGE: Record<StageKey, { title: string; what: string; one: string;
       toLabel: { en: "Local Economy", pt: "Economia Local" },
     },
     comes_back: {
-      title: { en: "It comes back", pt: "Ele volta" },
+      title: { en: "It comes back as stablecoin", pt: "Ele volta como stablecoin" },
       what: {
-        en: "Instalments repaid, and the investor's return on the way to a wallet.",
-        pt: "Parcelas pagas, e o retorno do investidor a caminho de uma carteira.",
+        en: "Her instalment in local units returns to the treasury and releases exactly the reais behind it — and those reais are what the investor is paid out of.",
+        pt: "A parcela dela em unidades locais volta para a tesouraria e libera exatamente os reais que estavam atrás dela — e são esses reais que pagam o investidor.",
       },
       one: { en: "instalment", pt: "parcela" },
       unit: { en: "instalments", pt: "parcelas" },

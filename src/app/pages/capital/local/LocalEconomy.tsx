@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, Coins, ShieldCheck, Sprout, TrendingDown } from "lucide-react";
+import { ArrowLeftRight, Building2, Coins, ShieldCheck, Sprout, TrendingDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../../components/LoadError";
@@ -112,6 +112,70 @@ function Body({ d }: { d: LocalEconomyDashboard }) {
           {tr({
             en: `${units(d.circulating_units, code)} is still in circulation, held across ${d.accounts} accounts. What the treasury is short by is exactly that, which is how a ledger of ${d.movements} movements can be checked in one subtraction rather than read line by line.`,
             pt: `${units(d.circulating_units, code)} seguem em circulação, distribuídos por ${d.accounts} contas. O que falta na tesouraria é exatamente isso, que é como um razão de ${d.movements} movimentos pode ser conferido numa subtração em vez de linha a linha.`,
+          })}
+        </p>
+      </Panel>
+
+      {/* What the units stand on. The accusation any local currency has to face
+          is that its issuer prints it, and the answer here is a subtraction a
+          reader can do: reais came in when capital was issued as units, and
+          they leave when she repays or a merchant cashes out. If what is left
+          ever failed to cover what circulates, the rail would have printed. */}
+      <Panel
+        title={tr({ en: "What the units stand on", pt: "Em que as unidades se apoiam" })}
+        description={tr({
+          en: "Local units are a claim on reais held by the community's own bank. Capital arriving puts reais in; a repayment releases them to the investor; a merchant cashing out takes them for itself.",
+          pt: "As unidades locais são um direito sobre reais guardados pelo banco da própria comunidade. O capital que chega põe reais dentro; uma parcela os libera para o investidor; um comerciante que saca os leva para si.",
+        })}
+        actions={d.backing.covered ? (
+          <StatusPill tone="positive" dot={false}>
+            <ShieldCheck size={11} className="mr-0.5" aria-hidden />
+            {tr({ en: "Every unit is covered", pt: "Toda unidade está coberta" })}
+          </StatusPill>
+        ) : (
+          <StatusPill tone="alert">{tr({ en: "Units exceed their backing", pt: "Unidades excedem o lastro" })}</StatusPill>
+        )}
+      >
+        <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+          <StatTile
+            label={tr({ en: "Reais held as backing", pt: "Reais guardados como lastro" })}
+            value={money(d.backing.backing_cents)}
+            hint={tr({
+              en: `against ${units(d.backing.circulating_units, code)} circulating`,
+              pt: `contra ${units(d.backing.circulating_units, code)} em circulação`,
+            })}
+            hintTone={d.backing.covered ? "positive" : "alert"}
+            icon={<ShieldCheck size={14} aria-hidden />}
+          />
+          <StatTile
+            label={tr({ en: "Issued against capital", pt: "Emitido contra capital" })}
+            value={money(d.backing.issued_cents)}
+            hint={tr({ en: "when a loan reached the territory", pt: "quando um empréstimo chegou ao território" })}
+            icon={<Coins size={14} aria-hidden />}
+          />
+          <StatTile
+            label={tr({ en: "Released to investors", pt: "Liberado para investidores" })}
+            value={money(d.backing.released_to_investors_cents)}
+            hint={tr({
+              en: "her instalments, redeemed back to reais",
+              pt: "as parcelas dela, resgatadas de volta para reais",
+            })}
+            hintTone="info"
+            icon={<ArrowLeftRight size={14} aria-hidden />}
+          />
+          <StatTile
+            label={tr({ en: "Taken by merchants", pt: "Levado por comerciantes" })}
+            value={money(d.backing.cashed_out_by_merchants_cents)}
+            hint={tr({ en: "cashed out of the network", pt: "sacado para fora da rede" })}
+            hintTone="caution"
+            icon={<TrendingDown size={14} aria-hidden />}
+          />
+        </div>
+
+        <p className="num text-xs text-muted-foreground">
+          {tr({
+            en: `${money(d.backing.issued_cents)} in, less ${money(d.backing.released_to_investors_cents)} released and ${money(d.backing.cashed_out_by_merchants_cents)} cashed out, leaves ${money(d.backing.backing_cents)} — and ${units(d.backing.circulating_units, code)} is what people here still hold. Nothing here was issued against nothing.`,
+            pt: `${money(d.backing.issued_cents)} entraram, menos ${money(d.backing.released_to_investors_cents)} liberados e ${money(d.backing.cashed_out_by_merchants_cents)} sacados, restam ${money(d.backing.backing_cents)} — e ${units(d.backing.circulating_units, code)} é o que as pessoas daqui ainda têm. Nada aqui foi emitido contra nada.`,
           })}
         </p>
       </Panel>

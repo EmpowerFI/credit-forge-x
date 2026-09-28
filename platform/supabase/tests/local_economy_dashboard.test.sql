@@ -16,7 +16,7 @@ select set_config(
   true
 );
 
-select plan(37);
+select plan(47);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -255,6 +255,66 @@ select is(pg_temp.dash() ->> 'model_version', private.local_rail_model_version()
 select is(
   jsonb_array_length(pg_temp.dash() -> 'by_type'), 6,
   'the breakdown names each of the six movements the fixture exercised');
+
+-- ------------------------------------------------------- what the units stand on
+
+-- The accusation any local currency has to face is that its issuer prints it.
+-- The answer here is a subtraction: reais came in when capital was issued as
+-- units, and they leave when she repays or a merchant cashes out. PGD 1.500 in,
+-- PGD 200 released by her instalment, PGD 80 taken by a merchant.
+
+select is((pg_temp.dash() -> 'backing' ->> 'issued_cents')::bigint, 150000::bigint,
+  'reais went in when the capital was issued to her as units');
+
+select is((pg_temp.dash() -> 'backing' ->> 'released_to_investors_cents')::bigint, 20000::bigint,
+  'and her instalment released exactly the reais behind the units she handed back');
+
+select is((pg_temp.dash() -> 'backing' ->> 'cashed_out_by_merchants_cents')::bigint, 8000::bigint,
+  'a merchant cashing out took its own reais out of the same pot');
+
+select is((pg_temp.dash() -> 'backing' ->> 'backing_cents')::bigint, 122000::bigint,
+  'what is left is what went in, less both ways out');
+
+-- The invariant, and the reason this rail is not a printing press: what is left
+-- covers what is circulating. If it ever failed, units would exist that no
+-- reais stand behind.
+select is((pg_temp.dash() -> 'backing' ->> 'covered')::boolean, true,
+  'and it covers every unit still in circulation, which is the whole claim');
+
+select cmp_ok(
+  (pg_temp.dash() -> 'backing' ->> 'backing_cents')::bigint, '>=',
+  (pg_temp.dash() -> 'backing' ->> 'circulating_cents')::bigint,
+  'stated as the subtraction rather than as a promise');
+
+-- Two crossings of one border, in opposite directions, and no more than one of
+-- each per loan and per instalment: a crossing recorded twice would show as
+-- backing that was never there.
+-- Two loans landed here, so two issues, and one instalment came back on the
+-- rail, so one redemption.
+select is(
+  (select count(*)::int from jsonb_array_elements(pg_temp.dash() -> 'crossings') as t(c)
+    where c ->> 'direction' = 'issue'), 2,
+  'one crossing in for each loan that landed on the rail');
+
+select is(
+  (select count(*)::int from jsonb_array_elements(pg_temp.dash() -> 'crossings') as t(c)
+    where c ->> 'direction' = 'redeem'), 1,
+  'and one crossing back for the instalment that travelled it');
+
+set local role postgres;
+select throws_ok(
+  $$ insert into local_conversions (economy_id, direction, units, brl_cents, parity_bps, loan_id)
+     values ('00000000-0000-0000-0000-0000000015f1', 'issue', 1, 1, 10000,
+             '00000000-0000-0000-0000-000000015cb1') $$,
+  '23505', null, 'and a loan cannot be issued against twice');
+
+select throws_ok(
+  $$ insert into local_conversions (economy_id, direction, units, brl_cents, parity_bps, loan_id)
+     values ('00000000-0000-0000-0000-0000000015f1', 'redeem', 1, 1, 10000,
+             '00000000-0000-0000-0000-000000015cb1') $$,
+  '23514', null, 'and a redemption without an instalment behind it is refused by shape');
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000015a5');
 
 -- ------------------------------------------------------------------- who reads
 

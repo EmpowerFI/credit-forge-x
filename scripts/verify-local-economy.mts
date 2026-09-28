@@ -37,10 +37,10 @@ const body = await page.locator("body").innerText();
 for (const probe of PT
   ? ["Economia Local", "Multiplicador Local 3 (LM3)", "A Mumbuca, em Maricá, reteve", "Taxa de retenção local", "Velocidade do capital",
      "Adicionalidade do capital global", "O que o razão guarda", "Saldos somam zero",
-     "Como o capital se moveu", "Os últimos movimentos", "O que estes números não provam"]
+     "Como o capital se moveu", "Os últimos movimentos", "O que estes números não provam", "Em que as unidades se apoiam", "Toda unidade está coberta"]
   : ["Local Economy", "Local Multiplier 3", "Mumbuca, in Maricá, retained", "Local retention rate", "Capital velocity",
      "Global capital additionality", "What the ledger holds", "Balances sum to zero",
-     "How the capital moved", "The last movements", "What these numbers do not prove"])
+     "How the capital moved", "The last movements", "What these numbers do not prove", "What the units stand on", "Every unit is covered"])
   console.log(`${body.includes(probe) ? "ok  " : "MISS"} ${probe}`);
 
 // From the page's own heading, so the shell's navigation does not eat the

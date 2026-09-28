@@ -37,11 +37,11 @@ const body = await page.locator("body").innerText();
 for (const probe of PT
   ? ["Jornada do Capital", "Comprometido com o livro", "Chegou a um negócio", "Negociado dentro do território",
      "O capital existe", "Um negócio pede", "O motor a encaminha", "Investidores põem o dinheiro",
-     "A cota vira um ativo", "Dólares viram reais", "A mesa paga a ela", "E depois", "Ele volta",
+     "A cota vira um ativo", "Dólares viram reais", "A mesa paga a ela", "E depois", "Ele volta como stablecoin", "resgatadas de volta para reais",
      "Sem registro em cadeia", "na fila para a Solana"]
   : ["Capital Journey", "Committed to the book", "Reached a business", "Traded inside the territory",
      "Capital exists", "A business asks", "The engine routes it", "Investors put up the money",
-     "The share becomes an asset", "Dollars become reais", "The desk pays her", "And then what", "It comes back",
+     "The share becomes an asset", "Dollars become reais", "The desk pays her", "And then what", "It comes back as stablecoin", "redeemed back to reais",
      "Not anchored", "queued for Solana"])
   console.log(`${body.includes(probe) ? "ok  " : "MISS"} ${probe}`);
 

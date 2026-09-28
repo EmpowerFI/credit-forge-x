@@ -24,7 +24,7 @@ select set_config(
   true
 );
 
-select plan(27);
+select plan(28);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -150,6 +150,12 @@ select is((pg_temp.stage(7) ->> 'evidence'), 'simulated_assumption',
 
 select is(pg_temp.amt(9), 10000::bigint, 'one instalment came back');
 select is((pg_temp.stage(9) ->> 'on_the_rail')::int, 1, 'and it travelled the local rail, because she still held the units');
+
+-- The figure that makes this a loop. Without it the rail takes capital in and
+-- never gives it back, and a local currency that only runs one way is a
+-- spending restriction with extra steps.
+select is((pg_temp.stage(9) ->> 'from_the_rail_cents')::bigint, 10000::bigint,
+  'and the units it returned released exactly the reais behind them, on their way to the investor');
 
 -- ---------------------------------------------------- the stages that did not
 

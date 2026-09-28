@@ -238,7 +238,15 @@ for (let i = 0; ; i++) {
   const { data: held, error } = await db.rpc("start_anchor_run", { p_lease_seconds: 1200 });
   if (error) throw new Error(`anchor worker: ${error.message}`);
   if (held) break;
-  if (i === 60) throw new Error("the anchor worker stayed busy for two minutes");
+  // The lease runs for twenty minutes, so a seed that crashed or was
+  // interrupted holds it long after it stopped doing anything — and the old
+  // message left whoever hit that at 2am to work the remedy out themselves.
+  if (i === 60) {
+    throw new Error(
+      "the anchor worker has held its lease for two minutes.\n" +
+      "  If no other seed or worker is running, a previous one crashed still holding it.\n" +
+      "  Release it and try again:  select public.finish_anchor_run();");
+  }
   await sleep(2000);
 }
 
@@ -879,8 +887,17 @@ for (const i of private_) {
 // recording function the live path uses; that function turns eligible ones
 // into opportunities and refers them.
 
+// Ordered, and the order is load-bearing. The allocation trigger assigns a pool
+// out of the liquidity left at the moment each opportunity opens, so the
+// sequence these are processed in decides which requests get domestic capital,
+// which get global, which are left waiting, and therefore which two loans the
+// desk formalises and which territories they land in. Postgres returns an
+// unordered select in whatever order it likes, and this one produced a book
+// with two loans on the local rail on most runs and one on some — same seed,
+// same generators, different demo.
 const { data: openIntents, error: intentsError } = await db
-  .from("credit_intents").select("id, entrepreneur_id, requested_amount_cents, purpose, created_at").eq("status", "active");
+  .from("credit_intents").select("id, entrepreneur_id, requested_amount_cents, purpose, created_at")
+  .eq("status", "active").order("created_at").order("id");
 if (intentsError) throw intentsError;
 for (const intent of openIntents.filter((i) => !cycleIds.has(i.entrepreneur_id))) {
   const { data: r, error } = await db.from("readiness_assessments")
@@ -1015,9 +1032,22 @@ if (liveRun) {
 // fully funded waits to be formalised on camera.
 
 const { data: referred, error: referredError } = await db.from("qualified_credit_opportunities")
-  .select("id, amount_cents, term_months").eq("status", "referred").order("created_at").order("id");
+  .select("id, entrepreneur_id, amount_cents, term_months").eq("status", "referred")
+  .order("created_at").order("id");
 if (referredError) throw referredError;
-const toWorkOn = referred.slice(0, Math.max(0, referred.length - 3));
+
+// The two loans this desk disburses are chosen in the demo's own territory, on
+// purpose. Grajaú is the only community with a local rail, so a loan disbursed
+// anywhere else lands in reais and the rail has nothing to show — and which
+// requests happened to be first was deciding how much of the thesis the demo
+// could demonstrate. This is a hook like the others the seed plants: the
+// request left unrouted, the one left without papers, the raise left five
+// dollars short. It does not change what any engine decides; it changes which
+// already-referred request the desk picks up first.
+const inGrajau = new Set(memberships.filter((m) => m.community_id === grajau.id).map((m) => m.entrepreneur_id));
+const ordered = [...referred].sort((a, b) =>
+  Number(inGrajau.has(b.entrepreneur_id)) - Number(inGrajau.has(a.entrepreneur_id)));
+const toWorkOn = ordered.slice(0, Math.max(0, ordered.length - 3));
 let formalised = 0, declined = 0, ready = 0, raising = 0, cancelled = 0, unlisted = 0;
 // The addendum's three settlement cases, on the two loans the desk disburses
 // here: both are global, and the first-cycle loans in July are case A too.
@@ -1110,7 +1140,7 @@ for (const [i, o] of toWorkOn.entries()) {
   }
 }
 // The last three are raising, at different points.
-for (const [k, o] of referred.slice(toWorkOn.length).entries()) {
+for (const [k, o] of ordered.slice(toWorkOn.length).entries()) {
   await fund(o.id, [0.15, 0.45, 0][k] ?? 0, 0, "2026-09-13T15:00:00-03:00");
 }
 
@@ -1320,3 +1350,23 @@ console.log(`local rail: ${economy.currency_code} ${rail.injected_units / 100} i
   `retention ${(rail.retention_bps / 100).toFixed(1)}% against Maricá's 46%, ` +
   `velocity ${(rail.velocity_bps / 10000).toFixed(2)}x — all read back from the dashboard`);
 console.log(`anchors queued: ${queued}`);
+
+// ------------------------------------------------- the run checks its own book
+//
+// Some runs land two loans on the Grajaú rail and some land one, from the same
+// seed and the same generators. Ordering the intents that drive pool allocation
+// narrowed it and did not close it, and the remaining difference has not been
+// found — it is not in which loans the desk formalises, which is identical
+// across runs, but in which of them reach the territory that has a rail.
+//
+// Until it is found, the run says so out loud. A thin book is not broken and it
+// is a weaker demonstration: one funded business instead of two, and an
+// additionality reading over a single loan. Better to see that here than to
+// find it on camera.
+if (rail.loans_landed < 2) {
+  console.log("");
+  console.log(`  !  Only ${rail.loans_landed} loan landed on the local rail, where a full run lands two.`);
+  console.log("     Nothing is broken; the demonstration is just thinner — one funded business,");
+  console.log("     and additionality measured over a single loan. Run this script again.");
+  console.log("");
+}
