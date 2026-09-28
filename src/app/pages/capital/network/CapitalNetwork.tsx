@@ -10,6 +10,7 @@ import StatusPill from "../../../components/product/StatusPill";
 import { tr } from "../../../i18n";
 import { prototypeNotice } from "../../../lib/capital";
 import { GATE } from "../../../lib/capitalNetwork";
+import CapitalOrigin from "./CapitalOrigin";
 import Instruments from "./Instruments";
 import Providers from "./Providers";
 import RunEngine from "./RunEngine";
@@ -118,6 +119,10 @@ export default function CapitalNetwork() {
               icon={<Handshake size={14} aria-hidden />}
             />
           </div>
+
+          {/* Counting routes says nothing about which of them carries money.
+              The book does, and the thesis of this page lives or dies on it. */}
+          <CapitalOrigin />
 
           <RunEngine
             opportunities={opportunities.data ?? []}

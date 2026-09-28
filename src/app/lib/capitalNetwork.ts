@@ -121,14 +121,17 @@ export const INSTRUMENT_TYPE: Record<InstrumentType, { label: string; what: stri
     what: { en: "People in Brazil lending through EmpowerFI's own desk. She receives and repays in reais, by Pix.", pt: "Pessoas no Brasil emprestando pela mesa da própria EmpowerFI. Ela recebe e paga em reais, por Pix." },
     tone: "positive",
   },
+  // The two routes from abroad, told apart. Many lenders with no veto, against
+  // one lender with a mandate: that difference is what "capital from outside
+  // Brazil" actually means here, and it belongs on the card.
   global_impact_capital: {
-    label: { en: "Global impact capital", pt: "Capital global de impacto" },
-    what: { en: "Capital from outside Brazil, converted and paid out in reais. She never touches a token.", pt: "Capital de fora do Brasil, convertido e pago em reais. Ela nunca encosta em um token." },
+    label: { en: "Investors abroad, share by share", pt: "Investidores no exterior, cota a cota" },
+    what: { en: "People and funds outside Brazil each funding a share of one loan, in USDC on Solana or in shielded ZEC. Nobody has to approve it: the raise closes when enough of them have said yes. She receives and repays in reais, and never touches a token.", pt: "Pessoas e fundos fora do Brasil financiando cada um uma cota de um mesmo empréstimo, em USDC na Solana ou em ZEC blindado. Ninguém precisa aprovar: a captação fecha quando gente suficiente disse sim. Ela recebe e paga em reais, e nunca encosta em um token." },
     tone: "positive",
   },
   impact_fund_capital: {
-    label: { en: "An impact fund's capital", pt: "Capital de um fundo de impacto" },
-    what: { en: "A fund outside Brazil lending on its own terms, with its own mandate. It has to say yes, and she receives and repays in reais.", pt: "Um fundo fora do Brasil emprestando nas condições dele, com mandato próprio. Ele precisa dizer sim, e ela recebe e paga em reais." },
+    label: { en: "One fund, on its own mandate", pt: "Um fundo, com mandato próprio" },
+    what: { en: "A single fund outside Brazil lending from its own balance sheet, on terms and a mandate it wrote. It has to say yes, and it asks for reports back. She receives and repays in reais.", pt: "Um único fundo fora do Brasil emprestando do próprio balanço, em condições e mandato que ele escreveu. Ele precisa dizer sim, e pede relatórios de volta. Ela recebe e paga em reais." },
     tone: "positive",
   },
 });
@@ -198,6 +201,14 @@ const NETWORK_ONLY: Record<Exclude<NetworkReason, AllocationReason>, { label: st
     says: { en: "Of the routes that could take this slice, this one states the lowest annual cost to her.", pt: "Entre as rotas que poderiam tomar esta fatia, esta declara o menor custo anual para ela." },
     tone: "positive",
   },
+  AFFORDABILITY_BUDGET_SHARED: {
+    label: { en: "Sized against the rest of the plan", pt: "Dimensionada junto com o resto do plano" },
+    says: {
+      en: "This route took less than its own policy allowed, because the other routes in this plan had already taken part of what she can repay each month. Each slice fits on its own; the plan has to fit too.",
+      pt: "Esta rota tomou menos do que a política dela permitia, porque as outras rotas deste plano já tinham tomado parte do que ela consegue pagar por mês. Cada fatia cabe sozinha; o plano também precisa caber.",
+    },
+    tone: "caution",
+  },
   CLOSED_NETWORK_PURPOSE_MATCH: {
     label: { en: "Inside the network's rules", pt: "Dentro das regras da rede" },
     says: { en: "What she needs is what this network exchanges between its members. No money changes hands and nothing is repaid.", pt: "O que ela precisa é o que esta rede troca entre seus membros. Nenhum dinheiro troca de mãos e nada é pago de volta." },
@@ -255,6 +266,14 @@ const NETWORK_ONLY: Record<Exclude<NetworkReason, AllocationReason>, { label: st
     label: { en: "Cost stays under the ceiling", pt: "O custo fica abaixo do teto" },
     says: { en: "Her all-in cost through this route, with what it really costs to bring the money in, is inside what the engine allows and inside what her month has left.", pt: "O custo total para ela por esta rota, com o que custa de verdade trazer o dinheiro, está dentro do que o motor permite e dentro do que sobra no mês dela." },
     tone: "positive",
+  },
+  GLOBAL_GAP_PARTLY_AFFORDABLE: {
+    label: { en: "Part of the gap, not all of it", pt: "Parte da lacuna, não toda ela" },
+    says: {
+      en: "At the price a rail actually quoted, her month reaches some of what local capital could not — so that much of the gap is what capital from outside Brazil may take, and the rest waits.",
+      pt: "Ao preço que um trilho de fato cotou, o mês dela alcança parte do que o capital local não alcançou — então essa parte é o que o capital de fora do Brasil pode tomar, e o resto espera.",
+    },
+    tone: "caution",
   },
   GLOBAL_EVIDENCE_SUFFICIENT: {
     label: { en: "Enough reported history", pt: "Histórico reportado suficiente" },
@@ -377,6 +396,56 @@ export function missingDocuments(plan: CapitalPlan): string[] {
     for (const d of String(gate?.value ?? "").split(",")) if (d) out.add(d);
   }
   return [...out].sort();
+}
+
+/**
+ * One source of capital, and what it actually carried.
+ *
+ * `capacity_cents` is not one kind of number: a partner declares what it has,
+ * and nothing in this product draws that declaration down when a plan
+ * recommends a route — a recommendation is not a drawdown, so a route can well
+ * have routed more than it says it holds. A pool's is arithmetic on its own
+ * book. `capacity_basis` says which, so a screen never presents them as one.
+ */
+export interface CapitalSource {
+  code: string;
+  name: string;
+  instrument_type: InstrumentType;
+  provider: string;
+  provider_type: ProviderType;
+  is_domestic: boolean;
+  is_credit: boolean;
+  requires_partner_approval: boolean;
+  /** What the recorded book routed through this source, over the latest plan per request. */
+  routed_cents: number;
+  /** How many requests it carried something for. */
+  requests: number;
+  capacity_cents: number;
+  capacity_basis: "declared" | "pool_residue";
+  /** Its share of everything the network routed, in basis points. */
+  share_bps: number;
+}
+
+/** Where the capital came from, source by source: public.capital_network_origin(). */
+export interface CapitalOrigin {
+  /** Requests with a recorded plan. */
+  plans: number;
+  requested_cents: number;
+  routed_cents: number;
+  domestic_cents: number;
+  global_cents: number;
+  unfunded_cents: number;
+  external_capital_gap_cents: number;
+  eligible_gap_cents: number;
+  sources: CapitalSource[];
+}
+
+export const originKey = ["platform", "capital-network-origin"] as const;
+
+export async function fetchCapitalOrigin(): Promise<CapitalOrigin> {
+  const { data, error } = await platform.rpc("capital_network_origin");
+  if (error) throw error;
+  return data as unknown as CapitalOrigin;
 }
 
 export const decisionsKey = (opportunityId: string) => ["platform", "capital-route-decisions", opportunityId] as const;
@@ -527,8 +596,14 @@ export function globalGateDetail(g: GlobalGate, e: GlobalEligibility["economics"
  * always: a refusal a person can check beats one she has to believe. The values
  * arrive from the engine as codes and centavos, and they are not readable until
  * they are put back into the language and the currency she uses.
+ *
+ * The instrument's kind is taken where the caller has it, for the one gate whose
+ * number means something different route by route: a partner's capacity is what
+ * that partner declared, and a pool's is a residue — its capital, less what it
+ * has lent, less what other requests are already holding. "Capacity exhausted"
+ * without that is a refusal nobody can check.
  */
-export function gateDetail(g: Gate): string {
+export function gateDetail(g: Gate, type?: InstrumentType): string {
   const list = (v: Gate["limit"], label: (s: string) => string) =>
     Array.isArray(v) && v.length > 0
       ? (v as (string | number)[]).map((x) => label(String(x))).join(", ")
@@ -590,9 +665,18 @@ export function gateDetail(g: Gate): string {
         pt: `${money(Number(g.value))} por mês é o que ela pode pagar; a parcela que esta rota pode tomar alcança ${money(Number(g.limit))}, abaixo do menor ticket dela`,
       });
     case "capacity":
-      return tr({
-        en: `${money(Number(g.limit))} left; its smallest ticket is ${money(Number(g.value))}`,
-        pt: `restam ${money(Number(g.limit))}; o menor ticket dela é ${money(Number(g.value))}`,
-      });
+      // A pool's capacity is nobody's declaration: it is what its capital comes
+      // to after the loans it has out and the requests the allocation engine
+      // has already listed on it. Naming that is the difference between a
+      // number and a reason.
+      return type === "domestic_p2p" || type === "global_impact_capital"
+        ? tr({
+            en: `${money(Number(g.limit))} left in the pool — its capital, less what it has lent and less what other requests the allocation engine listed on it are holding; its smallest ticket is ${money(Number(g.value))}`,
+            pt: `restam ${money(Number(g.limit))} no pool — o capital dele, menos o que já emprestou e menos o que outros pedidos listados nele pelo motor de alocação estão segurando; o menor ticket dele é ${money(Number(g.value))}`,
+          })
+        : tr({
+            en: `${money(Number(g.limit))} left of what this provider states; its smallest ticket is ${money(Number(g.value))}`,
+            pt: `restam ${money(Number(g.limit))} do que este provedor declara; o menor ticket dele é ${money(Number(g.value))}`,
+          });
   }
 }

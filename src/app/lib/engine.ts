@@ -31,6 +31,8 @@ export interface EngineOpportunity {
   community: string | null;
   community_city: string | null;
   community_state: string | null;
+  /** What an operator has already stated she has on file. Null for readers who are not the desk. */
+  documents: string[] | null;
   amount_cents: number;
   term_months: number;
   instalment_cents: number | null;

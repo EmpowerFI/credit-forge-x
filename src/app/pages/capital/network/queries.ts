@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  capitalPlanKey, decisionsKey, fetchCapitalPlan, fetchDecisions, fetchInstruments, fetchProviders,
-  instrumentsKey, providersKey,
+  capitalPlanKey, decisionsKey, fetchCapitalOrigin, fetchCapitalPlan, fetchDecisions, fetchInstruments,
+  fetchProviders, instrumentsKey, originKey, providersKey,
 } from "../../../lib/capitalNetwork";
 
 /** The providers behind the network, as the caller may see them. */
@@ -30,4 +30,9 @@ export function useCapitalPlan(opportunityId: string | null | undefined) {
     queryFn: () => fetchCapitalPlan(opportunityId!),
     enabled: Boolean(opportunityId),
   });
+}
+
+/** Where the capital came from, over every plan the network has recorded. */
+export function useCapitalOrigin() {
+  return useQuery({ queryKey: originKey, queryFn: fetchCapitalOrigin, staleTime: 30_000 });
 }

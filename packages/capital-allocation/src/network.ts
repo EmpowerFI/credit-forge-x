@@ -47,6 +47,8 @@ export type NetworkReason =
   | "REGION_MATCH"
   | "PARTNER_CAPACITY_AVAILABLE"
   | "LOWER_ESTIMATED_COST"
+  /** This route took less than its own policy allowed: her instalment was already spoken for. */
+  | "AFFORDABILITY_BUDGET_SHARED"
   | "CLOSED_NETWORK_PURPOSE_MATCH"
   | "SPONSORED_PROGRAM_MATCH"
   | "GLOBAL_IMPACT_MANDATE_MATCH"
@@ -70,6 +72,8 @@ export type NetworkReason =
   // vocabulary for one audit console, so these live here with the rest.
   | "GLOBAL_GAP_CONFIRMED"
   | "GLOBAL_ECONOMICS_WITHIN_CEILING"
+  /** Her month reaches part of the gap at the quoted price, not all of it. */
+  | "GLOBAL_GAP_PARTLY_AFFORDABLE"
   | "GLOBAL_EVIDENCE_SUFFICIENT"
   | "GLOBAL_ROUTE_REGULATED"
   | "GLOBAL_GAP_ABSENT"
@@ -220,6 +224,7 @@ const REASON_ORDER: NetworkReason[] = [
   "REGION_MATCH",
   "PARTNER_CAPACITY_AVAILABLE",
   "LOWER_ESTIMATED_COST",
+  "AFFORDABILITY_BUDGET_SHARED",
   "GLOBAL_EXPANDS_CAPACITY",
   "GLOBAL_IMPACT_MANDATE_MATCH",
   "AFFORDABILITY_LIMIT",
@@ -247,6 +252,27 @@ export function affordableAmountCents(need: CapitalNeed, i: Instrument): number 
   if (allowance <= 0) return 0;
   const monthly = Math.ceil((i.estimated_cost_bps ?? 0) / 12);
   return Math.floor((allowance * 10_000 * need.term_months) / (10_000 + monthly * need.term_months));
+}
+
+/**
+ * The flat instalment of a principal at an annual all-in rate, as the pool
+ * engine sizes one and as eligibility sized hers. Mirrored, not reinvented: a
+ * principal priced one way here and another way there would not add up.
+ */
+export function instalmentCents(principalCents: number, allInBps: number, termMonths: number): number {
+  const monthly = Math.ceil(allInBps / 12);
+  return Math.ceil((principalCents * (10_000 + monthly * termMonths)) / (10_000 * termMonths));
+}
+
+/**
+ * The largest principal whose instalment still fits a given headroom. The
+ * inverse of instalmentCents(), and the same arithmetic affordableAmountCents()
+ * does against one route's share — asked here of what her month has left.
+ */
+export function principalWithinInstalment(headroomCents: number, allInBps: number, termMonths: number): number {
+  if (headroomCents <= 0) return 0;
+  const monthly = Math.ceil(allInBps / 12);
+  return Math.floor((headroomCents * 10_000 * termMonths) / (10_000 + monthly * termMonths));
 }
 
 /** The gates one instrument puts to one need, in the order the engine asks them. */
@@ -324,7 +350,7 @@ function assess(need: CapitalNeed, i: Instrument): InstrumentAssessment {
 }
 
 /** Why this instrument earned its place in the stack. */
-function reasonsFor(need: CapitalNeed, i: Instrument, cheapest: boolean): NetworkReason[] {
+function reasonsFor(need: CapitalNeed, i: Instrument, cheapest: boolean, budgetBound: boolean): NetworkReason[] {
   const out: NetworkReason[] = [];
   if (i.purposes.includes(need.purpose)) {
     out.push(i.type === "productive_exchange_network" ? "CLOSED_NETWORK_PURPOSE_MATCH" : "PURPOSE_MATCH");
@@ -334,6 +360,7 @@ function reasonsFor(need: CapitalNeed, i: Instrument, cheapest: boolean): Networ
   out.push("TICKET_MATCH");
   if (i.capacity_cents > 0) out.push("PARTNER_CAPACITY_AVAILABLE");
   if (cheapest) out.push("LOWER_ESTIMATED_COST");
+  if (budgetBound) out.push("AFFORDABILITY_BUDGET_SHARED");
   if (!i.is_domestic) {
     out.push("GLOBAL_EXPANDS_CAPACITY");
     if (i.impact_mandate && need.impact_eligible) out.push("GLOBAL_IMPACT_MANDATE_MATCH");
@@ -380,20 +407,40 @@ export function matchCapital(need: CapitalNeed, instruments: Instrument[]): Capi
     return costs.length ? Math.min(...costs) : null;
   };
 
+  // What her month has left. Each route's own gate asks whether its slice fits a
+  // share of her affordable instalment; none of them asks what the slices come
+  // to together. Without this, three routes that each fit alone are recommended
+  // as one plan she cannot carry — and the second question, which does add them
+  // up, then refuses the very gap this plan just allocated.
+  let instalmentSpent = 0;
+  let budgetBound = false;
+
   const fill = (pool: InstrumentAssessment[], budget: number): number => {
     const low = cheapest(pool);
     let left = budget;
     for (const a of [...pool].sort((x, y) => rank(x, y, byId))) {
       if (left <= 0) break;
       const i = byId.get(a.instrument_id)!;
-      const take = Math.min(a.max_takeable_cents, left);
+      const cost = i.estimated_cost_bps ?? 0;
+      // A route with no repayment — an exchange, a grant — takes nothing from
+      // her month, so it neither spends the budget nor is bound by it.
+      const repays = i.max_instalment_share_bps !== null;
+      const headroom = need.max_instalment_cents - instalmentSpent;
+      const withinBudget = repays ? principalWithinInstalment(headroom, cost, need.term_months) : Number.MAX_SAFE_INTEGER;
+      const take = Math.min(a.max_takeable_cents, left, withinBudget);
       // A route that cannot reach its own floor is not a route for this slice.
-      if (take < i.ticket_min_cents) continue;
+      if (take < i.ticket_min_cents) {
+        if (repays && withinBudget < Math.min(a.max_takeable_cents, left)) budgetBound = true;
+        continue;
+      }
+      const trimmed = repays && withinBudget < Math.min(a.max_takeable_cents, left);
+      if (trimmed) budgetBound = true;
       allocations.push({
         instrument_id: i.id, amount_cents: take, fit_score: a.fit_score,
-        reasons: reasonsFor(need, i, (i.estimated_cost_bps ?? 0) === low),
+        reasons: reasonsFor(need, i, cost === low, trimmed),
         requires_partner_approval: i.requires_partner_approval, is_credit: i.is_credit,
       });
+      if (repays) instalmentSpent += instalmentCents(take, cost, need.term_months);
       left -= take;
     }
     return budget - left;
@@ -410,6 +457,7 @@ export function matchCapital(need: CapitalNeed, instruments: Instrument[]): Capi
   else if (domesticCovered > 0) reasons.add("DOMESTIC_CAPACITY_PARTIAL");
   else reasons.add("DOMESTIC_POOL_EXHAUSTED");
   for (const a of allocations) for (const r of a.reasons) reasons.add(r);
+  if (budgetBound) reasons.add("AFFORDABILITY_BUDGET_SHARED");
   for (const a of evaluated) for (const b of a.blocks) reasons.add(b);
   if (allocations.length === 0) reasons.add("NO_ROUTE_AVAILABLE");
 

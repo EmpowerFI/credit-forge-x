@@ -59,7 +59,7 @@ const exchange: Instrument = {
   estimated_cost_bps: null, capacity_cents: 600_000, impact_mandate: false, is_domestic: true,
 };
 const global: Instrument = {
-  id: "pool_global_impacto", provider: "empowerfi_pools", name: "Capital global de impacto",
+  id: "pool_global_impacto", provider: "empowerfi_pools", name: "Pool global P2P · investidores no exterior",
   type: "global_impact_capital", is_credit: true, requires_partner_approval: false,
   ticket_min_cents: 10_000, ticket_max_cents: 5_000_000, eligible_uf: [],
   purposes: [], business_age_min_months: 0,
@@ -120,7 +120,7 @@ describe("the gates", () => {
 // outside, and capital that expands what the pool's own book can reach.
 describe("a fund's own policy", () => {
   const fund: Instrument = {
-    id: "capital_impacto_global", provider: "fundo_impacto_global_demo", name: "Capital de impacto internacional",
+    id: "capital_impacto_global", provider: "fundo_impacto_global_demo", name: "Fundo de impacto internacional · capital próprio",
     type: "impact_fund_capital", is_credit: true, requires_partner_approval: true,
     ticket_min_cents: 100_000, ticket_max_cents: 5_000_000, eligible_uf: [], purposes: [],
     term_min_months: 6, term_max_months: 36, business_age_min_months: 6,

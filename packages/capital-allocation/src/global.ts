@@ -32,7 +32,10 @@
 //
 // Deterministic, integers only (centavos, basis points).
 
-import { COST_CEILING_BPS, type CapitalPlan, type Instrument, type NetworkReason } from "./network";
+import {
+  COST_CEILING_BPS, instalmentCents, principalWithinInstalment,
+  type CapitalPlan, type Instrument, type NetworkReason,
+} from "./network";
 
 export const GLOBAL_CAPITAL_MODEL_VERSION = "global-capital-v1.0.0";
 
@@ -63,6 +66,12 @@ export interface GlobalGapContext {
   max_instalment_cents: number;
   /** What the domestic allocations of this same plan already take of that instalment. */
   instalment_committed_cents: number;
+  /**
+   * The smallest ticket the global route states. A slice below it is not a
+   * slice anyone can take, so calling it eligible would put demand on a screen
+   * that no route in this network could ever answer.
+   */
+  global_ticket_min_cents: number;
   /** The global route's all-in annual cost, as the pool engine priced it. */
   route_cost_bps: number;
   /**
@@ -120,6 +129,12 @@ export interface GlobalEconomics {
   instalment_cents: number;
   /** What the domestic allocations left of her instalment. */
   instalment_headroom_cents: number;
+  /**
+   * How much of the gap that headroom actually reaches, at the quoted cost. The
+   * answer is rarely all of it and rarely none: a gap is an amount, and what she
+   * can carry of it is an amount too.
+   */
+  affordable_gap_cents: number;
 }
 
 export interface GlobalEligibility {
@@ -134,21 +149,12 @@ export interface GlobalEligibility {
   economics: GlobalEconomics;
 }
 
-/**
- * The flat instalment of a principal at an annual all-in rate, as the pool
- * engine sizes one and as eligibility sized hers. Mirrored, not reinvented: a
- * gap priced one way here and another way there would not add up.
- */
-export function instalmentCents(principalCents: number, allInBps: number, termMonths: number): number {
-  const monthly = Math.ceil(allInBps / 12);
-  return Math.ceil((principalCents * (10_000 + monthly * termMonths)) / (10_000 * termMonths));
-}
-
 /** Her economics on the gap, with the quote in place of the modelled constant. */
 export function globalEconomics(ctx: GlobalGapContext): GlobalEconomics {
   const mobilizationTotal = ctx.quoted_mobilization_bps + ctx.modelled_return_ramp_bps;
   const mobilizationAnnual = Math.ceil((mobilizationTotal * 12) / ctx.term_months);
   const total = ctx.route_cost_bps - ctx.modelled_ramp_annual_bps + mobilizationAnnual;
+  const headroom = Math.max(0, ctx.max_instalment_cents - ctx.instalment_committed_cents);
   return {
     route_cost_bps: ctx.route_cost_bps,
     modelled_ramp_annual_bps: ctx.modelled_ramp_annual_bps,
@@ -159,7 +165,10 @@ export function globalEconomics(ctx: GlobalGapContext): GlobalEconomics {
     total_cost_bps: total,
     delta_bps: total - ctx.route_cost_bps,
     instalment_cents: ctx.gap_cents > 0 ? instalmentCents(ctx.gap_cents, total, ctx.term_months) : 0,
-    instalment_headroom_cents: Math.max(0, ctx.max_instalment_cents - ctx.instalment_committed_cents),
+    instalment_headroom_cents: headroom,
+    affordable_gap_cents: ctx.gap_cents > 0
+      ? Math.min(ctx.gap_cents, principalWithinInstalment(headroom, total, ctx.term_months))
+      : 0,
   };
 }
 
@@ -179,8 +188,12 @@ export function globalGates(ctx: GlobalGapContext, e: GlobalEconomics): GlobalGa
     // The affordability gate of network.ts, asked a second time: against the
     // quoted cost, and against what the domestic routes left of her instalment
     // rather than against the whole of it.
-    { gate: "affordability", passed: e.instalment_cents <= e.instalment_headroom_cents,
-      reason: "GLOBAL_AFFORDABILITY_AFTER_MOBILIZATION", value: e.instalment_cents, limit: e.instalment_headroom_cents },
+    // Asked as an amount, not as a yes. A gap she can carry half of is half a
+    // gap international capital may take, and answering "no" to all of it sends
+    // her away from money she could have used. It refuses only what her month
+    // cannot reach at all.
+    { gate: "affordability", passed: e.affordable_gap_cents >= ctx.global_ticket_min_cents,
+      reason: "GLOBAL_AFFORDABILITY_AFTER_MOBILIZATION", value: e.affordable_gap_cents, limit: ctx.global_ticket_min_cents },
     { gate: "evidence",
       passed: ctx.evidence_score >= GLOBAL_EVIDENCE_MIN_SCORE && ctx.months_reported >= GLOBAL_MIN_MONTHS_REPORTED,
       reason: "GLOBAL_EVIDENCE_INSUFFICIENT",
@@ -194,6 +207,7 @@ export function globalGates(ctx: GlobalGapContext, e: GlobalEconomics): GlobalGa
 const REASON_ORDER: NetworkReason[] = [
   "GLOBAL_GAP_CONFIRMED",
   "GLOBAL_ECONOMICS_WITHIN_CEILING",
+  "GLOBAL_GAP_PARTLY_AFFORDABLE",
   "GLOBAL_EVIDENCE_SUFFICIENT",
   "GLOBAL_ROUTE_REGULATED",
   "GLOBAL_GAP_ABSENT",
@@ -228,6 +242,7 @@ export function globalEligibility(ctx: GlobalGapContext): GlobalEligibility {
     reasons.add("GLOBAL_GAP_CONFIRMED");
     const passed = (g: GlobalGate["gate"]) => gates.find((x) => x.gate === g)?.passed === true;
     if (passed("economics") && passed("affordability")) reasons.add("GLOBAL_ECONOMICS_WITHIN_CEILING");
+    if (passed("affordability") && economics.affordable_gap_cents < ctx.gap_cents) reasons.add("GLOBAL_GAP_PARTLY_AFFORDABLE");
     if (passed("evidence")) reasons.add("GLOBAL_EVIDENCE_SUFFICIENT");
     if (passed("regulatory_route")) reasons.add("GLOBAL_ROUTE_REGULATED");
   }
@@ -238,7 +253,9 @@ export function globalEligibility(ctx: GlobalGapContext): GlobalEligibility {
     gates,
     reason_codes: REASON_ORDER.filter((r) => reasons.has(r)),
     gap_cents: ctx.gap_cents,
-    eligible_gap_cents: decision === "eligible" ? ctx.gap_cents : 0,
+    // What international capital may take: the part of the gap that passed every
+    // question, which is the part her month reaches at the quoted price.
+    eligible_gap_cents: decision === "eligible" ? economics.affordable_gap_cents : 0,
     economics,
   };
 }

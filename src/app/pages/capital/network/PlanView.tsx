@@ -1,5 +1,5 @@
 import { FIT_WEIGHTS, type FitBreakdown } from "@empowerfi/capital-allocation";
-import { ArrowRight, Ban, Globe2, Handshake, MapPin, Plane } from "lucide-react";
+import { ArrowRight, Ban, Globe2, Handshake, MapPin, Plane, Wallet } from "lucide-react";
 import Panel from "../../../components/product/Panel";
 import StatTile from "../../../components/product/StatTile";
 import StatusPill from "../../../components/product/StatusPill";
@@ -141,7 +141,7 @@ function Refused({ assessment, instrument }: { assessment: InstrumentAssessment;
               {/* The reason names the gate, so naming it twice only adds noise.
                   Both sides of it follow, in her currency and her language: a
                   refusal a person can check beats one she has to believe. */}
-              <span className="text-foreground">{r.label}</span> — {gateDetail(g)}.
+              <span className="text-foreground">{r.label}</span> — {gateDetail(g, instrument?.instrument_type)}.
             </li>
           );
         })}
@@ -159,11 +159,27 @@ function Refused({ assessment, instrument }: { assessment: InstrumentAssessment;
  * so the quote replaces that term instead of being added to it. On a
  * twelve-month loan the swap has been moving her all-in cost by under a
  * percentage point, which is worth showing rather than worth hiding.
+ *
+ * Three readings of one gap, side by side, because they are three different
+ * numbers and a screen that shows one of them invites the wrong conclusion
+ * about the other two. What local capital could not take; the part of that her
+ * month still reaches at the quoted price; and what the plan above actually
+ * routed abroad. The second is smaller than the first whenever the domestic
+ * routes have already spent some of her instalment, and the third is its own
+ * number because the plan fills routes by fit, not by this question's answer.
  */
-function GlobalAnswer({ g }: { g: GlobalEligibility }) {
+function GlobalAnswer({ g, routed }: { g: GlobalEligibility; routed: number }) {
   const d = GLOBAL_DECISION[g.decision];
   const e = g.economics;
   const asked = g.decision !== "not_needed";
+  const reach = e.affordable_gap_cents;
+  const whole = g.gap_cents > 0 && reach >= g.gap_cents;
+  const share = g.gap_cents > 0 ? Math.floor((reach * 100) / g.gap_cents) : 0;
+  // A slice her month reaches is still not a slice anyone writes: the global
+  // route states a smallest ticket, and the affordability gate is where it is
+  // compared. Reading the floor from the gate keeps one number in one place.
+  const floor = g.gates.find((x) => x.gate === "affordability");
+  const underFloor = floor !== undefined && !floor.passed;
   return (
     <Panel
       title={tr({ en: "Capital from outside Brazil", pt: "Capital de fora do Brasil" })}
@@ -172,9 +188,38 @@ function GlobalAnswer({ g }: { g: GlobalEligibility }) {
     >
       {asked && (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+          {/* The gap, in three readings. */}
+          <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
             <StatTile label={tr({ en: "Gap asked about", pt: "Lacuna perguntada" })} value={money(g.gap_cents)}
+              hint={tr({ en: "what routes inside Brazil could not take", pt: "o que as rotas dentro do Brasil não puderam tomar" })}
               icon={<Plane size={14} aria-hidden />} />
+            <StatTile label={tr({ en: "What her month reaches of it", pt: "O que o mês dela alcança disso" })} value={money(reach)}
+              hint={underFloor
+                ? tr({
+                    en: `under the ${money(Number(floor.limit))} smallest ticket a route from abroad writes`,
+                    pt: `abaixo do ticket mínimo de ${money(Number(floor.limit))} que uma rota de fora escreve`,
+                  })
+                : g.decision === "refused"
+                  ? tr({ en: "refused on another question below", pt: "recusada por outra pergunta abaixo" })
+                  : whole
+                    ? tr({ en: "all of the gap, at the quoted price", pt: "toda a lacuna, ao preço cotado" })
+                    : tr({ en: `${share}% of the gap, at the quoted price`, pt: `${share}% da lacuna, ao preço cotado` })}
+              hintTone={underFloor || g.decision === "refused" ? "caution" : whole ? "positive" : "info"}
+              icon={<Wallet size={14} aria-hidden />} />
+            <StatTile label={tr({ en: "Routed abroad in this plan", pt: "Encaminhado para fora neste plano" })} value={money(routed)}
+              hint={routed > 0
+                ? tr({ en: "already allocated in the routes above", pt: "já alocado nas rotas acima" })
+                : tr({ en: "no route from abroad took any of it", pt: "nenhuma rota de fora tomou parte dela" })}
+              hintTone={routed > 0 ? "positive" : "caution"}
+              icon={<Globe2 size={14} aria-hidden />} />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {tr({
+              en: <>Three numbers, not one. The gap is what local capital left; what her month reaches is the largest slice of it her remaining instalment carries at the quoted price — the domestic routes above were paid for out of the same month; and what the plan routed abroad is what the routes actually took, chosen by fit rather than by this question. A gap is an amount, and so is <span className="text-foreground">the part of it she can carry</span>.</>,
+              pt: <>Três números, não um. A lacuna é o que o capital local deixou; o que o mês dela alcança é a maior fatia dela que a parcela restante carrega ao preço cotado — as rotas domésticas acima saíram do mesmo mês; e o que o plano encaminhou para fora é o que as rotas de fato tomaram, escolhidas por encaixe e não por esta pergunta. Uma lacuna é um valor, e <span className="text-foreground">a parte dela que ela consegue carregar</span> também é.</>,
+            })}
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
             <StatTile label={tr({ en: "Her cost, estimated", pt: "Custo dela, estimado" })} value={`${(e.route_cost_bps / 100).toFixed(1)}%`}
               hint={tr({ en: "a year, as the pool engine priced it", pt: "ao ano, como o motor de pool precificou" })} />
             <StatTile label={tr({ en: "Her cost, quoted", pt: "Custo dela, cotado" })} value={`${(e.total_cost_bps / 100).toFixed(1)}%`}
@@ -185,9 +230,13 @@ function GlobalAnswer({ g }: { g: GlobalEligibility }) {
                     pt: `${e.delta_bps > 0 ? "+" : ""}${(e.delta_bps / 100).toFixed(2)} ${Math.abs(e.delta_bps) < 200 ? "ponto percentual" : "pontos percentuais"} na estimativa`,
                   })}
               hintTone={e.delta_bps > 0 ? "caution" : "positive"} />
-            <StatTile label={tr({ en: "Instalment on this gap", pt: "Parcela desta lacuna" })} value={money(e.instalment_cents)}
-              hint={tr({ en: `${money(e.instalment_headroom_cents)} left of her month`, pt: `${money(e.instalment_headroom_cents)} do mês dela sobrando` })}
-              hintTone={e.instalment_cents <= e.instalment_headroom_cents ? "positive" : "alert"} />
+            {/* On the whole gap, which is what makes the slice above smaller
+                than it: over budget here is not a failure, it is the reason. */}
+            <StatTile label={tr({ en: "Instalment on the whole gap", pt: "Parcela da lacuna inteira" })} value={money(e.instalment_cents)}
+              hint={e.instalment_cents <= e.instalment_headroom_cents
+                ? tr({ en: `${money(e.instalment_headroom_cents)} left of her month`, pt: `${money(e.instalment_headroom_cents)} do mês dela sobrando` })
+                : tr({ en: `over the ${money(e.instalment_headroom_cents)} left of her month`, pt: `acima dos ${money(e.instalment_headroom_cents)} que sobram do mês dela` })}
+              hintTone={e.instalment_cents <= e.instalment_headroom_cents ? "positive" : "caution"} />
           </div>
           <p className="text-xs text-muted-foreground">
             {tr({
@@ -290,7 +339,7 @@ export default function PlanView({ plan, instruments, meta, global }: {
         </p>
       </Panel>
 
-      {global && <GlobalAnswer g={global} />}
+      {global && <GlobalAnswer g={global} routed={plan.global_coverage_cents} />}
 
       {plan.allocations.length > 0 && (
         <Panel
