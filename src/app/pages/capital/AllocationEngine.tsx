@@ -25,6 +25,7 @@ import PoolBranch from "./engine/PoolBranch";
 import Replay from "./engine/Replay";
 import Snapshot from "./engine/Snapshot";
 import TwoEngines from "./engine/TwoEngines";
+import NetworkPlan from "./engine/NetworkPlan";
 import { useEngineRun } from "./engine/useEngineRun";
 import VerifyDecision from "./engine/VerifyDecision";
 import { useEngineOpportunities, useRouteCards } from "./queries";
@@ -267,6 +268,10 @@ export default function AllocationEngine() {
                 <div className="space-y-4">
                   <Decision o={run.o} steps={run.steps} result={run.result} policies={run.policies} fxMilli={fx} settlement={settlement} />
                   {!run.plan.rejected && <Economics o={run.o} />}
+                  {/* The pool answered; the rest of the network answered too,
+                      and reading only the first makes a pool look like the
+                      whole of the capital available to her. */}
+                  {!run.plan.rejected && <NetworkPlan o={run.o} chosen={run.result?.pool ?? null} />}
                   {!run.plan.rejected && <VerifyDecision o={run.o} route={run.result?.pool ?? null} />}
                 </div>
               )}

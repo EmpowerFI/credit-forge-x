@@ -38,34 +38,51 @@ function policyLine(policy: Record<string, number>): string {
   return `${all}, ${tr({ en: "except", pt: "exceto" })} ${others.map(([k, v]) => `${k} v${v}`).join(", ")}`;
 }
 
-/** The whole decision, for whoever routes or funds it. */
-export function CapitalPlanPanel({ opportunityId }: { opportunityId: string }) {
+/**
+ * The whole decision, for whoever routes or funds it.
+ *
+ * `intro` and `empty` are for callers who are showing this plan inside another
+ * reading of the same request — the engine page shows it under the pool the
+ * allocation engine chose — and who therefore have something to say about it
+ * that the plan itself cannot know. Neither is shown while the plan is loading
+ * or failing: a heading over a spinner promises a section that may not arrive.
+ */
+export function CapitalPlanPanel({ opportunityId, intro, empty }: {
+  opportunityId: string;
+  /** Said above the plan, where there is one. */
+  intro?: React.ReactNode;
+  /** Said instead of it, where the engine has not run on this request yet. */
+  empty?: React.ReactNode;
+}) {
   const stored = useCapitalPlan(opportunityId);
 
   if (stored.isLoading) return <Skeleton className="h-48 w-full rounded-2xl" />;
   if (stored.error) return <LoadError error={stored.error} onRetry={() => void stored.refetch()} compact />;
-  if (!stored.data) return null;
+  if (!stored.data) return empty ?? null;
 
   const { plan, instruments, decision_no, decided_at, instrument_policy, global_eligibility } = stored.data;
   return (
-    <PlanView
-      plan={plan}
-      instruments={instruments}
-      global={global_eligibility}
-      meta={
-        <p className="text-xs text-muted-foreground">
-          {tr({ en: "Decision", pt: "Decisão" })} <span className="num text-foreground">{decision_no}</span>
-          {" · "}{formatDate(decided_at)}
-          {" · "}{tr({ en: "engine", pt: "motor" })} <span className="font-mono text-foreground">{plan.model_version}</span>
-          {" · "}
-          {/* What the routes' policies said when this ran, so a plan read weeks
-              later is not mistaken for one made under today's terms. Naming all
-              of them buries the one that matters, so only the routes that were
-              not on the commonest version are spelled out. */}
-          {policyLine(instrument_policy)}
-        </p>
-      }
-    />
+    <div className="space-y-4">
+      {intro}
+      <PlanView
+        plan={plan}
+        instruments={instruments}
+        global={global_eligibility}
+        meta={
+          <p className="text-xs text-muted-foreground">
+            {tr({ en: "Decision", pt: "Decisão" })} <span className="num text-foreground">{decision_no}</span>
+            {" · "}{formatDate(decided_at)}
+            {" · "}{tr({ en: "engine", pt: "motor" })} <span className="font-mono text-foreground">{plan.model_version}</span>
+            {" · "}
+            {/* What the routes' policies said when this ran, so a plan read weeks
+                later is not mistaken for one made under today's terms. Naming all
+                of them buries the one that matters, so only the routes that were
+                not on the commonest version are spelled out. */}
+            {policyLine(instrument_policy)}
+          </p>
+        }
+      />
+    </div>
   );
 }
 
