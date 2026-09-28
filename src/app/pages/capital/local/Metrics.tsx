@@ -1,6 +1,7 @@
-import { ArrowLeftRight, ExternalLink, Gauge, Globe2, Repeat } from "lucide-react";
+import { ArrowLeftRight, Gauge, Globe2, Repeat } from "lucide-react";
+import Cite from "../../../components/product/Cite";
 import { tr } from "../../../i18n";
-import { benchmark, share, times, units, type Benchmark, type LocalEconomyDashboard } from "../../../lib/localEconomy";
+import { benchmark, share, times, units, type LocalEconomyDashboard } from "../../../lib/localEconomy";
 
 // The four questions the addendum asks of a local rail (v3 §7.2, §8), each with
 // the division that produced it written underneath. A metric whose arithmetic is
@@ -15,20 +16,6 @@ import { benchmark, share, times, units, type Benchmark, type LocalEconomyDashbo
 // Where a published figure exists for the same thing, it sits on the card. Ours
 // is a demonstration loop and it leaks less than a municipality does — showing
 // the two together is the difference between a measurement and a boast.
-
-function Cite({ b }: { b: Benchmark }) {
-  return (
-    <a
-      href={b.source_url}
-      target="_blank"
-      rel="noreferrer noopener"
-      className="inline-flex items-center gap-1 rounded text-accent underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-    >
-      {b.source}{b.observed_period ? `, ${b.observed_period}` : ""}
-      <ExternalLink size={10} aria-hidden />
-    </a>
-  );
-}
 
 function Metric({ icon, label, value, formula, reading, against }: {
   icon: React.ReactNode;

@@ -3739,6 +3739,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      reference_points_listed: { Args: never; Returns: Json }
       readiness_inputs: { Args: { p_entrepreneur_id: string }; Returns: Json }
       record_audit_report_checks: {
         Args: { p_checks: Json; p_id: string }

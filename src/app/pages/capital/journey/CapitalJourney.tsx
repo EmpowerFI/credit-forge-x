@@ -11,6 +11,7 @@ import { prototypeNotice } from "../../../lib/capital";
 import { MOVEMENT, MOVEMENTS, type Journey, type MovementKey, type Stage } from "../../../lib/capitalJourney";
 import { EVIDENCE, weakest } from "../../../lib/evidence";
 import { money } from "../../../lib/readiness";
+import Positioning from "./Positioning";
 import StageCard from "./StageCard";
 import { useJourney } from "./queries";
 import { useEngineOpportunities } from "../queries";
@@ -195,6 +196,12 @@ export default function CapitalJourney() {
           )}
 
           <Spine j={j} />
+
+          {/* Before the loop is read stage by stage: whose rail it runs on.
+              It sits here rather than at the foot of nine cards because the
+              objection it answers — that a local currency is something we
+              invented — is formed in the first ten seconds, not the last. */}
+          <Positioning />
 
           {MOVEMENTS.map((k) => <Movement key={k} j={j} k={k} />)}
         </>

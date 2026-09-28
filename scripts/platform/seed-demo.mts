@@ -1356,13 +1356,22 @@ console.log(`consent: ${consentRows.length} recorded at enrollment, ${consentRow
   console.log(`settlement routes: ${decisions?.length ?? 0} decided ${JSON.stringify(routes)}; reasons ${reasons.join(", ") || "none"}`);
 }
 await must("release the anchor worker", db.rpc("finish_anchor_run"));
+/** A scaled integer as a decimal, rounded half away from zero, as Intl rounds it. */
+const dec = (value: number, scale: number, places: number) => {
+  const p = 10 ** places;
+  return (Math.round((value / scale) * p) / p).toFixed(places);
+};
 const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");
 console.log(`local rail: ${economy.currency_code} ${rail.injected_units / 100} injected in ${COMMUNITIES[0].city}, ` +
   `${economy.currency_code} ${rail.circulated_units / 100} traded inside the territory across ${merchants.length} merchants ` +
   `(one outside the eligible set), ${economy.currency_code} ${rail.redeemed_units / 100} cashed out; ` +
-  `LM3 ${(rail.lm3_bps / 10000).toFixed(2)} (rounds ${rail.round_1_units / 100}/${rail.round_2_units / 100}/${rail.round_3_units / 100}), ` +
-  `retention ${(rail.retention_bps / 100).toFixed(1)}% against Maricá's 46%, ` +
-  `velocity ${(rail.velocity_bps / 10000).toFixed(2)}x — all read back from the dashboard`);
+  // Rounded the way the screens round, not the way toFixed happens to: 93.35
+  // becomes 93.3 through a binary representation and 93.4 through arithmetic,
+  // and a printed book that disagrees with the screen by a tenth is a question
+  // nobody should have to answer on camera.
+  `LM3 ${dec(rail.lm3_bps, 10000, 2)} (rounds ${rail.round_1_units / 100}/${rail.round_2_units / 100}/${rail.round_3_units / 100}), ` +
+  `retention ${dec(rail.retention_bps, 100, 1)}% against Maricá's 46%, ` +
+  `velocity ${dec(rail.velocity_bps, 10000, 2)}x — all read back from the dashboard`);
 console.log(`anchors queued: ${queued}`);
 
 // ------------------------------------------------- the run checks its own book

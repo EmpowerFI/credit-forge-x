@@ -1,7 +1,9 @@
-import { localized } from "../i18n";
+import { formatNumber, localized } from "../i18n";
 import type { Tone } from "../components/product/StatusPill";
 import type { EvidenceLabel } from "./evidence";
 import { platform } from "./platform";
+export type { Benchmark } from "./referencePoints";
+import type { Benchmark } from "./referencePoints";
 
 // The Local Productive Capital Rail, as the screens read it (addendum v3 §7.2,
 // §8, §12). Every figure below comes out of public.local_economy_dashboard(),
@@ -43,20 +45,6 @@ export interface LocalMovement {
   from_name: string | null;
   to_name: string | null;
   note: string | null;
-}
-
-/** A figure this product did not measure, carried with its source. */
-export interface Benchmark {
-  key: string;
-  label: string;
-  value_bps: number | null;
-  value_cents: number | null;
-  value_count: number | null;
-  source: string;
-  source_url: string;
-  observed_period: string | null;
-  note: string | null;
-  evidence_status: EvidenceLabel;
 }
 
 /** What the units in circulation are a claim on. */
@@ -221,12 +209,16 @@ export async function fetchLocalEconomyDashboard(economyId: string | null): Prom
 export const units = (n: number, code: string) =>
   `${code} ${(n / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-/** A ratio held in basis points, as the multiple it is. */
-export const times = (bps: number) => `${(bps / 10000).toFixed(2)}×`;
+/** A ratio held in basis points, as the multiple it is, with the decimal mark of
+ * the language: 20300 is "2.03×" in English and "2,03×" in Portuguese. */
+export const times = (bps: number) =>
+  `${formatNumber(bps / 10000, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×`;
 
 /** The benchmark under a key, where the reading carried one. */
 export const benchmark = (d: { benchmarks: Benchmark[] }, key: string) =>
   d.benchmarks.find((b) => b.key === key);
 
-/** A share held in basis points. */
-export const share = (bps: number) => `${(bps / 100).toFixed(1)}%`;
+/** A share held in basis points, with the decimal mark of the language: 9330 is
+ * "93.3%" in English and "93,3%" in Portuguese. */
+export const share = (bps: number) =>
+  `${formatNumber(bps / 100, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;

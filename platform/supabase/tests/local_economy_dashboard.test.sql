@@ -16,7 +16,7 @@ select set_config(
   true
 );
 
-select plan(47);
+select plan(52);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -334,7 +334,42 @@ select is(
   jsonb_array_length(public.local_economies_listed()), 0,
   'and the listing shows her no economy at all, rather than a name with no numbers');
 
+-- ------------------------------------------------------------- the citations
+
+-- The four figures the positioning panel prints. They are the only numbers on
+-- any screen here that this product did not compute, and a typo in one of them
+-- is worse than a wrong figure of our own: it is a wrong claim about somebody
+-- else's work, under their name. So they are asserted, not trusted.
+select pg_temp.act_as('00000000-0000-0000-0000-0000000015a1');
+select is(
+  (select jsonb_object_agg(x ->> 'key', coalesce(x ->> 'value_count', x ->> 'value_cents', x ->> 'value_bps'))
+   from jsonb_array_elements(public.reference_points_listed()) x
+   where x ->> 'key' in ('bcd_count', 'pnmpo_portfolio', 'mumbuca_users', 'women_default_advantage')),
+  jsonb_build_object(
+    'bcd_count', '103',
+    'pnmpo_portfolio', '953000000000',
+    'mumbuca_users', '133000',
+    'women_default_advantage', '2150'),
+  '103 community banks, R$ 9.53bn of oriented microcredit, 133,000 Mumbuca users, 21.5 points less default among women');
+select ok(
+  (select bool_and((x ->> 'source') is not null and (x ->> 'source_url') like 'https://%' and (x ->> 'evidence_status') = 'external_benchmark')
+   from jsonb_array_elements(public.reference_points_listed()) x),
+  'every citation names a source, links to it over https, and says it is somebody else''s number');
+select is((select jsonb_array_length(public.reference_points_listed())), 8,
+  'and the reader hands back the whole set, so a screen picks rather than queries');
+set local role postgres;
+
+-- Exactly one value, because a point that carried two would let a screen pick
+-- the flattering one.
+select throws_ok(
+  $$ insert into public.reference_points (key, label, value_bps, value_count, source, source_url)
+     values ('two_values', 'pgTAP', 100, 5, 'pgTAP', 'https://example.org') $$,
+  '23514', null, 'a reference point with two values is refused');
+
 set local role anon;
+select throws_ok(
+  $$ select public.reference_points_listed() $$,
+  '42501', null, 'a signed-out visitor cites nothing');
 select throws_ok(
   $$ select public.local_economy_dashboard() $$,
   '42501', null, 'and a signed-out visitor cannot ask for the dashboard at all');
