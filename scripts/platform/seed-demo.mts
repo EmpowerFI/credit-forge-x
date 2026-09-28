@@ -1273,6 +1273,25 @@ console.log(`capital network, left without the business papers: ${
   informal ? borrowerRef(routable_.find((o) => o.id === informal)!.entrepreneur_id) : "none"}`);
 console.log(`capital network, left unrouted for the live run: ${
   liveRun ? borrowerRef(routable_.find((o) => o.id === liveRun)!.entrepreneur_id) : "none — every request was routed"}`);
+// The three cases step 7 of the demo runs on camera, read back from what the
+// allocation engine actually decided rather than written into the script. The
+// amounts move with every change to the scenario, and a rehearsed figure that
+// has quietly drifted is worse on camera than no figure at all.
+{
+  const { data: cases } = await db
+    .from("qualified_credit_opportunities")
+    .select("entrepreneur_id, amount_cents, purpose, term_months, funding_pool, status")
+    .in("status", ["open", "in_review", "referred", "partner_approved"])
+    .order("amount_cents", { ascending: true });
+  const pick = (want: (o: { funding_pool: string | null }) => boolean, from = "first") =>
+    from === "first" ? (cases ?? []).find(want) : [...(cases ?? [])].reverse().find(want);
+  const shown = (o: { entrepreneur_id: string; amount_cents: number; purpose: string; term_months: number } | undefined) =>
+    o ? `${borrowerRef(o.entrepreneur_id)} R$ ${(o.amount_cents / 100).toLocaleString("en-US")} ${o.purpose}/${o.term_months}m` : "none";
+  console.log("engine cases for step 7: " +
+    `domestic wins ${shown(pick((o) => o.funding_pool === "domestic", "last"))}; ` +
+    `global unlocks it ${shown(pick((o) => o.funding_pool === "global", "last"))}; ` +
+    `no pool can fund it ${shown(pick((o) => o.funding_pool === null, "last"))}`);
+}
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
 console.log(`left USDC ${FINALE_REMAINDER / 1e6} short, for the live investment: ${
   finale ? opportunityCode(finale) : "none — no global opportunity was still raising"}`);
