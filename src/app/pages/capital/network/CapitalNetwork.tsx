@@ -149,7 +149,7 @@ export default function CapitalNetwork() {
               })}</li>
               <li>
                 {tr({ en: "Which pool funds an opportunity is still decided when it opens to investors — see", pt: "Qual pool financia uma oportunidade continua sendo decidido quando ela abre a investidores — veja" })}{" "}
-                <Link to="/app/capital" className="text-accent hover:text-foreground">
+                <Link to="/app/capital/engine" className="text-accent hover:text-foreground">
                   {tr({ en: "the Credit & Capital Engine", pt: "o Motor de Crédito e Capital" })}
                 </Link>.
               </li>

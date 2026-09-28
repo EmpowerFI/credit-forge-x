@@ -19,6 +19,20 @@ export function useMarket() {
   });
 }
 
+/** What this console does not carry: qualified demand raising in reais on the
+ * domestic desk. A footnote for the market, so an investor who sees eight
+ * requests can learn that the engine qualified ten. */
+export function useMarketElsewhere() {
+  return useQuery({
+    queryKey: ["platform", "market-elsewhere"],
+    queryFn: async () => {
+      const { data, error } = await platform.rpc("market_funded_elsewhere");
+      if (error) throw error;
+      return data as unknown as { count: number; amount_cents: number } | null;
+    },
+  });
+}
+
 export function usePortfolio() {
   return useQuery({
     queryKey: ["platform", "investor-portfolio"],

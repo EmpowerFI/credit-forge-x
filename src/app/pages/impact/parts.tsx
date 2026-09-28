@@ -224,7 +224,7 @@ export function Opportunities({ data }: { data: ImpactIntelligence }) {
                 </td>
                 <td className="py-2.5 text-right">
                   {o.in_engine && (
-                    <Link to={`/app/capital?opportunity=${encodeURIComponent(o.code)}`} className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-accent hover:underline">
+                    <Link to={`/app/capital/engine?opportunity=${encodeURIComponent(o.code)}`} className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-accent hover:underline">
                       {tr({ en: "Run the engine", pt: "Rodar o motor" })} <ArrowRight size={12} aria-hidden />
                     </Link>
                   )}

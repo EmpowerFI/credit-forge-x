@@ -54,7 +54,7 @@ console.log("landed:", page.url().replace(BASE, ""));
 const CODES = (process.env.CODES ?? "Q-E3BC74,Q-7B6D7D,Q-6BCEC4").split(",");
 for (const code of CODES) {
   console.log(`\n=== ${code}`);
-  await page.goto(`${BASE}/app/capital?opportunity=${code}`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/app/capital/engine?opportunity=${code}`, { waitUntil: "networkidle" });
   await settle(page, 2000);
   const run = page.getByRole("button", { name: /RUN CREDIT ENGINE|RODAR O MOTOR DE CRÉDITO/i }).first();
   if (!(await run.count())) { console.log("  no run button — not in the picker"); continue; }

@@ -137,8 +137,8 @@ const MESSAGES: Record<string, string> = localized({
     pt: "Os pools de capital são para investidores, a mesa P2P da EmpowerFI, auditores e admins.",
   },
   domestic_pool_is_simulated: {
-    en: "This opportunity is funded by the domestic pool, in reais: simulate a BRL allocation instead.",
-    pt: "Esta oportunidade é captada pelo pool doméstico, em reais: simule uma alocação em BRL.",
+    en: "The engine routed this one to Brazilian capital: a domestic desk funds it in reais, and this console allocates in USDC.",
+    pt: "O motor roteou esta para o capital brasileiro: uma mesa doméstica financia em reais, e este console aloca em USDC.",
   },
   not_a_domestic_opportunity: {
     en: "This opportunity is funded by the global pool, in USDC.",

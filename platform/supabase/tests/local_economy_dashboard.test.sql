@@ -16,7 +16,7 @@ select set_config(
   true
 );
 
-select plan(30);
+select plan(52);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -158,10 +158,20 @@ select is(pg_temp.n('circulating_units'), 122000::bigint,
 
 -- ---------------------------------------------------------------- the metrics
 
--- 95.000 ÷ 150.000. Under 1×, because this capital has not finished moving —
--- which the dashboard reports rather than rounding up to a rosier story.
-select is(pg_temp.n('multiplier_bps'), 6333::bigint,
-  'the multiplier is local circulation over capital injected, and may be under 1x');
+-- LM3's three rounds, published beside the ratio so the division can be done by
+-- hand: 150.000 entered, 60.000 spent inside the territory, and 35.000 spent
+-- locally in turn — 25.000 between two merchants and 10.000 back to her.
+select is(pg_temp.n('round_1_units'), 150000::bigint, 'round one is the capital that entered the territory');
+select is(pg_temp.n('round_2_units'), 60000::bigint, 'round two is what she spent with merchants inside it');
+select is(pg_temp.n('round_3_units'), 35000::bigint,
+  'round three is what those merchants spent locally in turn, including back to her');
+
+-- (150.000 + 60.000 + 35.000) ÷ 150.000 = 1,633.
+select is(pg_temp.n('lm3_bps'), 16333::bigint,
+  'LM3 is all three rounds over the first, the way the field has measured this for twenty years');
+
+select cmp_ok(pg_temp.n('lm3_bps'), '<=', 30000::bigint,
+  'and it cannot exceed three, because it counts three rounds and stops');
 
 -- (150.000 − 8.000) ÷ 150.000.
 select is(pg_temp.n('retention_bps'), 9467::bigint,
@@ -181,12 +191,32 @@ select is(pg_temp.n('loans_landed'), 2::bigint, 'over the loans that actually la
 -- Each metric against the ledger again, without the dashboard's own totals in
 -- between: a reader with SQL and no trust should get the same four numbers.
 select is(
-  pg_temp.n('multiplier_bps'),
+  pg_temp.n('lm3_bps'),
   (select round(
-     sum(amount_units) filter (where tx_type in ('productive_purchase', 'merchant_payment', 'transfer'))
+     (sum(amount_units) filter (where tx_type = 'capital_injection')
+      + sum(amount_units) filter (where tx_type = 'productive_purchase')
+      + coalesce(sum(amount_units) filter (where tx_type in ('merchant_payment', 'transfer')), 0))
      * 10000.0 / sum(amount_units) filter (where tx_type = 'capital_injection'))::bigint
    from local_transactions where economy_id = '00000000-0000-0000-0000-0000000015f1'),
-  'and the multiplier recomputed straight from the rows agrees with the reader');
+  'and LM3 recomputed straight from the rows agrees with the reader');
+
+-- A figure with nothing to compare it to is an assertion however honestly it
+-- was derived, so the reading carries what it is being measured against.
+select is(
+  (select count(*)::int from jsonb_array_elements(pg_temp.dash() -> 'benchmarks')), 3,
+  'the reading carries the published figures it is compared against');
+
+select is(
+  (select b ->> 'evidence_status' from jsonb_array_elements(pg_temp.dash() -> 'benchmarks') as t(b)
+    where b ->> 'key' = 'mumbuca_retention'),
+  'external_benchmark',
+  'and they are labelled as somebody else''s work, not as ours');
+
+select cmp_ok(
+  (select (b ->> 'value_bps')::int from jsonb_array_elements(pg_temp.dash() -> 'benchmarks') as t(b)
+    where b ->> 'key' = 'mumbuca_retention'),
+  '<', pg_temp.n('retention_bps')::int,
+  'a demonstration loop retains more than the largest real one does, which is the caveat rather than the boast');
 
 -- --------------------------------------------------------------- the counting
 
@@ -226,6 +256,66 @@ select is(
   jsonb_array_length(pg_temp.dash() -> 'by_type'), 6,
   'the breakdown names each of the six movements the fixture exercised');
 
+-- ------------------------------------------------------- what the units stand on
+
+-- The accusation any local currency has to face is that its issuer prints it.
+-- The answer here is a subtraction: reais came in when capital was issued as
+-- units, and they leave when she repays or a merchant cashes out. PGD 1.500 in,
+-- PGD 200 released by her instalment, PGD 80 taken by a merchant.
+
+select is((pg_temp.dash() -> 'backing' ->> 'issued_cents')::bigint, 150000::bigint,
+  'reais went in when the capital was issued to her as units');
+
+select is((pg_temp.dash() -> 'backing' ->> 'released_to_investors_cents')::bigint, 20000::bigint,
+  'and her instalment released exactly the reais behind the units she handed back');
+
+select is((pg_temp.dash() -> 'backing' ->> 'cashed_out_by_merchants_cents')::bigint, 8000::bigint,
+  'a merchant cashing out took its own reais out of the same pot');
+
+select is((pg_temp.dash() -> 'backing' ->> 'backing_cents')::bigint, 122000::bigint,
+  'what is left is what went in, less both ways out');
+
+-- The invariant, and the reason this rail is not a printing press: what is left
+-- covers what is circulating. If it ever failed, units would exist that no
+-- reais stand behind.
+select is((pg_temp.dash() -> 'backing' ->> 'covered')::boolean, true,
+  'and it covers every unit still in circulation, which is the whole claim');
+
+select cmp_ok(
+  (pg_temp.dash() -> 'backing' ->> 'backing_cents')::bigint, '>=',
+  (pg_temp.dash() -> 'backing' ->> 'circulating_cents')::bigint,
+  'stated as the subtraction rather than as a promise');
+
+-- Two crossings of one border, in opposite directions, and no more than one of
+-- each per loan and per instalment: a crossing recorded twice would show as
+-- backing that was never there.
+-- Two loans landed here, so two issues, and one instalment came back on the
+-- rail, so one redemption.
+select is(
+  (select count(*)::int from jsonb_array_elements(pg_temp.dash() -> 'crossings') as t(c)
+    where c ->> 'direction' = 'issue'), 2,
+  'one crossing in for each loan that landed on the rail');
+
+select is(
+  (select count(*)::int from jsonb_array_elements(pg_temp.dash() -> 'crossings') as t(c)
+    where c ->> 'direction' = 'redeem'), 1,
+  'and one crossing back for the instalment that travelled it');
+
+set local role postgres;
+select throws_ok(
+  $$ insert into local_conversions (economy_id, direction, units, brl_cents, parity_bps, loan_id)
+     values ('00000000-0000-0000-0000-0000000015f1', 'issue', 1, 1, 10000,
+             '00000000-0000-0000-0000-000000015cb1') $$,
+  '23505', null, 'and a loan cannot be issued against twice');
+
+select throws_ok(
+  $$ insert into local_conversions (economy_id, direction, units, brl_cents, parity_bps, loan_id)
+     values ('00000000-0000-0000-0000-0000000015f1', 'redeem', 1, 1, 10000,
+             '00000000-0000-0000-0000-000000015cb1') $$,
+  '23514', null, 'and a redemption without an instalment behind it is refused by shape');
+
+select pg_temp.act_as('00000000-0000-0000-0000-0000000015a5');
+
 -- ------------------------------------------------------------------- who reads
 
 -- The leader of the territory reads her own economy, as the row-level policy on
@@ -244,7 +334,42 @@ select is(
   jsonb_array_length(public.local_economies_listed()), 0,
   'and the listing shows her no economy at all, rather than a name with no numbers');
 
+-- ------------------------------------------------------------- the citations
+
+-- The four figures the positioning panel prints. They are the only numbers on
+-- any screen here that this product did not compute, and a typo in one of them
+-- is worse than a wrong figure of our own: it is a wrong claim about somebody
+-- else's work, under their name. So they are asserted, not trusted.
+select pg_temp.act_as('00000000-0000-0000-0000-0000000015a1');
+select is(
+  (select jsonb_object_agg(x ->> 'key', coalesce(x ->> 'value_count', x ->> 'value_cents', x ->> 'value_bps'))
+   from jsonb_array_elements(public.reference_points_listed()) x
+   where x ->> 'key' in ('bcd_count', 'pnmpo_portfolio', 'mumbuca_users', 'women_default_advantage')),
+  jsonb_build_object(
+    'bcd_count', '103',
+    'pnmpo_portfolio', '953000000000',
+    'mumbuca_users', '133000',
+    'women_default_advantage', '2150'),
+  '103 community banks, R$ 9.53bn of oriented microcredit, 133,000 Mumbuca users, 21.5 points less default among women');
+select ok(
+  (select bool_and((x ->> 'source') is not null and (x ->> 'source_url') like 'https://%' and (x ->> 'evidence_status') = 'external_benchmark')
+   from jsonb_array_elements(public.reference_points_listed()) x),
+  'every citation names a source, links to it over https, and says it is somebody else''s number');
+select is((select jsonb_array_length(public.reference_points_listed())), 8,
+  'and the reader hands back the whole set, so a screen picks rather than queries');
+set local role postgres;
+
+-- Exactly one value, because a point that carried two would let a screen pick
+-- the flattering one.
+select throws_ok(
+  $$ insert into public.reference_points (key, label, value_bps, value_count, source, source_url)
+     values ('two_values', 'pgTAP', 100, 5, 'pgTAP', 'https://example.org') $$,
+  '23514', null, 'a reference point with two values is refused');
+
 set local role anon;
+select throws_ok(
+  $$ select public.reference_points_listed() $$,
+  '42501', null, 'a signed-out visitor cites nothing');
 select throws_ok(
   $$ select public.local_economy_dashboard() $$,
   '42501', null, 'and a signed-out visitor cannot ask for the dashboard at all');

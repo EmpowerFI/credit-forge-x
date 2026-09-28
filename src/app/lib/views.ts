@@ -45,15 +45,15 @@ const t = (tool: Omit<Tool, "label" | "what"> & { label: { en: string; pt: strin
 const IMPACT = t({ to: "/app/impact", icon: Sprout,
   label: { en: "Impact Intelligence", pt: "Inteligência de Impacto" },
   what: { en: "The program at a glance: funding, reach, readiness, capital and outcomes.", pt: "O programa num relance: recursos, alcance, prontidão, capital e resultados." } });
-const ENGINE = t({ to: "/app/capital", icon: Split,
+const ENGINE = t({ to: "/app/capital/engine", icon: Split,
   label: { en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" },
   what: { en: "Qualify an opportunity, then route it to the pool that can fund it.", pt: "Qualifique uma oportunidade e depois encaminhe-a ao pool que pode financiá-la." } });
 const NETWORK = t({ to: "/app/capital/network", icon: Network,
   label: { en: "Capital Network", pt: "Rede de Capital" },
   what: { en: "Every instrument the network can route to, and what the engine would do with one need.", pt: "Todo instrumento ao qual a rede pode encaminhar, e o que o motor faria com uma necessidade." } });
-const JOURNEY = t({ to: "/app/capital/journey", icon: Waypoints,
+const JOURNEY = t({ to: "/app/capital", icon: Waypoints,
   label: { en: "Capital Journey", pt: "Jornada do Capital" },
-  what: { en: "Where a dollar committed abroad ends up, and what it did on the way — nine stages, each read from its own records.", pt: "Onde um dólar comprometido lá fora vai parar, e o que ele fez no caminho — nove etapas, cada uma lida dos próprios registros." } });
+  what: { en: "One loop in four movements: global capital comes in, becomes credit in local currency, circulates, and comes back — nine stages under them, each read from its own records.", pt: "Um laço em quatro movimentos: o capital global entra, vira crédito em moeda local, circula e volta — nove etapas embaixo deles, cada uma lida dos próprios registros." } });
 const LOCAL = t({ to: "/app/capital/local", icon: MapPin,
   label: { en: "Local Economy", pt: "Economia Local" },
   what: { en: "What each unit of capital produced inside the territory, how much stayed, and how much came from abroad.", pt: "O que cada unidade de capital produziu dentro do território, quanto ficou, e quanto veio de fora." } });
@@ -138,16 +138,16 @@ export const VIEWS: View[] = localized([
     },
     roles: ["partner"],
     persona: { email: "partner@demo.empowerfi.io", name: "Paulo Mendes", role: "partner" },
-    home: ENGINE,
+    home: JOURNEY,
     primary: [
+      JOURNEY,
       t({ ...ENGINE, icon: RouteIcon,
         what: { en: "Readiness, affordability, risk and eligibility run live — then domestic or global, on liquidity, ticket, risk appetite, mandate and economics.", pt: "Prontidão, capacidade de pagamento, risco e elegibilidade rodados ao vivo — e então doméstico ou global, por liquidez, ticket, apetite a risco, mandato e economia." } }),
-      JOURNEY,
       NETWORK,
       LOCAL,
-      t({ to: "/app/capital#replay", icon: History, label: { en: "Portfolio replay", pt: "Replay da carteira" },
+      t({ to: "/app/capital/engine#replay", icon: History, label: { en: "Portfolio replay", pt: "Replay da carteira" },
         what: { en: "The whole demand, re-run through the engine.", pt: "Toda a demanda, rodada de novo pelo motor." } }),
-      t({ to: "/app/capital#assumptions", icon: SlidersHorizontal, label: { en: "Pool assumptions", pt: "Premissas dos pools" },
+      t({ to: "/app/capital/engine#assumptions", icon: SlidersHorizontal, label: { en: "Pool assumptions", pt: "Premissas dos pools" },
         what: { en: "Liquidity, tickets, returns, FX and ramp costs.", pt: "Liquidez, tickets, retornos, câmbio e custos de conversão." } }),
       t({ to: "/app/capital/economics#cost", icon: BarChart3, label: { en: "Cost to serve", pt: "Custo de servir" },
         what: { en: "What each stage costs, for every R$ 100 lent.", pt: "Quanto custa cada etapa, a cada R$ 100 emprestados." } }),

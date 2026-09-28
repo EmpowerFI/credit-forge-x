@@ -107,6 +107,13 @@ function Detail({ s }: { s: Stage }) {
       en: `${s.on_the_rail} of them travelled the local rail rather than reais`,
       pt: `${s.on_the_rail} delas viajaram pelo trilho local em vez de reais`,
     }));
+    // The figure that makes this a loop rather than a one-way grant with extra
+    // steps: units returning to the treasury release exactly the reais behind
+    // them, and those reais are the investor's return.
+    lines.push(tr({
+      en: `${money(s.from_the_rail_cents ?? 0)} of local units redeemed back to reais, on its way to the investor`,
+      pt: `${money(s.from_the_rail_cents ?? 0)} de unidades locais resgatadas de volta para reais, a caminho do investidor`,
+    }));
   }
   if (lines.length === 0) return null;
   return (

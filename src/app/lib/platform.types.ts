@@ -1683,6 +1683,80 @@ export type Database = {
           },
         ]
       }
+      local_conversions: {
+        Row: {
+          brl_cents: number
+          direction: Database["public"]["Enums"]["local_conversion_direction"]
+          economy_id: string
+          evidence_status: Database["public"]["Enums"]["evidence_label"]
+          id: string
+          loan_id: string | null
+          note: string | null
+          occurred_at: string
+          parity_bps: number
+          payment_id: string | null
+          transaction_id: string | null
+          units: number
+        }
+        Insert: {
+          brl_cents: number
+          direction: Database["public"]["Enums"]["local_conversion_direction"]
+          economy_id: string
+          evidence_status?: Database["public"]["Enums"]["evidence_label"]
+          id?: string
+          loan_id?: string | null
+          note?: string | null
+          occurred_at?: string
+          parity_bps: number
+          payment_id?: string | null
+          transaction_id?: string | null
+          units: number
+        }
+        Update: {
+          brl_cents?: number
+          direction?: Database["public"]["Enums"]["local_conversion_direction"]
+          economy_id?: string
+          evidence_status?: Database["public"]["Enums"]["evidence_label"]
+          id?: string
+          loan_id?: string | null
+          note?: string | null
+          occurred_at?: string
+          parity_bps?: number
+          payment_id?: string | null
+          transaction_id?: string | null
+          units?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_conversions_economy_id_fkey"
+            columns: ["economy_id"]
+            isOneToOne: false
+            referencedRelation: "local_economies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_conversions_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_conversions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "local_conversions_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "local_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       local_economies: {
         Row: {
           code: string
@@ -2706,6 +2780,48 @@ export type Database = {
           },
         ]
       }
+      reference_points: {
+        Row: {
+          created_at: string
+          evidence_status: Database["public"]["Enums"]["evidence_label"]
+          key: string
+          label: string
+          note: string | null
+          observed_period: string | null
+          source: string
+          source_url: string
+          value_bps: number | null
+          value_cents: number | null
+          value_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          evidence_status?: Database["public"]["Enums"]["evidence_label"]
+          key: string
+          label: string
+          note?: string | null
+          observed_period?: string | null
+          source: string
+          source_url: string
+          value_bps?: number | null
+          value_cents?: number | null
+          value_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          evidence_status?: Database["public"]["Enums"]["evidence_label"]
+          key?: string
+          label?: string
+          note?: string | null
+          observed_period?: string | null
+          source?: string
+          source_url?: string
+          value_bps?: number | null
+          value_cents?: number | null
+          value_count?: number | null
+        }
+        Relationships: []
+      }
       settlement_decisions: {
         Row: {
           compared: Json
@@ -3608,6 +3724,7 @@ export type Database = {
           status: Database["public"]["Enums"]["anchor_status"]
         }[]
       }
+      journey_opportunities: { Args: never; Returns: Json }
       local_economies_listed: { Args: never; Returns: Json }
       local_economy_dashboard: {
         Args: { p_economy_id?: string }
@@ -3653,6 +3770,7 @@ export type Database = {
         }
         Returns: Json
       }
+      market_funded_elsewhere: { Args: never; Returns: Json }
       measure_outcome: {
         Args: {
           p_capital_use?: Database["public"]["Enums"]["capital_use"]
@@ -3818,6 +3936,7 @@ export type Database = {
       }
       record_reconciliation: { Args: { p_results: Json }; Returns: number }
       refer_opportunity: { Args: { p_opportunity_id: string }; Returns: string }
+      reference_points_listed: { Args: never; Returns: Json }
       refund_claim: {
         Args: { p_limit?: number }
         Returns: {
@@ -4145,6 +4264,7 @@ export type Database = {
         | "PAID"
         | "DEFAULTED"
         | "CANCELLED"
+      local_conversion_direction: "issue" | "redeem"
       local_economy_status: "demo"
       local_owner_type: "treasury" | "entrepreneur" | "merchant"
       local_redemption_status: "requested" | "settled" | "failed"
@@ -4472,6 +4592,7 @@ export const Constants = {
         "DEFAULTED",
         "CANCELLED",
       ],
+      local_conversion_direction: ["issue", "redeem"],
       local_economy_status: ["demo"],
       local_owner_type: ["treasury", "entrepreneur", "merchant"],
       local_redemption_status: ["requested", "settled", "failed"],

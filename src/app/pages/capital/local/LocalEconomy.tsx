@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, Coins, ShieldCheck, Sprout, TrendingDown } from "lucide-react";
+import { ArrowLeftRight, Building2, Coins, ShieldCheck, Sprout, TrendingDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../../components/LoadError";
@@ -27,6 +27,11 @@ import { useLocalEconomies, useLocalEconomy } from "./queries";
 // and never here — §12 forbids a presentation value, and two places computing a
 // multiplier would be two multipliers. If the ledger recorded a shorter loop the
 // numbers come out smaller, and the screen reports the smaller numbers.
+//
+// The headline is LM3, the New Economics Foundation's Local Multiplier 3, and
+// not a ratio of our own. A number nobody can compare to anything is an
+// assertion however honestly it was derived, and this field has measured itself
+// the same way for twenty years.
 //
 // The guardrail below is not decoration. §8 says in the addendum's own words
 // that these measure network activity and prove nothing causal about
@@ -111,6 +116,70 @@ function Body({ d }: { d: LocalEconomyDashboard }) {
         </p>
       </Panel>
 
+      {/* What the units stand on. The accusation any local currency has to face
+          is that its issuer prints it, and the answer here is a subtraction a
+          reader can do: reais came in when capital was issued as units, and
+          they leave when she repays or a merchant cashes out. If what is left
+          ever failed to cover what circulates, the rail would have printed. */}
+      <Panel
+        title={tr({ en: "What the units stand on", pt: "Em que as unidades se apoiam" })}
+        description={tr({
+          en: "Local units are a claim on reais held by the community's own bank. Capital arriving puts reais in; a repayment releases them to the investor; a merchant cashing out takes them for itself.",
+          pt: "As unidades locais são um direito sobre reais guardados pelo banco da própria comunidade. O capital que chega põe reais dentro; uma parcela os libera para o investidor; um comerciante que saca os leva para si.",
+        })}
+        actions={d.backing.covered ? (
+          <StatusPill tone="positive" dot={false}>
+            <ShieldCheck size={11} className="mr-0.5" aria-hidden />
+            {tr({ en: "Every unit is covered", pt: "Toda unidade está coberta" })}
+          </StatusPill>
+        ) : (
+          <StatusPill tone="alert">{tr({ en: "Units exceed their backing", pt: "Unidades excedem o lastro" })}</StatusPill>
+        )}
+      >
+        <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+          <StatTile
+            label={tr({ en: "Reais held as backing", pt: "Reais guardados como lastro" })}
+            value={money(d.backing.backing_cents)}
+            hint={tr({
+              en: `against ${units(d.backing.circulating_units, code)} circulating`,
+              pt: `contra ${units(d.backing.circulating_units, code)} em circulação`,
+            })}
+            hintTone={d.backing.covered ? "positive" : "alert"}
+            icon={<ShieldCheck size={14} aria-hidden />}
+          />
+          <StatTile
+            label={tr({ en: "Issued against capital", pt: "Emitido contra capital" })}
+            value={money(d.backing.issued_cents)}
+            hint={tr({ en: "when a loan reached the territory", pt: "quando um empréstimo chegou ao território" })}
+            icon={<Coins size={14} aria-hidden />}
+          />
+          <StatTile
+            label={tr({ en: "Released to investors", pt: "Liberado para investidores" })}
+            value={money(d.backing.released_to_investors_cents)}
+            hint={tr({
+              en: "her instalments, redeemed back to reais",
+              pt: "as parcelas dela, resgatadas de volta para reais",
+            })}
+            hintTone="info"
+            icon={<ArrowLeftRight size={14} aria-hidden />}
+          />
+          <StatTile
+            label={tr({ en: "Taken by merchants", pt: "Levado por comerciantes" })}
+            value={money(d.backing.cashed_out_by_merchants_cents)}
+            hint={tr({ en: "cashed out of the network", pt: "sacado para fora da rede" })}
+            hintTone="caution"
+            icon={<TrendingDown size={14} aria-hidden />}
+          />
+        </div>
+
+        <p className="num text-xs text-muted-foreground">
+          {tr({
+            en: `${money(d.backing.issued_cents)} in, less ${money(d.backing.released_to_investors_cents)} released and ${money(d.backing.cashed_out_by_merchants_cents)} cashed out, leaves ${money(d.backing.backing_cents)} — and ${units(d.backing.circulating_units, code)} is what people here still hold. Nothing here was issued against nothing.`,
+            pt: `${money(d.backing.issued_cents)} entraram, menos ${money(d.backing.released_to_investors_cents)} liberados e ${money(d.backing.cashed_out_by_merchants_cents)} sacados, restam ${money(d.backing.backing_cents)} — e ${units(d.backing.circulating_units, code)} é o que as pessoas daqui ainda têm. Nada aqui foi emitido contra nada.`,
+          })}
+        </p>
+      </Panel>
+
       <Ledger d={d} />
 
       {/* Addendum v3 §8, in the addendum's own words. It belongs on the screen
@@ -122,8 +191,8 @@ function Body({ d }: { d: LocalEconomyDashboard }) {
       >
         <ul className="space-y-1.5 text-sm text-muted-foreground">
           <li>{tr({
-            en: "The multiplier, the retention rate and the velocity measure network activity. They do not by themselves prove causal economic impact.",
-            pt: "O multiplicador, a taxa de retenção e a velocidade medem atividade de rede. Sozinhos, eles não provam impacto econômico causal.",
+            en: "LM3, the retention rate and the velocity measure network activity. They do not by themselves prove causal economic impact.",
+            pt: "O LM3, a taxa de retenção e a velocidade medem atividade de rede. Sozinhos, eles não provam impacto econômico causal.",
           })}</li>
           <li>{tr({
             en: `${d.economy.name} is a clearly labelled sandbox. It is not a municipal or community currency, in production or in intent: nothing is issued, nothing is custodied, and ${code} cannot be spent outside this demonstration.`,
@@ -133,9 +202,13 @@ function Body({ d }: { d: LocalEconomyDashboard }) {
             en: "A redemption sends no Pix and no institution converts anything. The row exists so that retention has a denominator that is not a guess.",
             pt: "Um resgate não envia Pix e nenhuma instituição converte nada. A linha existe para que a retenção tenha um denominador que não seja um chute.",
           })}</li>
+          <li>{tr({
+            en: "Brazil has been doing this since 1998. Banco Palmas, in Fortaleza, created the first social currency because residents were buying almost everything outside the neighbourhood, and today more than a hundred community development banks run the same idea. This product does not invent that rail — it finances it, and the issuer here is the community, not EmpowerFI.",
+            pt: "O Brasil faz isto desde 1998. O Banco Palmas, em Fortaleza, criou a primeira moeda social porque os moradores compravam quase tudo fora do bairro, e hoje mais de cem bancos comunitários de desenvolvimento tocam a mesma ideia. Este produto não inventa esse trilho — ele o financia, e o emissor aqui é a comunidade, não a EmpowerFI.",
+          })}</li>
           <li className="num">{tr({
-            en: `Parity: ${d.economy.parity_reference}. Model ${d.model_version}.`,
-            pt: `Paridade: ${d.economy.parity_reference}. Modelo ${d.model_version}.`,
+            en: `Measure: ${d.measure}. Parity: ${d.economy.parity_reference}. Model ${d.model_version}.`,
+            pt: `Medida: ${d.measure}. Paridade: ${d.economy.parity_reference}. Modelo ${d.model_version}.`,
           })}</li>
         </ul>
       </Panel>
@@ -172,8 +245,8 @@ export default function LocalEconomy() {
             </p>
             <p>
               {tr({
-                en: "Local circulation counts purchases, payments between merchants and sales back to the business — movements between participants inside the territory. It excludes redemption, which is capital leaving the rail, and repayment, which returns it to the issuer. Counting a redemption as circulation would inflate the multiplier with the exact movement that is leakage.",
-                pt: "A circulação local conta compras, pagamentos entre comerciantes e vendas de volta para o negócio — movimentos entre participantes dentro do território. Ela exclui o resgate, que é capital saindo do trilho, e o pagamento da parcela, que o devolve ao emissor. Contar um resgate como circulação inflaria o multiplicador justamente com o movimento que é vazamento.",
+                en: "LM3 counts three rounds of spending: the capital that entered the territory, what she spent with merchants inside it, and what those merchants spent locally in turn. It counts neither redemption, which is capital leaving the rail, nor repayment, which returns it to the issuer — and a redemption counted as circulation would inflate the measure with the exact movement that is leakage.",
+                pt: "O LM3 conta três rodadas de gasto: o capital que entrou no território, o que ela gastou com comerciantes de dentro, e o que aqueles comerciantes gastaram localmente em seguida. Não conta o resgate, que é capital saindo do trilho, nem a parcela, que o devolve ao emissor — e um resgate contado como circulação inflaria a medida justamente com o movimento que é vazamento.",
               })}
             </p>
             <p>

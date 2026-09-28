@@ -166,7 +166,7 @@ const CASE_B_FX_MILLI = 5500;
 const locksBetterFx = new Set<string>();
 async function fund(opportunityId: string, fill: number, ireneShare: number, at: string, leaveMicro = 0) {
   const { data: o, error } = await db.from("qualified_credit_opportunities")
-    .select("id, amount_cents, created_at, funding_pool, funding_target_micro_usdc, funding_status").eq("id", opportunityId).single();
+    .select("id, amount_cents, created_at, funding_pool, funding_target_micro_usdc, funding_status, fx_brl_per_usdc_milli").eq("id", opportunityId).single();
   if (error) throw error;
   // Not offered to investors, by her choice, or no pool could take it: it waits.
   if (!o.funding_status) return;
@@ -182,7 +182,13 @@ async function fund(opportunityId: string, fill: number, ireneShare: number, at:
   const whole = (micro: number) => Math.floor(micro / 1_000_000) * 1_000_000;
   const goal = fill >= 1 ? target - leaveMicro : whole(target * fill);
   const parts: [string, number][] = [];
-  const mine = Math.min(goal, whole(target * ireneShare));
+  // The demo investor is an external stablecoin fund, and that is the whole
+  // thesis: capital that exists abroad as USDC becomes credit in local currency
+  // here. So she funds what the engine routed to the global pool and nothing
+  // else. Domestic P2P is Brazilian capital funding Brazilian entrepreneurs —
+  // a good route, and the seed investors carry it.
+  const global = o.funding_pool === "global";
+  const mine = global ? Math.min(goal, whole(target * ireneShare)) : 0;
   if (mine > 0) parts.push([irene!.id, mine]);
   let rest = goal - mine;
   for (const [k, id] of seedInvestorIds.entries()) {
@@ -191,10 +197,18 @@ async function fund(opportunityId: string, fill: number, ireneShare: number, at:
     rest -= take;
   }
   for (const [investorId, micro] of parts) {
-    await must("fund", db.rpc("record_investment", {
+    const rec = await must("fund", db.rpc("record_investment", {
       p_investor_id: investorId, p_opportunity_id: opportunityId, p_amount_micro_usdc: micro,
       p_mode: "simulated", p_is_simulated: true, p_created_at: at,
-    }));
+    })) as { id: string };
+    // A domestic allocation is made in reais. record_investment speaks micro
+    // USDC, so the reais are written back exactly as allocate_domestic writes
+    // them, and a domestic position is reais in the data rather than stablecoin
+    // converted for display.
+    if (!global) {
+      await must("domestic reais", db.from("investments")
+        .update({ amount_cents: Math.round((micro * (o.fx_brl_per_usdc_milli as number)) / 10_000_000) }).eq("id", rec.id));
+    }
   }
 }
 
@@ -238,7 +252,15 @@ for (let i = 0; ; i++) {
   const { data: held, error } = await db.rpc("start_anchor_run", { p_lease_seconds: 1200 });
   if (error) throw new Error(`anchor worker: ${error.message}`);
   if (held) break;
-  if (i === 60) throw new Error("the anchor worker stayed busy for two minutes");
+  // The lease runs for twenty minutes, so a seed that crashed or was
+  // interrupted holds it long after it stopped doing anything — and the old
+  // message left whoever hit that at 2am to work the remedy out themselves.
+  if (i === 60) {
+    throw new Error(
+      "the anchor worker has held its lease for two minutes.\n" +
+      "  If no other seed or worker is running, a previous one crashed still holding it.\n" +
+      "  Release it and try again:  select public.finish_anchor_run();");
+  }
   await sleep(2000);
 }
 
@@ -879,8 +901,17 @@ for (const i of private_) {
 // recording function the live path uses; that function turns eligible ones
 // into opportunities and refers them.
 
+// Ordered, and the order is load-bearing. The allocation trigger assigns a pool
+// out of the liquidity left at the moment each opportunity opens, so the
+// sequence these are processed in decides which requests get domestic capital,
+// which get global, which are left waiting, and therefore which two loans the
+// desk formalises and which territories they land in. Postgres returns an
+// unordered select in whatever order it likes, and this one produced a book
+// with two loans on the local rail on most runs and one on some — same seed,
+// same generators, different demo.
 const { data: openIntents, error: intentsError } = await db
-  .from("credit_intents").select("id, entrepreneur_id, requested_amount_cents, purpose, created_at").eq("status", "active");
+  .from("credit_intents").select("id, entrepreneur_id, requested_amount_cents, purpose, created_at")
+  .eq("status", "active").order("created_at").order("id");
 if (intentsError) throw intentsError;
 for (const intent of openIntents.filter((i) => !cycleIds.has(i.entrepreneur_id))) {
   const { data: r, error } = await db.from("readiness_assessments")
@@ -1015,9 +1046,22 @@ if (liveRun) {
 // fully funded waits to be formalised on camera.
 
 const { data: referred, error: referredError } = await db.from("qualified_credit_opportunities")
-  .select("id, amount_cents, term_months").eq("status", "referred").order("created_at").order("id");
+  .select("id, entrepreneur_id, amount_cents, term_months").eq("status", "referred")
+  .order("created_at").order("id");
 if (referredError) throw referredError;
-const toWorkOn = referred.slice(0, Math.max(0, referred.length - 3));
+
+// The two loans this desk disburses are chosen in the demo's own territory, on
+// purpose. Grajaú is the only community with a local rail, so a loan disbursed
+// anywhere else lands in reais and the rail has nothing to show — and which
+// requests happened to be first was deciding how much of the thesis the demo
+// could demonstrate. This is a hook like the others the seed plants: the
+// request left unrouted, the one left without papers, the raise left five
+// dollars short. It does not change what any engine decides; it changes which
+// already-referred request the desk picks up first.
+const inGrajau = new Set(memberships.filter((m) => m.community_id === grajau.id).map((m) => m.entrepreneur_id));
+const ordered = [...referred].sort((a, b) =>
+  Number(inGrajau.has(b.entrepreneur_id)) - Number(inGrajau.has(a.entrepreneur_id)));
+const toWorkOn = ordered.slice(0, Math.max(0, ordered.length - 3));
 let formalised = 0, declined = 0, ready = 0, raising = 0, cancelled = 0, unlisted = 0;
 // The addendum's three settlement cases, on the two loans the desk disburses
 // here: both are global, and the first-cycle loans in July are case A too.
@@ -1110,7 +1154,7 @@ for (const [i, o] of toWorkOn.entries()) {
   }
 }
 // The last three are raising, at different points.
-for (const [k, o] of referred.slice(toWorkOn.length).entries()) {
+for (const [k, o] of ordered.slice(toWorkOn.length).entries()) {
   await fund(o.id, [0.15, 0.45, 0][k] ?? 0, 0, "2026-09-13T15:00:00-03:00");
 }
 
@@ -1124,15 +1168,18 @@ for (const [k, o] of referred.slice(toWorkOn.length).entries()) {
 // merchants in the territory, one of them pays a third for a service, and the
 // third buys from her. Then a merchant redeems to reais and leaves the network.
 //
-// The multiplier the Local Economy Dashboard reports is whatever these
-// movements come to divided by what was injected. It is not set here and it is
-// not a target: if the loop were shorter the number would be smaller, and the
-// dashboard would say so — and the report at the end of this script reads it
-// back from the dashboard rather than dividing anything itself, because two
-// places dividing the same ledger is two multipliers.
+// The LM3 the Local Economy Dashboard reports is whatever these movements come
+// to. It is not set here and it is not a target: three rounds is what the loop
+// below has, and a shorter loop would print a smaller number. The report at the
+// end of this script reads it back from the dashboard rather than dividing
+// anything itself, because two places dividing the same ledger is two measures.
+//
+// Three rounds, deliberately, because LM3 counts three: capital arrives, she
+// buys from suppliers inside the territory, and those suppliers spend locally
+// in turn — one paying a third merchant, one buying from her.
 //
 // The shares below are drawn rather than fixed. With one set of constants for
-// every business the multiplier comes out the same whatever the loans are —
+// every business the measure comes out the same whatever the loans are —
 // 0.45 + 0.22 + 0.18 + 0.108 and nothing else — and a measurement that cannot
 // vary is a constant wearing a measurement's clothes. Businesses do not all
 // spend the same fraction of a loan on the same day, so they do not here
@@ -1187,7 +1234,7 @@ const railShare = (lo: number, hi: number) => lo + railRandom() * (hi - lo);
     // rather than in reais. From the merchant her supplier paid, so the loop is
     // three hops of the same capital and not a transfer out of thin air — a
     // merchant can only pay her with units it actually holds, which is the
-    // constraint that makes the multiplier mean something. Less than it
+    // constraint that makes the measure mean something. Less than it
     // received: a loop, not a rebate.
     const sale = Math.floor(onward * railShare(0.50, 0.70));
     await must("local sale", asPartner.rpc("local_sale", {
@@ -1231,7 +1278,22 @@ await must("mark the instalments simulated", db.from("payments").update({ is_sim
 await must("mark the cost events simulated", db.from("cost_events").update({ is_simulated: true }).eq("is_simulated", false));
 
 const { data: overview } = await asPartner.rpc("capital_overview");
-const rail = await must("local economy dashboard", asPartner.rpc("local_economy_dashboard", { p_economy_id: economy.id })) as Record<string, number>;
+const dashboard = await must("local economy dashboard", asPartner.rpc("local_economy_dashboard", { p_economy_id: economy.id })) as Record<string, unknown>;
+const rail = dashboard as unknown as Record<string, number>;
+/** What the units in circulation are a claim on, as the backing panel reports it. */
+const backing = dashboard.backing as {
+  issued_cents: number; released_to_investors_cents: number; cashed_out_by_merchants_cents: number;
+  backing_cents: number; circulating_cents: number; covered: boolean;
+};
+// Which requests actually crossed onto the rail. The journey's focused reading
+// narrows every movement to one request, and a request that never reached the
+// rail reads zero through movements two, three and four — a true answer to the
+// wrong question, and a bad twelve seconds on camera. The picker now leads with
+// the ones that travelled furthest, so this line is the run's own check that
+// there is something for it to lead with, by the P- reference the desk sees.
+const toFollow = (await must("what to follow", asPartner.rpc("journey_opportunities")) as
+  { code: string; amount_cents: number; reached: string }[])
+  .filter((o) => o.reached === "looped" || o.reached === "rail");
 await asPartner.auth.signOut();
 
 // ----------------------------------------------------------------- capital
@@ -1309,10 +1371,55 @@ console.log(`consent: ${consentRows.length} recorded at enrollment, ${consentRow
   console.log(`settlement routes: ${decisions?.length ?? 0} decided ${JSON.stringify(routes)}; reasons ${reasons.join(", ") || "none"}`);
 }
 await must("release the anchor worker", db.rpc("finish_anchor_run"));
+/** A scaled integer as a decimal, rounded half away from zero, as Intl rounds it. */
+const dec = (value: number, scale: number, places: number) => {
+  const p = 10 ** places;
+  return (Math.round((value / scale) * p) / p).toFixed(places);
+};
 const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");
 console.log(`local rail: ${economy.currency_code} ${rail.injected_units / 100} injected in ${COMMUNITIES[0].city}, ` +
   `${economy.currency_code} ${rail.circulated_units / 100} traded inside the territory across ${merchants.length} merchants ` +
   `(one outside the eligible set), ${economy.currency_code} ${rail.redeemed_units / 100} cashed out; ` +
-  `multiplier ${(rail.multiplier_bps / 10000).toFixed(2)}x, retention ${(rail.retention_bps / 100).toFixed(1)}%, ` +
-  `velocity ${(rail.velocity_bps / 10000).toFixed(2)}x — all read back from the dashboard`);
+  // Rounded the way the screens round, not the way toFixed happens to: 93.35
+  // becomes 93.3 through a binary representation and 93.4 through arithmetic,
+  // and a printed book that disagrees with the screen by a tenth is a question
+  // nobody should have to answer on camera.
+  `LM3 ${dec(rail.lm3_bps, 10000, 2)} (rounds ${rail.round_1_units / 100}/${rail.round_2_units / 100}/${rail.round_3_units / 100}), ` +
+  `retention ${dec(rail.retention_bps, 100, 1)}% against Maricá's 46%, ` +
+  `velocity ${dec(rail.velocity_bps, 10000, 2)}x — all read back from the dashboard`);
+// The subtraction the ninety-second script reads out loud. It moves with the
+// book, and a rehearsed figure that has quietly drifted is worse on camera than
+// no figure at all, so the run prints its own.
+const brl = (cents: number) => (cents / 100).toFixed(2);
+console.log(`backing: R$ ${brl(backing.issued_cents)} in, less R$ ${brl(backing.released_to_investors_cents)} released to investors `
+  + `and R$ ${brl(backing.cashed_out_by_merchants_cents)} cashed out by merchants, leaves R$ ${brl(backing.backing_cents)} `
+  + `— against R$ ${brl(backing.circulating_cents)} still circulating: ${backing.covered ? "covered" : "NOT COVERED"}`);
+console.log(`followed the rail, for the journey's focused reading: `
+  + (toFollow.length > 0
+    ? toFollow.map((o) => `${o.code} R$ ${(o.amount_cents / 100).toLocaleString("en-US")} (${o.reached})`).join("; ")
+    : "none — no request crossed onto the rail on this run"));
 console.log(`anchors queued: ${queued}`);
+
+// ------------------------------------------------- the run checks its own book
+//
+// Runs used to land two loans on the Grajaú rail and sometimes one, from the
+// same seed and the same generators. Two things caused it: an unordered select
+// driving pool allocation, and — the part that actually mattered — the desk
+// formalising whichever requests came first, so whether either of them sat in
+// the one territory with a rail was luck. Both are closed: the intents are
+// ordered, and `ordered` above sorts Grajaú's members to the front, which makes
+// the demo territory a deliberate hook rather than a coincidence.
+//
+// The check stays anyway. A guard is worth keeping after its cause is known,
+// because the next change to how the desk picks will not announce itself, and a
+// thin book is not broken — it is a weaker demonstration: one funded business
+// instead of two, and an additionality reading over a single loan. Better to
+// see that here than to find it on camera.
+if (rail.loans_landed < 2) {
+  console.log("");
+  console.log(`  !  Only ${rail.loans_landed} loan landed on the local rail, where a full run lands two.`);
+  console.log("     Nothing is broken; the demonstration is just thinner — one funded business,");
+  console.log("     and additionality measured over a single loan. Check how the desk picked");
+  console.log("     before reseeding: the run is meant to be deterministic now.");
+  console.log("");
+}

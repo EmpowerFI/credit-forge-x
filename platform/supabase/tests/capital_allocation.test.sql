@@ -11,7 +11,7 @@ select set_config(
   true
 );
 
-select plan(41);
+select plan(46);
 
 -- ------------------------------------------------------------ the vectors
 -- Generated from packages/capital-allocation/vectors/scenarios.json: the
@@ -243,6 +243,25 @@ select ok((select funding_pool is null and funding_status is null from o where w
 select ok((select allocation is null and funding_status is null from o where who = 'pgTAP Cida Alloc'),
   'Cida''s is never allocated: she has not agreed to be shown to investors');
 
+-- ------------------------------------------------ the console she browses
+
+-- An external investor allocates USDC and has no rail to send reais on, so a
+-- request the engine routed to the domestic desk is not an offer that can be
+-- made here. What leaves the market is counted rather than hidden: an investor
+-- who sees one request should be able to learn that the engine qualified two.
+select pg_temp.act_as('00000000-0000-0000-0000-0000000008a8');
+select is((select count(*)::int from investor_opportunities() where opportunity_id = (select id from o where who = 'pgTAP Ana Alloc')), 0,
+  'the market an investor browses leaves out what the engine routed to reais');
+select is((select count(*)::int from investor_opportunities() where opportunity_id = (select id from o where who = 'pgTAP Bia Alloc')), 1,
+  'and keeps what it can fund in USDC');
+select is(market_funded_elsewhere(), jsonb_build_object('count', 1, 'amount_cents', 200000),
+  'saying in one line how much qualified demand raises on the rail it does not carry');
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000008a1');
+select is((select count(*)::int from investor_opportunities() where opportunity_id = (select id from o where who = 'pgTAP Ana Alloc')), 1,
+  'an overseer still sees it: seeing what was routed away is the job');
+set local role postgres;
+
 -- --------------------------------------------------------------- investing
 
 set local role service_role;
@@ -265,6 +284,10 @@ select is((select array_agg(amount_cents order by amount_cents) from investments
   '{50000,150000}'::bigint[], 'each position keeping the reais put in');
 select ok((select bool_and(mode = 'simulated' and is_simulated) from investments where opportunity_id = (select id from o where who = 'pgTAP Ana Alloc')),
   'both marked simulated');
+select pg_temp.act_as('00000000-0000-0000-0000-0000000008a8');
+select is((select count(*)::int from investor_opportunities() where opportunity_id = (select id from o where who = 'pgTAP Ana Alloc')), 1,
+  'and a domestic one she holds comes back: a position that cannot be opened is worse than a route that cannot be taken');
+set local role postgres;
 
 -- ------------------------------------------------------------- formalisation
 

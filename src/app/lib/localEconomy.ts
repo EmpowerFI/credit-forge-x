@@ -1,7 +1,9 @@
-import { localized } from "../i18n";
+import { formatNumber, localized } from "../i18n";
 import type { Tone } from "../components/product/StatusPill";
 import type { EvidenceLabel } from "./evidence";
 import { platform } from "./platform";
+export type { Benchmark } from "./referencePoints";
+import type { Benchmark } from "./referencePoints";
 
 // The Local Productive Capital Rail, as the screens read it (addendum v3 §7.2,
 // §8, §12). Every figure below comes out of public.local_economy_dashboard(),
@@ -45,10 +47,42 @@ export interface LocalMovement {
   note: string | null;
 }
 
+/** What the units in circulation are a claim on. */
+export interface Backing {
+  issued_cents: number;
+  released_to_investors_cents: number;
+  cashed_out_by_merchants_cents: number;
+  /** Issued, less what left through a repayment and what a merchant cashed out. */
+  backing_cents: number;
+  circulating_units: number;
+  circulating_cents: number;
+  /** Whether the reais still held cover the units still circulating. */
+  covered: boolean;
+}
+
+/** One crossing of the border between reais and local units. */
+export interface Crossing {
+  id: string;
+  direction: "issue" | "redeem";
+  units: number;
+  brl_cents: number;
+  parity_bps: number;
+  note: string | null;
+  occurred_at: string;
+  evidence_status: EvidenceLabel;
+}
+
 export interface LocalEconomyDashboard {
   economy: Omit<LocalEconomyListed, "movements">;
   model_version: string;
+  /** The method the headline figure is computed by, named so it can be checked. */
+  measure: string;
   evidence_status: EvidenceLabel;
+
+  /** LM3's three rounds: capital in, what she spent locally, what they re-spent. */
+  round_1_units: number;
+  round_2_units: number;
+  round_3_units: number;
 
   injected_units: number;
   injected_brl_cents: number;
@@ -65,8 +99,8 @@ export interface LocalEconomyDashboard {
   first_movement_at: string | null;
   last_movement_at: string | null;
 
-  /** Local Capital Multiplier: circulation per unit injected. */
-  multiplier_bps: number;
+  /** Local Multiplier 3 (New Economics Foundation): all three rounds over the first. */
+  lm3_bps: number;
   /** What has not been taken off the rail for reais. */
   retention_bps: number;
   /** Turns of the units still in circulation. */
@@ -90,6 +124,10 @@ export interface LocalEconomyDashboard {
   /** What the accounts hold equals what the movements say is circulating. */
   supply_matches_balances: boolean;
 
+  /** What these figures are compared against, so the flattering one cannot stand alone. */
+  benchmarks: Benchmark[];
+  backing: Backing;
+  crossings: Crossing[];
   by_type: { tx_type: LocalTxType; movements: number; units: number }[];
   recent: LocalMovement[];
 }
@@ -171,8 +209,16 @@ export async function fetchLocalEconomyDashboard(economyId: string | null): Prom
 export const units = (n: number, code: string) =>
   `${code} ${(n / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-/** A ratio held in basis points, as the multiple it is. */
-export const times = (bps: number) => `${(bps / 10000).toFixed(2)}×`;
+/** A ratio held in basis points, as the multiple it is, with the decimal mark of
+ * the language: 20300 is "2.03×" in English and "2,03×" in Portuguese. */
+export const times = (bps: number) =>
+  `${formatNumber(bps / 10000, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}×`;
 
-/** A share held in basis points. */
-export const share = (bps: number) => `${(bps / 100).toFixed(1)}%`;
+/** The benchmark under a key, where the reading carried one. */
+export const benchmark = (d: { benchmarks: Benchmark[] }, key: string) =>
+  d.benchmarks.find((b) => b.key === key);
+
+/** A share held in basis points, with the decimal mark of the language: 9330 is
+ * "93.3%" in English and "93,3%" in Portuguese. */
+export const share = (bps: number) =>
+  `${formatNumber(bps / 100, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;

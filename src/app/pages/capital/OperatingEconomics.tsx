@@ -600,7 +600,7 @@ export default function OperatingEconomics() {
               </Select>
             )}
             <Button asChild variant="outline" className="gap-2">
-              <Link to="/app/capital"><ArrowLeft size={16} /> {tr({ en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" })}</Link>
+              <Link to="/app/capital/engine"><ArrowLeft size={16} /> {tr({ en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" })}</Link>
             </Button>
           </>
         } />
