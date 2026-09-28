@@ -42,7 +42,7 @@ for (const probe of PT
      // The nine stages, under them.
      "O capital existe", "Um negócio pede", "O motor a encaminha", "Investidores põem o dinheiro",
      "A cota vira um ativo", "Dólares viram reais", "A mesa paga a ela", "E depois", "Ele volta como stablecoin", "resgatadas de volta para reais",
-     "Sem registro em cadeia", "na fila para a Solana",
+     "Sem registro em cadeia", "na Solana",
      // Whose rail this runs on: four figures that are not ours, with sources.
      "O Brasil já tem esse trilho", "Nenhum dos quatro números abaixo é nosso.",
      "Bancos comunitários de desenvolvimento no Brasil", "Rede Brasileira de Bancos Comunitários, 2024",
@@ -52,7 +52,7 @@ for (const probe of PT
      "put up by investors", "reached a business", "she traded inside the territory", "repaid by businesses",
      "Capital exists", "A business asks", "The engine routes it", "Investors put up the money",
      "The share becomes an asset", "Dollars become reais", "The desk pays her", "And then what", "It comes back as stablecoin", "redeemed back to reais",
-     "Not anchored", "queued for Solana",
+     "Not anchored", "on Solana",
      "Brazil already has this rail", "Not one of the four figures below is ours.",
      "Community development banks in Brazil", "Rede Brasileira de Bancos Comunitários, 2024",
      "R$ 9.53 bn", "ANBC, 2025-06", "EmpowerFI is not a currency and issues none"])
