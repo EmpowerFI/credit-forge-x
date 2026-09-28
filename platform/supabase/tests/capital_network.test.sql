@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(72);
+select plan(78);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -596,6 +596,56 @@ select is(
 
 update eligibility_assessments set decision = 'ELIGIBLE'
   where id = '00000000-0000-0000-0000-0000000009b1';
+
+-- ------------------------------------------- where the capital came from
+
+-- The book, divided by source. It is the only place the thesis of this page is
+-- checkable: that domestic capital has several sources rather than one pool,
+-- and that the two routes from abroad are not the same kind of money.
+
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a2');
+select throws_ok(
+  $$ select public.capital_network_origin() $$,
+  '42501', null, 'the whole network''s book is not an entrepreneur''s to read');
+
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000009a3');
+
+select is(
+  (select (public.capital_network_origin() ->> 'plans')::int),
+  (select count(distinct opportunity_id)::int from capital_route_decisions),
+  'one plan per request, however many times the engine ran over it');
+
+select is(
+  (select (public.capital_network_origin() ->> 'routed_cents')::bigint),
+  (select (public.capital_network_origin() ->> 'domestic_cents')::bigint
+        + (public.capital_network_origin() ->> 'global_cents')::bigint),
+  'every centavo the network routed is on one side of the border or the other');
+
+select is(
+  (select sum((s ->> 'routed_cents')::bigint)::bigint
+   from jsonb_array_elements(public.capital_network_origin() -> 'sources') as t(s)),
+  (select (public.capital_network_origin() ->> 'routed_cents')::bigint),
+  'and the sources account for all of it');
+
+-- Capacity does not mean one thing. A partner states what it has, and nothing
+-- draws that down when a plan names it; a pool's is arithmetic on its own book.
+-- Presenting the two as one number is the mistake this field exists to prevent.
+select is(
+  (select array_agg(s ->> 'code' order by s ->> 'code')
+   from jsonb_array_elements(public.capital_network_origin() -> 'sources') as t(s)
+   where s ->> 'capacity_basis' = 'pool_residue'),
+  array['pool_domestico_p2p', 'pool_global_impacto'],
+  'only the two pool routes report a residue; every partner route reports a declaration');
+
+select is(
+  (select count(*)::int
+   from jsonb_array_elements(public.capital_network_origin() -> 'sources') as t(s)
+   where not (s ->> 'is_domestic')::boolean),
+  2, 'and capital from abroad arrives as two routes, not one');
+
+set local role postgres;
 
 select * from finish();
 rollback;

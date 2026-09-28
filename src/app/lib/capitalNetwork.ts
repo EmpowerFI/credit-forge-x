@@ -398,6 +398,56 @@ export function missingDocuments(plan: CapitalPlan): string[] {
   return [...out].sort();
 }
 
+/**
+ * One source of capital, and what it actually carried.
+ *
+ * `capacity_cents` is not one kind of number: a partner declares what it has,
+ * and nothing in this product draws that declaration down when a plan
+ * recommends a route — a recommendation is not a drawdown, so a route can well
+ * have routed more than it says it holds. A pool's is arithmetic on its own
+ * book. `capacity_basis` says which, so a screen never presents them as one.
+ */
+export interface CapitalSource {
+  code: string;
+  name: string;
+  instrument_type: InstrumentType;
+  provider: string;
+  provider_type: ProviderType;
+  is_domestic: boolean;
+  is_credit: boolean;
+  requires_partner_approval: boolean;
+  /** What the recorded book routed through this source, over the latest plan per request. */
+  routed_cents: number;
+  /** How many requests it carried something for. */
+  requests: number;
+  capacity_cents: number;
+  capacity_basis: "declared" | "pool_residue";
+  /** Its share of everything the network routed, in basis points. */
+  share_bps: number;
+}
+
+/** Where the capital came from, source by source: public.capital_network_origin(). */
+export interface CapitalOrigin {
+  /** Requests with a recorded plan. */
+  plans: number;
+  requested_cents: number;
+  routed_cents: number;
+  domestic_cents: number;
+  global_cents: number;
+  unfunded_cents: number;
+  external_capital_gap_cents: number;
+  eligible_gap_cents: number;
+  sources: CapitalSource[];
+}
+
+export const originKey = ["platform", "capital-network-origin"] as const;
+
+export async function fetchCapitalOrigin(): Promise<CapitalOrigin> {
+  const { data, error } = await platform.rpc("capital_network_origin");
+  if (error) throw error;
+  return data as unknown as CapitalOrigin;
+}
+
 export const decisionsKey = (opportunityId: string) => ["platform", "capital-route-decisions", opportunityId] as const;
 
 export async function fetchDecisions(opportunityId: string): Promise<RouteDecision[]> {

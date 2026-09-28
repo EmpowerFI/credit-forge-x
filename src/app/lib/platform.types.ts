@@ -3112,6 +3112,7 @@ export type Database = {
         Args: { p_program_id?: string }
         Returns: Json
       }
+      capital_network_origin: { Args: never; Returns: Json }
       capital_overview: { Args: never; Returns: Json }
       capital_plan: { Args: { p_opportunity_id: string }; Returns: Json }
       capital_portfolio: { Args: never; Returns: Json }
