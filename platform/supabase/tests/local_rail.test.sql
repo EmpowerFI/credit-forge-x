@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(33);
+select plan(39);
 
 -- ------------------------------------------------------------------ fixtures
 
@@ -213,6 +213,92 @@ select throws_ok(
       where a.owner_type = 'treasury' and b.owner_id = '00000000-0000-0000-0000-0000000014b1' $$,
   '42501', null, 'and nobody writes the ledger around private.local_move()');
 
+-- --------------------------------------------------- capital lands on the rail
+
+-- The injection is not something an operator remembers to do: a trigger fires
+-- on disbursal, beside the ones that already settle and cost the same event.
+
+set local role postgres;
+insert into credit_intents (id, entrepreneur_id, purpose, requested_amount_cents) values
+  ('00000000-0000-0000-0000-0000000014d1', '00000000-0000-0000-0000-0000000014e1', 'inventory', 200000),
+  ('00000000-0000-0000-0000-0000000014d2', '00000000-0000-0000-0000-0000000014e2', 'inventory', 200000);
+insert into readiness_assessments (id, entrepreneur_id, assessment_no, model_version, as_of_period, status, band, score,
+  components, missing_requirements, reason_codes, features) values
+  ('00000000-0000-0000-0000-000000014aa1', '00000000-0000-0000-0000-0000000014e1', 1, 'test', private.current_period(),
+   'CREDIT_READY', 'HIGH', 70, '{"data_quality": 18}'::jsonb, '{}', '{}', '{"months_reported": 12}'::jsonb),
+  ('00000000-0000-0000-0000-000000014aa2', '00000000-0000-0000-0000-0000000014e2', 1, 'test', private.current_period(),
+   'CREDIT_READY', 'HIGH', 70, '{"data_quality": 18}'::jsonb, '{}', '{}', '{"months_reported": 12}'::jsonb);
+insert into eligibility_assessments (id, entrepreneur_id, intent_id, readiness_assessment_id, eligibility_no, model_version,
+  decision, requested_amount_cents, proposed_amount_cents, term_months, instalment_cents, max_instalment_cents,
+  risk_band, risk_points, confidence, reason_codes, inputs) values
+  ('00000000-0000-0000-0000-000000014ea1', '00000000-0000-0000-0000-0000000014e1', '00000000-0000-0000-0000-0000000014d1',
+   '00000000-0000-0000-0000-000000014aa1', 1, 'test', 'ELIGIBLE', 200000, 200000, 12, 20000, 60000, 'LOW', 10, 'HIGH', '{}', '{}'::jsonb),
+  ('00000000-0000-0000-0000-000000014ea2', '00000000-0000-0000-0000-0000000014e2', '00000000-0000-0000-0000-0000000014d2',
+   '00000000-0000-0000-0000-000000014aa2', 1, 'test', 'ELIGIBLE', 200000, 200000, 12, 20000, 60000, 'LOW', 10, 'HIGH', '{}', '{}'::jsonb);
+insert into qualified_credit_opportunities (id, entrepreneur_id, intent_id, eligibility_id, opportunity_no,
+  amount_cents, term_months, instalment_cents, purpose, risk_band, confidence, status, desired_date, urgency) values
+  ('00000000-0000-0000-0000-000000014fa1', '00000000-0000-0000-0000-0000000014e1', '00000000-0000-0000-0000-0000000014d1',
+   '00000000-0000-0000-0000-000000014ea1', 1, 200000, 12, 20000, 'inventory', 'LOW', 'HIGH', 'in_review', current_date + 30, 'soon'),
+  ('00000000-0000-0000-0000-000000014fa2', '00000000-0000-0000-0000-0000000014e2', '00000000-0000-0000-0000-0000000014d2',
+   '00000000-0000-0000-0000-000000014ea2', 1, 200000, 12, 20000, 'inventory', 'LOW', 'HIGH', 'in_review', current_date + 30, 'soon');
+insert into partner_decisions (id, opportunity_id, partner_id, verdict, approved_amount_cents, rate_bps, term_months) values
+  ('00000000-0000-0000-0000-000000014dc1', '00000000-0000-0000-0000-000000014fa1', '00000000-0000-0000-0000-0000000014ab', 'approved', 200000, 300, 12),
+  ('00000000-0000-0000-0000-000000014dc2', '00000000-0000-0000-0000-000000014fa2', '00000000-0000-0000-0000-0000000014ab', 'approved', 200000, 300, 12);
+insert into loans (id, opportunity_id, entrepreneur_id, partner_id, decision_id,
+  principal_cents, term_months, rate_bps, instalment_cents, status) values
+  ('00000000-0000-0000-0000-000000014cb1', '00000000-0000-0000-0000-000000014fa1', '00000000-0000-0000-0000-0000000014e1',
+   '00000000-0000-0000-0000-0000000014ab', '00000000-0000-0000-0000-000000014dc1', 200000, 12, 300, 20000, 'PARTNER_APPROVED'),
+  ('00000000-0000-0000-0000-000000014cb2', '00000000-0000-0000-0000-000000014fa2', '00000000-0000-0000-0000-0000000014e2',
+   '00000000-0000-0000-0000-0000000014ab', '00000000-0000-0000-0000-000000014dc2', 200000, 12, 300, 20000, 'PARTNER_APPROVED');
+
+insert into loan_events (loan_id, from_status, to_status, note)
+values ('00000000-0000-0000-0000-000000014cb1', 'PARTNER_APPROVED', 'DISBURSED', 'pgTAP');
+
+select is(
+  (select amount_units from local_transactions
+   where loan_id = '00000000-0000-0000-0000-000000014cb1' and tx_type = 'capital_injection'),
+  200000::bigint, 'disbursing a loan puts its principal on her territory''s rail, without anyone asking');
+
+select is(
+  (select count(*)::int from local_transactions
+   where loan_id = '00000000-0000-0000-0000-000000014cb1' and tx_type = 'capital_injection'),
+  1, 'and disbursing is idempotent on the rail: one injection per loan');
+
+-- Her territory has a rail. The other entrepreneur's does not, and that is a
+-- fact about the territory rather than a failure of the disbursal.
+insert into loan_events (loan_id, from_status, to_status, note)
+values ('00000000-0000-0000-0000-000000014cb2', 'PARTNER_APPROVED', 'DISBURSED', 'pgTAP');
+
+select is(
+  (select count(*)::int from local_transactions where loan_id = '00000000-0000-0000-0000-000000014cb2'),
+  0, 'a territory with no local economy records nothing, and the loan still disbursed');
+
+select is(
+  (private.local_inject_for_loan('00000000-0000-0000-0000-000000014cb2') ->> 'reason'),
+  'no_local_economy', 'and it says why, rather than raising');
+
+-- She repays in the units she holds. She holds all of them here, so she does.
+insert into payments (loan_id, instalment_no, amount_cents, paid_at) values
+  ('00000000-0000-0000-0000-000000014cb1', 1, 20000, now());
+
+select is(
+  (select amount_units from local_transactions
+   where loan_id = '00000000-0000-0000-0000-000000014cb1' and tx_type = 'repayment'),
+  20000::bigint, 'an instalment travels back along the rail it arrived on');
+
+-- And she cannot repay what she has spent: capital in a supplier''s account is
+-- not hers to hand back, and a ledger that took it anyway would be printing
+-- units at the moment of repayment.
+select public.local_spend('00000000-0000-0000-0000-0000000014b1', 215000, 'inventory',
+  '00000000-0000-0000-0000-0000000014e1');
+insert into payments (loan_id, instalment_no, amount_cents, paid_at) values
+  ('00000000-0000-0000-0000-000000014cb1', 2, 20000, now());
+
+select is(
+  (select count(*)::int from local_transactions
+   where loan_id = '00000000-0000-0000-0000-000000014cb1' and tx_type = 'repayment'),
+  1, 'and an instalment she has no units for stays a repayment in reais, with nothing invented on the rail');
+
 -- -------------------------------------------------------------------- reading
 
 set local role postgres;
@@ -222,7 +308,7 @@ select is(
   1, 'she reads her own balance');
 select is(
   (select count(*)::int from local_transactions),
-  2, 'and the movements that touched it, and no others');
+  5, 'and the five movements that touched it: two injections, two purchases and a repayment, and no others');
 
 set local role postgres;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000014a4');
@@ -240,7 +326,7 @@ set local role postgres;
 select pg_temp.act_as('00000000-0000-0000-0000-0000000014a5');
 select is(
   (select count(*)::int from local_transactions where economy_id = '00000000-0000-0000-0000-0000000014f1'),
-  4, 'the desk reads the whole ledger');
+  7, 'the desk reads the whole ledger, including the movements that never touched her');
 
 -- Not "reads nothing": the grant is not there at all, so the question itself is
 -- refused. A visitor cannot count the rows to learn there are rows.

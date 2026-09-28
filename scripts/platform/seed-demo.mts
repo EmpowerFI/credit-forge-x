@@ -777,6 +777,44 @@ for (const m of memberships) {
 // so the demo can show exactly that.
 
 const grajau = byName.get(COMMUNITIES[0].name)!;
+
+// ------------------------------------------------------- the local rail
+// One territory has a local economy, and three do not. That is the honest
+// arrangement rather than a convenient one: the capital network then says
+// LOCAL_RAIL_ELIGIBLE where a rail exists and LOCAL_RAIL_UNAVAILABLE where it
+// does not, and a judge can see the difference on two plans side by side.
+//
+// Grajaú, because that is where the live demo happens. Six merchants, one of
+// them deliberately outside the eligible set, so a refusal on the rail is
+// something the screen can show rather than something we assert.
+
+const [economy] = await must("local economy", db.from("local_economies").insert({
+  code: "grajau_produtivo",
+  name: "Moeda Produtiva do Grajaú",
+  territory: "Grajaú, zona sul de São Paulo",
+  community_id: grajau.id,
+  uf: "SP",
+  currency_code: "GRJ",
+  // 10000 basis points of a centavo per unit: 1 GRJ = R$ 1, for the demo.
+  parity_bps: 10_000,
+  parity_reference: "1 GRJ = R$ 1,00 · demonstração, sem lastro e sem emissor",
+}).select("id, code, currency_code, parity_bps"));
+
+const MERCHANTS = [
+  { code: "atacado_sul", name: "Atacado Zona Sul", sector: "wholesale", neighbourhood: "Grajaú", eligible: true },
+  { code: "tecidos_parelheiros", name: "Tecidos Parelheiros", sector: "textiles", neighbourhood: "Parelheiros", eligible: true },
+  { code: "grafica_cantinho", name: "Gráfica do Cantinho", sector: "services", neighbourhood: "Grajaú", eligible: true },
+  { code: "hortifruti_feira", name: "Hortifruti da Feira", sector: "food", neighbourhood: "Grajaú", eligible: true },
+  { code: "manutencao_bairro", name: "Manutenção do Bairro", sector: "services", neighbourhood: "Cidade Dutra", eligible: true },
+  // Outside the network: productive capital may not be spent here, and the
+  // engine refuses it by name rather than by silence.
+  { code: "loja_fora_da_rede", name: "Loja fora da rede", sector: "retail", neighbourhood: "Centro", eligible: false },
+];
+const merchants = await must("local merchants", db.from("local_merchants").insert(
+  MERCHANTS.map((m) => ({ ...m, economy_id: economy.id, city: "São Paulo", uf: "SP" })),
+).select("id, code, eligible"));
+const merchantOf = new Map(merchants.map((m) => [m.code, m.id]));
+
 const leftAlone = memberships.find(
   (m) => m.community_id === grajau.id && m.entrepreneur_id !== maria.id && statusOf.get(m.entrepreneur_id) === "CREDIT_READY",
 )?.entrepreneur_id;
@@ -793,6 +831,11 @@ const intents = memberships
     entrepreneur_id: m.entrepreneur_id,
     purpose: PURPOSE_BY_SECTOR[sectorOf.get(m.entrepreneur_id) ?? "retail"],
     requested_amount_cents: (20 + Math.floor(random() * 80)) * 10_000, // R$ 2,000–9,900
+    // Where she would spend it (addendum v3 §6). Most of this demand is bought
+    // near home, which is the premise the local rail rests on — and some of it
+    // is not, because a rail that every request matches is a rail nobody has
+    // tested. Drawn for everyone, so the sequence does not shift.
+    supplier_geography: ((d) => d < 0.45 ? "same_neighbourhood" : d < 0.8 ? "municipality" : d < 0.95 ? "state" : "other_brazil")(random()),
     is_simulated: true,
     created_at: iso(new Date(Date.UTC(2026, 8, 12, 16) + Math.floor(random() * 36) * 3_600_000)),
   }));
@@ -1071,6 +1114,90 @@ for (const [k, o] of referred.slice(toWorkOn.length).entries()) {
   await fund(o.id, [0.15, 0.45, 0][k] ?? 0, 0, "2026-09-13T15:00:00-03:00");
 }
 
+// ------------------------------------------------------ circulation, locally
+// The capital that landed on the rail is spent, and then spent again.
+//
+// The injection itself was not written here: a trigger fires on disbursal, the
+// way settlement and cost to serve already do, so the ledger cannot fall behind
+// the loans. What is written here is what happens afterwards, because that is
+// the part of the thesis a screen can check — she buys her inputs from two
+// merchants in the territory, one of them pays a third for a service, and the
+// third buys from her. Then a merchant redeems to reais and leaves the network.
+//
+// The multiplier the Local Economy Dashboard reports is whatever these
+// movements come to divided by what was injected. It is not set here and it is
+// not a target: if the loop were shorter the number would be smaller, and the
+// dashboard would say so.
+
+const railTx: { injected: number; moves: number } = { injected: 0, moves: 0 };
+{
+  const { data: injections } = await db
+    .from("local_transactions")
+    .select("loan_id, amount_units, to_account_id")
+    .eq("economy_id", economy.id)
+    .eq("tx_type", "capital_injection");
+
+  for (const [n, tx] of (injections ?? []).entries()) {
+    const { data: account } = await db
+      .from("local_accounts").select("owner_id").eq("id", tx.to_account_id).single();
+    const her = account?.owner_id as string | undefined;
+    if (!her) continue;
+    railTx.injected += tx.amount_units;
+
+    // Two suppliers, sized so a third of the capital is still hers afterwards:
+    // she is buying inputs, not spending the loan down to nothing on day one.
+    const supplier = n % 2 === 0 ? "atacado_sul" : "tecidos_parelheiros";
+    const buy = Math.floor(tx.amount_units * 0.45);
+    const second = Math.floor(tx.amount_units * 0.22);
+    await must("local spend", asPartner.rpc("local_spend", {
+      p_merchant_id: merchantOf.get(supplier), p_units: buy,
+      p_purpose: "inventory", p_entrepreneur_id: her, p_note: "insumos",
+    }));
+    await must("local spend, second supplier", asPartner.rpc("local_spend", {
+      p_merchant_id: merchantOf.get("hortifruti_feira"), p_units: second,
+      p_purpose: "inventory", p_entrepreneur_id: her, p_note: "insumos",
+    }));
+    railTx.moves += buy + second;
+
+    // The supplier pays for a service inside the same territory.
+    const onward = Math.floor(buy * 0.4);
+    await must("local merchant payment", asPartner.rpc("local_merchant_payment", {
+      p_from_merchant_id: merchantOf.get(supplier), p_to_merchant_id: merchantOf.get("grafica_cantinho"),
+      p_units: onward, p_note: "serviço",
+    }));
+    railTx.moves += onward;
+
+    // And she sells into the network, which is what lets her repay on the rail
+    // rather than in reais. From the merchant her supplier paid, so the loop is
+    // three hops of the same capital and not a transfer out of thin air — a
+    // merchant can only pay her with units it actually holds, which is the
+    // constraint that makes the multiplier mean something. Less than it
+    // received: a loop, not a rebate.
+    const sale = Math.floor(onward * 0.6);
+    await must("local sale", asPartner.rpc("local_sale", {
+      p_merchant_id: merchantOf.get("grafica_cantinho"), p_entrepreneur_id: her,
+      p_units: sale, p_note: "venda dela para a rede",
+    }));
+    railTx.moves += sale;
+  }
+
+  // One merchant takes value out of the network and is paid in reais. Simulated:
+  // no Pix is sent, and the row says so in its own evidence label.
+  const { data: held } = await db
+    .from("local_accounts").select("owner_id, balance_units")
+    .eq("economy_id", economy.id).eq("owner_type", "merchant")
+    .order("balance_units", { ascending: false }).limit(1);
+  if (held?.[0] && held[0].balance_units > 0) {
+    const out = Math.floor(held[0].balance_units * 0.5);
+    if (out > 0) {
+      await must("local redemption", asPartner.rpc("local_redeem", {
+        p_merchant_id: held[0].owner_id, p_units: out,
+      }));
+      railTx.moves += out;
+    }
+  }
+}
+
 const { data: overview } = await asPartner.rpc("capital_overview");
 await asPartner.auth.signOut();
 
@@ -1131,4 +1258,7 @@ console.log(`consent: ${consentRows.length} recorded at enrollment, ${consentRow
 }
 await must("release the anchor worker", db.rpc("finish_anchor_run"));
 const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");
+console.log(`local rail: ${economy.currency_code} ${railTx.injected / 100} injected in ${COMMUNITIES[0].city}, ` +
+  `${economy.currency_code} ${railTx.moves / 100} moved afterwards across ${merchants.length} merchants ` +
+  `(one outside the eligible set); multiplier ${(railTx.moves / Math.max(railTx.injected, 1)).toFixed(2)}x from the ledger`);
 console.log(`anchors queued: ${queued}`);
