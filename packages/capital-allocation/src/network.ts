@@ -36,6 +36,28 @@ export type InstrumentType =
   | "impact_fund_capital";
 
 /**
+ * How far a route's capital reaches. A regional cooperative and a fund in
+ * Amsterdam are both "not the domestic pool", and the difference between them is
+ * what the v3 thesis is about, so it stops being inferred from is_domestic.
+ */
+export type CapitalScope = "territorial" | "regional" | "national" | "global";
+
+/**
+ * How value actually reaches her. Four rails, and the one that matters to v3 is
+ * the first: capital that arrives as local units and is spent inside a territory
+ * rather than leaving it the moment it lands.
+ */
+export type SettlementRail = "local_currency" | "brl_pix" | "partner_card" | "usdc_solana";
+
+/**
+ * Where she would spend it. Asked because capital that circulates locally is the
+ * whole claim: a need whose supplier is abroad does not circulate anywhere, and
+ * a screen that showed a multiplier for it would be measuring nothing.
+ */
+export type SupplierGeography =
+  | "same_neighbourhood" | "municipality" | "state" | "other_brazil" | "international";
+
+/**
  * One vocabulary, not two. Where the addendum's §8 collides with a code the
  * pool engine already raises, the existing spelling wins, so the audit console
  * never shows two answers to one question.
@@ -53,10 +75,20 @@ export type NetworkReason =
   | "SPONSORED_PROGRAM_MATCH"
   | "GLOBAL_IMPACT_MANDATE_MATCH"
   | "GLOBAL_EXPANDS_CAPACITY"
+  /** This route hands her value on a local rail, and the territory has one. */
+  | "LOCAL_RAIL_ELIGIBLE"
+  /** What she is buying can be bought where the capital circulates. */
+  | "LOCAL_SUPPLIER_MATCH"
   // what the network could and could not do
   | "DOMESTIC_COVERAGE_SUFFICIENT"
   | "DOMESTIC_CAPACITY_PARTIAL"
   | "DOMESTIC_POOL_EXHAUSTED"
+  /** A route inside the territory gave everything it had, and it was not enough. */
+  | "TERRITORIAL_CAPACITY_PARTIAL"
+  /** Local capital did not cover her: the residual exists, before anyone asks who fills it. */
+  | "EXTERNAL_GAP_EXISTS"
+  /** Capital from abroad answered demand that local capital had not: v3's additionality. */
+  | "GLOBAL_ADDITIONALITY"
   // why a route was refused
   | "AFFORDABILITY_LIMIT"
   | "TICKET_OUTSIDE_POOL_POLICY"
@@ -66,6 +98,12 @@ export type NetworkReason =
   | "BUSINESS_TOO_YOUNG"
   | "INSUFFICIENT_DOCUMENTATION"
   | "PARTNER_CAPACITY_EXHAUSTED"
+  /**
+   * This route settles on a local rail and the territory has none, so it would
+   * pay her in reais instead. Not a refusal: the route is still offered, and a
+   * code that said nothing would leave the difference invisible.
+   */
+  | "LOCAL_RAIL_UNAVAILABLE"
   | "MANUAL_REVIEW_REQUIRED"
   | "NO_ROUTE_AVAILABLE"
   // the second question, asked of the residual gap by ./global.ts. One
@@ -112,6 +150,10 @@ export interface Instrument {
   capacity_cents: number;
   impact_mandate: boolean;
   is_domestic: boolean;
+  /** How far this route's capital reaches (v3 §6). */
+  capital_scope: CapitalScope;
+  /** How value reaches her from it (v3 §6). */
+  settlement_rail: SettlementRail;
 }
 
 /** What she needs, and what the engines already established about her. */
@@ -127,6 +169,13 @@ export interface CapitalNeed {
   max_instalment_cents: number;
   /** Women-led and in a verified community. */
   impact_eligible: boolean;
+  /** Where she would spend it (v3 §6), at the grain the local rail cares about. */
+  supplier_geography: SupplierGeography;
+  /**
+   * Whether her territory has a local rail at all. A route that settles in local
+   * units where none exists is not refused — it pays her in reais, and says so.
+   */
+  local_rail_available: boolean;
   /** Gate 1: the opportunity exists, so eligibility passed. False only in a what-if. */
   readiness_ok: boolean;
   /** Whether a manual review may proceed where readiness did not pass. */
@@ -225,8 +274,13 @@ const REASON_ORDER: NetworkReason[] = [
   "PARTNER_CAPACITY_AVAILABLE",
   "LOWER_ESTIMATED_COST",
   "AFFORDABILITY_BUDGET_SHARED",
+  "LOCAL_RAIL_ELIGIBLE",
+  "LOCAL_SUPPLIER_MATCH",
   "GLOBAL_EXPANDS_CAPACITY",
   "GLOBAL_IMPACT_MANDATE_MATCH",
+  "TERRITORIAL_CAPACITY_PARTIAL",
+  "EXTERNAL_GAP_EXISTS",
+  "GLOBAL_ADDITIONALITY",
   "AFFORDABILITY_LIMIT",
   "TICKET_OUTSIDE_POOL_POLICY",
   "PURPOSE_OUTSIDE_POOL_MANDATE",
@@ -235,6 +289,7 @@ const REASON_ORDER: NetworkReason[] = [
   "BUSINESS_TOO_YOUNG",
   "INSUFFICIENT_DOCUMENTATION",
   "PARTNER_CAPACITY_EXHAUSTED",
+  "LOCAL_RAIL_UNAVAILABLE",
   "MANUAL_REVIEW_REQUIRED",
   "NO_ROUTE_AVAILABLE",
 ];
@@ -349,8 +404,14 @@ function assess(need: CapitalNeed, i: Instrument): InstrumentAssessment {
   };
 }
 
+/** Whether what she is buying can be bought where this capital would circulate. */
+const spendsLocally = (need: CapitalNeed) =>
+  need.supplier_geography === "same_neighbourhood" || need.supplier_geography === "municipality";
+
 /** Why this instrument earned its place in the stack. */
-function reasonsFor(need: CapitalNeed, i: Instrument, cheapest: boolean, budgetBound: boolean): NetworkReason[] {
+function reasonsFor(
+  need: CapitalNeed, i: Instrument, cheapest: boolean, budgetBound: boolean, capacityBound: boolean,
+): NetworkReason[] {
   const out: NetworkReason[] = [];
   if (i.purposes.includes(need.purpose)) {
     out.push(i.type === "productive_exchange_network" ? "CLOSED_NETWORK_PURPOSE_MATCH" : "PURPOSE_MATCH");
@@ -361,6 +422,16 @@ function reasonsFor(need: CapitalNeed, i: Instrument, cheapest: boolean, budgetB
   if (i.capacity_cents > 0) out.push("PARTNER_CAPACITY_AVAILABLE");
   if (cheapest) out.push("LOWER_ESTIMATED_COST");
   if (budgetBound) out.push("AFFORDABILITY_BUDGET_SHARED");
+  // The local rail, and what it needs to be more than a label: a territory that
+  // has one, and a supplier close enough that the units can be spent there.
+  if (i.settlement_rail === "local_currency") {
+    out.push(need.local_rail_available ? "LOCAL_RAIL_ELIGIBLE" : "LOCAL_RAIL_UNAVAILABLE");
+    if (need.local_rail_available && spendsLocally(need)) out.push("LOCAL_SUPPLIER_MATCH");
+  }
+  // A route inside the territory that gave everything it had. Said of the scope
+  // rather than of the instrument, because "the neighbourhood ran out" and "a
+  // national line ran out" are different facts about the same shortfall.
+  if (i.capital_scope === "territorial" && capacityBound) out.push("TERRITORIAL_CAPACITY_PARTIAL");
   if (!i.is_domestic) {
     out.push("GLOBAL_EXPANDS_CAPACITY");
     if (i.impact_mandate && need.impact_eligible) out.push("GLOBAL_IMPACT_MANDATE_MATCH");
@@ -435,9 +506,12 @@ export function matchCapital(need: CapitalNeed, instruments: Instrument[]): Capi
       }
       const trimmed = repays && withinBudget < Math.min(a.max_takeable_cents, left);
       if (trimmed) budgetBound = true;
+      // It gave everything it had and there was still need: a shortfall of
+      // capacity rather than of her month, and they are told apart.
+      const capacityBound = take >= i.capacity_cents && take < left;
       allocations.push({
         instrument_id: i.id, amount_cents: take, fit_score: a.fit_score,
-        reasons: reasonsFor(need, i, cost === low, trimmed),
+        reasons: reasonsFor(need, i, cost === low, trimmed, capacityBound),
         requires_partner_approval: i.requires_partner_approval, is_credit: i.is_credit,
       });
       if (repays) instalmentSpent += instalmentCents(take, cost, need.term_months);
@@ -458,6 +532,12 @@ export function matchCapital(need: CapitalNeed, instruments: Instrument[]): Capi
   else reasons.add("DOMESTIC_POOL_EXHAUSTED");
   for (const a of allocations) for (const r of a.reasons) reasons.add(r);
   if (budgetBound) reasons.add("AFFORDABILITY_BUDGET_SHARED");
+  // Two facts about the plan rather than about any one route (v3 §6, §8). The
+  // gap is stated before anyone asks who fills it, and additionality is claimed
+  // only where capital from abroad answered demand local capital had not — not
+  // merely because a global route happened to be the cheapest.
+  if (gap > 0) reasons.add("EXTERNAL_GAP_EXISTS");
+  if (globalCovered > 0 && domesticCovered < need.amount_cents) reasons.add("GLOBAL_ADDITIONALITY");
   for (const a of evaluated) for (const b of a.blocks) reasons.add(b);
   if (allocations.length === 0) reasons.add("NO_ROUTE_AVAILABLE");
 

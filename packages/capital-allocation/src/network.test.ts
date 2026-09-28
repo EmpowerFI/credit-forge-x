@@ -38,7 +38,7 @@ const regional: Instrument = {
   purposes: ["working_capital", "inventory"], business_age_min_months: 6,
   term_min_months: null, term_max_months: null,
   required_documents: ["cnpj_or_mei", "bank_statement_3m"], max_instalment_share_bps: 6000,
-  estimated_cost_bps: 4800, capacity_cents: 4_000_000, impact_mandate: false, is_domestic: true,
+  estimated_cost_bps: 4800, capacity_cents: 4_000_000, impact_mandate: false, is_domestic: true, capital_scope: "regional", settlement_rail: "brl_pix",
 };
 const micro: Instrument = {
   id: "microcredito_produtivo", provider: "microcredito_demo", name: "Microcrédito produtivo",
@@ -47,7 +47,7 @@ const micro: Instrument = {
   purposes: ["working_capital", "inventory", "equipment"], business_age_min_months: 0,
   term_min_months: null, term_max_months: null,
   required_documents: ["cpf", "proof_of_activity"], max_instalment_share_bps: 4000,
-  estimated_cost_bps: 6600, capacity_cents: 1_500_000, impact_mandate: true, is_domestic: true,
+  estimated_cost_bps: 6600, capacity_cents: 1_500_000, impact_mandate: true, is_domestic: true, capital_scope: "national", settlement_rail: "brl_pix",
 };
 const exchange: Instrument = {
   id: "troca_produtiva_rede", provider: "rede_troca_demo", name: "Troca produtiva em rede",
@@ -56,7 +56,7 @@ const exchange: Instrument = {
   purposes: ["working_capital", "inventory"], business_age_min_months: 0,
   term_min_months: null, term_max_months: null,
   required_documents: ["network_membership"], max_instalment_share_bps: null,
-  estimated_cost_bps: null, capacity_cents: 600_000, impact_mandate: false, is_domestic: true,
+  estimated_cost_bps: null, capacity_cents: 600_000, impact_mandate: false, is_domestic: true, capital_scope: "territorial", settlement_rail: "partner_card",
 };
 const global: Instrument = {
   id: "pool_global_impacto", provider: "empowerfi_pools", name: "Pool global P2P · investidores no exterior",
@@ -65,7 +65,7 @@ const global: Instrument = {
   purposes: [], business_age_min_months: 0,
   term_min_months: null, term_max_months: null, required_documents: [],
   max_instalment_share_bps: 10_000, estimated_cost_bps: 5400, capacity_cents: 9_000_000,
-  impact_mandate: true, is_domestic: false,
+  impact_mandate: true, is_domestic: false, capital_scope: "global", settlement_rail: "local_currency",
 };
 const NETWORK = [regional, micro, exchange, global];
 
@@ -73,7 +73,8 @@ const NETWORK = [regional, micro, exchange, global];
 const rita: CapitalNeed = {
   amount_cents: 500_000, term_months: 12, purpose: "inventory", uf: "SP",
   business_age_months: 18, documents: ["cnpj_or_mei", "bank_statement_3m", "cpf", "proof_of_activity", "network_membership"],
-  max_instalment_cents: 90_000, impact_eligible: true, readiness_ok: true, manual_review_allowed: false,
+  max_instalment_cents: 90_000, impact_eligible: true, supplier_geography: "municipality", local_rail_available: true,
+  readiness_ok: true, manual_review_allowed: false,
 };
 
 describe("the fit score", () => {
@@ -125,7 +126,7 @@ describe("a fund's own policy", () => {
     ticket_min_cents: 100_000, ticket_max_cents: 5_000_000, eligible_uf: [], purposes: [],
     term_min_months: 6, term_max_months: 36, business_age_min_months: 6,
     required_documents: ["cnpj_or_mei", "bank_statement_3m"], max_instalment_share_bps: 5000,
-    estimated_cost_bps: 3600, capacity_cents: 2_000_000_000, impact_mandate: true, is_domestic: false,
+    estimated_cost_bps: 3600, capacity_cents: 2_000_000_000, impact_mandate: true, is_domestic: false, capital_scope: "global", settlement_rail: "local_currency",
   };
 
   it("refuses a term shorter than it will fund", () => {
