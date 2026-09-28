@@ -94,7 +94,7 @@ function NextActions({ data }: { data: Data }) {
   const toMeasure = data.hero.loans_disbursed - data.hero.outcomes_measured;
   const items = [
     data.capital.waiting_for_capital > 0 && {
-      key: "waiting", to: "/app/capital", tone: "caution" as const,
+      key: "waiting", to: "/app/capital/engine", tone: "caution" as const,
       text: tr({
         en: `${data.capital.waiting_for_capital} qualified ${data.capital.waiting_for_capital === 1 ? "opportunity waits" : "opportunities wait"} for a pool that can fund them`,
         pt: `${data.capital.waiting_for_capital} ${data.capital.waiting_for_capital === 1 ? "oportunidade qualificada aguarda" : "oportunidades qualificadas aguardam"} um pool que possa financiá-las`,

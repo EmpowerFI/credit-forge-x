@@ -54,7 +54,7 @@ export const STORIES: Area[] = localized([
   {
     id: "engine", to: "/app/capital", prefix: ["/app/capital"], icon: Split,
     label: { en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" },
-    audience: { en: "Who is qualified, and which pool can fund it sustainably?", pt: "Quem está qualificada, e qual pool pode financiar de forma sustentável?" },
+    audience: { en: "Where does a dollar committed abroad end up, and what did it do on the way?", pt: "Onde vai parar um dólar comprometido lá fora, e o que ele fez no caminho?" },
     roles: ["sponsor", "capital_provider", "partner", "admin", "auditor"], persona: SPONSOR,
   },
   {
@@ -124,9 +124,9 @@ export const SUBNAV: Partial<Record<AreaId, NavItem[]>> = localized({
   // The engine's home had no sidebar at all: whoever entered as the operator
   // landed there with no way on except the header menu.
   engine: [
-    { to: "/app/capital", label: { en: "Engine", pt: "Motor" }, icon: Split, end: true },
+    { to: "/app/capital", label: { en: "Capital Journey", pt: "Jornada do Capital" }, icon: Waypoints, end: true },
+    { to: "/app/capital/engine", label: { en: "Engine", pt: "Motor" }, icon: Split },
     { to: "/app/capital/network", label: { en: "Capital Network", pt: "Rede de Capital" }, icon: Network },
-    { to: "/app/capital/journey", label: { en: "Capital Journey", pt: "Jornada do Capital" }, icon: Waypoints },
     { to: "/app/capital/local", label: { en: "Local Economy", pt: "Economia Local" }, icon: MapPin },
     { to: "/app/capital/economics", label: { en: "Operating economics", pt: "Economia operacional" }, icon: BarChart3 },
   ],

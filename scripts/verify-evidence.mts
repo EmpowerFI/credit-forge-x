@@ -52,7 +52,7 @@ console.log("---\n" + body.slice(from < 0 ? 0 : from).split("\n").filter((l) => 
 // Three screens this persona can actually open. Her own page carries the same
 // mark, but the operator cannot open it, so checking it here would only ever
 // prove that the route is role-gated.
-for (const [path, name] of [["/app/capital", "engine"], ["/app/capital/local", "local economy"], ["/app/capital/economics", "operating economics"]]) {
+for (const [path, name] of [["/app/capital/engine", "engine"], ["/app/capital/local", "local economy"], ["/app/capital/economics", "operating economics"]]) {
   await page.goto(`${BASE}${path}`, { waitUntil: "networkidle" });
   await settle(page, 2500);
   const t = await page.locator("body").innerText();

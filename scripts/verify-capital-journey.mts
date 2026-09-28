@@ -30,16 +30,22 @@ if (await choice.count()) { await choice.click(); await settle(page, 500); }
 await page.getByRole("button", { name: /Enter as demo|Entrar como demo|Explore without a wallet|Explorar sem carteira/i }).first().click();
 await settle(page, 4000);
 
-await page.goto(`${BASE}/app/capital/journey`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/app/capital`, { waitUntil: "networkidle" });
 await settle(page, 2500);
 
 const body = await page.locator("body").innerText();
 for (const probe of PT
-  ? ["Jornada do Capital", "Comprometido com o livro", "Chegou a um negócio", "Negociado dentro do território",
+  ? ["Jornada do Capital",
+     // The four movements, which are the spine and the page's own argument.
+     "O capital global entra", "Vira crédito em moeda local", "Circula no território", "Volta como stablecoin",
+     "postos por investidores", "chegaram a um negócio", "ela negociou dentro do território", "pagos pelos negócios",
+     // The nine stages, under them.
      "O capital existe", "Um negócio pede", "O motor a encaminha", "Investidores põem o dinheiro",
      "A cota vira um ativo", "Dólares viram reais", "A mesa paga a ela", "E depois", "Ele volta como stablecoin", "resgatadas de volta para reais",
      "Sem registro em cadeia", "na fila para a Solana"]
-  : ["Capital Journey", "Committed to the book", "Reached a business", "Traded inside the territory",
+  : ["Capital Journey",
+     "Global capital comes in", "It becomes credit in local currency", "It circulates in the territory", "It comes back as stablecoin",
+     "put up by investors", "reached a business", "she traded inside the territory", "repaid by businesses",
      "Capital exists", "A business asks", "The engine routes it", "Investors put up the money",
      "The share becomes an asset", "Dollars become reais", "The desk pays her", "And then what", "It comes back as stablecoin", "redeemed back to reais",
      "Not anchored", "queued for Solana"])
@@ -78,5 +84,25 @@ for (const w of [768, 390]) {
   await settle(page, 900);
   console.log(`overflow@${w}:`, JSON.stringify(await overflow()));
 }
+// The area now opens on the loop, so the reorganisation itself is checked: the
+// old address still lands somewhere, the engine still opens at its new one, and
+// the left rail leads with the loop rather than with one of its tools.
+await page.setViewportSize({ width: 1280, height: 1100 });
+await page.goto(`${BASE}/app/capital/journey`, { waitUntil: "networkidle" });
+await settle(page, 1500);
+console.log(`\n${page.url().endsWith("/app/capital") ? "ok  " : "MISS"} /app/capital/journey lands on /app/capital (got ${page.url()})`);
+
+await page.goto(`${BASE}/app/capital/engine`, { waitUntil: "networkidle" });
+await settle(page, 2500);
+const engine = await page.locator("main").innerText();
+console.log(`${engine.includes(PT ? "Motor de Crédito e Capital" : "Credit & Capital Engine") ? "ok  " : "MISS"} the engine opens at /app/capital/engine`);
+
+// The area's own rail, not the list of areas above it — both name the engine.
+const navs = await page.locator("nav").allInnerTexts();
+const order = navs.find((t) => t.includes(PT ? "Economia Local" : "Local Economy")) ?? "";
+const loop = order.indexOf(PT ? "Jornada do Capital" : "Capital Journey");
+const tool = order.indexOf(PT ? "Motor" : "Engine");
+console.log(`${loop === 0 && tool > loop ? "ok  " : "MISS"} the rail leads with the loop, then the engine :: ${order.replace(/\n/g, " · ")}`);
+
 console.log("console errors:", errors.length ? errors.slice(0, 5) : "none");
 await browser.close();

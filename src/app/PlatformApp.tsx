@@ -170,13 +170,19 @@ function Pages() {
             whoever may read a figure may read what kind of claim it is. */}
         <Route path="evidence" element={<Suspense fallback={loading}><EvidencePage /></Suspense>} />
         <Route path="impact" element={<RequireAuth roles={["sponsor", "admin", "auditor"]}><Suspense fallback={loading}><ImpactIntelligence /></Suspense></RequireAuth>} />
-        <Route path="capital" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
+        {/* The area opens on the whole loop, not on one of its tools. Every
+            other screen here answers one movement well and none answered the
+            question the product is for, which is why five good screens read as
+            five unrelated ones. */}
+        <Route path="capital" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><CapitalJourney /></Suspense></RequireAuth>} />
+        {/* Where the journey used to live. Links from outside the app outlive a
+            reorganisation of it. */}
+        <Route path="capital/journey" element={<Navigate to="/app/capital" replace />} />
+        <Route path="capital/engine" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
         {/* Reading the registry is as wide as its row-level policy; running the
             engine is for the desk and capital operators, and setting a policy is
             narrower still. The page gates those itself. */}
         <Route path="capital/network" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><CapitalNetwork /></Suspense></RequireAuth>} />
-        {/* The arc the other screens only ever show a slice of. */}
-        <Route path="capital/journey" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><CapitalJourney /></Suspense></RequireAuth>} />
         {/* What happened after the capital landed. The same reach as the rest
             of the engine's area; the reader itself checks each economy against
             the row-level policy, so a narrower account sees only its own. */}
