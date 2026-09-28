@@ -21,6 +21,7 @@ import { useLocale } from "./i18n/useLocale";
 const AuditPage = lazy(() => import("./pages/AuditPage"));
 const AllocationEngine = lazy(() => import("./pages/capital/AllocationEngine"));
 const CapitalNetwork = lazy(() => import("./pages/capital/network/CapitalNetwork"));
+const LocalEconomy = lazy(() => import("./pages/capital/local/LocalEconomy"));
 const AuditLayout = lazy(() => import("./pages/audit/AuditLayout"));
 const AuditAttestations = lazy(() => import("./pages/audit/Attestations"));
 const AuditEvents = lazy(() => import("./pages/audit/Events"));
@@ -169,6 +170,10 @@ function Pages() {
             engine is for the desk and capital operators, and setting a policy is
             narrower still. The page gates those itself. */}
         <Route path="capital/network" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><CapitalNetwork /></Suspense></RequireAuth>} />
+        {/* What happened after the capital landed. The same reach as the rest
+            of the engine's area; the reader itself checks each economy against
+            the row-level policy, so a narrower account sees only its own. */}
+        <Route path="capital/local" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><LocalEconomy /></Suspense></RequireAuth>} />
         <Route path="capital/economics" element={<RequireAuth roles={["sponsor", "partner", "admin", "auditor"]}><Suspense fallback={loading}><OperatingEconomics /></Suspense></RequireAuth>} />
         <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/app" replace />} />

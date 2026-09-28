@@ -1,6 +1,6 @@
 import {
   ArrowLeftRight, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardList, Coins, FileCheck2, FileText, Filter,
-  Gauge, Gem, GraduationCap, HandCoins, History, Layers, ListChecks, Network, PieChart, Route as RouteIcon, ShieldCheck, SlidersHorizontal,
+  Gauge, Gem, GraduationCap, HandCoins, History, Layers, ListChecks, MapPin, Network, PieChart, Route as RouteIcon, ShieldCheck, SlidersHorizontal,
   Split, Sprout, Store, TrendingUp, Users, Wallet, type LucideIcon,
 } from "lucide-react";
 import { localized } from "../i18n";
@@ -51,6 +51,9 @@ const ENGINE = t({ to: "/app/capital", icon: Split,
 const NETWORK = t({ to: "/app/capital/network", icon: Network,
   label: { en: "Capital Network", pt: "Rede de Capital" },
   what: { en: "Every instrument the network can route to, and what the engine would do with one need.", pt: "Todo instrumento ao qual a rede pode encaminhar, e o que o motor faria com uma necessidade." } });
+const LOCAL = t({ to: "/app/capital/local", icon: MapPin,
+  label: { en: "Local Economy", pt: "Economia Local" },
+  what: { en: "What each unit of capital produced inside the territory, how much stayed, and how much came from abroad.", pt: "O que cada unidade de capital produziu dentro do território, quanto ficou, e quanto veio de fora." } });
 const ECONOMICS = t({ to: "/app/capital/economics", icon: BarChart3,
   label: { en: "Operating economics", pt: "Economia operacional" },
   what: { en: "Cost to serve, time to decision, follow-up and portfolio quality, side by side.", pt: "Custo de servir, tempo até a decisão, acompanhamento e qualidade da carteira, lado a lado." } });
@@ -90,7 +93,7 @@ export const VIEWS: View[] = localized([
       t({ to: "/app/impact#report", icon: FileText, label: { en: "Sponsor report", pt: "Relatório do patrocinador" },
         what: { en: "The program's figures, method and proofs, to download.", pt: "Os números, o método e as provas do programa, para baixar." } }),
     ],
-    secondary: [ENGINE, ECONOMICS],
+    secondary: [ENGINE, ECONOMICS, LOCAL],
   },
   {
     id: "investor", icon: Wallet,
@@ -137,6 +140,7 @@ export const VIEWS: View[] = localized([
       t({ ...ENGINE, icon: RouteIcon,
         what: { en: "Readiness, affordability, risk and eligibility run live — then domestic or global, on liquidity, ticket, risk appetite, mandate and economics.", pt: "Prontidão, capacidade de pagamento, risco e elegibilidade rodados ao vivo — e então doméstico ou global, por liquidez, ticket, apetite a risco, mandato e economia." } }),
       NETWORK,
+      LOCAL,
       t({ to: "/app/capital#replay", icon: History, label: { en: "Portfolio replay", pt: "Replay da carteira" },
         what: { en: "The whole demand, re-run through the engine.", pt: "Toda a demanda, rodada de novo pelo motor." } }),
       t({ to: "/app/capital#assumptions", icon: SlidersHorizontal, label: { en: "Pool assumptions", pt: "Premissas dos pools" },
@@ -184,7 +188,11 @@ export const VIEWS: View[] = localized([
         what: { en: "The follow-ups waiting on the community.", pt: "Os acompanhamentos que esperam pela comunidade." } }),
     ],
     // No secondary: a leader's work is all inside her community, and the
-    // overview is already the button above.
+    // overview is already the button above. Her territory's local economy is
+    // hers to read — the row-level policy says so — but it lives inside the
+    // engine's area, whose other pages she cannot open, so sending her there
+    // would hand her a sidebar of refusals. It belongs on her own overview
+    // instead, and is not there yet.
     secondary: [],
   },
   {

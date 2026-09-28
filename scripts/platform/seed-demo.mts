@@ -1127,9 +1127,20 @@ for (const [k, o] of referred.slice(toWorkOn.length).entries()) {
 // The multiplier the Local Economy Dashboard reports is whatever these
 // movements come to divided by what was injected. It is not set here and it is
 // not a target: if the loop were shorter the number would be smaller, and the
-// dashboard would say so.
+// dashboard would say so — and the report at the end of this script reads it
+// back from the dashboard rather than dividing anything itself, because two
+// places dividing the same ledger is two multipliers.
+//
+// The shares below are drawn rather than fixed. With one set of constants for
+// every business the multiplier comes out the same whatever the loans are —
+// 0.45 + 0.22 + 0.18 + 0.108 and nothing else — and a measurement that cannot
+// vary is a constant wearing a measurement's clothes. Businesses do not all
+// spend the same fraction of a loan on the same day, so they do not here
+// either, and the number the dashboard reports is an aggregate of what the
+// ledger actually holds.
 
-const railTx: { injected: number; moves: number } = { injected: 0, moves: 0 };
+const railRandom = rng(20261020);
+const railShare = (lo: number, hi: number) => lo + railRandom() * (hi - lo);
 {
   const { data: injections } = await db
     .from("local_transactions")
@@ -1142,13 +1153,13 @@ const railTx: { injected: number; moves: number } = { injected: 0, moves: 0 };
       .from("local_accounts").select("owner_id").eq("id", tx.to_account_id).single();
     const her = account?.owner_id as string | undefined;
     if (!her) continue;
-    railTx.injected += tx.amount_units;
 
-    // Two suppliers, sized so a third of the capital is still hers afterwards:
-    // she is buying inputs, not spending the loan down to nothing on day one.
+    // Two suppliers, sized so a quarter to a third of the capital is still hers
+    // afterwards: she is buying inputs, not spending the loan down to nothing
+    // on day one.
     const supplier = n % 2 === 0 ? "atacado_sul" : "tecidos_parelheiros";
-    const buy = Math.floor(tx.amount_units * 0.45);
-    const second = Math.floor(tx.amount_units * 0.22);
+    const buy = Math.floor(tx.amount_units * railShare(0.40, 0.50));
+    const second = Math.floor(tx.amount_units * railShare(0.18, 0.26));
     await must("local spend", asPartner.rpc("local_spend", {
       p_merchant_id: merchantOf.get(supplier), p_units: buy,
       p_purpose: "inventory", p_entrepreneur_id: her, p_note: "insumos",
@@ -1157,15 +1168,20 @@ const railTx: { injected: number; moves: number } = { injected: 0, moves: 0 };
       p_merchant_id: merchantOf.get("hortifruti_feira"), p_units: second,
       p_purpose: "inventory", p_entrepreneur_id: her, p_note: "insumos",
     }));
-    railTx.moves += buy + second;
 
-    // The supplier pays for a service inside the same territory.
-    const onward = Math.floor(buy * 0.4);
+    // Each supplier pays for something inside the same territory. Two of them,
+    // because a territory where only one merchant has anyone to pay is a
+    // territory with one supply chain in it.
+    const onward = Math.floor(buy * railShare(0.35, 0.50));
     await must("local merchant payment", asPartner.rpc("local_merchant_payment", {
       p_from_merchant_id: merchantOf.get(supplier), p_to_merchant_id: merchantOf.get("grafica_cantinho"),
       p_units: onward, p_note: "serviço",
     }));
-    railTx.moves += onward;
+    const upkeep = Math.floor(second * railShare(0.30, 0.45));
+    await must("local merchant payment, upkeep", asPartner.rpc("local_merchant_payment", {
+      p_from_merchant_id: merchantOf.get("hortifruti_feira"), p_to_merchant_id: merchantOf.get("manutencao_bairro"),
+      p_units: upkeep, p_note: "manutenção",
+    }));
 
     // And she sells into the network, which is what lets her repay on the rail
     // rather than in reais. From the merchant her supplier paid, so the loop is
@@ -1173,12 +1189,11 @@ const railTx: { injected: number; moves: number } = { injected: 0, moves: 0 };
     // merchant can only pay her with units it actually holds, which is the
     // constraint that makes the multiplier mean something. Less than it
     // received: a loop, not a rebate.
-    const sale = Math.floor(onward * 0.6);
+    const sale = Math.floor(onward * railShare(0.50, 0.70));
     await must("local sale", asPartner.rpc("local_sale", {
       p_merchant_id: merchantOf.get("grafica_cantinho"), p_entrepreneur_id: her,
       p_units: sale, p_note: "venda dela para a rede",
     }));
-    railTx.moves += sale;
   }
 
   // One merchant takes value out of the network and is paid in reais. Simulated:
@@ -1193,12 +1208,12 @@ const railTx: { injected: number; moves: number } = { injected: 0, moves: 0 };
       await must("local redemption", asPartner.rpc("local_redeem", {
         p_merchant_id: held[0].owner_id, p_units: out,
       }));
-      railTx.moves += out;
     }
   }
 }
 
 const { data: overview } = await asPartner.rpc("capital_overview");
+const rail = await must("local economy dashboard", asPartner.rpc("local_economy_dashboard", { p_economy_id: economy.id })) as Record<string, number>;
 await asPartner.auth.signOut();
 
 // ----------------------------------------------------------------- capital
@@ -1258,7 +1273,9 @@ console.log(`consent: ${consentRows.length} recorded at enrollment, ${consentRow
 }
 await must("release the anchor worker", db.rpc("finish_anchor_run"));
 const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");
-console.log(`local rail: ${economy.currency_code} ${railTx.injected / 100} injected in ${COMMUNITIES[0].city}, ` +
-  `${economy.currency_code} ${railTx.moves / 100} moved afterwards across ${merchants.length} merchants ` +
-  `(one outside the eligible set); multiplier ${(railTx.moves / Math.max(railTx.injected, 1)).toFixed(2)}x from the ledger`);
+console.log(`local rail: ${economy.currency_code} ${rail.injected_units / 100} injected in ${COMMUNITIES[0].city}, ` +
+  `${economy.currency_code} ${rail.circulated_units / 100} traded inside the territory across ${merchants.length} merchants ` +
+  `(one outside the eligible set), ${economy.currency_code} ${rail.redeemed_units / 100} cashed out; ` +
+  `multiplier ${(rail.multiplier_bps / 10000).toFixed(2)}x, retention ${(rail.retention_bps / 100).toFixed(1)}%, ` +
+  `velocity ${(rail.velocity_bps / 10000).toFixed(2)}x — all read back from the dashboard`);
 console.log(`anchors queued: ${queued}`);

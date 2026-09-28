@@ -3295,6 +3295,8 @@ export type Database = {
           status: Database["public"]["Enums"]["anchor_status"]
         }[]
       }
+      local_economies_listed: { Args: never; Returns: Json }
+      local_economy_dashboard: { Args: { p_economy_id?: string }; Returns: Json }
       measure_outcome: {
         Args: {
           p_capital_use?: Database["public"]["Enums"]["capital_use"]
