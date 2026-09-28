@@ -165,8 +165,12 @@ export interface CapitalOverview {
     capital_micro_usdc: number | null;
     lent: number;
     claimed: number;
+    /** Capital less what is lent: capacity against demand counted whole. */
     liquidity_cents: number;
     liquidity_micro_usdc: number | null;
+    /** Capital less what is lent and less what is claimed: what may still be allocated. */
+    available_cents: number;
+    available_micro_usdc: number | null;
   }[];
   coverage: {
     demand_cents: number;

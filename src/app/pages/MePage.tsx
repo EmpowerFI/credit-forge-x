@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import MemberEducation from "../components/MemberEducation";
+import PageEvidence from "../components/product/PageEvidence";
 import PageHeader from "../components/product/PageHeader";
 import ProofStatus from "../components/ProofStatus";
 import { useAuth } from "../auth/useAuth";
@@ -433,7 +434,9 @@ export default function MePage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <PageHeader eyebrow={me.data.display_name}
+      <PageHeader
+        meta={<PageEvidence family="business_months" />}
+        eyebrow={me.data.display_name}
         title={me.data.business_name ?? tr({ en: "My business", pt: "Meu negócio" })}
         description={tr({
           en: "Where your business stands, what is missing, and what happened to your request.",

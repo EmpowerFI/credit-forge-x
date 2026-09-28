@@ -11,7 +11,7 @@ select set_config(
   true
 );
 
-select plan(38);
+select plan(41);
 
 -- ------------------------------------------------------------ the vectors
 -- Generated from packages/capital-allocation/vectors/scenarios.json: the
@@ -311,6 +311,32 @@ set local role postgres;
 select is((select v -> 'coverage' from ov),
   '{"demand_cents":400000,"domestic_only_cents":0,"combined_cents":200000,"domestic_coverage_bps":0,"combined_coverage_bps":5000}'::jsonb,
   'demand is Bia''s and Dora''s: R$ 1,000 at home covers neither, global capital covers Bia''s');
+
+-- Two figures, two questions. Coverage weighs the pools against all qualified
+-- demand, claimed requests included on both sides, and the engine page asks what
+-- the pool may still put into the next request. Reading the first as the second
+-- is how the engine page came to answer "Global P2P selected" about a request
+-- the database had recorded as waiting for capital.
+select is(
+  (select (p ->> 'available_cents')::bigint from ov, jsonb_array_elements(v -> 'pools') p where p ->> 'pool' = 'global'),
+  (select private.usdc_cents(
+     (private.pool_book('global') ->> 'capital')::bigint
+       - (private.pool_book('global') ->> 'lent')::bigint
+       - (private.pool_book('global') ->> 'claimed')::bigint,
+     private.demo_brl_per_usdc_milli())),
+  'a pool reports what it may still allocate, on the arithmetic the allocation trigger itself uses');
+
+select ok(
+  (select bool_and((p ->> 'available_cents')::bigint <= (p ->> 'liquidity_cents')::bigint)
+   from ov, jsonb_array_elements(v -> 'pools') p),
+  'and it is never more than what the pool has not lent');
+
+-- Bia''s request is raising on the global pool, so the pool is holding it: it is
+-- gone from what may be allocated next and still there in what is not lent.
+select ok(
+  (select (p ->> 'available_micro_usdc')::bigint < (p ->> 'liquidity_micro_usdc')::bigint
+   from ov, jsonb_array_elements(v -> 'pools') p where p ->> 'pool' = 'global'),
+  'a request already raising on a pool is spoken for, and only one of the two figures says so');
 
 -- ------------------------------------------------------------ the engine page
 

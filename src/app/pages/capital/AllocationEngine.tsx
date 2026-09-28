@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "../../auth/useAuth";
 import LoadError from "../../components/LoadError";
+import PageEvidence from "../../components/product/PageEvidence";
 import PageHeader from "../../components/product/PageHeader";
 import StatusPill from "../../components/product/StatusPill";
 import { localized, tr } from "../../i18n";
@@ -148,7 +149,9 @@ export default function AllocationEngine() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Two engines, one decision", pt: "Dois motores, uma decisão" })} title={tr({ en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" })}
+      <PageHeader
+        meta={<PageEvidence family="readiness_and_eligibility" />}
+        eyebrow={tr({ en: "Two engines, one decision", pt: "Dois motores, uma decisão" })} title={tr({ en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" })}
         description={tr({
           en: "Pick an opportunity, run the credit engine, then run capital allocation on what it qualifies.",
           pt: "Escolha uma oportunidade, rode o motor de crédito e depois a alocação de capital sobre o que ele qualificar.",

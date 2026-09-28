@@ -162,7 +162,7 @@ describe("reading the domestic pass", () => {
     purposes: ["working_capital", "inventory"], business_age_min_months: 6,
     term_min_months: null, term_max_months: null,
     required_documents: ["cnpj_or_mei", "bank_statement_3m"], max_instalment_share_bps: 6000,
-    estimated_cost_bps: 4800, capacity_cents: 4_000_000, impact_mandate: false, is_domestic: true,
+    estimated_cost_bps: 4800, capacity_cents: 4_000_000, impact_mandate: false, is_domestic: true, capital_scope: "regional", settlement_rail: "brl_pix",
   };
   const exchange: Instrument = {
     id: "troca_produtiva_rede", provider: "rede_troca_demo", name: "Troca produtiva em rede",
@@ -171,12 +171,13 @@ describe("reading the domestic pass", () => {
     purposes: ["working_capital", "inventory"], business_age_min_months: 0,
     term_min_months: null, term_max_months: null,
     required_documents: ["network_membership"], max_instalment_share_bps: null,
-    estimated_cost_bps: null, capacity_cents: 600_000, impact_mandate: false, is_domestic: true,
+    estimated_cost_bps: null, capacity_cents: 600_000, impact_mandate: false, is_domestic: true, capital_scope: "territorial", settlement_rail: "partner_card",
   };
   const need: CapitalNeed = {
     amount_cents: 500_000, term_months: 12, purpose: "inventory", uf: "SP", business_age_months: 18,
     documents: ["cnpj_or_mei", "bank_statement_3m", "network_membership"],
-    max_instalment_cents: 90_000, impact_eligible: true, readiness_ok: true, manual_review_allowed: false,
+    max_instalment_cents: 90_000, impact_eligible: true, supplier_geography: "municipality", local_rail_available: true,
+  readiness_ok: true, manual_review_allowed: false,
   };
 
   it("names a domestic route refused only for papers she could fetch", () => {
@@ -208,7 +209,7 @@ describe("reading the domestic pass", () => {
       type: "global_impact_capital", is_credit: true, requires_partner_approval: false,
       ticket_min_cents: 10_000, ticket_max_cents: 5_000_000, eligible_uf: [], purposes: [],
       term_min_months: null, term_max_months: null, business_age_min_months: 0, required_documents: [], max_instalment_share_bps: 10_000,
-      estimated_cost_bps: 2400, capacity_cents: 9_000_000, impact_mandate: true, is_domestic: false,
+      estimated_cost_bps: 2400, capacity_cents: 9_000_000, impact_mandate: true, is_domestic: false, capital_scope: "global", settlement_rail: "local_currency",
     };
     const plan = matchCapital(need, [globalRoute]);
     expect(plan.global_coverage_cents).toBe(need.amount_cents);

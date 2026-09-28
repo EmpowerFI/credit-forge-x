@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "../../../auth/useAuth";
 import LoadError from "../../../components/LoadError";
+import PageEvidence from "../../../components/product/PageEvidence";
 import PageHeader from "../../../components/product/PageHeader";
 import Panel from "../../../components/product/Panel";
 import StatTile from "../../../components/product/StatTile";
-import StatusPill from "../../../components/product/StatusPill";
 import { tr } from "../../../i18n";
 import { prototypeNotice } from "../../../lib/capital";
 import { GATE } from "../../../lib/capitalNetwork";
@@ -48,7 +48,7 @@ export default function CapitalNetwork() {
           en: "Every instrument the network can route to, the policy each is offered under, and what the engine would do with one qualified need.",
           pt: "Todo instrumento ao qual a rede pode encaminhar, a política de cada um e o que o motor faria com uma necessidade qualificada.",
         })}
-        meta={<StatusPill tone="caution" dot={false}>{tr({ en: "Simulated network", pt: "Rede simulada" })}</StatusPill>}
+        meta={<PageEvidence family="partner_routes" />}
         about={
           <>
             <p>

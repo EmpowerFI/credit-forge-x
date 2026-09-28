@@ -8,6 +8,7 @@ import { useAuth } from "../auth/useAuth";
 import { ConsentScopes, ConsentSummary, ProofLine } from "../components/consent/ConsentScopes";
 import LoadError from "../components/LoadError";
 import { DataTag } from "../components/product/DataLegend";
+import PageEvidence from "../components/product/PageEvidence";
 import PageHeader from "../components/product/PageHeader";
 import Panel from "../components/product/Panel";
 import { anchorsSettled } from "../lib/anchors";
@@ -119,7 +120,9 @@ export default function ConsentPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Privacy", pt: "Privacidade" })} title={tr({ en: "Your consent", pt: "Seu consentimento" })}
+      <PageHeader
+        meta={<PageEvidence />}
+        eyebrow={tr({ en: "Privacy", pt: "Privacidade" })} title={tr({ en: "Your consent", pt: "Seu consentimento" })}
         description={tr({
           en: "You decide what your data is used for. Every change is a new record, proven on Solana, so what you agreed to, and when, can always be checked.",
           pt: "Você decide para que seus dados são usados. Cada mudança é um novo registro, comprovado na Solana, para que sempre seja possível verificar com o que você concordou, e quando.",

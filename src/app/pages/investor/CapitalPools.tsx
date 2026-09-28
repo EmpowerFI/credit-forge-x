@@ -39,11 +39,15 @@ export default function CapitalPools({ engineLink = true, tilesOnly = false }: {
             <StatTile label={tr({ en: "Qualified demand", pt: "Demanda qualificada" })} value={reaisShort(d.coverage.demand_cents)}
               hint={tr({ en: `${d.demand.length} opportunities`, pt: `${d.demand.length} oportunidades` })} />
             {/* Capacity, never "liquidity": nothing is held here, and a draining
-                bar beside the word invites the reading that something is. */}
+                bar beside the word invites the reading that something is.
+                Declared is the headline, and what is still free to allocate sits
+                under it — the gap between the two is what opportunities already
+                raising on this pool are holding, and reading only the headline
+                is how a pool looks richer than it decides. */}
             <StatTile label={tr({ en: "Domestic capacity", pt: "Capacidade doméstica" })} value={reaisShort(domestic.liquidity_cents)}
-              hint={tr({ en: "declared, in simulated reais", pt: "declarada, em reais simulados" })} />
+              hint={tr({ en: `declared · ${reaisShort(domestic.available_cents)} free`, pt: `declarada · ${reaisShort(domestic.available_cents)} livres` })} />
             <StatTile label={tr({ en: "Global capacity", pt: "Capacidade global" })} value={usdcShort(global.liquidity_micro_usdc ?? 0)}
-              hint={tr({ en: `declared · ≈ ${reaisShort(global.liquidity_cents)}`, pt: `declarada · ≈ ${reaisShort(global.liquidity_cents)}` })} />
+              hint={tr({ en: `declared · ${usdcShort(global.available_micro_usdc ?? 0)} free`, pt: `declarada · ${usdcShort(global.available_micro_usdc ?? 0)} livres` })} />
             <StatTile label={tr({ en: "Funding coverage", pt: "Cobertura de captação" })} value={bpsPercent(d.coverage.combined_coverage_bps)}
               hint={tr({ en: `${bpsPercent(d.coverage.domestic_coverage_bps)} domestic alone`, pt: `${bpsPercent(d.coverage.domestic_coverage_bps)} só com o doméstico` })} hintTone="info" />
           </>

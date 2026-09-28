@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate, formatNumber, tr } from "../../i18n";
 import LoadError from "../../components/LoadError";
 import ExplorerLink from "../../components/product/ExplorerLink";
+import PageEvidence from "../../components/product/PageEvidence";
 import PageHeader from "../../components/product/PageHeader";
 import Panel from "../../components/product/Panel";
 import StatTile from "../../components/product/StatTile";
@@ -69,7 +70,9 @@ export default function Overview() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })} title={tr({ en: "Overview", pt: "Visão geral" })}
+      <PageHeader
+        meta={<PageEvidence family="pool_capital" />}
+        eyebrow={tr({ en: "Investor Console", pt: "Console do Investidor" })} title={tr({ en: "Overview", pt: "Visão geral" })}
         description={tr({
           en: "What is raising now, and what your capital is doing.",
           pt: "O que está captando agora, e o que o seu capital está fazendo.",

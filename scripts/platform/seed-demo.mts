@@ -777,6 +777,44 @@ for (const m of memberships) {
 // so the demo can show exactly that.
 
 const grajau = byName.get(COMMUNITIES[0].name)!;
+
+// ------------------------------------------------------- the local rail
+// One territory has a local economy, and three do not. That is the honest
+// arrangement rather than a convenient one: the capital network then says
+// LOCAL_RAIL_ELIGIBLE where a rail exists and LOCAL_RAIL_UNAVAILABLE where it
+// does not, and a judge can see the difference on two plans side by side.
+//
+// Grajaú, because that is where the live demo happens. Six merchants, one of
+// them deliberately outside the eligible set, so a refusal on the rail is
+// something the screen can show rather than something we assert.
+
+const [economy] = await must("local economy", db.from("local_economies").insert({
+  code: "grajau_produtivo",
+  name: "Moeda Produtiva do Grajaú",
+  territory: "Grajaú, zona sul de São Paulo",
+  community_id: grajau.id,
+  uf: "SP",
+  currency_code: "GRJ",
+  // 10000 basis points of a centavo per unit: 1 GRJ = R$ 1, for the demo.
+  parity_bps: 10_000,
+  parity_reference: "1 GRJ = R$ 1,00 · demonstração, sem lastro e sem emissor",
+}).select("id, code, currency_code, parity_bps"));
+
+const MERCHANTS = [
+  { code: "atacado_sul", name: "Atacado Zona Sul", sector: "wholesale", neighbourhood: "Grajaú", eligible: true },
+  { code: "tecidos_parelheiros", name: "Tecidos Parelheiros", sector: "textiles", neighbourhood: "Parelheiros", eligible: true },
+  { code: "grafica_cantinho", name: "Gráfica do Cantinho", sector: "services", neighbourhood: "Grajaú", eligible: true },
+  { code: "hortifruti_feira", name: "Hortifruti da Feira", sector: "food", neighbourhood: "Grajaú", eligible: true },
+  { code: "manutencao_bairro", name: "Manutenção do Bairro", sector: "services", neighbourhood: "Cidade Dutra", eligible: true },
+  // Outside the network: productive capital may not be spent here, and the
+  // engine refuses it by name rather than by silence.
+  { code: "loja_fora_da_rede", name: "Loja fora da rede", sector: "retail", neighbourhood: "Centro", eligible: false },
+];
+const merchants = await must("local merchants", db.from("local_merchants").insert(
+  MERCHANTS.map((m) => ({ ...m, economy_id: economy.id, city: "São Paulo", uf: "SP" })),
+).select("id, code, eligible"));
+const merchantOf = new Map(merchants.map((m) => [m.code, m.id]));
+
 const leftAlone = memberships.find(
   (m) => m.community_id === grajau.id && m.entrepreneur_id !== maria.id && statusOf.get(m.entrepreneur_id) === "CREDIT_READY",
 )?.entrepreneur_id;
@@ -793,6 +831,11 @@ const intents = memberships
     entrepreneur_id: m.entrepreneur_id,
     purpose: PURPOSE_BY_SECTOR[sectorOf.get(m.entrepreneur_id) ?? "retail"],
     requested_amount_cents: (20 + Math.floor(random() * 80)) * 10_000, // R$ 2,000–9,900
+    // Where she would spend it (addendum v3 §6). Most of this demand is bought
+    // near home, which is the premise the local rail rests on — and some of it
+    // is not, because a rail that every request matches is a rail nobody has
+    // tested. Drawn for everyone, so the sequence does not shift.
+    supplier_geography: ((d) => d < 0.45 ? "same_neighbourhood" : d < 0.8 ? "municipality" : d < 0.95 ? "state" : "other_brazil")(random()),
     is_simulated: true,
     created_at: iso(new Date(Date.UTC(2026, 8, 12, 16) + Math.floor(random() * 36) * 3_600_000)),
   }));
@@ -1071,7 +1114,124 @@ for (const [k, o] of referred.slice(toWorkOn.length).entries()) {
   await fund(o.id, [0.15, 0.45, 0][k] ?? 0, 0, "2026-09-13T15:00:00-03:00");
 }
 
+// ------------------------------------------------------ circulation, locally
+// The capital that landed on the rail is spent, and then spent again.
+//
+// The injection itself was not written here: a trigger fires on disbursal, the
+// way settlement and cost to serve already do, so the ledger cannot fall behind
+// the loans. What is written here is what happens afterwards, because that is
+// the part of the thesis a screen can check — she buys her inputs from two
+// merchants in the territory, one of them pays a third for a service, and the
+// third buys from her. Then a merchant redeems to reais and leaves the network.
+//
+// The multiplier the Local Economy Dashboard reports is whatever these
+// movements come to divided by what was injected. It is not set here and it is
+// not a target: if the loop were shorter the number would be smaller, and the
+// dashboard would say so — and the report at the end of this script reads it
+// back from the dashboard rather than dividing anything itself, because two
+// places dividing the same ledger is two multipliers.
+//
+// The shares below are drawn rather than fixed. With one set of constants for
+// every business the multiplier comes out the same whatever the loans are —
+// 0.45 + 0.22 + 0.18 + 0.108 and nothing else — and a measurement that cannot
+// vary is a constant wearing a measurement's clothes. Businesses do not all
+// spend the same fraction of a loan on the same day, so they do not here
+// either, and the number the dashboard reports is an aggregate of what the
+// ledger actually holds.
+
+const railRandom = rng(20261020);
+const railShare = (lo: number, hi: number) => lo + railRandom() * (hi - lo);
+{
+  const { data: injections } = await db
+    .from("local_transactions")
+    .select("loan_id, amount_units, to_account_id")
+    .eq("economy_id", economy.id)
+    .eq("tx_type", "capital_injection");
+
+  for (const [n, tx] of (injections ?? []).entries()) {
+    const { data: account } = await db
+      .from("local_accounts").select("owner_id").eq("id", tx.to_account_id).single();
+    const her = account?.owner_id as string | undefined;
+    if (!her) continue;
+
+    // Two suppliers, sized so a quarter to a third of the capital is still hers
+    // afterwards: she is buying inputs, not spending the loan down to nothing
+    // on day one.
+    const supplier = n % 2 === 0 ? "atacado_sul" : "tecidos_parelheiros";
+    const buy = Math.floor(tx.amount_units * railShare(0.40, 0.50));
+    const second = Math.floor(tx.amount_units * railShare(0.18, 0.26));
+    await must("local spend", asPartner.rpc("local_spend", {
+      p_merchant_id: merchantOf.get(supplier), p_units: buy,
+      p_purpose: "inventory", p_entrepreneur_id: her, p_note: "insumos",
+    }));
+    await must("local spend, second supplier", asPartner.rpc("local_spend", {
+      p_merchant_id: merchantOf.get("hortifruti_feira"), p_units: second,
+      p_purpose: "inventory", p_entrepreneur_id: her, p_note: "insumos",
+    }));
+
+    // Each supplier pays for something inside the same territory. Two of them,
+    // because a territory where only one merchant has anyone to pay is a
+    // territory with one supply chain in it.
+    const onward = Math.floor(buy * railShare(0.35, 0.50));
+    await must("local merchant payment", asPartner.rpc("local_merchant_payment", {
+      p_from_merchant_id: merchantOf.get(supplier), p_to_merchant_id: merchantOf.get("grafica_cantinho"),
+      p_units: onward, p_note: "serviço",
+    }));
+    const upkeep = Math.floor(second * railShare(0.30, 0.45));
+    await must("local merchant payment, upkeep", asPartner.rpc("local_merchant_payment", {
+      p_from_merchant_id: merchantOf.get("hortifruti_feira"), p_to_merchant_id: merchantOf.get("manutencao_bairro"),
+      p_units: upkeep, p_note: "manutenção",
+    }));
+
+    // And she sells into the network, which is what lets her repay on the rail
+    // rather than in reais. From the merchant her supplier paid, so the loop is
+    // three hops of the same capital and not a transfer out of thin air — a
+    // merchant can only pay her with units it actually holds, which is the
+    // constraint that makes the multiplier mean something. Less than it
+    // received: a loop, not a rebate.
+    const sale = Math.floor(onward * railShare(0.50, 0.70));
+    await must("local sale", asPartner.rpc("local_sale", {
+      p_merchant_id: merchantOf.get("grafica_cantinho"), p_entrepreneur_id: her,
+      p_units: sale, p_note: "venda dela para a rede",
+    }));
+  }
+
+  // One merchant takes value out of the network and is paid in reais. Simulated:
+  // no Pix is sent, and the row says so in its own evidence label.
+  const { data: held } = await db
+    .from("local_accounts").select("owner_id, balance_units")
+    .eq("economy_id", economy.id).eq("owner_type", "merchant")
+    .order("balance_units", { ascending: false }).limit(1);
+  if (held?.[0] && held[0].balance_units > 0) {
+    const out = Math.floor(held[0].balance_units * 0.5);
+    if (out > 0) {
+      await must("local redemption", asPartner.rpc("local_redeem", {
+        p_merchant_id: held[0].owner_id, p_units: out,
+      }));
+    }
+  }
+}
+
+// ------------------------------------------------- the book says it is a demo
+// Investments and positions were marked simulated when they were created,
+// because record_investment takes the flag. Loans, their events and their
+// instalments were not: formalise_loan, transition_loan and record_payment are
+// the product's own functions and in a real deployment a loan is not a
+// simulation, so their default is false and nothing in the seed said otherwise.
+//
+// The result was eight loans, twenty-four transitions and twelve instalments in
+// a demonstration book claiming to be real, and the Capital Journey read that
+// claim and printed "Observed" over the disbursal. A screen for judges is the
+// worst possible place to discover that flag means different things in
+// different tables, so the seed now says what its own rows are. The cost events
+// the triggers already copied the old flag onto are corrected with them.
+await must("mark the loans simulated", db.from("loans").update({ is_simulated: true }).eq("is_simulated", false));
+await must("mark the loan events simulated", db.from("loan_events").update({ is_simulated: true }).eq("is_simulated", false));
+await must("mark the instalments simulated", db.from("payments").update({ is_simulated: true }).eq("is_simulated", false));
+await must("mark the cost events simulated", db.from("cost_events").update({ is_simulated: true }).eq("is_simulated", false));
+
 const { data: overview } = await asPartner.rpc("capital_overview");
+const rail = await must("local economy dashboard", asPartner.rpc("local_economy_dashboard", { p_economy_id: economy.id })) as Record<string, number>;
 await asPartner.auth.signOut();
 
 // ----------------------------------------------------------------- capital
@@ -1113,6 +1273,25 @@ console.log(`capital network, left without the business papers: ${
   informal ? borrowerRef(routable_.find((o) => o.id === informal)!.entrepreneur_id) : "none"}`);
 console.log(`capital network, left unrouted for the live run: ${
   liveRun ? borrowerRef(routable_.find((o) => o.id === liveRun)!.entrepreneur_id) : "none — every request was routed"}`);
+// The three cases step 7 of the demo runs on camera, read back from what the
+// allocation engine actually decided rather than written into the script. The
+// amounts move with every change to the scenario, and a rehearsed figure that
+// has quietly drifted is worse on camera than no figure at all.
+{
+  const { data: cases } = await db
+    .from("qualified_credit_opportunities")
+    .select("entrepreneur_id, amount_cents, purpose, term_months, funding_pool, status")
+    .in("status", ["open", "in_review", "referred", "partner_approved"])
+    .order("amount_cents", { ascending: true });
+  const pick = (want: (o: { funding_pool: string | null }) => boolean, from = "first") =>
+    from === "first" ? (cases ?? []).find(want) : [...(cases ?? [])].reverse().find(want);
+  const shown = (o: { entrepreneur_id: string; amount_cents: number; purpose: string; term_months: number } | undefined) =>
+    o ? `${borrowerRef(o.entrepreneur_id)} R$ ${(o.amount_cents / 100).toLocaleString("en-US")} ${o.purpose}/${o.term_months}m` : "none";
+  console.log("engine cases for step 7: " +
+    `domestic wins ${shown(pick((o) => o.funding_pool === "domestic", "last"))}; ` +
+    `global unlocks it ${shown(pick((o) => o.funding_pool === "global", "last"))}; ` +
+    `no pool can fund it ${shown(pick((o) => o.funding_pool === null, "last"))}`);
+}
 console.log(`ready and left alone, for the demo: ${leftAloneName ?? "none"} (Grajaú)`);
 console.log(`left USDC ${FINALE_REMAINDER / 1e6} short, for the live investment: ${
   finale ? opportunityCode(finale) : "none — no global opportunity was still raising"}`);
@@ -1131,4 +1310,9 @@ console.log(`consent: ${consentRows.length} recorded at enrollment, ${consentRow
 }
 await must("release the anchor worker", db.rpc("finish_anchor_run"));
 const { count: queued } = await db.from("chain_anchors").select("id", { count: "exact", head: true }).eq("status", "pending");
+console.log(`local rail: ${economy.currency_code} ${rail.injected_units / 100} injected in ${COMMUNITIES[0].city}, ` +
+  `${economy.currency_code} ${rail.circulated_units / 100} traded inside the territory across ${merchants.length} merchants ` +
+  `(one outside the eligible set), ${economy.currency_code} ${rail.redeemed_units / 100} cashed out; ` +
+  `multiplier ${(rail.multiplier_bps / 10000).toFixed(2)}x, retention ${(rail.retention_bps / 100).toFixed(1)}%, ` +
+  `velocity ${(rail.velocity_bps / 10000).toFixed(2)}x — all read back from the dashboard`);
 console.log(`anchors queued: ${queued}`);

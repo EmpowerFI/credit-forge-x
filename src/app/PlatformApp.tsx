@@ -21,6 +21,8 @@ import { useLocale } from "./i18n/useLocale";
 const AuditPage = lazy(() => import("./pages/AuditPage"));
 const AllocationEngine = lazy(() => import("./pages/capital/AllocationEngine"));
 const CapitalNetwork = lazy(() => import("./pages/capital/network/CapitalNetwork"));
+const LocalEconomy = lazy(() => import("./pages/capital/local/LocalEconomy"));
+const CapitalJourney = lazy(() => import("./pages/capital/journey/CapitalJourney"));
 const AuditLayout = lazy(() => import("./pages/audit/AuditLayout"));
 const AuditAttestations = lazy(() => import("./pages/audit/Attestations"));
 const AuditEvents = lazy(() => import("./pages/audit/Events"));
@@ -32,6 +34,7 @@ const AuditReports = lazy(() => import("./pages/audit/Reports"));
 // A shared audit report opens without an account.
 const ReportPage = lazy(() => import("./pages/ReportPage"));
 const ConsentPage = lazy(() => import("./pages/ConsentPage"));
+const EvidencePage = lazy(() => import("./pages/EvidencePage"));
 // The investor console: wallet, Solana client and charts, loaded when opened.
 const InvestorOverview = lazy(() => import("./pages/investor/Overview"));
 const InvestorOpportunities = lazy(() => import("./pages/investor/Opportunities"));
@@ -163,12 +166,21 @@ function Pages() {
         <Route path="investor/assets" element={investor(<InvestorPositions />)} />
         <Route path="investor/assets/:id" element={investor(<InvestorAsset />)} />
         <Route path="investor/audit" element={investor(<InvestorAuditTrail />)} />
+        {/* What every number here is made of. Open to anyone signed in:
+            whoever may read a figure may read what kind of claim it is. */}
+        <Route path="evidence" element={<Suspense fallback={loading}><EvidencePage /></Suspense>} />
         <Route path="impact" element={<RequireAuth roles={["sponsor", "admin", "auditor"]}><Suspense fallback={loading}><ImpactIntelligence /></Suspense></RequireAuth>} />
         <Route path="capital" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><AllocationEngine /></Suspense></RequireAuth>} />
         {/* Reading the registry is as wide as its row-level policy; running the
             engine is for the desk and capital operators, and setting a policy is
             narrower still. The page gates those itself. */}
         <Route path="capital/network" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><CapitalNetwork /></Suspense></RequireAuth>} />
+        {/* The arc the other screens only ever show a slice of. */}
+        <Route path="capital/journey" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><CapitalJourney /></Suspense></RequireAuth>} />
+        {/* What happened after the capital landed. The same reach as the rest
+            of the engine's area; the reader itself checks each economy against
+            the row-level policy, so a narrower account sees only its own. */}
+        <Route path="capital/local" element={<RequireAuth roles={["sponsor", "capital_provider", "partner", "admin", "auditor"]}><Suspense fallback={loading}><LocalEconomy /></Suspense></RequireAuth>} />
         <Route path="capital/economics" element={<RequireAuth roles={["sponsor", "partner", "admin", "auditor"]}><Suspense fallback={loading}><OperatingEconomics /></Suspense></RequireAuth>} />
         <Route path="admin" element={<RequireAuth roles={["admin"]}><AdminReviewPage /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/app" replace />} />

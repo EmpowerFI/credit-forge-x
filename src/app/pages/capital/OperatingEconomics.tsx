@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import LoadError from "../../components/LoadError";
+import PageEvidence from "../../components/product/PageEvidence";
 import PageHeader from "../../components/product/PageHeader";
 import StatTile from "../../components/product/StatTile";
 import { useAuth } from "../../auth/useAuth";
@@ -578,7 +579,9 @@ export default function OperatingEconomics() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow={tr({ en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" })}
+      <PageHeader
+        meta={<PageEvidence family="cost_rates" />}
+        eyebrow={tr({ en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" })}
         title={tr({ en: "Operating economics", pt: "Economia operacional" })}
         description={tr({
           en: "Can productive credit become cheaper to operate without becoming weaker credit?",

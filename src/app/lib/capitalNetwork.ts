@@ -191,6 +191,55 @@ const NETWORK_ONLY: Record<Exclude<NetworkReason, AllocationReason>, { label: st
     says: { en: "This route states that it operates where she is.", pt: "Esta rota declara que opera onde ela está." },
     tone: "positive",
   },
+  // The local rail, in the words of addendum v3 §6.
+  LOCAL_RAIL_ELIGIBLE: {
+    label: { en: "Arrives as local capital", pt: "Chega como capital local" },
+    says: {
+      en: "This route hands her value inside her own territory's ledger, so what she spends stays where she spends it until someone redeems it.",
+      pt: "Esta rota entrega o valor no registro do próprio território dela, então o que ela gasta fica onde ela gasta até alguém resgatar.",
+    },
+    tone: "positive",
+  },
+  LOCAL_SUPPLIER_MATCH: {
+    label: { en: "Her suppliers are here", pt: "Os fornecedores dela são daqui" },
+    says: {
+      en: "What she is buying can be bought in the territory this capital circulates in. Capital that has to leave to be useful does not circulate.",
+      pt: "O que ela vai comprar pode ser comprado no território onde este capital circula. Capital que precisa sair para servir não circula.",
+    },
+    tone: "positive",
+  },
+  LOCAL_RAIL_UNAVAILABLE: {
+    label: { en: "No local rail here, so reais", pt: "Sem trilho local aqui, então reais" },
+    says: {
+      en: "This route settles in local units and her territory has none, so it would pay her in reais instead. The route stands; only the rail changes.",
+      pt: "Esta rota liquida em unidades locais e o território dela não tem nenhuma, então pagaria em reais. A rota continua; só o trilho muda.",
+    },
+    tone: "caution",
+  },
+  TERRITORIAL_CAPACITY_PARTIAL: {
+    label: { en: "The territory gave what it had", pt: "O território deu o que tinha" },
+    says: {
+      en: "A route inside her own territory put in everything it had left, and it was not the whole request. That is a shortfall of local capacity, not of what she can pay.",
+      pt: "Uma rota dentro do próprio território dela colocou tudo o que restava, e não foi o pedido inteiro. É falta de capacidade local, não do que ela pode pagar.",
+    },
+    tone: "caution",
+  },
+  EXTERNAL_GAP_EXISTS: {
+    label: { en: "Local capital did not cover it", pt: "O capital local não cobriu" },
+    says: {
+      en: "Something is left over after every route inside Brazil took what it could. Stated before anyone asks who fills it, because that is what makes it a measurement.",
+      pt: "Sobra algo depois que todas as rotas dentro do Brasil tomaram o que podiam. Declarado antes de perguntar quem preenche, porque é isso que o torna uma medida.",
+    },
+    tone: "info",
+  },
+  GLOBAL_ADDITIONALITY: {
+    label: { en: "Capital from abroad added to it", pt: "O capital de fora somou" },
+    says: {
+      en: "Money from outside Brazil funded demand local capital had not reached — added capacity, rather than a cheaper answer to demand already covered.",
+      pt: "Dinheiro de fora do Brasil financiou demanda que o capital local não alcançou — capacidade somada, não uma resposta mais barata a uma demanda já coberta.",
+    },
+    tone: "positive",
+  },
   PARTNER_CAPACITY_AVAILABLE: {
     label: { en: "Capacity available", pt: "Capacidade disponível" },
     says: { en: "The provider still has capacity stated for this route.", pt: "O provedor ainda tem capacidade declarada para esta rota." },
