@@ -546,8 +546,14 @@ export function globalGateDetail(g: GlobalGate, e: GlobalEligibility["economics"
  * always: a refusal a person can check beats one she has to believe. The values
  * arrive from the engine as codes and centavos, and they are not readable until
  * they are put back into the language and the currency she uses.
+ *
+ * The instrument's kind is taken where the caller has it, for the one gate whose
+ * number means something different route by route: a partner's capacity is what
+ * that partner declared, and a pool's is a residue — its capital, less what it
+ * has lent, less what other requests are already holding. "Capacity exhausted"
+ * without that is a refusal nobody can check.
  */
-export function gateDetail(g: Gate): string {
+export function gateDetail(g: Gate, type?: InstrumentType): string {
   const list = (v: Gate["limit"], label: (s: string) => string) =>
     Array.isArray(v) && v.length > 0
       ? (v as (string | number)[]).map((x) => label(String(x))).join(", ")
@@ -609,9 +615,18 @@ export function gateDetail(g: Gate): string {
         pt: `${money(Number(g.value))} por mês é o que ela pode pagar; a parcela que esta rota pode tomar alcança ${money(Number(g.limit))}, abaixo do menor ticket dela`,
       });
     case "capacity":
-      return tr({
-        en: `${money(Number(g.limit))} left; its smallest ticket is ${money(Number(g.value))}`,
-        pt: `restam ${money(Number(g.limit))}; o menor ticket dela é ${money(Number(g.value))}`,
-      });
+      // A pool's capacity is nobody's declaration: it is what its capital comes
+      // to after the loans it has out and the requests the allocation engine
+      // has already listed on it. Naming that is the difference between a
+      // number and a reason.
+      return type === "domestic_p2p" || type === "global_impact_capital"
+        ? tr({
+            en: `${money(Number(g.limit))} left in the pool — its capital, less what it has lent and less what other requests the allocation engine listed on it are holding; its smallest ticket is ${money(Number(g.value))}`,
+            pt: `restam ${money(Number(g.limit))} no pool — o capital dele, menos o que já emprestou e menos o que outros pedidos listados nele pelo motor de alocação estão segurando; o menor ticket dele é ${money(Number(g.value))}`,
+          })
+        : tr({
+            en: `${money(Number(g.limit))} left of what this provider states; its smallest ticket is ${money(Number(g.value))}`,
+            pt: `restam ${money(Number(g.limit))} do que este provedor declara; o menor ticket dele é ${money(Number(g.value))}`,
+          });
   }
 }
