@@ -33,7 +33,7 @@ export const organizationSchema = (): Record<string, unknown> => ({
   logo: `${SITE_URL}/favicon.png`,
   foundingDate: COMPANY_FOUNDING_YEAR,
   description:
-    "EmpowerFI is productive-credit and impact intelligence infrastructure, built in Brazil. Sponsors of ESG, impact and entrepreneurship programs fund cohorts that communities run; EmpowerFI turns that execution into auditable evidence, qualifies credit opportunities from the same data, and routes them to domestic capital in reais or global capital in USDC on Solana. Businesses receive and repay in reais, by Pix. In the pilot, a regulated financial partner provides the capital and makes the credit decision.",
+    "EmpowerFI is building the capital infrastructure that connects productive businesses and local economies to the best-fit sources of capital, built in Brazil. It qualifies productive capital demand, maps the capital instruments available to a business or a territory, allocates local and domestic capital first, and evaluates the qualified demand that remains underserved for additional global capital. Servicing, repayment and outcomes are measured after deployment. EmpowerFI holds no lending, P2P, investment, FX or local-currency licence, and regulated financial functions are expected to operate through regulated structures and partners.",
   address: {
     "@type": "PostalAddress",
     addressLocality: COMPANY_CITY,

@@ -3,8 +3,14 @@ import { SiteAnchorButton, SiteLinkButton } from "@/components/site/editorial";
 import { HOME, type Lang } from "./copy";
 
 /**
- * The hero, as the founder's reference draws it: the sentence on the left with
- * room to be long, and on the right what the platform is actually made of.
+ * The hero: the economic thesis on the left, and on the right the architecture
+ * it rests on — four layers, with EmpowerFI as the one in the middle.
+ *
+ * The right-hand column deliberately says nothing about Solana, USDC or
+ * tokenisation. A visitor who reads only this screen should leave knowing what
+ * the company connects to what; the technology that carries it is a later
+ * section, because leading with the rail is how an infrastructure company gets
+ * mistaken for a crypto one.
  *
  * No entrance animation. The first thing a partner or a judge reads should be
  * on the screen when the screen arrives — and a page that fades itself in has
@@ -12,7 +18,7 @@ import { HOME, type Lang } from "./copy";
  */
 const HomeHero = ({ lang }: { lang: Lang }) => {
   const t = HOME[lang].hero;
-  const p = t.panel;
+  const s = t.stack;
   return (
     <section className="px-4 pb-20 pt-28 md:px-8 lg:pb-28 lg:pt-36">
       <div className="container mx-auto grid gap-14 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] xl:items-start xl:gap-16">
@@ -33,8 +39,10 @@ const HomeHero = ({ lang }: { lang: Lang }) => {
             </SiteAnchorButton>
           </div>
 
+          <p className="mt-6 text-[0.95rem] text-foreground/70">{t.note}</p>
+
           {/* What is a prototype and what is a plan, before anything else is claimed. */}
-          <div className="mt-11 max-w-2xl space-y-2 border-t border-foreground/15 pt-4">
+          <div className="mt-10 max-w-2xl space-y-2 border-t border-foreground/15 pt-4">
             <p className="label-ui text-foreground/90">{t.statusLabel}</p>
             {t.status.map((line) => (
               <p key={line} className="text-[0.95rem] leading-relaxed text-foreground/80">{line}</p>
@@ -42,37 +50,27 @@ const HomeHero = ({ lang }: { lang: Lang }) => {
           </div>
         </div>
 
+        {/* Four layers, capital going down and everything that proves it coming
+            back up. The arrows point both ways on purpose: a diagram with one
+            direction describes a grant, and this is not one. */}
         <div className="xl:pt-1.5">
-          <p className="eyebrow">{p.title}</p>
-          <div className="mt-5 space-y-3">
-            {p.intelligences.map((it, i) => (
-              <div key={it.name}>
-                {i > 0 && <p className="py-1 text-center text-xl leading-none text-accent" aria-hidden>+</p>}
-                <div className="rounded-sm border border-gold/55 px-6 py-5">
-                  <p className="font-heading text-2xl leading-tight">{it.name}</p>
-                  <p className="mt-2 text-[0.95rem] leading-snug text-foreground/85">{it.desc}</p>
+          <p className="eyebrow">{s.title}</p>
+          <ol className="mt-5 space-y-2">
+            {s.layers.map((l, i) => (
+              <li key={l.name}>
+                {i > 0 && (
+                  <p className="py-1.5 text-center text-sm leading-none tracking-[0.3em] text-accent" aria-hidden>↓ ↑</p>
+                )}
+                <div className={`rounded-sm px-6 py-5 ${l.emphasis
+                  ? "border-[1.5px] border-gold bg-gold/12"
+                  : "border border-gold/55"}`}>
+                  <p className="font-heading text-2xl leading-tight">{l.name}</p>
+                  <p className="mt-1.5 text-[0.95rem] leading-snug text-foreground/80">{l.sub}</p>
                 </div>
-              </div>
+              </li>
             ))}
-            <p className="py-1 text-center text-xl leading-none text-accent" aria-hidden>↓</p>
-            {/* One column on a phone. "Patrocinadores" is a single 14-letter
-                word: as tracked capitals it is wider than a third of this
-                panel at every desktop width, so these three labels drop the
-                capitals the rest of the site uses. Inside a tile, above the
-                thing itself, they read as captions rather than as eyebrows. */}
-            <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-              {p.outputs.map((o) => (
-                <li key={o.who}
-                  className={`rounded-sm px-3.5 py-4 ${o.future
-                    ? "border border-dashed border-gold/60"
-                    : "border-[1.5px] border-gold bg-gold/12"}`}>
-                  <span className="block font-ui text-xs tracking-[0.02em] text-foreground/70">{o.who}</span>
-                  <span className="mt-1.5 block font-heading text-[1.0625rem] leading-tight">{o.what}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="pt-1 text-sm text-foreground/65">{p.futureNote}</p>
-          </div>
+          </ol>
+          <p className="pt-4 text-sm leading-relaxed text-foreground/65">{s.note}</p>
         </div>
       </div>
     </section>

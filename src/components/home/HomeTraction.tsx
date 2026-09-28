@@ -163,10 +163,12 @@ const HomeTraction = ({ lang }: { lang: Lang }) => {
         <div className="container mx-auto grid gap-14 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)] xl:gap-20">
           <div>
             <SectionHeading eyebrow={c.eyebrow} title={t.fit} />
-            <p className="mt-7 leading-relaxed text-foreground/85">{c.subtitle}</p>
+            <p className="mt-7 leading-relaxed text-foreground/85">{t.fitBody}</p>
 
-            {/* The three ways in, as rows rather than cards: choosing one sets
-                the form's first line, so the founder reads who is writing. */}
+            {/* The six ways in, as rows rather than cards: choosing one sets the
+                form's first line, so the founder reads who is writing. All six
+                lead to the same form — this company is having discovery
+                conversations, not routing anyone into a product. */}
             <ul className="mt-9 border-t border-foreground/15">
               {t.ctas.map((cta) => {
                 const inner = (
@@ -181,9 +183,7 @@ const HomeTraction = ({ lang }: { lang: Lang }) => {
                 const row = "group flex min-h-[3.5rem] w-full items-center justify-between gap-5 border-b border-foreground/15 py-5 text-left transition-colors hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background";
                 return (
                   <li key={cta.id}>
-                    {cta.id === "capital"
-                      ? <Link to={`${PATHS[lang].investors}#waitlist`} className={row}>{inner}</Link>
-                      : <button type="button" onClick={() => choose(cta.id as Interest)} className={row}>{inner}</button>}
+                    <button type="button" onClick={() => choose(cta.id as Interest)} className={row}>{inner}</button>
                   </li>
                 );
               })}
