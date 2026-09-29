@@ -1,6 +1,7 @@
 import type { AllocationResult, PoolCheck, PoolId, PoolPolicy, RiskBand } from "@empowerfi/capital-allocation";
 import { RULES as ELIGIBILITY_RULES } from "@empowerfi/eligibility-engine";
 import { RULES as READINESS_RULES } from "@empowerfi/readiness-engine";
+import type { Reached } from "./capitalJourney";
 import { platform } from "./platform";
 
 // The Credit Engine page. Two engines, one opportunity at a time:
@@ -41,6 +42,11 @@ export interface EngineOpportunity {
   impact_eligible: boolean;
   funding_status: string | null;
   funding_pool: PoolId | null;
+  /** Already became a loan. Not the desk's work any more — and the only kind of
+   * request whose capital the page's third act has anywhere to follow. */
+  settled: boolean;
+  /** How far the capital got, read exactly as the journey picker reads it. */
+  reached: Reached;
   allocation: AllocationResult | null;
   allocation_reason_codes: string[] | null;
   allocation_model_version: string | null;
@@ -80,7 +86,10 @@ export interface EngineOpportunity {
 export const engineOpportunitiesKey = ["platform", "engine-opportunities"] as const;
 
 export async function fetchEngineOpportunities(): Promise<EngineOpportunity[]> {
-  const { data, error } = await platform.rpc("engine_opportunities");
+  // Settled requests too. The desk's queue is what still needs a decision, and
+  // on its own it can never offer a request whose capital went anywhere — every
+  // request that crossed into reais is a loan, and the queue excludes those.
+  const { data, error } = await platform.rpc("engine_opportunities", { p_include_settled: true });
   if (error) throw error;
   return (data ?? []) as unknown as EngineOpportunity[];
 }
@@ -165,6 +174,10 @@ export type EngineState =
   | "DOMESTIC_SELECTED"
   | "GLOBAL_SELECTED"
   | "WAITING_FOR_CAPITAL"
+  // Act 3 is not produced by stateAt: the engines have stopped by then and the
+  // page is replaying what the ledger recorded for the request they judged.
+  | "FOLLOWING_CAPITAL"
+  | "LOOP_CLOSED"
   | "ERROR";
 
 /**

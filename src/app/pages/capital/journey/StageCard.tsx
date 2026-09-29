@@ -26,7 +26,7 @@ const ICON: Record<StageKey, LucideIcon> = {
   comes_back: ArrowRight,
 };
 
-function Proof({ s }: { s: Stage }) {
+export function Proof({ s }: { s: Stage }) {
   const { total, confirmed, failed } = s.anchors;
   if (total === 0) {
     return (

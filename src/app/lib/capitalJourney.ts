@@ -246,6 +246,28 @@ export const MOVEMENT = localized({
 
 export const MOVEMENTS: MovementKey[] = ["comes_in", "becomes_credit", "circulates", "comes_back"];
 
+/**
+ * The six stages after the allocation decision, in the order the money took
+ * them. The engine page replays these as its third act: the two engines stop at
+ * the decision, which is where a conventional fund's screen also stops, and
+ * these are the hops that come after it.
+ */
+export const FOLLOWED: StageKey[] = [
+  "investors_fund",
+  "position_minted",
+  "dollars_become_reais",
+  "disbursed",
+  "circulates",
+  "comes_back",
+];
+
+/** One tick a stage, so the act's length is the ledger's and not a designer's. */
+export const FOLLOW_TICKS = FOLLOWED.length;
+
+/** Where the money changes country and currency: everything from this row on is
+ * inside the territory. */
+export const CROSSES_AT = FOLLOWED.indexOf("dollars_become_reais");
+
 // ------------------------------------------------------------- the picker
 
 /** How far a request actually got, which is what orders the picker. */

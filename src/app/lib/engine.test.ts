@@ -17,7 +17,7 @@ const opportunity = (over: Partial<EngineOpportunity> = {}): EngineOpportunity =
   purpose: "inventory", business_sector: "food", community: "Grajaú", community_city: "São Paulo", community_state: "SP",
   documents: ["cpf", "proof_of_activity"],
   amount_cents: 220_000, term_months: 6, instalment_cents: 41_000, risk_band: "LOW", confidence: "HIGH", impact_eligible: true,
-  funding_status: "open", funding_pool: "domestic", allocation: null, allocation_reason_codes: ["DOMESTIC_LIQUIDITY_AVAILABLE"],
+  funding_status: "open", funding_pool: "domestic", settled: false, reached: "raising", allocation: null, allocation_reason_codes: ["DOMESTIC_LIQUIDITY_AVAILABLE"],
   allocation_model_version: "capital-allocation-v1.0.0", allocated_at: null,
   funding_target_micro_usdc: null, fx_brl_per_usdc_milli: null,
   readiness: {

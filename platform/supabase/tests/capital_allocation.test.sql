@@ -11,7 +11,7 @@ select set_config(
   true
 );
 
-select plan(46);
+select plan(50);
 
 -- ------------------------------------------------------------ the vectors
 -- Generated from packages/capital-allocation/vectors/scenarios.json: the
@@ -388,4 +388,22 @@ select ok(
 select pg_temp.act_as('00000000-0000-0000-0000-0000000008a7');
 select is((select array_agg(left(x ->> 'code', 2)) from jsonb_array_elements(engine_opportunities()) x), array['P-', 'P-'],
   'the desk sees the same two, by its own P- codes');
+select is((select count(*)::int from jsonb_array_elements(engine_opportunities()) x where (x ->> 'settled')::boolean), 0,
+  'and its queue still holds nothing that was already lent');
+create temp table eng_settled as select engine_opportunities(true) as v;
 set local role postgres;
+
+-- The engine page's third act follows the capital after the decision, and every
+-- request that got that far is a loan — precisely what the queue leaves out. So
+-- a caller can ask for those too, without the queue losing its meaning.
+select is((select jsonb_array_length(v) from eng_settled), 3,
+  'asked for settled requests too, the desk also sees the one it already lent');
+select is(
+  (select array_agg((x ->> 'settled')::boolean order by i)
+   from eng_settled, jsonb_array_elements(v) with ordinality t(x, i)),
+  array[false, false, true],
+  'the queue first and the lent one after it, never mixed into the work still to be done');
+select is(
+  (select x ->> 'reached' from eng_settled, jsonb_array_elements(v) x where (x ->> 'settled')::boolean),
+  'disbursed',
+  'each saying how far its capital got, so nobody follows a request that never left the first movement');

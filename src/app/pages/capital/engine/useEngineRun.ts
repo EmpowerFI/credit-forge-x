@@ -11,15 +11,21 @@ const reducedMotion = () => {
 
 /**
  * The clock of a run: a tick counter that advances until `total`, then stops.
- * With `hold`, it first stops there and waits for `resume`: the credit engine
- * qualifies before capital allocation is run. With reduced motion, or after
- * Skip, it jumps straight to where it stops. It only paces the showing of a
- * result that is already computed.
+ *
+ * `holds` are the ticks it stops at and waits for `resume`, in order. There are
+ * two of them on the engine page, and they are the seams of the story rather
+ * than pauses for pacing: the credit engine has to qualify a request before
+ * capital allocation is asked anything, and capital has to be allocated before
+ * there is anything to follow. Each hold is a question the previous act left
+ * open, so the button that releases it can name the next act.
+ *
+ * With reduced motion, or after Skip, it jumps straight to where it stops. It
+ * only paces the showing of a result that is already computed.
  */
 export function useEngineRun() {
   const [tick, setTick] = useState(-1);
   const [total, setTotal] = useState(0);
-  const [hold, setHold] = useState<number | null>(null);
+  const [holds, setHolds] = useState<number[]>([]);
   const timer = useRef<number | null>(null);
 
   const stop = () => {
@@ -42,36 +48,40 @@ export function useEngineRun() {
     }, TICK_MS);
   }, []);
 
-  const start = useCallback((ticks: number, holdAt: number | null = null) => {
+  const start = useCallback((ticks: number, holdAt: number[] = []) => {
+    const hs = [...new Set(holdAt)].filter((h) => h > 0 && h < ticks).sort((a, b) => a - b);
     setTotal(ticks);
-    setHold(holdAt !== null && holdAt < ticks ? holdAt : null);
-    runTo(0, holdAt !== null && holdAt < ticks ? holdAt : ticks);
+    setHolds(hs);
+    runTo(0, hs.length > 0 ? hs[0] : ticks);
   }, [runTo]);
 
   const resume = useCallback(() => {
-    if (hold === null) return;
-    const from = hold;
-    setHold(null);
-    runTo(from, total);
-  }, [hold, total, runTo]);
+    if (holds.length === 0) return;
+    const [from, ...rest] = holds;
+    setHolds(rest);
+    runTo(from, rest.length > 0 ? rest[0] : total);
+  }, [holds, total, runTo]);
 
   const skip = useCallback(() => {
     stop();
-    setTick(hold ?? total);
-  }, [hold, total]);
+    setTick(holds.length > 0 ? holds[0] : total);
+  }, [holds, total]);
 
   const reset = useCallback(() => {
     stop();
     setTick(-1);
     setTotal(0);
-    setHold(null);
+    setHolds([]);
   }, []);
 
   useEffect(() => stop, []);
 
-  const held = hold !== null && tick >= hold;
+  const next = holds.length > 0 ? holds[0] : null;
+  const held = next !== null && tick >= next;
   return {
-    tick, total, started: tick >= 0, done: tick >= 0 && tick >= total, held, holding: hold !== null,
+    tick, total, started: tick >= 0, done: tick >= 0 && tick >= total, held, holding: next !== null,
+    /** Which seam the run is waiting at, so the button can name the next act. */
+    heldAt: held ? next : null,
     start, resume, skip, reset,
   };
 }
