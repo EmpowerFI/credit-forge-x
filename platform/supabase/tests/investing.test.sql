@@ -108,11 +108,17 @@ select results_eq(
 
 -- ------------------------------------------------------------------ funding
 
+-- The quote is taken when the opportunity opens and moves with the market, so
+-- what is asserted is the shape of the target rather than a rate: a whole
+-- number of USDC, and enough of them to cover her loan at the quote the row
+-- was booked at. A frozen rate here failed every time the market moved.
 select results_eq(
-  $$ select funding_status::text, funding_target_micro_usdc, fx_brl_per_usdc_milli
+  $$ select funding_status::text,
+            funding_target_micro_usdc % 1000000 = 0,
+            funding_target_micro_usdc >= private.usdc_micro(amount_cents, fx_brl_per_usdc_milli)
      from qualified_credit_opportunities where id = (select id from rita) $$,
-  $$ values ('open', 371000000::bigint, 5400) $$,
-  'an eligible request opens for funding: R$ 2,000 at the demo quote of R$ 5.40 is 371 USDC'
+  $$ values ('open', true, true) $$,
+  'an eligible request opens for funding, for whole USDC that cover her loan at its own quote'
 );
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
@@ -221,7 +227,9 @@ select is(
   round(100000000 * 10000.0 / (select target from rita))::integer,
   'Wanda''s share is what she put in over what the loan needed'
 );
-select is((select count(*)::int from position_events where kind = 'created'), 2,
+select is(
+  (select count(*)::int from position_events e join credit_positions p on p.id = e.position_id
+   where e.kind = 'created' and p.opportunity_id = (select id from rita)), 2,
   'and each one opens with an event saying so');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
@@ -438,11 +446,17 @@ select is(round(private.usdc_micro(100000, 5500)), 181818182::numeric,
   'R$ 1,000 at R$ 5.50 per USDC is 181.818182 USDC');
 select is(private.share_usdc(100000, 0.25, 5500), 45454545::bigint,
   'a quarter share of that instalment is 45.454545 USDC');
+-- The two pools round differently on purpose: USDC investors buy whole coins,
+-- and the domestic book keeps its reais to the micro-USDC at the same quote.
+-- Asserting the first rule over both was true only where no domestic
+-- opportunity existed, which is to say only in this file's own fixture.
 select ok(
-  (select bool_and(funding_target_micro_usdc >= private.usdc_micro(amount_cents, fx_brl_per_usdc_milli)
-                   and funding_target_micro_usdc - private.usdc_micro(amount_cents, fx_brl_per_usdc_milli) < 1000000)
+  (select bool_and(case funding_pool
+     when 'global' then funding_target_micro_usdc >= private.usdc_micro(amount_cents, fx_brl_per_usdc_milli)
+                    and funding_target_micro_usdc - private.usdc_micro(amount_cents, fx_brl_per_usdc_milli) < 1000000
+     else abs(funding_target_micro_usdc - private.usdc_micro(amount_cents, fx_brl_per_usdc_milli)) <= 1 end)
    from qualified_credit_opportunities where funding_target_micro_usdc is not null),
-  'every funding target is its loan in USDC at the same scale, rounded up to the whole coin'
+  'every funding target is its loan at its own quote: whole coins for USDC, the micro-USDC for the domestic book'
 );
 
 select * from finish();
