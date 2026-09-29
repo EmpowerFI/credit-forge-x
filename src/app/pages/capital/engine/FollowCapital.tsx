@@ -1,5 +1,4 @@
 import { ArrowUp, Circle, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import StatusPill from "../../../components/product/StatusPill";
 import { formatNumber, localized, tr } from "../../../i18n";
@@ -17,6 +16,12 @@ import { Proof } from "../journey/StageCard";
 // header says so, because a page that animates a hypothesis and a ledger in the
 // same column and labels neither is inviting the viewer to take the first for
 // the second.
+//
+// Each stage carries its figure and its proof and nothing else. It used to carry
+// a link into the screen that wrote it — the Investor Console, the desk, the
+// settlement page — which turned a demonstration of the mechanism into a set of
+// doors out of it, most of them belonging to somebody else's role. This panel
+// shows how the thing works; it is not a table of contents for the product.
 //
 // It exists because the two engines stop exactly where this product starts to
 // differ from a conventional fund. Underwriting and picking a pool are what
@@ -161,12 +166,6 @@ function Hop({ s, state, fxMilli }: { s: Stage; state: RowState; fxMilli: number
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <StatusPill tone={EVIDENCE[s.evidence].tone} dot={false}>{EVIDENCE[s.evidence].label}</StatusPill>
             <Proof s={s} />
-            <Link
-              to={meta.to}
-              className="rounded text-xs font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              {tr({ en: `Check it on ${meta.toLabel}`, pt: `Conferir em ${meta.toLabel}` })}
-            </Link>
           </div>
         )}
       </div>

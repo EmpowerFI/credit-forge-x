@@ -235,24 +235,24 @@ export default function LocalEconomy() {
           pt: "O capital chegou a um negócio, e depois? O que cada unidade produziu dentro do território, quanto disso ficou, e quanto veio de fora.",
         })}
         meta={<PageEvidence family="local_rail" />}
+        // Two paragraphs. The method behind each measure is written under the
+        // measure itself, where someone looking at a number can see how it was
+        // divided; restating all three here was a paper stapled to a dashboard.
+        // What stays is the pair of claims the figures cannot make for
+        // themselves: nothing is stored or targeted, and a redemption is not
+        // circulation.
         about={
           <>
             <p>
               {tr({
-                en: "Every figure is arithmetic over the rail's own movements, computed in the database. No number on this screen is stored, configured or targeted: a shorter loop in the ledger produces smaller figures and the screen reports the smaller figures.",
-                pt: "Toda medida é aritmética sobre os movimentos do próprio trilho, calculada no banco. Nenhum número desta tela é armazenado, configurado ou uma meta: um laço mais curto no razão produz medidas menores, e a tela informa as medidas menores.",
+                en: "Every figure is arithmetic over the rail's own movements, computed in the database. Nothing here is stored, configured or targeted: a shorter loop in the ledger produces smaller figures, and the screen reports the smaller figures.",
+                pt: "Toda medida é aritmética sobre os movimentos do próprio trilho, calculada no banco. Nada aqui é armazenado, configurado ou uma meta: um laço mais curto no razão produz medidas menores, e a tela informa as medidas menores.",
               })}
             </p>
             <p>
               {tr({
-                en: "LM3 counts three rounds of spending: the capital that entered the territory, what she spent with merchants inside it, and what those merchants spent locally in turn. It counts neither redemption, which is capital leaving the rail, nor repayment, which returns it to the issuer — and a redemption counted as circulation would inflate the measure with the exact movement that is leakage.",
-                pt: "O LM3 conta três rodadas de gasto: o capital que entrou no território, o que ela gastou com comerciantes de dentro, e o que aqueles comerciantes gastaram localmente em seguida. Não conta o resgate, que é capital saindo do trilho, nem a parcela, que o devolve ao emissor — e um resgate contado como circulação inflaria a medida justamente com o movimento que é vazamento.",
-              })}
-            </p>
-            <p>
-              {tr({
-                en: "Velocity divides local circulation by the units still in circulation, read at this instant rather than averaged over a period, because this ledger is hours old and an average over hours would be a more complicated way of saying the same thing.",
-                pt: "A velocidade divide a circulação local pelas unidades ainda em circulação, lidas neste instante e não como média de um período, porque este razão tem horas de vida e uma média de horas seria um jeito mais complicado de dizer a mesma coisa.",
+                en: "Redemption is capital leaving the rail and repayment returns it to the issuer, so neither counts as circulation — counting them would inflate the measure with the exact movement that is leakage.",
+                pt: "O resgate é capital saindo do trilho e a parcela o devolve ao emissor, então nenhum dos dois conta como circulação — contá-los inflaria a medida justamente com o movimento que é vazamento.",
               })}
             </p>
             <p>{prototypeNotice()}</p>

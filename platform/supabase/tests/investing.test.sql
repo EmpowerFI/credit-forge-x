@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(55);
+select plan(60);
 
 -- ------------------------------------------------------------------ fixtures
 -- One partner, one community, Rita and Sara ready and asking. Two wallet
@@ -108,11 +108,17 @@ select results_eq(
 
 -- ------------------------------------------------------------------ funding
 
+-- The quote is taken when the opportunity opens and moves with the market, so
+-- what is asserted is the shape of the target rather than a rate: a whole
+-- number of USDC, and enough of them to cover her loan at the quote the row
+-- was booked at. A frozen rate here failed every time the market moved.
 select results_eq(
-  $$ select funding_status::text, funding_target_micro_usdc, fx_brl_per_usdc_milli
+  $$ select funding_status::text,
+            funding_target_micro_usdc % 1000000 = 0,
+            funding_target_micro_usdc >= private.usdc_micro(amount_cents, fx_brl_per_usdc_milli)
      from qualified_credit_opportunities where id = (select id from rita) $$,
-  $$ values ('open', 371000000::bigint, 5400) $$,
-  'an eligible request opens for funding: R$ 2,000 at the demo quote of R$ 5.40 is 371 USDC'
+  $$ values ('open', true, true) $$,
+  'an eligible request opens for funding, for whole USDC that cover her loan at its own quote'
 );
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
@@ -184,6 +190,27 @@ select throws_ok(
   'P0001', 'opportunity_not_open', 'after which it takes no more'
 );
 
+-- ------------------------------------------------------------ who may hold it
+-- The deposit is what admits the wallet. Nobody is handed an address in
+-- advance, so the wallet a position must mint to is on the list because it
+-- paid for the position, and a wallet that paid for nothing is not.
+
+select results_eq(
+  $$ select active, is_simulated from eligible_wallets
+     where wallet = 'WaNdA1111111111111111111111111111111111111' $$,
+  $$ values (true, true) $$,
+  'the wallet that funded it is admitted, by the deposit and by nothing else'
+);
+select is(
+  (select note from eligible_wallets where wallet = 'WaNdA1111111111111111111111111111111111111'),
+  'Admitted by the deposit sig-wanda-1',
+  'and the row names the deposit that admitted it'
+);
+select is(
+  (select count(*)::int from eligible_wallets where wallet = 'StRaNgEr11111111111111111111111111111111111'), 0,
+  'a wallet that never funded anything is not admitted'
+);
+
 -- ------------------------------------------------------- the tokenised position
 -- Funding it turns each allocation into a credit position: one per investment,
 -- owned by the wallet that funded it, and worth her share rather than the loan.
@@ -200,7 +227,9 @@ select is(
   round(100000000 * 10000.0 / (select target from rita))::integer,
   'Wanda''s share is what she put in over what the loan needed'
 );
-select is((select count(*)::int from position_events where kind = 'created'), 2,
+select is(
+  (select count(*)::int from position_events e join credit_positions p on p.id = e.position_id
+   where e.kind = 'created' and p.opportunity_id = (select id from rita)), 2,
   'and each one opens with an event saying so');
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
@@ -243,9 +272,8 @@ set local role postgres;
 update credit_positions set mint_address = 'MiNt111111111111111111111111111111111111111',
   token_account = 'AtA1111111111111111111111111111111111111111', minted_at = now()
 where id = (select id from wanda_pos);
-insert into eligible_wallets (wallet, label) values
-  ('YaRa22222222222222222222222222222222222222', 'pgTAP Yara'),
-  ('WaNdA1111111111111111111111111111111111111', 'pgTAP Wanda');
+-- Both wallets are already admitted: each funded this loan, and that is what
+-- put them on the list.
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
 select is(
@@ -362,10 +390,26 @@ select throws_ok($$ select investor_position((select id from wanda_inv)) $$, '42
   'nor open her position');
 set local role postgres;
 
+-- An operator takes Yara's wallet off the list, and she deposits again. Taking
+-- a wallet off is a decision; a later deposit is not an argument against it.
+update eligible_wallets set active = false where wallet = 'YaRa22222222222222222222222222222222222222';
+
 -- The partner declines Sara, partly funded: her investors are owed their capital.
 select record_investment('00000000-0000-0000-0000-0000000004b2', o.id, 50000000, 'wallet',
   'YaRa22222222222222222222222222222222222222', 'sig-yara-sara')
 from opp o where o.entrepreneur_id = '00000000-0000-0000-0000-0000000004e2';
+
+select results_eq(
+  $$ select active, note from eligible_wallets
+     where wallet = 'YaRa22222222222222222222222222222222222222' $$,
+  $$ values (false, 'Admitted by the deposit sig-yara-1') $$,
+  'a wallet an operator withdrew is not put back by depositing again'
+);
+select is(
+  (select count(*)::int from eligible_wallets where wallet = 'YaRa22222222222222222222222222222222222222'), 1,
+  'and a second deposit from an admitted wallet adds no second row'
+);
+update eligible_wallets set active = true where wallet = 'YaRa22222222222222222222222222222222222222';
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004a5');
 select partner_decide((select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000004e2'), 'declined',
   p_reason => 'Outside our focus');
@@ -402,11 +446,17 @@ select is(round(private.usdc_micro(100000, 5500)), 181818182::numeric,
   'R$ 1,000 at R$ 5.50 per USDC is 181.818182 USDC');
 select is(private.share_usdc(100000, 0.25, 5500), 45454545::bigint,
   'a quarter share of that instalment is 45.454545 USDC');
+-- The two pools round differently on purpose: USDC investors buy whole coins,
+-- and the domestic book keeps its reais to the micro-USDC at the same quote.
+-- Asserting the first rule over both was true only where no domestic
+-- opportunity existed, which is to say only in this file's own fixture.
 select ok(
-  (select bool_and(funding_target_micro_usdc >= private.usdc_micro(amount_cents, fx_brl_per_usdc_milli)
-                   and funding_target_micro_usdc - private.usdc_micro(amount_cents, fx_brl_per_usdc_milli) < 1000000)
+  (select bool_and(case funding_pool
+     when 'global' then funding_target_micro_usdc >= private.usdc_micro(amount_cents, fx_brl_per_usdc_milli)
+                    and funding_target_micro_usdc - private.usdc_micro(amount_cents, fx_brl_per_usdc_milli) < 1000000
+     else abs(funding_target_micro_usdc - private.usdc_micro(amount_cents, fx_brl_per_usdc_milli)) <= 1 end)
    from qualified_credit_opportunities where funding_target_micro_usdc is not null),
-  'every funding target is its loan in USDC at the same scale, rounded up to the whole coin'
+  'every funding target is its loan at its own quote: whole coins for USDC, the micro-USDC for the domestic book'
 );
 
 select * from finish();

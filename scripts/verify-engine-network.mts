@@ -47,7 +47,7 @@ const errors: string[] = [];
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 page.on("pageerror", (e) => errors.push(String(e)));
 
-await enter(page, process.env.UX_LOCALE === "pt" ? "Operador de crédito / capital" : "Credit / Capital Operator");
+await enter(page, process.env.UX_LOCALE === "pt" ? "Operação" : "Operations");
 console.log("landed:", page.url().replace(BASE, ""));
 
 // ---- the engine page, one request at a time

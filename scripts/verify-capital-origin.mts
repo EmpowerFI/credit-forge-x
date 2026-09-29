@@ -24,7 +24,7 @@ if ((await gate.count()) && (await gate.isVisible().catch(() => false))) {
   await page.keyboard.press("Enter");
   await page.waitForLoadState("networkidle");
 }
-const label = PT ? "Operador de crédito / capital" : "Credit / Capital Operator";
+const label = PT ? "Operação" : "Operations";
 const choice = page.getByRole("radio", { name: label, exact: true }).first();
 if (await choice.count()) { await choice.click(); await settle(page, 500); }
 await page.getByRole("button", { name: /Enter as demo|Entrar como demo|Explore without a wallet|Explorar sem carteira/i }).first().click();
