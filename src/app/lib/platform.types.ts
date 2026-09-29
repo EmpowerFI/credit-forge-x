@@ -3830,6 +3830,10 @@ export type Database = {
           term_months: number
         }[]
       }
+      pay_instalment: {
+        Args: { p_instalment_no?: number; p_loan_id: string }
+        Returns: Json
+      }
       position_history: { Args: never; Returns: Json }
       position_mint_claim: { Args: { p_limit?: number }; Returns: Json }
       position_mint_failed: {
