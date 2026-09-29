@@ -125,7 +125,7 @@ export default function LoginPage() {
             })}</p>
           </div>
           <ol className="grid gap-3 md:grid-cols-3">
-            {STORIES.map((area, i) => {
+            {STORIES.filter((a) => !a.hidden).map((area, i) => {
               const Icon = area.icon;
               return (
                 <li key={area.id}>

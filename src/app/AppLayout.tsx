@@ -155,7 +155,7 @@ function useScrollToHash() {
 function StoryBar({ current, onNavigate, vertical = false }: { current?: Area; onNavigate?: () => void; vertical?: boolean }) {
   const { profile } = useAuth();
   const { open, switching, visible } = useOpenArea();
-  const stories = STORIES.filter(visible);
+  const stories = STORIES.filter((a) => !a.hidden && visible(a));
   const operations = OPERATIONS.filter(visible);
   const go = (area: Area) => { onNavigate?.(); void open(area); };
   const switchHint = (area: Area) => canOpen(area, profile?.role) ? undefined

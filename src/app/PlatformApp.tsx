@@ -11,6 +11,7 @@ import HomeRedirect from "./pages/HomeRedirect";
 import LoginPage from "./pages/LoginPage";
 import MePage from "./pages/MePage";
 const MyLoanPage = lazy(() => import("./pages/me/MyLoan"));
+const CapitalRoutePage = lazy(() => import("./pages/me/CapitalRoute"));
 import NewCommunityPage from "./pages/NewCommunityPage";
 import type { Role } from "./lib/platform";
 import WalletProvider from "./wallet/WalletProvider";
@@ -125,6 +126,7 @@ function Pages() {
         <Route path="start" element={<Suspense fallback={loading}><StartPage /></Suspense>} />
         <Route path="me" element={<MePage />} />
         <Route path="me/loan" element={<Suspense fallback={loading}><MyLoanPage /></Suspense>} />
+        <Route path="me/route" element={<Suspense fallback={loading}><CapitalRoutePage /></Suspense>} />
         <Route path="check-in" element={<CheckinPage />} />
         <Route path="consent" element={<Suspense fallback={loading}><ConsentPage /></Suspense>} />
         <Route path="community" element={<CommunitiesPage />} />

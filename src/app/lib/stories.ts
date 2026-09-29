@@ -37,6 +37,9 @@ export interface Area {
   /** The demo account that opens it for someone whose role cannot. */
   persona: { email: string; name: string };
   icon: LucideIcon;
+  /** Reached from the money it explains, not from a menu: the area resolves so
+   * the shell knows where you are, and is left out of the numbered bar. */
+  hidden?: boolean;
 }
 
 export interface NavItem { to: string; label: string; icon: LucideIcon; end?: boolean }
@@ -59,6 +62,7 @@ export const STORIES: Area[] = localized([
       pt: "Como um pedido é avaliado, de onde vem o capital dele, e o que esse capital fez depois.",
     },
     roles: ["sponsor", "capital_provider", "partner", "admin", "auditor"], persona: SPONSOR,
+    hidden: true,
   },
   {
     id: "investor", to: "/app/investor", prefix: ["/app/investor"], icon: Wallet,
