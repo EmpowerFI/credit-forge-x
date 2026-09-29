@@ -474,6 +474,17 @@ export default function Position() {
             </RouteStep>
           </ol>
         )}
+        {/* The mechanism, offered after the money moved rather than before it.
+            The engine page takes this code and opens on this request. */}
+        <p className="mt-5 border-t border-border pt-4 text-sm text-muted-foreground">
+          <Link to={`/app/capital/engine?opportunity=${opp.code}`} className="text-info hover:underline">
+            {tr({ en: "Why this opportunity existed", pt: "Por que esta oportunidade existiu" })}
+          </Link>{" "}
+          {tr({
+            en: "— the two engines that judged this request, the pool they gave it, and the capital they released.",
+            pt: "— os dois motores que avaliaram este pedido, o pool que deram a ele, e o capital que liberaram.",
+          })}
+        </p>
       </Panel>
 
       {loan && (

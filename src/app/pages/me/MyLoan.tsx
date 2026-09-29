@@ -195,6 +195,14 @@ export default function MyLoanPage() {
                 </ul>
               </div>
             )}
+
+            {/* Where it goes next, for whoever wants to know. A link, not a
+                third of this page: what she came here to do is pay. */}
+            <div className="border-t border-border pt-4">
+              <Link to="/app/me/route" className="text-sm text-info hover:underline">
+                {tr({ en: "The route of your money →", pt: "A rota do seu dinheiro →" })}
+              </Link>
+            </div>
           </div>
         </div>
       )}

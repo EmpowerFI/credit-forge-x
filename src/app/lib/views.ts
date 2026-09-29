@@ -1,7 +1,7 @@
 import {
   ArrowLeftRight, Banknote, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardList, Coins, FileCheck2, FileText, Filter,
   Gauge, Gem, GraduationCap, HandCoins, Layers, MapPin, PieChart, ShieldCheck, SlidersHorizontal,
-  Split, Sprout, Store, TrendingUp, Users, Wallet, type LucideIcon,
+  Sprout, Store, TrendingUp, Users, Wallet, type LucideIcon,
 } from "lucide-react";
 import { localized } from "../i18n";
 import type { Role } from "./platform";
@@ -52,12 +52,6 @@ const t = (tool: Omit<Tool, "label" | "what"> & { label: { en: string; pt: strin
 const IMPACT = t({ to: "/app/impact", icon: Sprout,
   label: { en: "Impact Intelligence", pt: "Inteligência de Impacto" },
   what: { en: "The program at a glance: funding, reach, readiness, capital and outcomes.", pt: "O programa num relance: recursos, alcance, prontidão, capital e resultados." } });
-// The one panel that shows the mechanism: how a request is judged, where its
-// capital comes from, and what that capital then did. Offered to every view
-// that has a reason to ask, and owned by none of them.
-const ENGINE = t({ to: "/app/capital/engine", icon: Split,
-  label: { en: "How it works", pt: "Como funciona" },
-  what: { en: "Run one request through both engines, then follow the capital it released.", pt: "Rode um pedido pelos dois motores e depois siga o capital que ele liberou." } });
 const LOCAL = t({ to: "/app/capital/local", icon: MapPin,
   label: { en: "Local Economy", pt: "Economia Local" },
   what: { en: "What each unit of capital produced inside the territory, how much stayed, and how much came from abroad.", pt: "O que cada unidade de capital produziu dentro do território, quanto ficou, e quanto veio de fora." } });
@@ -100,7 +94,7 @@ export const VIEWS: View[] = localized([
       t({ to: "/app/impact#report", icon: FileText, label: { en: "Sponsor report", pt: "Relatório do patrocinador" },
         what: { en: "The program's figures, method and proofs, to download.", pt: "Os números, o método e as provas do programa, para baixar." } }),
     ],
-    secondary: [ENGINE],
+    secondary: [],
   },
   {
     id: "investor", icon: Wallet,
@@ -129,7 +123,7 @@ export const VIEWS: View[] = localized([
       t({ to: "/app/investor/audit", icon: ShieldCheck, label: { en: "Proofs", pt: "Provas" },
         what: { en: "Your allocations and their loans, on Solana.", pt: "Suas alocações e os empréstimos delas, na Solana." } }),
     ],
-    secondary: [ENGINE],
+    secondary: [],
   },
   {
     id: "operator", icon: Briefcase,
@@ -152,14 +146,14 @@ export const VIEWS: View[] = localized([
       t({ to: "/app/partner/decisions", icon: FileCheck2, label: { en: "Proofs", pt: "Provas" },
         what: { en: "Decisions, loans and instalments, each anchored on Solana.", pt: "Decisões, empréstimos e parcelas, cada um registrado na Solana." } }),
     ],
-    // The engine is not this desk's workspace: it is the panel that shows how a
-    // request is judged and where its capital comes from, and it belongs beside
-    // every view rather than inside one. The nine other analytics screens this
-    // list used to carry — the network, operating economics, the replay, the
-    // pool assumptions — are still routed and no longer offered here. A desk
-    // with twelve destinations was not a desk; it was the whole product wearing
-    // one persona's name.
-    secondary: [ENGINE, LOCAL],
+    // The engine is in no menu at all. The database allocates when a request
+    // opens to investors, so by the time anyone could click a menu item the
+    // decision has already been taken — and an explanation offered before the
+    // thing it explains reads as a step the product makes you take. It is
+    // reached from the money instead: from a position, asking why the
+    // opportunity existed. The nine other analytics screens this list used to
+    // carry are still routed and no longer offered here.
+    secondary: [LOCAL],
   },
   {
     id: "community", icon: Users,

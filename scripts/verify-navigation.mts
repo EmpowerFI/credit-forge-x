@@ -59,8 +59,10 @@ for (const view of ["sponsor", "investor", "operator", "community", "entrepreneu
 }
 const all = everywhere.join("\n").toLowerCase();
 for (const gone of PT
-  ? ["Rede de Capital", "Economia operacional", "Jornada do Capital", "Replay da carteira", "Premissas dos pools", "Custo de servir", "Códigos de motivo"]
-  : ["Capital Network", "Operating economics", "Capital Journey", "Portfolio replay", "Pool assumptions", "Cost to serve", "Reason codes"])
+  ? ["Rede de Capital", "Economia operacional", "Jornada do Capital", "Replay da carteira", "Premissas dos pools", "Custo de servir", "Códigos de motivo",
+     "Como funciona", "Motor de Crédito e Capital"]
+  : ["Capital Network", "Operating economics", "Capital Journey", "Portfolio replay", "Pool assumptions", "Cost to serve", "Reason codes",
+     "How it works", "Credit & Capital Engine"])
   console.log(`${all.includes(gone.toLowerCase()) ? "STILL THERE" : "ok   gone"}: ${gone}`);
 
 console.log(errors.length ? `--- console errors:\n${errors.join("\n")}` : "--- no console errors");
