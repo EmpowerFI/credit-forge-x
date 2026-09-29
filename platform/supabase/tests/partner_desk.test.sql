@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(19);
+select plan(27);
 
 -- ------------------------------------------------------------------ fixtures
 -- Ana's request and Bia's. Wanda funds 30 USDC of Ana's from her wallet and
@@ -229,6 +229,49 @@ select is(
    from jsonb_array_elements(partner_desk() -> 'loans') l where (l ->> 'id')::uuid = (select id from loan2)),
   0::bigint, 'simulated investors: nothing goes back to the vault for them'
 );
+set local role postgres;
+
+-- ------------------------------------------------ the guard that never fired
+
+-- `v_loan.partner_id = private.my_partner_id()` is null, not false, for anyone
+-- who is not a partner at all — and `not (null or false)` is null, which no IF
+-- executes. So the two functions that write the loan ledger let through exactly
+-- the callers they exist to stop. A different partner was always refused, and
+-- that is why this survived: the case that was tested was the case that worked.
+select pg_temp.act_as('00000000-0000-0000-0000-0000000007a2');
+select throws_ok($$ select transition_loan((select id from loan2), 'PAID') $$,
+  '42501', 'not_your_loan', 'a community leader holds no partner at all, and moves nobody''s loan');
+select throws_ok($$ select record_payment((select id from loan2), 5, 1000) $$,
+  '42501', 'not_your_loan', 'nor records a payment against one');
+select throws_ok($$ select pay_instalment((select id from loan2)) $$,
+  '42501', 'not_your_loan', 'nor pays an instalment that is not hers');
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000007a8');
+select throws_ok($$ select transition_loan((select id from loan2), 'PAID') $$,
+  '42501', 'not_your_loan', 'and the partner it is not stays refused, as it always was');
+set local role postgres;
+
+-- ------------------------------------------------ she pays her own instalment
+
+-- The borrower is the author of this one movement, and until now the only
+-- function that recorded it required the desk.
+select pg_temp.act_as('00000000-0000-0000-0000-0000000007a4');
+select is((select (pay_instalment((select id from loan2)) ->> 'instalment_no')::int), 2,
+  'Bia pays her own next instalment without naming which one it is');
+select is(
+  (select array_agg(instalment_no::int order by instalment_no) from payments where loan_id = (select id from loan2)),
+  array[1, 2],
+  'and it lands beside the one the desk recorded, on the same loan');
+select is(
+  (select array[my_loan() ->> 'loan_id', my_loan() ->> 'paid', my_loan() ->> 'next_no',
+                my_loan() ->> 'instalment_cents', my_loan() -> 'local' ->> 'currency']),
+  -- 28255 is the loan's own instalment, not the 36000 the desk happened to
+  -- record for the first one: she pays what the loan says a month costs.
+  array[(select id from loan2)::text, '2', '3', '28255', null],
+  'and she reads her own loan in one call: what she owes, which instalment is next, and no local rail on this one');
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000007a2');
+select is(my_loan(), null, 'someone who is not a borrower reads no loan rather than somebody else''s');
 set local role postgres;
 
 select * from finish();
