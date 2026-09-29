@@ -71,3 +71,25 @@ export function EngineHeader({ n, name, question, right }: { n: 1 | 2; name: str
     </div>
   );
 }
+
+/**
+ * The third act's header. Deliberately not "Engine 3": the first two acts are
+ * the engines re-run in this browser against today's assumptions, and this one
+ * counts rows that were written when the money actually moved. Numbering it
+ * alongside them would let a viewer read a hypothesis and a ledger as the same
+ * kind of claim.
+ */
+export function RecordHeader({ name, question, right }: { name: string; question: string; right?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          {tr({ en: "The record · not a re-run", pt: "O registro · não é simulação" })}
+        </p>
+        <h3 className="font-heading text-lg font-bold text-foreground">{name}</h3>
+        <p className="text-sm text-muted-foreground">{question}</p>
+      </div>
+      {right}
+    </div>
+  );
+}

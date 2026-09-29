@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../../components/LoadError";
@@ -202,6 +203,24 @@ export default function CapitalJourney() {
           )}
 
           <Spine j={j} />
+
+          {/* This page is the ledger of the loop; the engine is the loop in
+              motion. Four figures and nine cards are what a claim looks like
+              after it has been checked, and nobody arrives at a page like this
+              already believing it — so the screen that shows the same money
+              moving is one click away rather than four levels down a menu. */}
+          <p className="text-sm text-muted-foreground">
+            {tr({ en: "Rather watch it happen?", pt: "Prefere ver acontecendo?" })}{" "}
+            <Link
+              to="/app/capital/engine"
+              className="rounded font-medium text-accent underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              {tr({
+                en: "The Credit & Capital Engine runs one request through all four movements, one press at a time.",
+                pt: "O Motor de Crédito e Capital roda um pedido pelos quatro movimentos, um clique de cada vez.",
+              })}
+            </Link>
+          </p>
 
           {/* Before the loop is read stage by stage: whose rail it runs on.
               It sits here rather than at the foot of nine cards because the
