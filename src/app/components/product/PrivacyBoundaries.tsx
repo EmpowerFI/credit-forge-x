@@ -22,9 +22,9 @@ const STAYS_PRIVATE: string[] = localized([
 ]);
 
 /** What an investor can see of an opportunity, and what stays private: the boundary, stated on the screen. */
-export default function PrivacyBoundaries({ children }: { children?: ReactNode }) {
+export default function PrivacyBoundaries({ children, folded }: { children?: ReactNode; folded?: boolean }) {
   return (
-    <Panel title={tr({ en: "Privacy boundaries", pt: "Limites de privacidade" })}
+    <Panel folded={folded} title={tr({ en: "Privacy boundaries", pt: "Limites de privacidade" })}
       description={tr({
         en: "Investors get the decision snapshot and cryptographic evidence — never identity, bank data or the financial history behind it.",
         pt: "Investidores recebem o retrato da decisão e evidências criptográficas — nunca a identidade, os dados bancários ou o histórico financeiro por trás dela.",

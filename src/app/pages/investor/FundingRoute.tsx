@@ -1,5 +1,7 @@
-import { ArrowDown, ArrowRight, Check, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowRight, Check, ChevronRight, X } from "lucide-react";
 import type { AllocationResult, PoolAssessment } from "@empowerfi/capital-allocation";
+import { cn } from "@/lib/utils";
 import { localized, tr } from "../../i18n";
 import Panel from "../../components/product/Panel";
 import PoolPill from "../../components/product/PoolPill";
@@ -23,17 +25,68 @@ const STEPS: Record<PoolId, { label: string; reality: Reality }[]> = localized({
   ],
 });
 
+/**
+ * The route, filling in the order the money moves.
+ *
+ * A static row of four boxes says "these are the legs". The same row arriving
+ * one leg at a time says "this is a journey", which is the claim — and it is
+ * the one thing on this page a reader watches rather than reads. It runs once,
+ * when the panel is first scrolled into view, so it is not a loop competing
+ * with the figures beside it; a reader who arrives with reduced motion asked
+ * for gets the finished row immediately.
+ */
 function Route({ pool }: { pool: PoolId }) {
+  const steps = STEPS[pool];
+  const [shown, setShown] = useState(0);
+  const rail = useRef<HTMLOListElement>(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = rail.current;
+    if (!el || started.current) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShown(steps.length);
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting) || started.current) return;
+      started.current = true;
+      io.disconnect();
+      let i = 0;
+      const tick = () => {
+        i += 1;
+        setShown(i);
+        if (i < steps.length) window.setTimeout(tick, 420);
+      };
+      window.setTimeout(tick, 120);
+    }, { threshold: 0.35 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [steps.length]);
+
   return (
-    <ol className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-      {STEPS[pool].map((s, i) => (
-        <li key={s.label} className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          {i > 0 && <><ArrowRight size={14} className="hidden text-muted-foreground sm:block" aria-hidden /><ArrowDown size={14} className="text-muted-foreground sm:hidden" aria-hidden /></>}
-          <span className="inline-flex flex-wrap items-center gap-1.5 rounded-lg border border-border bg-secondary/40 px-2.5 py-1.5 text-xs text-foreground">
-            {s.label} <StatusPill tone={REALITY[s.reality].tone} dot={false}>{REALITY[s.reality].label}</StatusPill>
-          </span>
-        </li>
-      ))}
+    <ol ref={rail} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+      {steps.map((s, i) => {
+        const here = i < shown;
+        return (
+          <li key={s.label} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {i > 0 && (
+              <span className={cn("transition-opacity duration-300 motion-reduce:transition-none motion-reduce:opacity-100",
+                here ? "opacity-100" : "opacity-20")}>
+                <ArrowRight size={14} className="hidden text-accent sm:block" aria-hidden />
+                <ArrowDown size={14} className="text-accent sm:hidden" aria-hidden />
+              </span>
+            )}
+            <span className={cn(
+              "inline-flex flex-wrap items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs text-foreground",
+              "transition-[opacity,transform,border-color] duration-500 ease-out",
+              "motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-x-0",
+              here ? "border-border bg-secondary/40 opacity-100 translate-x-0" : "border-transparent bg-secondary/20 opacity-0 -translate-x-1")}>
+              {s.label} <StatusPill tone={REALITY[s.reality].tone} dot={false}>{REALITY[s.reality].label}</StatusPill>
+            </span>
+          </li>
+        );
+      })}
     </ol>
   );
 }
@@ -85,34 +138,42 @@ export default function FundingRoute({ row }: { row: MarketRow }) {
         </ul>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Assessment a={a.domestic} chosen={pool === "domestic"} />
-        <Assessment a={a.global} chosen={pool === "global"} />
-      </div>
-
-      {pool && a.borrower_rate_bps_month !== null && (
-        <div className="grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">{tr({ en: "Her side", pt: "Lado dela" })}</p>
-            <p className="num text-sm text-foreground">
-              {bpsPercent(a.borrower_rate_bps_month)} {tr({ en: "a month", pt: "ao mês" })} · {row.term_months} × {money(a.instalment_cents)}
-            </p>
-            <p className="text-xs text-muted-foreground">{tr({ en: "In reais, by Pix, whichever pool funds it.", pt: "Em reais, por Pix, seja qual for o pool que captar." })}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">{tr({ en: "Investors' side · simulated", pt: "Lado dos investidores · simulado" })}</p>
-            <p className="num text-sm text-foreground">
-              {tr({
-                en: `${bpsPercent(a.investor_return_bps ?? 0)} asked · ${bpsPercent(a.investor_net_return_bps ?? 0)} after expected loss`,
-                pt: `${bpsPercent(a.investor_return_bps ?? 0)} exigido · ${bpsPercent(a.investor_net_return_bps ?? 0)} após perda esperada`,
-              })}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {tr({ en: `${POOL[pool].investors}, in ${POOL[pool].asset.toLowerCase()}.`, pt: `${POOL[pool].investors}, em ${POOL[pool].asset.toLowerCase()}.` })}
-            </p>
-          </div>
+      <details className="[&[open]>summary>svg]:rotate-90">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-accent hover:text-foreground">
+          <ChevronRight size={13} className="transition-transform" aria-hidden />
+          {tr({ en: "What each pool would have cost", pt: "Quanto cada pool custaria" })}
+        </summary>
+        <div className="space-y-4 pt-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Assessment a={a.domestic} chosen={pool === "domestic"} />
+          <Assessment a={a.global} chosen={pool === "global"} />
         </div>
-      )}
+
+        {pool && a.borrower_rate_bps_month !== null && (
+          <div className="grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">{tr({ en: "Her side", pt: "Lado dela" })}</p>
+              <p className="num text-sm text-foreground">
+                {bpsPercent(a.borrower_rate_bps_month)} {tr({ en: "a month", pt: "ao mês" })} · {row.term_months} × {money(a.instalment_cents)}
+              </p>
+              <p className="text-xs text-muted-foreground">{tr({ en: "In reais, by Pix, whichever pool funds it.", pt: "Em reais, por Pix, seja qual for o pool que captar." })}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">{tr({ en: "Investors' side · simulated", pt: "Lado dos investidores · simulado" })}</p>
+              <p className="num text-sm text-foreground">
+                {tr({
+                  en: `${bpsPercent(a.investor_return_bps ?? 0)} asked · ${bpsPercent(a.investor_net_return_bps ?? 0)} after expected loss`,
+                  pt: `${bpsPercent(a.investor_return_bps ?? 0)} exigido · ${bpsPercent(a.investor_net_return_bps ?? 0)} após perda esperada`,
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {tr({ en: `${POOL[pool].investors}, in ${POOL[pool].asset.toLowerCase()}.`, pt: `${POOL[pool].investors}, em ${POOL[pool].asset.toLowerCase()}.` })}
+              </p>
+            </div>
+          </div>
+        )}
+        </div>
+      </details>
       <p className="font-mono text-[11px] text-muted-foreground">{a.model_version}</p>
     </Panel>
   );

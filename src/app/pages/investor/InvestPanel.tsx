@@ -173,7 +173,10 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
   const connected = Boolean(account && wallet && account.address === wallet);
   const balances = useBalances(connected ? wallet : null);
   const remaining = Math.max(0, (row.funding_target_micro_usdc ?? 0) - row.funded_micro_usdc);
-  const [amount, setAmount] = useState("10");
+  const [amount, setAmount] = useState(() => {
+    const whole = Math.floor(remaining / 10 ** USDC_DECIMALS);
+    return String(whole >= 10 ? 10 : whole >= 1 ? whole : remaining / 10 ** USDC_DECIMALS);
+  });
   const micro = Math.round(Number(amount || 0) * 10 ** USDC_DECIMALS);
   const balance = Number(balances.data?.microUsdc ?? 0);
   const open = row.funding_status === "open" || row.funding_status === "partially_funded";
@@ -239,7 +242,7 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
               <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">USDC</span>
             </div>
             <div className="flex flex-wrap gap-2 pt-1">
-              {[5, 10, 25].map((v) => (
+              {[5, 10, 25].filter((v) => v * 10 ** USDC_DECIMALS <= remaining).map((v) => (
                 <button key={v} type="button" onClick={() => setAmount(String(v))}
                   className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground">{v}</button>
               ))}
