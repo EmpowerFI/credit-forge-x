@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { allocate, type AllocationResult, type PoolPolicy } from "@empowerfi/capital-allocation";
-import { ArrowDown, BarChart3, FastForward, Play, RotateCcw, Route, Split } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { ArrowDown, FastForward, Play, RotateCcw, Route, Split } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "../../auth/useAuth";
@@ -14,7 +14,6 @@ import { prototypeNotice } from "../../lib/capital";
 import { FOLLOW_TICKS } from "../../lib/capitalJourney";
 import { compareForOpportunity } from "../../lib/settlementRoute";
 import { creditSteps, type CreditStep, type EngineOpportunity, type EngineState, runPlan, stateAt } from "../../lib/engine";
-import CapitalPools from "../investor/CapitalPools";
 import { useCapitalOverview } from "../investor/queries";
 import Assumptions from "./engine/Assumptions";
 import { formFor, type PoolForm, policyOf } from "./engine/pools";
@@ -25,9 +24,7 @@ import OpportunityPicker from "./engine/OpportunityPicker";
 import FollowCapital from "./engine/FollowCapital";
 import { EngineHeader, Flow, RecordHeader } from "./engine/parts";
 import PoolBranch from "./engine/PoolBranch";
-import Replay from "./engine/Replay";
 import Snapshot from "./engine/Snapshot";
-import TwoEngines from "./engine/TwoEngines";
 import NetworkPlan from "./engine/NetworkPlan";
 import { useEngineRun } from "./engine/useEngineRun";
 import VerifyDecision from "./engine/VerifyDecision";
@@ -42,6 +39,13 @@ import { useEngineOpportunities, useRouteCards } from "./queries";
 // allocation engine in this browser against today's liquidity and the
 // assumptions in the drawer. Nothing here writes: the database allocates when
 // an opportunity opens to investors.
+//
+// Three sections used to hang below the canvas: a diagram of the two engines, a
+// row of pool liquidity tiles, and a replay of the whole book through the
+// engine. The page now has three labelled acts, so the diagram described what
+// was already happening above it; the other two are portfolio analytics, which
+// is a thing to argue about in a paper rather than to scroll past on the way out
+// of a demonstration. All three are still in git.
 //
 // Act 3 is a different kind of claim and says so. The two engines stop at the
 // allocation decision — which is exactly where a conventional impact fund also
@@ -175,8 +179,6 @@ export default function AllocationEngine() {
         : actsDone ? (clock.done ? "LOOP_CLOSED" : "FOLLOWING_CAPITAL")
           : stateAt(clock.tick, run.plan, run.result);
   const running = state === "RUNNING_CREDIT_ENGINE" || state === "RUNNING_CAPITAL_ALLOCATION" || state === "FOLLOWING_CAPITAL";
-  const activeEngine: 0 | 1 | 2 = state === "RUNNING_CREDIT_ENGINE" || state === "CREDIT_REJECTED" || state === "QUALIFIED_OPPORTUNITY" ? 1
-    : state === "IDLE" || state === "OPPORTUNITY_SELECTED" ? 0 : 2;
   const poolBase = run ? run.plan.creditTicks + 1 : 0;
   const economicsBase = run ? poolBase + run.plan.poolTicks : 0;
   const showAllocation = Boolean(run?.result) && !heldAfterCredit && Boolean(run) && clock.tick >= run!.plan.creditTicks + 1;
@@ -199,21 +201,23 @@ export default function AllocationEngine() {
           en: "Pick an opportunity, run the credit engine, run capital allocation on what it qualifies — then follow the capital that decision released, all the way back.",
           pt: "Escolha uma oportunidade, rode o motor de crédito, rode a alocação de capital sobre o que ele qualificar — e depois siga o capital que a decisão liberou, até a volta.",
         })}
+        // Two paragraphs, and both are disclosures rather than explanations.
+        // What each engine asks is on the engine, in its own header; repeating
+        // it here taught the page to a reader who had not run it yet. What is
+        // left is the two things a run cannot tell you by watching it: that
+        // nothing here writes, and that a pool is a promise rather than a pile
+        // of money.
         about={tr({
           en: (
             <>
-              <p>Engine 1 asks whether a business should become a qualified credit opportunity, from its readiness, its history, affordability and risk. Engine 2 asks which available pool can fund that opportunity sustainably, on liquidity, ticket, risk appetite, mandate and economics — and answers domestic, global, or waiting for capital.</p>
-              <p>Both run here in your browser against today's liquidity and the assumptions in the drawer, with the same code the database runs. Nothing on this page writes: the database allocates when an opportunity opens to investors.</p>
-              <p>A third act follows, and it is not an engine. Both engines re-run in your browser against today's assumptions; the six stages after the decision count rows that were written when the money actually moved — the crossing into reais, the disbursal, what she traded inside the territory, and the instalment that released the reais her investor is paid out of. A hypothesis and a ledger are different kinds of claim, so the page labels which is which.</p>
-              <p>Liquidity here is declared capacity, not money held. EmpowerFI custodies nothing: a pool is what capital has said it will lend through this desk, less what is already lent, and it exists so engine 2 can answer "waiting for capital" instead of assuming there is always more. An investor's money moves when she funds one named opportunity, into the vault, not into a pool.</p>
+              <p>Both engines run here in your browser, on today's liquidity and the assumptions in the drawer, with the same code the database runs. Nothing on this page writes: the database allocates when an opportunity opens to investors.</p>
+              <p>Liquidity is declared capacity, not money held. EmpowerFI custodies nothing — a pool is what capital has said it will lend through this desk, less what is already lent. An investor's money moves when she funds one named opportunity, into the vault, not into a pool.</p>
             </>
           ),
           pt: (
             <>
-              <p>O Motor 1 pergunta se um negócio deve virar uma oportunidade de crédito qualificada, a partir da prontidão, do histórico, da capacidade de pagamento e do risco. O Motor 2 pergunta qual pool disponível pode financiá-la de forma sustentável, por liquidez, ticket, apetite a risco, mandato e economia — e responde doméstico, global ou aguardando capital.</p>
-              <p>Os dois rodam aqui no seu navegador, com a liquidez de hoje e as premissas da gaveta, usando o mesmo código que roda no banco. Nada nesta página escreve: o banco aloca quando uma oportunidade abre para investidores.</p>
-              <p>Vem depois um terceiro ato, e ele não é um motor. Os dois motores rodam no seu navegador com as premissas de hoje; as seis etapas depois da decisão contam linhas escritas quando o dinheiro de fato se moveu — a travessia para reais, o desembolso, o que ela negociou dentro do território e a parcela que liberou os reais com que o investidor dela é pago. Uma hipótese e um registro são tipos diferentes de afirmação, então a página diz qual é qual.</p>
-              <p>Liquidez aqui é capacidade declarada, não dinheiro guardado. A EmpowerFI não custodia nada: um pool é o quanto o capital disse que empresta por esta mesa, menos o que já está emprestado, e existe para que o Motor 2 possa responder "aguardando capital" em vez de supor que sempre há mais. O dinheiro da investidora se move quando ela financia uma oportunidade específica, para o cofre, não para um pool.</p>
+              <p>Os dois motores rodam aqui no seu navegador, com a liquidez de hoje e as premissas da gaveta, usando o mesmo código que roda no banco. Nada nesta página escreve: o banco aloca quando uma oportunidade abre para investidores.</p>
+              <p>Liquidez é capacidade declarada, não dinheiro guardado. A EmpowerFI não custodia nada — um pool é o quanto o capital disse que empresta por esta mesa, menos o que já está emprestado. O dinheiro da investidora se move quando ela financia uma oportunidade específica, para o cofre, não para um pool.</p>
             </>
           ),
         })}
@@ -369,14 +373,6 @@ export default function AllocationEngine() {
           )}
         </div>
       </div>
-
-      <TwoEngines active={activeEngine} />
-
-      <CapitalPools engineLink={false} tilesOnly />
-
-      {overview.data && policies && (
-        <div id="replay" className="scroll-mt-32"><Replay demand={overview.data.demand} policies={policies} coverage={overview.data.coverage} assumptionsChanged={changed} /></div>
-      )}
 
       <p className="px-1 text-xs text-muted-foreground">{prototypeNotice()}</p>
     </div>
