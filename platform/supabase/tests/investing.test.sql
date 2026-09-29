@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(55);
+select plan(60);
 
 -- ------------------------------------------------------------------ fixtures
 -- One partner, one community, Rita and Sara ready and asking. Two wallet
@@ -184,6 +184,27 @@ select throws_ok(
   'P0001', 'opportunity_not_open', 'after which it takes no more'
 );
 
+-- ------------------------------------------------------------ who may hold it
+-- The deposit is what admits the wallet. Nobody is handed an address in
+-- advance, so the wallet a position must mint to is on the list because it
+-- paid for the position, and a wallet that paid for nothing is not.
+
+select results_eq(
+  $$ select active, is_simulated from eligible_wallets
+     where wallet = 'WaNdA1111111111111111111111111111111111111' $$,
+  $$ values (true, true) $$,
+  'the wallet that funded it is admitted, by the deposit and by nothing else'
+);
+select is(
+  (select note from eligible_wallets where wallet = 'WaNdA1111111111111111111111111111111111111'),
+  'Admitted by the deposit sig-wanda-1',
+  'and the row names the deposit that admitted it'
+);
+select is(
+  (select count(*)::int from eligible_wallets where wallet = 'StRaNgEr11111111111111111111111111111111111'), 0,
+  'a wallet that never funded anything is not admitted'
+);
+
 -- ------------------------------------------------------- the tokenised position
 -- Funding it turns each allocation into a credit position: one per investment,
 -- owned by the wallet that funded it, and worth her share rather than the loan.
@@ -243,9 +264,8 @@ set local role postgres;
 update credit_positions set mint_address = 'MiNt111111111111111111111111111111111111111',
   token_account = 'AtA1111111111111111111111111111111111111111', minted_at = now()
 where id = (select id from wanda_pos);
-insert into eligible_wallets (wallet, label) values
-  ('YaRa22222222222222222222222222222222222222', 'pgTAP Yara'),
-  ('WaNdA1111111111111111111111111111111111111', 'pgTAP Wanda');
+-- Both wallets are already admitted: each funded this loan, and that is what
+-- put them on the list.
 
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004b1');
 select is(
@@ -362,10 +382,26 @@ select throws_ok($$ select investor_position((select id from wanda_inv)) $$, '42
   'nor open her position');
 set local role postgres;
 
+-- An operator takes Yara's wallet off the list, and she deposits again. Taking
+-- a wallet off is a decision; a later deposit is not an argument against it.
+update eligible_wallets set active = false where wallet = 'YaRa22222222222222222222222222222222222222';
+
 -- The partner declines Sara, partly funded: her investors are owed their capital.
 select record_investment('00000000-0000-0000-0000-0000000004b2', o.id, 50000000, 'wallet',
   'YaRa22222222222222222222222222222222222222', 'sig-yara-sara')
 from opp o where o.entrepreneur_id = '00000000-0000-0000-0000-0000000004e2';
+
+select results_eq(
+  $$ select active, note from eligible_wallets
+     where wallet = 'YaRa22222222222222222222222222222222222222' $$,
+  $$ values (false, 'Admitted by the deposit sig-yara-1') $$,
+  'a wallet an operator withdrew is not put back by depositing again'
+);
+select is(
+  (select count(*)::int from eligible_wallets where wallet = 'YaRa22222222222222222222222222222222222222'), 1,
+  'and a second deposit from an admitted wallet adds no second row'
+);
+update eligible_wallets set active = true where wallet = 'YaRa22222222222222222222222222222222222222';
 select pg_temp.act_as('00000000-0000-0000-0000-0000000004a5');
 select partner_decide((select id from opp where entrepreneur_id = '00000000-0000-0000-0000-0000000004e2'), 'declined',
   p_reason => 'Outside our focus');
