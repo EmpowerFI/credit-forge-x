@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(25);
+select plan(27);
 
 -- ------------------------------------------------------------------ fixtures
 -- Ana's request and Bia's. Wanda funds 30 USDC of Ana's from her wallet and
@@ -262,6 +262,16 @@ select is(
   (select array_agg(instalment_no::int order by instalment_no) from payments where loan_id = (select id from loan2)),
   array[1, 2],
   'and it lands beside the one the desk recorded, on the same loan');
+select is(
+  (select array[my_loan() ->> 'loan_id', my_loan() ->> 'paid', my_loan() ->> 'next_no',
+                my_loan() ->> 'instalment_cents', my_loan() -> 'local' ->> 'currency']),
+  -- 28255 is the loan's own instalment, not the 36000 the desk happened to
+  -- record for the first one: she pays what the loan says a month costs.
+  array[(select id from loan2)::text, '2', '3', '28255', null],
+  'and she reads her own loan in one call: what she owes, which instalment is next, and no local rail on this one');
+set local role postgres;
+select pg_temp.act_as('00000000-0000-0000-0000-0000000007a2');
+select is(my_loan(), null, 'someone who is not a borrower reads no loan rather than somebody else''s');
 set local role postgres;
 
 select * from finish();

@@ -1,5 +1,5 @@
 import {
-  ArrowLeftRight, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardList, Coins, FileCheck2, FileText, Filter,
+  ArrowLeftRight, Banknote, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardList, Coins, FileCheck2, FileText, Filter,
   Gauge, Gem, GraduationCap, HandCoins, History, Layers, ListChecks, MapPin, Network, PieChart, Route as RouteIcon, Waypoints, ShieldCheck, SlidersHorizontal,
   Split, Sprout, Store, TrendingUp, Users, Wallet, type LucideIcon,
 } from "lucide-react";
@@ -217,8 +217,10 @@ export const VIEWS: View[] = localized([
         what: { en: "Your month in two minutes.", pt: "Seu mês em dois minutos." } }),
       t({ to: "/app/me#readiness", icon: Gauge, label: { en: "Readiness", pt: "Prontidão" },
         what: { en: "Where you stand, and what is missing.", pt: "Onde você está, e o que falta." } }),
-      t({ to: "/app/me#capital", icon: HandCoins, label: { en: "Capital", pt: "Capital" },
-        what: { en: "Ask for capital when you are ready, then follow the loan and your instalments, paid by Pix.", pt: "Peça capital quando estiver pronta e acompanhe o empréstimo e suas parcelas, pagas por Pix." } }),
+      t({ to: "/app/me#capital", icon: HandCoins, label: { en: "Ask for capital", pt: "Pedir capital" },
+        what: { en: "Ask when you are ready, and follow what happens to the request.", pt: "Peça quando estiver pronta, e acompanhe o que acontece com o pedido." } }),
+      t({ to: "/app/me/loan", icon: Banknote, label: { en: "My loan", pt: "Meu empréstimo" },
+        what: { en: "What you owe, and paying an instalment — in the currency you trade in.", pt: "O que você deve, e pagar uma parcela — na moeda em que você negocia." } }),
       t({ to: "/app/consent", icon: ShieldCheck, label: { en: "Consent", pt: "Consentimento" },
         what: { en: "You decide what your data is used for.", pt: "Você decide para que seus dados são usados." } }),
     ],
