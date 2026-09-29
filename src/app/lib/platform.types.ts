@@ -3781,6 +3781,7 @@ export type Database = {
         }
         Returns: string
       }
+      my_loan: { Args: never; Returns: Json }
       operating_economics: { Args: { p_program_id?: string }; Returns: Json }
       opportunity_economics: {
         Args: { p_opportunity_id: string }
@@ -3830,7 +3831,6 @@ export type Database = {
           term_months: number
         }[]
       }
-      my_loan: { Args: never; Returns: Json }
       pay_instalment: {
         Args: { p_instalment_no?: number; p_loan_id: string }
         Returns: Json
