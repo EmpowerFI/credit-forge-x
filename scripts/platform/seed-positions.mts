@@ -16,12 +16,18 @@
 // work the address out. They never sign: receiving an asset needs no
 // signature, and the platform holds the freeze authority that admits them.
 //
-// The demo investor is different only in that she may want to hold the seeded
-// portfolio in a wallet she controls; pass it with --investor-wallet. She does
-// not need it to invest: a wallet that funds an opportunity is admitted by its
-// own deposit (record_investment), so the live path needs no address in
-// advance and anyone can reproduce it. Without the flag the script keeps
-// whichever wallet already holds her assets, so re-running it changes nothing.
+// No step of the demo needs an address in advance, and this script is meant to
+// be run without one. A wallet that signs in with Solana is its own account,
+// known by its address; a wallet that funds an opportunity is admitted by the
+// deposit the chain already proved (record_investment). So the asset a live
+// investment creates mints to whatever wallet was connected, and the seeded
+// assets here belong to their investors by investor_id, which is what the email
+// sessions read.
+//
+// --investor-wallet remains for one optional thing: handing the seeded
+// portfolio to a wallet you hold, so that wallet's own session shows an asset
+// it holds but did not fund. Without the flag the script keeps whichever wallet
+// already holds her assets, so re-running it changes nothing.
 //
 // Idempotent, and it never moves an asset: a position that has already been
 // minted keeps the owner the chain recorded.
@@ -144,8 +150,9 @@ for (const investorId of [...new Set(positions.map((p) => p.investor_id))]) {
 
 console.log(`admitted ${new Set(positions.map((p) => p.investor_id)).size} wallets:\n${lines.join("\n")}`);
 if (!investorWallet) {
-  console.log(`\nNo --investor-wallet given: the seeded portfolio stays on derived wallets, which`
-    + `\nis fine. A wallet you connect in the browser is admitted by its own deposit, so`
-    + `\nthe live investment mints without this flag.`);
+  console.log(`\nNo --investor-wallet given, which is the normal way to run this. The seeded`
+    + `\nportfolio stays on derived wallets and belongs to its investors by investor_id;`
+    + `\na wallet connected in the browser is its own account and is admitted by its own`
+    + `\ndeposit, so nothing in the demo needs an address in advance.`);
 }
 console.log(`\nThe mint cron runs every minute and takes five at a time.`);
