@@ -1,6 +1,7 @@
 import { Instagram, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Mark } from "@/components/site/editorial";
+import { NOT_OFFER_EN, NOT_OFFER_PT } from "@/components/investors/copy";
 import {
   COMPANY_CITY,
   COMPANY_CNPJ,
@@ -22,11 +23,11 @@ interface InstitutionalFooterProps {
 const notices = {
   "pt-BR": [
     "Protótipo de uma futura arquitetura regulada de crédito produtivo P2P. Investimentos, retornos, câmbio e liquidação via Pix do hackathon são simulados; as transações em blockchain usam ativos de teste na Devnet.",
-    "Nada neste site é oferta de valores mobiliários ou de produto financeiro. Entrar na lista de espera é uma manifestação de interesse, sem compromisso.",
+    NOT_OFFER_PT,
   ],
   en: [
     "Prototype of a future regulated P2P productive-credit architecture. Hackathon investments, returns, FX and Pix settlement are simulated; blockchain transactions use test assets on Devnet.",
-    "Nothing on this site is an offer of securities or of a financial product. Joining a waitlist is a non-binding expression of interest.",
+    NOT_OFFER_EN,
   ],
 } as const;
 

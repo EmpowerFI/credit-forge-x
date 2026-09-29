@@ -75,15 +75,22 @@ export interface InvestorCopy {
   };
 }
 
-// Exact text (PLAN_SITE.md, "Canonical sentences").
-const DISCLAIMER_EN =
-  "Prototype of a future regulated P2P productive-credit architecture. Hackathon investments, returns, FX and Pix settlement are simulated; blockchain transactions use test assets on Devnet.";
-const NOT_OFFER_EN =
-  "Nothing on this site is an offer of securities or of a financial product. Joining a waitlist is a non-binding expression of interest.";
-const DISCLAIMER_PT =
-  "Protótipo de uma futura arquitetura regulada de crédito produtivo P2P. Investimentos, retornos, câmbio e liquidação via Pix do hackathon são simulados; as transações em blockchain usam ativos de teste na Devnet.";
-const NOT_OFFER_PT =
-  "Nada neste site é oferta de valores mobiliários ou de produto financeiro. Entrar na lista de espera é uma manifestação de interesse, sem compromisso.";
+// The canonical sentences. They are written once here and reused wherever the
+// site makes a claim that needs them, so a change of scope changes them in one
+// place rather than in six that then disagree.
+//
+// They widened with the company: the prototype is no longer only a P2P credit
+// architecture, and the licences EmpowerFI does not hold are no longer only
+// lending ones. What must not be overstated is regulatory certainty — hence
+// "expected to", not "will".
+export const DISCLAIMER_EN =
+  "Prototype investments, returns, FX, local-currency conversion and settlement are simulated where explicitly identified; blockchain transactions use test assets on Solana Devnet. Future regulated financial functions are expected to operate through appropriate regulated structures and partners.";
+export const NOT_OFFER_EN =
+  "Nothing on this site is an offer of securities, credit or a financial product. EmpowerFI does not currently operate a licensed lending, P2P, investment, FX or local-currency business. Joining a waitlist is a non-binding expression of interest.";
+export const DISCLAIMER_PT =
+  "Investimentos, retornos, câmbio, conversão em moeda local e liquidação do protótipo são simulados onde explicitamente identificado; as transações em blockchain usam ativos de teste na Devnet da Solana. Funções financeiras reguladas futuras devem operar por estruturas e parceiros regulados adequados.";
+export const NOT_OFFER_PT =
+  "Nada neste site é oferta de valores mobiliários, de crédito ou de produto financeiro. A EmpowerFI não opera hoje negócio licenciado de crédito, P2P, investimento, câmbio ou moeda local. Entrar na lista de espera é manifestação de interesse, sem compromisso.";
 
 const en: InvestorCopy = {
   hero: {
