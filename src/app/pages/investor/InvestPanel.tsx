@@ -29,6 +29,7 @@ import { LIVE } from "../../lib/zcash";
 import { useBalances } from "../../wallet/useBalances";
 import ConnectWalletDialog from "../../wallet/ConnectWallet";
 import { useWalletEntry } from "../../wallet/WalletSignIn";
+import WhereItLands from "./WhereItLands";
 import ZecInvest from "./ZecInvest";
 
 type Step = "sign" | "confirm" | "record" | "done";
@@ -247,6 +248,10 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
             </div>
           </div>
           {problem && micro > 0 && <p className="text-xs text-caution">{problem}</p>}
+
+          {/* Where the dollars land, before she sends them. The crossing is the
+              claim this company makes, and it used to live on another screen. */}
+          <WhereItLands opportunityId={row.opportunity_id} micro={micro} />
 
           {via === "zec" ? (
             <ZecInvest row={row} micro={micro} problem={problem} requestId={null} onRequest={setZecRequest} />
