@@ -1,6 +1,6 @@
 import {
   ArrowLeftRight, Banknote, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardList, Coins, FileCheck2, FileText, Filter,
-  Gauge, Gem, GraduationCap, HandCoins, History, Layers, ListChecks, MapPin, Network, PieChart, Route as RouteIcon, Waypoints, ShieldCheck, SlidersHorizontal,
+  Gauge, Gem, GraduationCap, HandCoins, Layers, MapPin, PieChart, ShieldCheck, SlidersHorizontal,
   Split, Sprout, Store, TrendingUp, Users, Wallet, type LucideIcon,
 } from "lucide-react";
 import { localized } from "../i18n";
@@ -11,6 +11,13 @@ import { areaOf } from "./stories";
 // value, its tools and a demo account. A view is a lens, not a permission: the
 // routes stay behind RBAC, and an account only opens a view its role holds —
 // except demo accounts, which switch to the view's demo persona.
+//
+// Three destinations left this file and none of them left the product: the
+// Capital Network, operating economics and the Capital Journey are still
+// routed, still linked from the pages that need them, and no longer offered in
+// a menu. They were read as three more things to understand before anything
+// could be understood at all — and two of them appeared under three different
+// personas, which is what made the same product look like several.
 
 export type ViewId = "sponsor" | "investor" | "operator" | "community" | "entrepreneur";
 
@@ -45,21 +52,18 @@ const t = (tool: Omit<Tool, "label" | "what"> & { label: { en: string; pt: strin
 const IMPACT = t({ to: "/app/impact", icon: Sprout,
   label: { en: "Impact Intelligence", pt: "Inteligência de Impacto" },
   what: { en: "The program at a glance: funding, reach, readiness, capital and outcomes.", pt: "O programa num relance: recursos, alcance, prontidão, capital e resultados." } });
+// The one panel that shows the mechanism: how a request is judged, where its
+// capital comes from, and what that capital then did. Offered to every view
+// that has a reason to ask, and owned by none of them.
 const ENGINE = t({ to: "/app/capital/engine", icon: Split,
-  label: { en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" },
-  what: { en: "Qualify an opportunity, then route it to the pool that can fund it.", pt: "Qualifique uma oportunidade e depois encaminhe-a ao pool que pode financiá-la." } });
-const NETWORK = t({ to: "/app/capital/network", icon: Network,
-  label: { en: "Capital Network", pt: "Rede de Capital" },
-  what: { en: "Every instrument the network can route to, and what the engine would do with one need.", pt: "Todo instrumento ao qual a rede pode encaminhar, e o que o motor faria com uma necessidade." } });
-const JOURNEY = t({ to: "/app/capital", icon: Waypoints,
-  label: { en: "Capital Journey", pt: "Jornada do Capital" },
-  what: { en: "One loop in four movements: global capital comes in, becomes credit in local currency, circulates, and comes back — nine stages under them, each read from its own records.", pt: "Um laço em quatro movimentos: o capital global entra, vira crédito em moeda local, circula e volta — nove etapas embaixo deles, cada uma lida dos próprios registros." } });
+  label: { en: "How it works", pt: "Como funciona" },
+  what: { en: "Run one request through both engines, then follow the capital it released.", pt: "Rode um pedido pelos dois motores e depois siga o capital que ele liberou." } });
 const LOCAL = t({ to: "/app/capital/local", icon: MapPin,
   label: { en: "Local Economy", pt: "Economia Local" },
   what: { en: "What each unit of capital produced inside the territory, how much stayed, and how much came from abroad.", pt: "O que cada unidade de capital produziu dentro do território, quanto ficou, e quanto veio de fora." } });
-const ECONOMICS = t({ to: "/app/capital/economics", icon: BarChart3,
-  label: { en: "Operating economics", pt: "Economia operacional" },
-  what: { en: "Cost to serve, time to decision, follow-up and portfolio quality, side by side.", pt: "Custo de servir, tempo até a decisão, acompanhamento e qualidade da carteira, lado a lado." } });
+const DESK = t({ to: "/app/partner", icon: Briefcase,
+  label: { en: "P2P desk", pt: "Mesa P2P" },
+  what: { en: "Requests waiting to be formalised and disbursed (simulated Pix).", pt: "Pedidos aguardando formalização e desembolso (Pix simulado)." } });
 const CONSOLE = t({ to: "/app/investor", icon: Wallet,
   label: { en: "Investor Console", pt: "Console do Investidor" },
   what: { en: "Your mandate, liquidity and positions.", pt: "Seu mandato, liquidez e posições." } });
@@ -96,7 +100,7 @@ export const VIEWS: View[] = localized([
       t({ to: "/app/impact#report", icon: FileText, label: { en: "Sponsor report", pt: "Relatório do patrocinador" },
         what: { en: "The program's figures, method and proofs, to download.", pt: "Os números, o método e as provas do programa, para baixar." } }),
     ],
-    secondary: [ENGINE, ECONOMICS, JOURNEY],
+    secondary: [ENGINE],
   },
   {
     id: "investor", icon: Wallet,
@@ -125,45 +129,37 @@ export const VIEWS: View[] = localized([
       t({ to: "/app/investor/audit", icon: ShieldCheck, label: { en: "Proofs", pt: "Provas" },
         what: { en: "Your allocations and their loans, on Solana.", pt: "Suas alocações e os empréstimos delas, na Solana." } }),
     ],
-    secondary: [ENGINE, JOURNEY],
+    secondary: [ENGINE],
   },
   {
-    id: "operator", icon: Split,
-    label: { en: "Credit / Capital Operator", pt: "Operador de crédito / capital" },
-    value: { en: "Qualify opportunities, route feasible capital and measure operating economics.", pt: "Qualifique oportunidades, encaminhe o capital viável e meça a economia da operação." },
-    headline: { en: "Qualify opportunities, compare capital pools.", pt: "Qualifique oportunidades, compare pools de capital." },
+    id: "operator", icon: Briefcase,
+    label: { en: "Operations", pt: "Operação" },
+    value: { en: "Formalise, disburse and follow the loans this desk carries.", pt: "Formalize, desembolse e acompanhe os empréstimos desta mesa." },
+    headline: { en: "Run the desk.", pt: "Toque a mesa." },
     lead: {
-      en: "And measure the cost of serving small-ticket productive credit.",
-      pt: "E meça o custo de servir crédito produtivo de ticket pequeno.",
+      en: "Approve, disburse, record instalments and measure what the capital did.",
+      pt: "Aprove, desembolse, registre parcelas e meça o que o capital fez.",
     },
     roles: ["partner"],
     persona: { email: "partner@demo.empowerfi.io", name: "Paulo Mendes", role: "partner" },
-    home: JOURNEY,
+    home: DESK,
     primary: [
-      JOURNEY,
-      t({ ...ENGINE, icon: RouteIcon,
-        what: { en: "Readiness, affordability, risk and eligibility run live — then domestic or global, on liquidity, ticket, risk appetite, mandate and economics.", pt: "Prontidão, capacidade de pagamento, risco e elegibilidade rodados ao vivo — e então doméstico ou global, por liquidez, ticket, apetite a risco, mandato e economia." } }),
-      NETWORK,
-      LOCAL,
-      t({ to: "/app/capital/engine#replay", icon: History, label: { en: "Portfolio replay", pt: "Replay da carteira" },
-        what: { en: "The whole demand, re-run through the engine.", pt: "Toda a demanda, rodada de novo pelo motor." } }),
-      t({ to: "/app/capital/engine#assumptions", icon: SlidersHorizontal, label: { en: "Pool assumptions", pt: "Premissas dos pools" },
-        what: { en: "Liquidity, tickets, returns, FX and ramp costs.", pt: "Liquidez, tickets, retornos, câmbio e custos de conversão." } }),
-      t({ to: "/app/capital/economics#cost", icon: BarChart3, label: { en: "Cost to serve", pt: "Custo de servir" },
-        what: { en: "What each stage costs, for every R$ 100 lent.", pt: "Quanto custa cada etapa, a cada R$ 100 emprestados." } }),
-      t({ to: "/app/capital/economics#discipline", icon: ListChecks, label: { en: "Reason codes", pt: "Códigos de motivo" },
-        what: { en: "Why the engines decided what they decided.", pt: "Por que os motores decidiram o que decidiram." } }),
-      t({ to: "/app/partner/decisions", icon: FileCheck2, label: { en: "Proofs", pt: "Provas" },
-        what: { en: "Decisions, loans and instalments, each anchored on Solana.", pt: "Decisões, empréstimos e parcelas, cada um registrado na Solana." } }),
-    ],
-    secondary: [
-      t({ to: "/app/partner", icon: Briefcase, label: { en: "P2P desk", pt: "Mesa P2P" },
-        what: { en: "Formalise and disburse (simulated Pix).", pt: "Formalizar e desembolsar (Pix simulado)." } }),
-      t({ to: "/app/partner/servicing", icon: CalendarClock, label: { en: "Servicing", pt: "Acompanhamento de pagamentos" },
+      DESK,
+      t({ to: "/app/partner/servicing", icon: CalendarClock, label: { en: "Servicing", pt: "Acompanhamento" },
         what: { en: "Instalments due and recorded.", pt: "Parcelas a vencer e registradas." } }),
       t({ to: "/app/partner/portfolio", icon: PieChart, label: { en: "Portfolio and outcomes", pt: "Carteira e resultados" },
         what: { en: "Loans by state, and outcomes ready to measure.", pt: "Empréstimos por situação, e resultados prontos para medir." } }),
+      t({ to: "/app/partner/decisions", icon: FileCheck2, label: { en: "Proofs", pt: "Provas" },
+        what: { en: "Decisions, loans and instalments, each anchored on Solana.", pt: "Decisões, empréstimos e parcelas, cada um registrado na Solana." } }),
     ],
+    // The engine is not this desk's workspace: it is the panel that shows how a
+    // request is judged and where its capital comes from, and it belongs beside
+    // every view rather than inside one. The nine other analytics screens this
+    // list used to carry — the network, operating economics, the replay, the
+    // pool assumptions — are still routed and no longer offered here. A desk
+    // with twelve destinations was not a desk; it was the whole product wearing
+    // one persona's name.
+    secondary: [ENGINE, LOCAL],
   },
   {
     id: "community", icon: Users,

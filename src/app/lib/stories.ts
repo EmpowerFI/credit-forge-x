@@ -52,9 +52,12 @@ export const STORIES: Area[] = localized([
     roles: ["sponsor", "admin", "auditor"], persona: SPONSOR,
   },
   {
-    id: "engine", to: "/app/capital", prefix: ["/app/capital"], icon: Split,
+    id: "engine", to: "/app/capital/engine", prefix: ["/app/capital"], icon: Split,
     label: { en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" },
-    audience: { en: "Where does a dollar committed abroad end up, and what did it do on the way?", pt: "Onde vai parar um dólar comprometido lá fora, e o que ele fez no caminho?" },
+    audience: {
+      en: "How a request is judged, where its capital comes from, and what that capital then did.",
+      pt: "Como um pedido é avaliado, de onde vem o capital dele, e o que esse capital fez depois.",
+    },
     roles: ["sponsor", "capital_provider", "partner", "admin", "auditor"], persona: SPONSOR,
   },
   {
@@ -112,7 +115,10 @@ export const canOpen = (area: Area, role: Role | undefined) => Boolean(role && a
 export const HOME: Record<Role, AreaId> = {
   sponsor: "impact",
   capital_provider: "investor",
-  partner: "engine",
+  // The desk, not the panel. A partner signing in has work waiting; the engine
+  // shows how the mechanism decides, which is a thing to look at rather than a
+  // thing to do.
+  partner: "desk",
   community_leader: "community",
   entrepreneur: "business",
   auditor: "audit",

@@ -217,11 +217,9 @@ export default function AllocationEngine() {
             </>
           ),
         })}
-        actions={profile && ["sponsor", "partner", "admin", "auditor"].includes(profile.role) ? (
-          <Button asChild variant="outline" className="gap-2">
-            <Link to="/app/capital/economics"><BarChart3 size={16} /> {tr({ en: "Operating economics", pt: "Economia operacional" })}</Link>
-          </Button>
-        ) : undefined} />
+        /* No door out. Operating economics is still routed and still linked from
+           where it is argued about; a panel whose job is to show the mechanism
+           does not open with a button to a different screen. */ />
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         {/* Controls */}

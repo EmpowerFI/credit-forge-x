@@ -10,7 +10,7 @@ The bar at the top of the app numbers the three stories: 1 Impact Intelligence, 
 
 ## Ninety seconds, if that is all there is
 
-The short version answers one question: global capital reached a business — and then what? It is one screen and three button presses, because the argument is a movement and a movement has to be watched rather than read. Enter as the operator (**View platform as: Credit / Capital Operator** → **Enter as demo · Paulo Mendes**), open **Credit & Capital Engine**, and stay there until the last beat.
+The short version answers one question: global capital reached a business — and then what? It is one screen and three button presses, because the argument is a movement and a movement has to be watched rather than read. Enter as the desk (**View platform as: Operations** → **Enter as demo · Paulo Mendes**), open **How it works**, and stay there until the last beat.
 
 | # | Time | Do | Say |
 |---|---|---|---|
@@ -21,7 +21,7 @@ The short version answers one question: global capital reached a business — an
 | 5 | 0:46 | **FOLLOW THE CAPITAL**. The rail fills downward: dollars put up outside Brazil, the position, then **the crossing**, with the rate this request struck. | "Dollars that existed outside Brazil. They cross once, at this request's own rate — not the book's average — on the cheaper of two priced routes, and the screen says what the route not taken would have cost. She never holds a dollar and never owes one." |
 | 6 | 1:02 | Below the crossing, **inside the territory**: what the desk paid her, what she traded, what landed on the rail. | "Disbursed in the currency she trades in. Then the stage nothing else here had: what she spent, spent where she lives, counted rather than assumed. What her supplier paid a third merchant afterwards sits beside it and is never added to it — that balance is commingled the moment a second customer pays into it." |
 | 7 | 1:16 | The last hop, and the block under it: **Back out to the investor**. | "Her instalment comes back. It goes to the treasury and releases exactly the reais that were held behind it, and those reais are what the investor is paid out of. The loop closes or it does not; there is no third answer. One screen, three clicks, and no part of that was a diagram." |
-| 8 | 1:28 | **Capital Journey** in the left rail → **Brazil already has this rail**, directly under the four movements. | "Last thing. Not one of those four figures is ours: a hundred and three community development banks issuing local currencies here since 1998, a hundred and thirty-three thousand people paying with one of them in a single city. That rail is short of capital, not infrastructure. We are the layer that lets capital from outside reach it — we are not a currency and we issue none." |
+| 8 | 1:28 | **Capital Journey** (`/app/capital`, linked from the panel rather than the menu) → **Brazil already has this rail**, directly under the four movements. | "Last thing. Not one of those four figures is ours: a hundred and three community development banks issuing local currencies here since 1998, a hundred and thirty-three thousand people paying with one of them in a single city. That rail is short of capital, not infrastructure. We are the layer that lets capital from outside reach it — we are not a currency and we issue none." |
 
 Two answers worth having ready, neither of them a beat:
 
