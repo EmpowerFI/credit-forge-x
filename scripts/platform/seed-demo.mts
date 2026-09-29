@@ -544,11 +544,28 @@ const reportedAt = (period: string) => {
   return iso(at < WINDOW_END ? at : new Date(WINDOW_END.getTime() - random() * 3 * 86_400_000));
 };
 
-// Maria has reported July and August. Her September check-in, done live in
-// the demo, is the one that makes her ready.
+// Maria has reported every month since April, borrowed in July on the first
+// three, and has been repaying since. Her September check-in, done live in the
+// demo, keeps her current; what she does live after it is ask for a second
+// request, which is now the moment the entrepreneur view is recorded on.
+//
+// She used to hold only July and August, one consecutive month short, so the
+// live check-in was what tipped her into CREDIT_READY. That beat cannot survive
+// alongside a first loan: qualifying in July needs three consecutive months
+// ending in June (MAX_MONTHS_SINCE_LAST is 1), and once June is there, April
+// through August is one unbroken run and she is ready before the camera starts.
+// A gap earlier does not help — it breaks the run the live check-in has to
+// complete. She is the only participant with a login, so she is the only
+// borrower who can be shown paying her own instalment, and that is worth more
+// to the thesis than a threshold crossed on screen.
 const MARIA_MONTHS: CheckinRecord[] = [
-  { period: "2026-07", revenue_cents: 380_000, cogs_cents: 145_000, opex_cents: 55_000, household_cents: 85_000, keeps_records: true, active_days: 23 },
-  { period: "2026-08", revenue_cents: 405_000, cogs_cents: 152_000, opex_cents: 58_000, household_cents: 90_000, keeps_records: true, active_days: 24 },
+  { period: "2026-02", revenue_cents: 298_000, cogs_cents: 110_000, opex_cents: 43_000, household_cents: 58_000, keeps_records: true, active_days: 22 },
+  { period: "2026-03", revenue_cents: 314_000, cogs_cents: 116_000, opex_cents: 44_000, household_cents: 60_000, keeps_records: true, active_days: 23 },
+  { period: "2026-04", revenue_cents: 341_000, cogs_cents: 126_000, opex_cents: 46_000, household_cents: 62_000, keeps_records: true, active_days: 23 },
+  { period: "2026-05", revenue_cents: 352_000, cogs_cents: 130_000, opex_cents: 47_000, household_cents: 64_000, keeps_records: true, active_days: 23 },
+  { period: "2026-06", revenue_cents: 366_000, cogs_cents: 135_000, opex_cents: 48_000, household_cents: 66_000, keeps_records: true, active_days: 24 },
+  { period: "2026-07", revenue_cents: 380_000, cogs_cents: 140_000, opex_cents: 50_000, household_cents: 68_000, keeps_records: true, active_days: 23 },
+  { period: "2026-08", revenue_cents: 405_000, cogs_cents: 148_000, opex_cents: 52_000, household_cents: 70_000, keeps_records: true, active_days: 24 },
 ];
 const mariaProfile = profiles.find((p) => p.display_name === "Maria Oliveira");
 
@@ -593,7 +610,18 @@ const firstCycle = memberships
     ["steady", "growing"].includes(histories.get(m.entrepreneur_id)!.profile) && coreDone.get(m.entrepreneur_id) === 5)
   .slice(0, PLANS.length)
   .map((membership, i) => ({ membership, ...PLANS[i] }));
-const cycleIds = new Set(firstCycle.map((c) => c.membership.entrepreneur_id));
+// Maria borrows in the first cycle too, and is the only one of them in Grajaú —
+// deliberately, because Grajaú is the only territory with a local rail and she
+// is the only participant with a login. A screen that shows a borrower paying
+// her own instalment in local units needs a borrower who can sign in, and until
+// now the eight people with loans all had no account and the one account had no
+// loan.
+const firstCycleWithMaria = [
+  ...firstCycle,
+  { membership: memberships.find((m) => m.entrepreneur_id === maria.id)!,
+    plan: "on_time" as Plan, after: 1.12, use: "as_declared" },
+];
+const cycleIds = new Set(firstCycleWithMaria.map((c) => c.membership.entrepreneur_id));
 
 const scale = (c: CheckinRecord, f: number, period = c.period): CheckinRecord =>
   ({ ...c, period, revenue_cents: whole(c.revenue_cents * f), cogs_cents: whole(c.cogs_cents * f) });
@@ -601,6 +629,8 @@ for (const c of firstCycle) {
   const id = c.membership.entrepreneur_id;
   const h = histories.get(id)!;
   // Reporting since March; what changed after the loan shows from August.
+  // Maria is not in this loop: her months carry the gap the demo depends on,
+  // and she joined Grajaú on a date the rest of the seed already reads.
   h.months = [
     scale(h.months[0], 0.94 + cycleRandom() * 0.08, "2026-03"),
     ...h.months.map((m) => (m.period > "2026-07" ? scale(m, c.after * (0.97 + cycleRandom() * 0.06)) : m)),
@@ -687,7 +717,8 @@ const PAID_AT = ["2026-08-09T15:00:00-03:00", "2026-09-09T15:00:00-03:00"];
 const PAID_OFF_AT = "2026-09-10T09:00:00-03:00";
 let cycleLoans = 0;
 let leftToMeasure: string | null = null;
-for (const c of firstCycle) {
+let mariaLoanId: string | null = null;
+for (const c of firstCycleWithMaria) {
   const id = c.membership.entrepreneur_id;
   const { features, result } = assessReadiness({
     as_of_period: "2026-07",
@@ -730,6 +761,7 @@ for (const c of firstCycle) {
   if (loanError) throw loanError;
   await must("first-cycle disburse", asPartner.rpc("transition_loan", { p_loan_id: loan.id, p_to: "DISBURSED", p_note: "Pix sent" }));
   await must("first-cycle activate", asPartner.rpc("transition_loan", { p_loan_id: loan.id, p_to: "ACTIVE" }));
+  if (id === maria.id) mariaLoanId = loan.id;
   const instalments = c.plan === "late" ? 0 : c.plan === "early_payoff" ? loan.term_months : 2;
   for (let n = 1; n <= instalments; n++) {
     await must("first-cycle instalment", asPartner.rpc("record_payment", {
@@ -756,11 +788,15 @@ for (const c of firstCycle) {
 
   // September: what changed in the business since. One on-time loan is left
   // for the desk to measure during the demo, which the sponsor then sees.
-  if (!leftToMeasure && c.plan === "on_time" && id !== noImpact) {
+  if (!leftToMeasure && c.plan === "on_time" && id !== noImpact && id !== maria.id) {
     leftToMeasure = loan.id;
     cycleLoans++;
     continue;
   }
+  // Maria's stays unmeasured and running. Hers is the loan the entrepreneur
+  // view is recorded on, so it has to still owe instalments — and an outcome
+  // needs months of trading after the loan that her history does not have yet.
+  if (id === maria.id) { cycleLoans++; continue; }
   const outcomeId = await must("first-cycle outcome", db.rpc("measure_outcome", { p_loan_id: loan.id, p_capital_use: c.use }));
   await must("date outcome", db.from("productive_outcomes").update({ measured_at: "2026-09-12T16:00:00-03:00" }).eq("id", outcomeId as string));
   cycleLoans++;
@@ -836,6 +872,16 @@ const merchants = await must("local merchants", db.from("local_merchants").inser
   MERCHANTS.map((m) => ({ ...m, economy_id: economy.id, city: "São Paulo", uf: "SP" })),
 ).select("id, code, eligible"));
 const merchantOf = new Map(merchants.map((m) => [m.code, m.id]));
+
+// Maria's loan was disbursed in July, and this rail did not exist until now, so
+// the trigger that lands capital on it never fired for her. It is landed here
+// instead — the same function, called late rather than a different path — which
+// is what gives her units to pay her next instalment with. The two instalments
+// she already paid carry no local leg, and that is the truth: the rail came
+// after them.
+if (mariaLoanId) {
+  await must("maria on the rail", asPartner.rpc("local_inject_capital", { p_loan_id: mariaLoanId }));
+}
 
 const leftAlone = memberships.find(
   (m) => m.community_id === grajau.id && m.entrepreneur_id !== maria.id && statusOf.get(m.entrepreneur_id) === "CREDIT_READY",

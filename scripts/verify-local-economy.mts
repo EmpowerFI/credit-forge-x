@@ -37,13 +37,23 @@ const body = await page.locator("body").innerText();
 for (const probe of PT
   ? ["Economia Local", "Multiplicador Local 3 (LM3)", "A Mumbuca, em Maricá, reteve", "Taxa de retenção local", "Velocidade do capital",
      "Adicionalidade do capital global", "O que o razão guarda", "Saldos somam zero",
-     "Como o capital se moveu", "Os últimos movimentos", "O que estes números não provam", "Em que as unidades se apoiam", "Toda unidade está coberta",
-     // Decimal mark of the language: a multiple and a share, as Brazil writes them.
-     "2,03×", "93,4%"]
+     "Como o capital se moveu", "Os últimos movimentos", "O que estes números não provam", "Em que as unidades se apoiam", "Toda unidade está coberta"]
   : ["Local Economy", "Local Multiplier 3", "Mumbuca, in Maricá, retained", "Local retention rate", "Capital velocity",
      "Global capital additionality", "What the ledger holds", "Balances sum to zero",
-     "How the capital moved", "The last movements", "What these numbers do not prove", "What the units stand on", "Every unit is covered", "2.03×", "93.4%"])
+     "How the capital moved", "The last movements", "What these numbers do not prove", "What the units stand on", "Every unit is covered"])
   console.log(`${body.includes(probe) ? "ok  " : "MISS"} ${probe}`);
+
+// The decimal mark of the language, on the multiple and the share. Written as a
+// shape rather than as "2.03×" and "93.4%": those two move with every change to
+// the book, and a probe that has to be edited whenever the seed changes stops
+// being read and starts being updated to match whatever it found.
+for (const [what, re] of [
+  ["a multiple", PT ? /\d+,\d+×/ : /\d+\.\d+×/],
+  ["a share", PT ? /\d+,\d+%/ : /\d+\.\d+%/],
+] as const) {
+  const m = body.match(re);
+  console.log(`${m ? "ok  " : "MISS"} ${what}, as ${PT ? "Brazil" : "English"} writes it${m ? `: ${m[0]}` : ""}`);
+}
 
 // From the page's own heading, so the shell's navigation does not eat the
 // budget and the ledger panels are actually read.
