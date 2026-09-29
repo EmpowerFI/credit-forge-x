@@ -129,26 +129,14 @@ export default function CapitalJourney() {
           <>
             <p>
               {tr({
-                en: "Nothing on this screen is drawn. Every stage counts rows in the table that stage writes, and a stage with nothing in it says so rather than pointing an arrow at the next one. A diagram of an intended architecture would be free to make, and that is exactly what would make it worth nothing.",
-                pt: "Nada nesta tela é desenhado. Cada etapa conta linhas na tabela que aquela etapa escreve, e uma etapa vazia diz isso em vez de apontar uma seta para a seguinte. Um diagrama de uma arquitetura pretendida seria de graça, e é justamente isso que o faria não valer nada.",
+                en: "Nothing here is drawn. Every stage counts rows in the table that stage writes, and an empty stage says so instead of pointing an arrow at the next one. A stage can be true and unanchored — the local rail writes no anchor — so proof is reported beside the money, never in place of it.",
+                pt: "Nada aqui é desenhado. Cada etapa conta linhas na tabela que aquela etapa escreve, e uma etapa vazia diz isso em vez de apontar uma seta para a seguinte. Uma etapa pode ser verdadeira e não registrada em cadeia — o trilho local não registra nada — então a prova é informada ao lado do dinheiro, nunca no lugar dele.",
               })}
             </p>
             <p>
               {tr({
-                en: "The four movements are deliberately uneven. Five of the nine stages happen before a single real exists, and they are the five a conventional impact fund also runs — origination, underwriting, allocation, funding, custody. The four that follow are the ones this product exists for. Splitting the nine into four bands of roughly equal size would read better and would hide exactly that.",
-                pt: "Os quatro movimentos são desiguais de propósito. Cinco das nove etapas acontecem antes de existir um único real, e são as cinco que um fundo de impacto convencional também roda — originação, análise, alocação, captação, custódia. As quatro seguintes são aquelas para as quais este produto existe. Dividir as nove em quatro faixas de tamanho parecido ficaria melhor e esconderia justamente isso.",
-              })}
-            </p>
-            <p>
-              {tr({
-                en: "Proof is reported beside the money and never stands in for it. A stage can be true and unanchored: the local rail writes no anchor at all, and the engine's plans are not anchored yet. Reporting nine of nine proven by leaving out the stages that prove nothing would be the easiest thing to do here.",
-                pt: "A prova é informada ao lado do dinheiro e nunca no lugar dele. Uma etapa pode ser verdadeira e não registrada em cadeia: o trilho local não registra nada, e os planos do motor ainda não são registrados. Informar nove de nove provadas omitindo as etapas que não provam nada seria a coisa mais fácil de fazer aqui.",
-              })}
-            </p>
-            <p>
-              {tr({
-                en: "Following one request narrows every stage to that request. What she traded is the capital that left and re-entered the account the disbursal credited. What her supplier paid a third merchant afterwards is shown beside it and never added to it — that balance is commingled the moment a second customer pays it, and claiming otherwise would be inventing a provenance.",
-                pt: "Seguir um pedido estreita cada etapa àquele pedido. O que ela negociou é o capital que saiu e voltou à conta que o desembolso creditou. O que o fornecedor dela pagou a um terceiro comerciante depois aparece ao lado e nunca somado — aquele saldo se mistura no instante em que um segundo cliente paga, e dizer o contrário seria inventar uma procedência.",
+                en: "The four movements are uneven on purpose: five of the nine stages are the ones a conventional impact fund also runs. The four that follow are what this product exists for.",
+                pt: "Os quatro movimentos são desiguais de propósito: cinco das nove etapas são as que um fundo de impacto convencional também roda. As quatro seguintes são aquelas para as quais este produto existe.",
               })}
             </p>
             <p>{prototypeNotice()}</p>

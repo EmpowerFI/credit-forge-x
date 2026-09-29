@@ -262,18 +262,14 @@ export default function ImpactIntelligence() {
         about={tr({
           en: (
             <>
-              <p>Every figure is computed live from the platform's records, over the communities that run this program, and is an aggregate: no name, no business and no figure a participant reported appears here. Groups under five are hidden so nobody can be singled out.</p>
-              <p>Outcomes count only the businesses that consented to impact reporting; the rest are reported as withheld. Opportunities are listed by code, and only when she agreed to be shown to investors.</p>
-              <p>Proofs are real transactions on Solana devnet, and "Verify" recomputes the record in your browser before checking it on chain.</p>
-              <p>This is a demo program: the sponsor, its budget and the businesses are simulated.</p>
+              <p>Every figure is an aggregate computed live from the platform's records: no name, no business and no figure a participant reported appears here. Groups under five are hidden, and outcomes count only the businesses that consented — the rest are reported as withheld.</p>
+              <p>Proofs are real transactions on Solana devnet. The sponsor, its budget and the businesses are simulated.</p>
             </>
           ),
           pt: (
             <>
-              <p>Cada número é calculado ao vivo a partir dos registros da plataforma, sobre as comunidades que conduzem este programa, e é um agregado: nenhum nome, nenhum negócio e nenhum valor informado por uma participante aparece aqui. Grupos com menos de cinco ficam ocultos para que ninguém seja identificado.</p>
-              <p>Os resultados contam apenas os negócios que consentiram com o uso para impacto; os demais são reportados como retidos. As oportunidades aparecem por código, e só quando ela concordou em ser mostrada a investidores.</p>
-              <p>As provas são transações reais na devnet da Solana, e "Verificar" recalcula o registro no seu navegador antes de conferir na blockchain.</p>
-              <p>Este é um programa de demonstração: o patrocinador, o orçamento e os negócios são simulados.</p>
+              <p>Cada número é um agregado calculado ao vivo a partir dos registros da plataforma: nenhum nome, nenhum negócio e nenhum valor informado por uma participante aparece aqui. Grupos com menos de cinco ficam ocultos, e os resultados contam apenas os negócios que consentiram — os demais são reportados como retidos.</p>
+              <p>As provas são transações reais na devnet da Solana. O patrocinador, o orçamento e os negócios são simulados.</p>
             </>
           ),
         })}

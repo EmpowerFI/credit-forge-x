@@ -136,42 +136,6 @@ export const INSTRUMENT_TYPE: Record<InstrumentType, { label: string; what: stri
   },
 });
 
-/** The seven gates, in the order the engine asks them. */
-export const GATE: Record<Gate["gate"], { label: string; asks: string }> = localized({
-  geography: {
-    label: { en: "Where she is", pt: "Onde ela está" },
-    asks: { en: "Does this route serve her state?", pt: "Esta rota atende o estado dela?" },
-  },
-  ticket: {
-    label: { en: "Ticket", pt: "Ticket" },
-    asks: { en: "Can this route reach its own minimum for what she asked?", pt: "Esta rota alcança o próprio mínimo para o que ela pediu?" },
-  },
-  purpose: {
-    label: { en: "Purpose", pt: "Finalidade" },
-    asks: { en: "Does this route fund what she is buying?", pt: "Esta rota financia o que ela vai comprar?" },
-  },
-  term: {
-    label: { en: "Term", pt: "Prazo" },
-    asks: { en: "Is the number of months she needs inside what this route will fund?", pt: "O número de meses que ela precisa está dentro do que esta rota financia?" },
-  },
-  business_age: {
-    label: { en: "Reported history", pt: "Histórico reportado" },
-    asks: { en: "Has she reported for as many months as this route asks?", pt: "Ela reportou tantos meses quanto esta rota pede?" },
-  },
-  documents: {
-    label: { en: "Papers", pt: "Documentos" },
-    asks: { en: "Does she have the documents this route asks for?", pt: "Ela tem os documentos que esta rota pede?" },
-  },
-  affordability: {
-    label: { en: "What she can pay", pt: "O que ela pode pagar" },
-    asks: { en: "Does the share of her instalment this route may take reach its minimum ticket?", pt: "A parcela que esta rota pode tomar alcança o ticket mínimo dela?" },
-  },
-  capacity: {
-    label: { en: "Capacity left", pt: "Capacidade restante" },
-    asks: { en: "Has this route enough left to write its smallest ticket?", pt: "Esta rota tem o suficiente para escrever o menor ticket dela?" },
-  },
-});
-
 // The reason codes the network adds. The five it shares with the pool engine
 // keep the pool engine's wording — one vocabulary, so the audit console never
 // shows two answers to one question.

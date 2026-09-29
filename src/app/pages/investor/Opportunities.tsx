@@ -81,14 +81,14 @@ export default function Opportunities() {
         about={tr({
           en: (
             <>
-              <p>Each opportunity exists only after readiness, her own request for capital and EmpowerFI's eligibility check. You commit USDC; it reaches her as local currency, she repays in local currency, and it comes back to you as USDC. You never hold reais and she never holds a dollar: the currency effect sits with the pool, priced into the hedge.</p>
-              <p>Businesses appear by code, and only when she agreed to be shown to investors. Requests the engine routed to Brazilian capital are funded in reais by a domestic desk and are not offered here.</p>
+              <p>An opportunity exists only after readiness, her own request for capital, and an eligibility check. She appears by code, and only because she agreed to be shown to investors.</p>
+              <p>You never hold reais and she never holds a dollar: the currency effect sits with the pool, priced into the hedge. Requests the engine routed to Brazilian capital are funded in reais by a domestic desk, and are not offered here.</p>
             </>
           ),
           pt: (
             <>
-              <p>Cada oportunidade só existe depois da prontidão, do pedido de crédito feito por ela e da verificação de elegibilidade da EmpowerFI. Você aporta USDC; o dinheiro chega a ela em moeda local, ela paga em moeda local, e volta para você em USDC. Você nunca tem reais e ela nunca tem dólar: o efeito cambial fica com o pool, precificado no hedge.</p>
-              <p>Os negócios aparecem por código, e só quando ela concordou em ser mostrada a investidores. Os pedidos que o motor roteou para capital brasileiro são financiados em reais por uma mesa doméstica e não são ofertados aqui.</p>
+              <p>Uma oportunidade só existe depois da prontidão, do pedido de crédito feito por ela e da verificação de elegibilidade. Ela aparece por código, e só porque concordou em ser mostrada a investidores.</p>
+              <p>Você nunca tem reais e ela nunca tem dólar: o efeito cambial fica com o pool, precificado no hedge. Os pedidos que o motor roteou para capital brasileiro são financiados em reais por uma mesa doméstica, e não são ofertados aqui.</p>
             </>
           ),
         })} />

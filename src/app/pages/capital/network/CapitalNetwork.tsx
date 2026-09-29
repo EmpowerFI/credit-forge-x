@@ -9,7 +9,6 @@ import Panel from "../../../components/product/Panel";
 import StatTile from "../../../components/product/StatTile";
 import { tr } from "../../../i18n";
 import { prototypeNotice } from "../../../lib/capital";
-import { GATE } from "../../../lib/capitalNetwork";
 import CapitalOrigin from "./CapitalOrigin";
 import Instruments from "./Instruments";
 import Providers from "./Providers";
@@ -53,27 +52,20 @@ export default function CapitalNetwork() {
           <>
             <p>
               {tr({
-                en: "Hard gates first, weights second. Seven gates decide whether a route may take this need at all — where she is, the ticket, the purpose, her reported history, her papers, what she can pay and what the route has left — and each is shown with both sides of its comparison. Only then does a fit score rank the routes that survived, and no weight can overturn a gate.",
-                pt: "Portões rígidos primeiro, pesos depois. Sete portões decidem se uma rota pode atender esta necessidade, e cada um é mostrado com os dois lados da comparação. Só então uma pontuação de encaixe classifica as rotas que sobraram, e nenhum peso derruba um portão.",
-              })}
-            </p>
-            <ul className="space-y-1">
-              {(Object.keys(GATE) as (keyof typeof GATE)[]).map((g) => (
-                <li key={g}>
-                  <span className="text-foreground">{GATE[g].label}</span> — {GATE[g].asks}
-                </li>
-              ))}
-            </ul>
-            <p>
-              {tr({
-                en: "Local capital first, global capital for the residual. Domestic routes are allocated before any global route is offered anything, so the external capital gap is a measurement of the domestic network taken before global money can hide it.",
-                pt: "Capital local primeiro, capital global para o resíduo. As rotas domésticas são alocadas antes de qualquer rota global receber algo, então a lacuna de capital externo é uma medida da rede doméstica feita antes de o dinheiro global poder escondê-la.",
+                en: "Hard gates first, weights second. A gate decides whether a route may take this need at all, and each is shown with both sides of its comparison. Only then does a fit score rank the routes that survived, and no weight can overturn a gate.",
+                pt: "Portões rígidos primeiro, pesos depois. Um portão decide se uma rota pode atender esta necessidade, e cada um é mostrado com os dois lados da comparação. Só então uma pontuação de encaixe classifica as rotas que sobraram, e nenhum peso derruba um portão.",
               })}
             </p>
             <p>
               {tr({
-                en: "A match is never an approval. Every route whose owner still has to decide says so on its card, and nothing on this screen creates a loan, an investment or a position. The two P2P routes read their ticket range, purposes, mandate and capacity from funding_pools, and their cost from the engine that already prices them, so this page and the Investor Console cannot disagree about a pool.",
-                pt: "Um encaixe nunca é uma aprovação. Toda rota cujo dono ainda precisa decidir diz isso no próprio cartão, e nada nesta tela cria empréstimo, investimento ou posição. As duas rotas P2P leem faixa de ticket, finalidades, mandato e capacidade de funding_pools, e o custo do motor que já as precifica, então esta página e o Console do Investidor não podem discordar sobre um pool.",
+                en: "Domestic routes are allocated before any global route is offered anything, so the external capital gap measures the domestic network before global money can hide it.",
+                pt: "As rotas domésticas são alocadas antes de qualquer rota global receber algo, então a lacuna de capital externo mede a rede doméstica antes de o dinheiro global poder escondê-la.",
+              })}
+            </p>
+            <p>
+              {tr({
+                en: "A match is never an approval. Every route whose owner still has to decide says so on its card, and nothing on this screen creates a loan, an investment or a position.",
+                pt: "Um encaixe nunca é uma aprovação. Toda rota cujo dono ainda precisa decidir diz isso no próprio cartão, e nada nesta tela cria empréstimo, investimento ou posição.",
               })}
             </p>
             <p>{prototypeNotice()}</p>
