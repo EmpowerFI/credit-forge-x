@@ -390,20 +390,26 @@ select is((select array_agg(left(x ->> 'code', 2)) from jsonb_array_elements(eng
   'the desk sees the same two, by its own P- codes');
 select is((select count(*)::int from jsonb_array_elements(engine_opportunities()) x where (x ->> 'settled')::boolean), 0,
   'and its queue still holds nothing that was already lent');
-create temp table eng_settled as select engine_opportunities(true) as v;
+create temp table eng_settled as
+  select x, i from jsonb_array_elements(engine_opportunities(true)) with ordinality t(x, i)
+  where (x ->> 'opportunity_id')::uuid in (select id from o);
 set local role postgres;
 
 -- The engine page's third act follows the capital after the decision, and every
 -- request that got that far is a loan — precisely what the queue leaves out. So
 -- a caller can ask for those too, without the queue losing its meaning.
-select is((select jsonb_array_length(v) from eng_settled), 3,
+--
+-- Scoped to this file's own three requests. Run against a deployment with a
+-- seeded book this reader returns everything that deployment ever lent, and a
+-- test that counted the whole array would be asserting on somebody else's data.
+select is((select count(*)::int from eng_settled), 3,
   'asked for settled requests too, the desk also sees the one it already lent');
 select is(
-  (select array_agg((x ->> 'settled')::boolean order by i)
-   from eng_settled, jsonb_array_elements(v) with ordinality t(x, i)),
+  (select array_agg((x ->> 'settled')::boolean order by i) from eng_settled),
   array[false, false, true],
   'the queue first and the lent one after it, never mixed into the work still to be done');
 select is(
-  (select x ->> 'reached' from eng_settled, jsonb_array_elements(v) x where (x ->> 'settled')::boolean),
-  'disbursed',
+  (select array_agg(x ->> 'reached' order by i) from eng_settled
+   where (x ->> 'opportunity_id')::uuid = (select id from o where who = 'pgTAP Ana Alloc')),
+  array['disbursed'],
   'each saying how far its capital got, so nobody follows a request that never left the first movement');
