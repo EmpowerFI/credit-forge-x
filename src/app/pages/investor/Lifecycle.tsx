@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
-import { Check, Circle } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Check, Circle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Panel from "../../components/product/Panel";
+import { railStep, type RailState, useRailReveal } from "../../lib/moneyRail";
 import StatusPill from "../../components/product/StatusPill";
 import { tr } from "../../i18n";
 import { usdcFromReais } from "../../lib/investor";
@@ -50,12 +51,14 @@ function Figure({ label, cents, fxMilli, sub }: { label: string; cents: number; 
   );
 }
 
-function Stage({ stage, state }: { stage: LifecycleStage; state: StageState }) {
+function Stage({ stage, state, run }: { stage: LifecycleStage; state: StageState; run: RailState }) {
   return (
-    <li className="flex min-w-0 flex-col gap-1.5">
+    <li className={cn("flex min-w-0 flex-col gap-1.5", railStep(run))}>
       <span aria-hidden className={cn("h-1 rounded-full", state.done ? "bg-positive" : "bg-border")} />
       <span className="flex items-start gap-1.5">
-        {state.done
+        {run === "running"
+          ? <Loader2 size={14} className="mt-0.5 shrink-0 animate-spin text-accent motion-reduce:animate-none" aria-hidden />
+          : state.done
           ? <Check size={14} className="mt-0.5 shrink-0 text-positive" aria-hidden />
           : <Circle size={14} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden />}
         <span className="text-sm font-medium text-foreground">{STAGE_LABEL[stage]}</span>
@@ -85,11 +88,15 @@ export default function Lifecycle({ principalCents, instalmentCents, termMonths,
   folded?: boolean;
   numeral?: string;
 }) {
+  // The five steps of the loan's life, arriving in the order they happen. What
+  // the fold buys a reader is the sequence, not the list.
+  const [open, setOpen] = useState(false);
+  const rail = useRailReveal(ORDER.length, { stepMs: 420, armed: folded ? open : undefined });
   return (
-    <Panel folded={folded} numeral={numeral} title={tr({ en: "Written in reais, funded in dollars", pt: "Escrito em reais, financiado em dólares" })}
+    <Panel folded={folded} numeral={numeral} onOpenChange={setOpen} title={tr({ en: "Written in reais, funded in dollars", pt: "Escrito em reais, financiado em dólares" })}
       description={tr({
-        en: "She owes reais: the principal and every instalment are fixed in her currency, and never move with the exchange rate. The dollar figures are what those reais are worth at the quote this opportunity holds — informational, and never what she repays.",
-        pt: "A dívida da empreendedora é em reais: o principal e cada parcela são fixos na moeda dela e não se movem com o câmbio. Os valores em dólar são quanto esses reais valem pela cotação que esta oportunidade carrega — informativos, e nunca o que ela paga.",
+        en: "She owes reais, fixed in her currency — the dollar figures are never what she repays.",
+        pt: "A dívida dela é em reais, fixa na moeda dela — os valores em dólar nunca são o que ela paga.",
       })}>
       <div className="grid gap-3 sm:grid-cols-2">
         <Figure label={tr({ en: "Principal, contracted in reais", pt: "Principal, contratado em reais" })} cents={principalCents} fxMilli={fxMilli} />
@@ -97,8 +104,8 @@ export default function Lifecycle({ principalCents, instalmentCents, termMonths,
           sub={tr({ en: `${termMonths} × ${money(instalmentCents)}`, pt: `${termMonths} × ${money(instalmentCents)}` })} />
       </div>
 
-      <ol className="grid gap-x-4 gap-y-5 [grid-template-columns:repeat(auto-fit,minmax(10.5rem,1fr))]">
-        {ORDER.map((s) => <Stage key={s} stage={s} state={stages[s]} />)}
+      <ol ref={rail.ref} className="grid gap-x-4 gap-y-5 [grid-template-columns:repeat(auto-fit,minmax(10.5rem,1fr))]">
+        {ORDER.map((s, i) => <Stage key={s} stage={s} state={stages[s]} run={rail.state(i)} />)}
       </ol>
 
       {children}

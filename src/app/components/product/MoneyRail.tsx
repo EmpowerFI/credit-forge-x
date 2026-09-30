@@ -32,3 +32,16 @@ export function RailMarker({ state, first, last, children }: {
     </span>
   );
 }
+
+/**
+ * The engine's "being read now" mark, for a row that has no spine: a slot that
+ * holds the spinner while its step runs and keeps its width the rest of the
+ * time, so a table of checks does not reflow as the run passes down it.
+ */
+export function RailTick({ state }: { state: RailState }) {
+  return (
+    <span aria-hidden className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+      {state === "running" && <Loader2 size={12} className="animate-spin text-accent motion-reduce:animate-none" />}
+    </span>
+  );
+}

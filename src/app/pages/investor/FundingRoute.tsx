@@ -1,10 +1,10 @@
+import { useState } from "react";
 import { ArrowDown, ArrowRight, Check, ChevronRight, X } from "lucide-react";
 import type { AllocationResult, PoolAssessment } from "@empowerfi/capital-allocation";
 import { cn } from "@/lib/utils";
 import { localized, tr } from "../../i18n";
-import { useRailReveal } from "../../lib/moneyRail";
+import { railStep, type RailState, useRailReveal } from "../../lib/moneyRail";
 import Panel from "../../components/product/Panel";
-import PoolPill from "../../components/product/PoolPill";
 import StatusPill from "../../components/product/StatusPill";
 import { bpsPercent, POOL, poolOf, REASON, type AllocationReason, type PoolId } from "../../lib/capital";
 import type { MarketRow } from "../../lib/investor";
@@ -30,14 +30,11 @@ const STEPS: Record<PoolId, { label: string; reality: Reality }[]> = localized({
  * rail as her page and as the engine's third act, so one movement does not get
  * three different animations in one product.
  */
-function Route({ pool }: { pool: PoolId }) {
-  const steps = STEPS[pool];
-  const rail = useRailReveal(steps.length);
+function Route({ steps, state }: { steps: { label: string; reality: Reality }[]; state: (i: number) => RailState }) {
   return (
-    <ol ref={rail.ref} className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-2">
+    <ol className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-2">
       {steps.map((s, i) => {
-        const state = rail.state(i);
-        const here = state !== "waiting";
+        const here = state(i) !== "waiting";
         return (
           <li key={s.label} className="flex items-center gap-2">
             {i > 0 && (
@@ -51,7 +48,7 @@ function Route({ pool }: { pool: PoolId }) {
               "inline-flex flex-wrap items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs text-foreground",
               "transition-[opacity,transform,border-color] duration-500 ease-out",
               "motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-x-0",
-              state === "running" ? "border-accent/60 bg-accent/5 opacity-100 translate-x-0"
+              state(i) === "running" ? "border-accent/60 bg-accent/5 opacity-100 translate-x-0"
                 : here ? "border-border bg-secondary/40 opacity-100 translate-x-0"
                   : "border-transparent bg-secondary/20 opacity-0 -translate-x-1")}>
               {s.label} <StatusPill tone={REALITY[s.reality].tone} dot={false}>{REALITY[s.reality].label}</StatusPill>
@@ -84,30 +81,39 @@ function Assessment({ a, chosen }: { a: PoolAssessment; chosen: boolean }) {
 }
 
 /** The funding route the Capital Allocation Engine chose for this opportunity, and why. */
-export default function FundingRoute({ row, numeral }: { row: MarketRow; numeral?: string }) {
+export default function FundingRoute({ row, numeral, folded }: { row: MarketRow; numeral?: string; folded?: boolean }) {
   const pool = poolOf(row.funding_pool);
   const a = row.allocation as unknown as AllocationResult | null;
-  if (!a) return null;
   const reasons = (row.allocation_reason_codes ?? []) as AllocationReason[];
+  const steps = pool ? STEPS[pool] : [];
+  // One run over the whole answer, not two: the route fills in leg by leg, and
+  // the reasons it was chosen for arrive under it as the last legs land. Two
+  // rails in one panel would read as two unrelated things being counted.
+  const [open, setOpen] = useState(false);
+  const rail = useRailReveal<HTMLDivElement>(steps.length + reasons.length,
+    { stepMs: 420, armed: folded ? open : undefined });
+  if (!a) return null;
+  const chosen = pool ? a[pool] : null;
   return (
-    <Panel numeral={numeral} title={tr({ en: "Funding route", pt: "Rota de captação" })}
-      description={tr({
-        en: "Chosen by the Capital Allocation Engine: feasibility first — liquidity, risk appetite, ticket and mandate — then what it costs her.",
-        pt: "Escolhida pelo Motor de Alocação de Capital: primeiro a viabilidade (liquidez, apetite a risco, ticket e mandato), depois quanto custa para ela.",
-      })}
-      actions={<PoolPill pool={pool} />}>
-      {pool && <Route pool={pool} />}
+    <Panel numeral={numeral} folded={folded} onOpenChange={setOpen} title={tr({ en: "Funding route", pt: "Rota de captação" })}
+      description={chosen ? tr({
+        en: `${POOL[pool!].name} — ${bpsPercent(chosen.all_in_bps)} all-in for her, a year.`,
+        pt: `${POOL[pool!].name} — ${bpsPercent(chosen.all_in_bps)} de custo total para ela, ao ano.`,
+      }) : undefined}>
+      <div ref={rail.ref} className="space-y-4">
+        {pool && <Route steps={steps} state={rail.state} />}
 
-      <div className="space-y-2">
-        <h3 className="font-heading text-base font-bold text-foreground">{tr({ en: "Why this pool?", pt: "Por que este pool?" })}</h3>
-        <ul className="space-y-2">
-          {reasons.map((r) => (
-            <li key={r} className="flex flex-col gap-1 text-sm sm:flex-row sm:items-baseline sm:gap-3">
-              <span className="shrink-0"><StatusPill tone={REASON[r].tone} dot={false}>{REASON[r].label}</StatusPill></span>
-              <span className="text-muted-foreground">{REASON[r].says}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-2">
+          <h3 className="font-heading text-base font-bold text-foreground">{tr({ en: "Why this pool?", pt: "Por que este pool?" })}</h3>
+          <ul className="space-y-2">
+            {reasons.map((r, i) => (
+              <li key={r} className={`flex flex-col gap-1 text-sm sm:flex-row sm:items-baseline sm:gap-3 ${railStep(rail.state(steps.length + i))}`}>
+                <span className="shrink-0"><StatusPill tone={REASON[r].tone} dot={false}>{REASON[r].label}</StatusPill></span>
+                <span className="text-muted-foreground">{REASON[r].says}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       <details className="[&[open]>summary>svg]:rotate-90">
