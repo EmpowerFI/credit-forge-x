@@ -230,7 +230,7 @@ The app tells one loop in two stories, numbered in the bar at the top of every p
   - operational scalability (steps that took no one's time, staff hours) with continuous follow-up (reporting, open follow-ups, instalments, outcomes);
   - capital access (routes, waiting, allocation reasons) with portfolio quality (instalments on schedule, late, paid, defaulted).
 
-  The desk, auditors and admins read it over everything, and a sponsor over its own program. The page `/app/capital/economics` labels it a hypothesis: costs come from the pilot's assumed rate card and the demo data is simulated.
+  The desk, auditors and admins read it over everything, and a sponsor over its own program. The page `/app/capital/economics` states what the model does and labels its two inputs that are not yet field data: the rate card is an assumption and the demo's records are simulated. The figures themselves are measured from the events each stage recorded.
 - **Proofs beside events.** `VerifyButton` opens a proof drawer (`components/proof`) with the event, model version, commitment, devnet transaction and a check on Solana. When the viewer may read the record, it is recomputed in the browser by the same `lib/verify.ts` the audit page uses.
 
 ## Capital pools and the allocation engine

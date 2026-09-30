@@ -1,9 +1,11 @@
 import { formatNumber, localized, tr } from "../i18n";
 import { platform } from "./platform";
 
-// Operating economics, as the database measures it (operating_economics): can
-// productive credit become cheaper to operate without becoming weaker credit?
-// The prototype measures; it does not claim the answer (refactor spec §2A).
+// Operating economics, as the database measures it (operating_economics): what
+// it costs to operate productive credit, and what may not be sacrificed to make
+// it cheaper (refactor spec §2A). Both halves of every pair are measured from
+// recorded events; what is not yet field data is the rate card that prices them,
+// and the screen says so there rather than doubting the model here.
 
 export type CostPhase = "preparation" | "origination" | "servicing";
 /** Who pays. Three businesses meet on this platform and only one of them is us. */
