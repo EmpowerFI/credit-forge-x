@@ -11,8 +11,8 @@ import StatusPill from "../../components/product/StatusPill";
 import VerifyOnSolana from "../../components/product/VerifyOnSolana";
 import { type PoolId, poolOf, prototypeNotice } from "../../lib/capital";
 import { DECISION_LABEL, ELIGIBILITY_REASON, percent } from "../../lib/credit";
-import { FUNDING_LABEL, type MarketRow, PROOF_LABEL, type Proof, reaisFromUsdc, RISK, title } from "../../lib/investor";
-import { money } from "../../lib/readiness";
+import { FUNDING_LABEL, type MarketRow, PROOF_LABEL, type Proof, RISK } from "../../lib/investor";
+import { type CreditPurpose, money, PURPOSE_LABEL, sectorLabel } from "../../lib/readiness";
 import { reaisRate } from "../../lib/settlement";
 import { usdc } from "../../lib/solana";
 import Lifecycle, { type LifecycleStage, type StageState } from "./Lifecycle";
@@ -89,37 +89,28 @@ function Field({ label, children, kind }: { label: string; children: React.React
   );
 }
 
-/** What this pool asks, less expected loss. Its own component so the panel can
- *  sit first in the document and still be the aside at two columns. */
-function ExpectedReturn({ row, pool, grade }: { row: MarketRow; pool: PoolId | null; grade: string }) {
+/** One figure of the band that decides: label, number, and a hint or a hairline. */
+function Cell({ label, value, hint, bar, first }: {
+  label: string; value: React.ReactNode; hint?: string; bar?: number | null; first?: boolean;
+}) {
   return (
-    <>
-<p className="num font-heading text-3xl font-bold text-foreground">
-            {percent(row.indicative_yield_bps)} <span className="text-sm font-normal text-muted-foreground">{tr({ en: "a year", pt: "ao ano" })}</span>
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {pool === "global"
-              ? tr({
-                en: `What global investors ask for this pool, less expected loss for band ${grade}. Global investors also carry the currency effect the hedge assumes away.`,
-                pt: `O que os investidores globais exigem neste pool, menos a perda esperada da faixa ${grade}. Os investidores globais também assumem o efeito cambial que o hedge deixa de fora.`,
-              })
-              : tr({
-                en: `What domestic investors ask for this pool, less expected loss for band ${grade}.`,
-                pt: `O que os investidores domésticos exigem neste pool, menos a perda esperada da faixa ${grade}.`,
-              })}
-            {row.my_micro_usdc > 0 && tr({
-              en: <> You hold {usdc(row.my_micro_usdc)} ({money(reaisFromUsdc(row.my_micro_usdc, row.fx_brl_per_usdc_milli))}).</>,
-              pt: <> Você tem {usdc(row.my_micro_usdc)} ({money(reaisFromUsdc(row.my_micro_usdc, row.fx_brl_per_usdc_milli))}).</>,
-            })}
-          </p>
-    </>
+    <div className={`space-y-1 py-3 ${first ? "lg:pr-4" : "lg:px-4"}`}>
+      <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
+      <dd className="num font-heading text-2xl font-bold leading-none text-foreground">{value}</dd>
+      {hint && <p className="num text-xs text-muted-foreground">{hint}</p>}
+      {bar !== undefined && bar !== null && (
+        <div className="h-0.5 bg-border" role="presentation">
+          <div className="h-0.5 bg-accent transition-[width] duration-700 motion-reduce:transition-none" style={{ width: `${Math.min(100, bar)}%` }} />
+        </div>
+      )}
+    </div>
   );
 }
 
 /** The proofs, and the model versions that produced them. */
-function Evidence({ row, proofs }: { row: MarketRow; proofs: Proof[] }) {
+function Evidence({ row, proofs, numeral }: { row: MarketRow; proofs: Proof[]; numeral?: string }) {
   return (
-      <Panel title={tr({ en: "Verifiable evidence", pt: "Evidências verificáveis" })}
+      <Panel numeral={numeral} title={tr({ en: "Verifiable evidence", pt: "Evidências verificáveis" })}
         description={tr({
           en: "Each assessment's commitment is on Solana; the record behind it stays private.",
           pt: "O hash de cada avaliação está na Solana; o registro por trás dele fica privado.",
@@ -212,22 +203,27 @@ export default function OpportunityDetail() {
       </Link>
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="space-y-6 xl:col-start-2 xl:row-start-1">
+        {/* Only the decision. It follows the reader down the argument rather
+            than scrolling away from it, and the two panels that used to sit
+            under it are now a figure in the header and a movement of the page. */}
+        <div className="xl:col-start-2 xl:row-start-1 xl:sticky xl:top-6 xl:self-start">
           {pool === "domestic" ? <FundedElsewhere hasPosition={row.my_micro_usdc > 0} /> : <InvestPanel row={row} />}
-          <Panel title={tr({ en: "Expected return · simulated", pt: "Retorno esperado · simulado" })}>
-            <ExpectedReturn row={row} pool={pool} grade={risk.grade} />
-          </Panel>
-          <Evidence row={row} proofs={proofs} />
         </div>
 
-        <div className="space-y-6 xl:col-start-1 xl:row-start-1">
-          <section className="panel space-y-6 p-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="space-y-1">
-                <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">{title(row.purpose, row.business_sector)}</h1>
-                <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-                  <span className="font-mono">{row.code}</span> ·
-                  <span className="inline-flex items-center gap-1"><MapPin size={13} /> {row.community_name} ({row.community_city}, {row.community_state})</span>
+        <div className="min-w-0 xl:col-start-1 xl:row-start-1">
+          <header className="space-y-4 border-b border-border pb-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="min-w-0 space-y-1">
+                <p className="num text-xs font-medium uppercase tracking-widest text-accent">
+                  {row.business_sector ? `${sectorLabel(row.business_sector)} · ` : ""}{row.code}
+                </p>
+                <h1 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">{PURPOSE_LABEL[row.purpose as CreditPurpose]}</h1>
+                <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground">
+                  <MapPin size={13} aria-hidden />
+                  {tr({
+                    en: `A woman-led business in ${row.community_city}, ${row.community_state}`,
+                    pt: `Um negócio liderado por mulher em ${row.community_city}, ${row.community_state}`,
+                  })}
                   <BadgeCheck size={14} className="text-positive" aria-label={tr({ en: "verified community", pt: "comunidade verificada" })} />
                 </p>
               </div>
@@ -237,53 +233,43 @@ export default function OpportunityDetail() {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <div>
-                <p className="text-xs text-muted-foreground">{tr({ en: "Requested", pt: "Pedido" })}</p>
-                <p className="num font-heading text-xl font-bold text-primary">{money(row.amount_cents)}</p>
-                <p className="num text-xs text-muted-foreground">
-                  {pool === "global"
-                    ? tr({
-                      en: `${usdc(row.funding_target_micro_usdc, 0)} at ${reaisRate(row.fx_brl_per_usdc_milli ?? 0, 3)}/USDC, simulated quote`,
-                      pt: `${usdc(row.funding_target_micro_usdc, 0)} a ${reaisRate(row.fx_brl_per_usdc_milli ?? 0, 3)}/USDC, cotação simulada`,
-                    })
-                    : tr({ en: "in reais, funded by Brazilian capital", pt: "em reais, financiada por capital brasileiro" })}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{tr({ en: "Term", pt: "Prazo" })}</p>
-                <p className="num font-heading text-xl font-bold text-foreground">{tr({ en: `${row.term_months} months`, pt: `${row.term_months} meses` })}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{tr({ en: "Risk band", pt: "Faixa de risco" })}</p>
-                <p className={`font-heading text-xl font-bold text-${risk.tone}`}>{risk.grade}</p>
-                <p className="text-xs text-muted-foreground">{tr({ en: `${LEVEL[row.confidence]} confidence`, pt: `confiança ${LEVEL[row.confidence]}` })}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{tr({ en: "Readiness", pt: "Prontidão" })}</p>
-                <p className="num font-heading text-xl font-bold text-info">{row.readiness_score ?? "—"}<span className="text-sm">/100</span></p>
-                <p className="text-xs text-muted-foreground">{tr({ en: "band", pt: "faixa" })} {row.readiness_band ? LEVEL[row.readiness_band] : ""}</p>
-              </div>
-            </div>
+            {/* The five figures that decide, in one band. Expected return was a
+                panel of its own in the aside, where it sat below the fold. */}
+            <dl className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] divide-x divide-border">
+              <Cell label={tr({ en: "Requested", pt: "Pedido" })} value={money(row.amount_cents)} first
+                hint={pool === "global"
+                  ? tr({
+                    en: `≈ ${usdc(row.funding_target_micro_usdc, 0)} at ${reaisRate(row.fx_brl_per_usdc_milli ?? 0, 3)}/USDC, simulated`,
+                    pt: `≈ ${usdc(row.funding_target_micro_usdc, 0)} a ${reaisRate(row.fx_brl_per_usdc_milli ?? 0, 3)}/USDC, simulada`,
+                  })
+                  : tr({ en: "in reais, from Brazilian capital", pt: "em reais, de capital brasileiro" })} />
+              <Cell label={tr({ en: "Expected return", pt: "Retorno esperado" })}
+                value={<span className="text-accent">{percent(row.indicative_yield_bps)} <span className="text-base font-medium">{tr({ en: "a year", pt: "ao ano" })}</span></span>}
+                hint={tr({ en: "Simulated, net of expected loss", pt: "Simulado, após perda esperada" })} />
+              <Cell label={tr({ en: "Term", pt: "Prazo" })}
+                value={<>{row.term_months} <span className="text-base font-medium">{tr({ en: "months", pt: "meses" })}</span></>}
+                hint={tr({ en: "Monthly instalments in reais", pt: "Parcelas mensais em reais" })} />
+              <Cell label={tr({ en: "Risk band", pt: "Faixa de risco" })} value={risk.grade}
+                hint={tr({ en: `${LEVEL[row.confidence]} confidence`, pt: `Confiança ${LEVEL[row.confidence]}` })} />
+              <Cell label={tr({ en: "Readiness", pt: "Prontidão" })}
+                value={<>{row.readiness_score ?? "—"}<span className="text-base font-medium text-muted-foreground">/100</span></>}
+                bar={row.readiness_score} />
+            </dl>
 
             <FundingBar funded={row.funded_micro_usdc} target={row.funding_target_micro_usdc} investors={row.investors}
               pool={pool} fxMilli={row.fx_brl_per_usdc_milli} amountCents={row.amount_cents} />
+          </header>
 
-            <div className="space-y-2 border-t border-border pt-5">
-              <h2 className="font-heading text-base font-bold text-foreground">{tr({ en: "Productive purpose", pt: "Finalidade produtiva" })}</h2>
-              <p className="text-sm text-muted-foreground">{WHY[row.purpose]}</p>
-              <p className="text-xs text-muted-foreground">
-                <DataTag kind="private" />{" "}
-                {tr({ en: "Her own description of the need stays with her and her community.", pt: "A descrição da necessidade, nas palavras dela, fica com ela e com a comunidade." })}
-              </p>
-            </div>
+          <Panel numeral="I" title={tr({ en: "Productive purpose", pt: "Finalidade produtiva" })}>
+            <p className="max-w-prose font-heading text-lg italic leading-snug text-foreground">{WHY[row.purpose]}</p>
+            <p className="text-xs text-muted-foreground">
+              <DataTag kind="private" />{" "}
+              {tr({ en: "Her own description of the need stays with her and her community.", pt: "A descrição da necessidade, nas palavras dela, fica com ela e com a comunidade." })}
+            </p>
+          </Panel>
 
-            <details className="space-y-2 border-t border-border pt-5 [&[open]>summary>svg]:rotate-90">
-              <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-heading text-base font-bold text-foreground hover:text-accent">
-                <ChevronRight size={15} className="transition-transform text-accent" aria-hidden />
-                {tr({ en: "How it was underwritten", pt: "Como a análise foi feita" })}
-              </summary>
-              <div className="pt-2">
+          <Panel numeral="II" folded title={tr({ en: "How it was underwritten", pt: "Como a análise foi feita" })}>
+              <div>
                 <Field label={tr({ en: "Data quality", pt: "Qualidade dos dados" })} kind="derived">
                   {row.records_kept_bps !== null
                     ? tr({ en: `${percent(row.records_kept_bps)} of months with records`, pt: `${percent(row.records_kept_bps)} dos meses com registros` })
@@ -310,17 +296,18 @@ export default function OpportunityDetail() {
                   ))}
                 </ul>
               )}
-            </details>
-          </section>
+          </Panel>
 
-          <FundingRoute row={row} />
+          <FundingRoute row={row} numeral="III" />
 
           {pool === "global" && (
-            <Lifecycle folded principalCents={row.amount_cents} instalmentCents={row.instalment_cents} termMonths={row.term_months}
+            <Lifecycle folded numeral="IV" principalCents={row.amount_cents} instalmentCents={row.instalment_cents} termMonths={row.term_months}
               fxMilli={row.fx_brl_per_usdc_milli} stages={stages} />
           )}
 
-          <PrivacyBoundaries folded>
+          <Evidence row={row} proofs={proofs} numeral={pool === "global" ? "V" : "IV"} />
+
+          <PrivacyBoundaries numeral={pool === "global" ? "VI" : "V"}>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-4 text-sm">
               <ShieldCheck size={16} className="text-positive" aria-hidden />
               <span className="text-foreground">{tr({ en: "Shown here because she allowed it.", pt: "Exibida aqui porque ela autorizou." })}</span>

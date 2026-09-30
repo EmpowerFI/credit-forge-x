@@ -87,19 +87,20 @@ console.log(`\n=== ${href} (of ${cards} listed)`);
 for (const probe of PT ? ["Investir", "Global / USDC"] : ["Invest", "Global / USDC"]) {
   console.log(`${detail.includes(probe) ? "ok  " : "MISS"} ${probe}`);
 }
-// What her dollars become, said before she sends them: the crossing, priced and
+// What her dollars become, said before they are sent: the crossing, priced and
 // scaled to the amount in the box. An investor who reads "Invest" over a dollar
 // figure and finds out about reais on another screen was told the claim rather
-// than shown it.
+// than shown it. Said in two lines now, not a three-step chain: the reais that
+// reach her, and which of the two routes was priced cheapest today.
 for (const probe of PT
-  ? ["da sua carteira", "no fundo de crédito local", "USDC", "R$", "a rota é decidida de novo quando a mesa desembolsa"]
-  : ["from your wallet", "into the local credit fund", "USDC", "R$", "the route is decided again when the desk disburses"]) {
+  ? ["Ela recebe", "Rota", "USDC", "R$", "decidida de novo quando a mesa desembolsa"]
+  : ["She receives", "Route", "USDC", "R$", "ecided again when the desk disburses"]) {
   console.log(`${detail.toLowerCase().includes(probe.toLowerCase()) ? "ok  " : "MISS"} ${probe}`);
 }
-// The chain as it reads, so a figure that is wrong is visible and not merely present.
+// The block as it reads, so a figure that is wrong is visible and not merely present.
 const chain = detail.split("\n").map((l) => l.trim()).filter(Boolean);
-const at = chain.findIndex((l) => l.includes(PT ? "da sua carteira" : "from your wallet"));
-console.log("--- where it lands\n" + (at < 0 ? "not rendered" : chain.slice(at - 1, at + 5).join("\n")));
+const at = chain.findIndex((l) => l.toLowerCase().includes(PT ? "ela recebe" : "she receives"));
+console.log("--- what she receives\n" + (at < 0 ? "not rendered" : chain.slice(at, at + 5).join("\n")));
 
 // The detail page names both pools on purpose: the engine's comparison is why
 // a dollar is needed here at all, and that is an explanation, not an offer.
