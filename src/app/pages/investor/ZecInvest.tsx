@@ -8,9 +8,11 @@ import { Label } from "@/components/ui/label";
 import QrCode from "../../components/QrCode";
 import ExplorerLink from "../../components/product/ExplorerLink";
 import ZcashTx from "../../components/product/ZcashTx";
+import { CrossingIn } from "../../components/product/Crossing";
 import StatusPill from "../../components/product/StatusPill";
 import { describeError } from "../../lib/errors";
 import type { MarketRow } from "../../lib/investor";
+import { whySolanaIsOneWay } from "../../lib/oneClick";
 import { usdc } from "../../lib/solana";
 import {
   checkZcashNow, createZcashRequest, fetchZcashRequest, isShieldedTestAddress, LIVE, paymentUri, POOL_LABEL, setReturnAddress,
@@ -200,7 +202,7 @@ export default function ZecInvest({ row, micro, problem, requestId, onRequest }:
               })}
           </p>
         </div>
-        <Button className="h-11 w-full text-base font-semibold" disabled={Boolean(problem) || creating || !returnOk} onClick={create}>
+        <Button className="h-auto min-h-11 w-full gap-2 whitespace-normal py-2.5 text-base font-semibold" disabled={Boolean(problem) || creating || !returnOk} onClick={create}>
           {creating ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />} {tr({ en: "Get a shielded payment request", pt: "Gerar um pedido de pagamento blindado" })}
         </Button>
         {error && <p className="text-xs text-alert">{error}</p>}
@@ -208,6 +210,20 @@ export default function ZecInvest({ row, micro, problem, requestId, onRequest }:
           {tr({
             en: "Pay from any Zcash wallet. The amount, the memo and who paid stay shielded on Zcash: only EmpowerFI's treasury key, and the auditor it is disclosed to, can read them. No Solana wallet needed.",
             pt: "Pague de qualquer carteira Zcash. O valor, o memo e quem pagou ficam blindados na Zcash: só a chave da tesouraria da EmpowerFI, e o auditor a quem ela é revelada, podem lê-los. Não precisa de carteira Solana.",
+          })}
+        </p>
+
+        {/* For an investor who holds dollars rather than ZEC: what the crossing
+            costs, said by the network that would make it. The panel prices the
+            route and swaps nothing — and what lands from a swap lands in the
+            open, which is why the shielding is a step of ours and not a step
+            the market sells. */}
+        <CrossingIn microUsdc={micro} />
+        <p className="text-xs text-muted-foreground">
+          {whySolanaIsOneWay()}{" "}
+          {tr({
+            en: "A swap lands ZEC transparent: this treasury shields it on arrival, and that is the part an explorer can never read.",
+            pt: "Um swap aterra ZEC transparente: esta tesouraria blinda na chegada, e é essa parte que um explorador nunca consegue ler.",
           })}
         </p>
       </div>
