@@ -36,6 +36,7 @@ flowchart LR
   SOL[(Solana devnet<br/>empowerfi_audit + vault)]
   ZEC[(Zcash testnet<br/>shielded treasury)]
   MG[MoneyGram Ramps<br/>sandbox]
+  OC[NEAR Intents 1Click]
 
   UI -- session --> RPC --> PG
   UI -- session --> RE & EE
@@ -55,6 +56,7 @@ flowchart LR
   VS -- releases, payouts, refunds --> SOL
   ZW -- viewing key, read only --> ZEC
   RQ -- quote --> MG
+  UI -- dry quote, no key --> OC
 ```
 
 ## The funnel spine
@@ -170,6 +172,7 @@ Editing the record in the database turns the verdict to MISMATCH. The page also 
 
 - **A global investment.** The investor signs in with a Solana wallet (Sign-In with Solana, through Supabase Auth) — from the login page or, without leaving it, from the opportunity she is reading, since the wallet sign-in replaces the demo session in place — and sends test USDC to the program's vault with a plain token transfer. `investment-confirm` reads the transaction from devnet, checks the amount, the vault and the sender, and records the allocation, which is queued as an `AllocationCommitment`.
 - **With shielded ZEC.** `zcash-request` answers with a ZIP 321 payment request to EmpowerFI's shielded treasury on Zcash testnet, with a random memo reference. `zcash-watch` scans new blocks every minute with the treasury's viewing key (`services/zcash-watcher`, Rust compiled to WebAssembly) and, once a payment confirms, credits the vault with USDC for that allocation.
+- **The crossing, priced.** What the ZEC leg is worth in either direction is quoted live by NEAR Intents' 1Click API from the browser (`src/app/lib/oneClick.ts`, `Crossing.tsx`) — the amount out, the floor the route commits to, and its time estimate. Every call is a dry quote: it returns no deposit address, so nothing here can move funds, and it needs no key, so a reader with no account sees the same prices. Three facts about that network are load-bearing enough to live in the file's header, because each one settled a design question. It has no testnet, so the price is mainnet and the movement beside it is this platform's own on Zcash testnet and Solana devnet, and each panel says which is which. A shielded recipient is refused — `u1…` answers `recipient is not valid`, only transparent `t1…` is accepted — so a swap lands ZEC in the open and the shielding is this treasury's step, which is why the shielding is the part worth having. And Solana is the one origin the network does not route into ZEC, while Ethereum, Base and Arbitrum USDC do, so the way in is from those three and the way out is to Solana. `scripts/verify-crossing.mts` asks all four directions before it reads a screen: the claim is a fact about their network, not about this code, and if it changes the screens need rewriting rather than patching.
 - **A domestic allocation.** `allocate_domestic` records a simulated position in reais; nothing moves on chain but its proof.
 - **Settlement.** When the desk disburses, the database creates settlement legs; `vault-settle` sends the real ones (the release of global capital to the off-ramp's account, then each instalment's shares paid out to investors) and marks the rest as simulated: the conversion to reais at the demo quote, and Pix both ways. `ramp-quote` asks MoneyGram Ramps' sandbox what a USDC cash-out to Brazil would cost, to show beside the simulated conversion. On a global loan, the same moment prices both ways of turning the dollars into reais and records which one paid her: [Settlement routing](#settlement-routing).
 - **Refunds.** If the desk declines a funded opportunity, or she withdraws consent before disbursement, `vault-refund` returns each wallet investor's USDC from the vault.
@@ -210,7 +213,7 @@ Everything priced in reais used to be priced at a fixed R$ 5.40, which made one 
 
 ## Stories, sponsors and mandates
 
-The app tells one loop in three stories (refactor specification, 16 Sep), numbered in the bar at the top of every page: **Impact Intelligence** (`/app/impact`), the **Credit & Capital Engine** (`/app/capital`) and the **Investor Console** (`/app/investor`). Operations sit beside them: the entrepreneur's journey, community operations, the P2P desk, admin and the audit console. `src/app/lib/stories.ts` maps each area to its routes, roles and demo persona; a demo account opens an area its role cannot by signing in as that persona, and drops everything the previous account had loaded.
+The app tells one loop in two stories, numbered in the bar at the top of every page: **Impact Intelligence** (`/app/impact`) and the **Investor Console** (`/app/investor`). The **Credit & Capital Engine** (`/app/capital`) was a third until the engine stopped being a destination: `private.open_for_funding()` already runs the allocation engine in the database when an opportunity opens, so a page offering to run it first was a rehearsal of a decision already taken. Its area carries `hidden: true` in `stories.ts` — the routes still resolve, and every link into it comes from the money it decided: a sponsor drilling into a code, an opportunity, or a position. Operations sit beside them: the entrepreneur's journey, community operations, the P2P desk, admin and the audit console. `src/app/lib/stories.ts` maps each area to its routes, roles and demo persona; a demo account opens an area its role cannot by signing in as that persona, and drops everything the previous account had loaded.
 
 - **Sponsors and programs.** `sponsors`, `programs` (period, funding committed and deployed) and `program_communities`; a `sponsor` role acts for one sponsor. `impact_intelligence(program)` reads the program over its communities from the same per-member state the community workspace reads (`private.community_state`):
   - hero figures and a cumulative funnel from sponsored to performing;
@@ -303,10 +306,10 @@ The first-cycle facts are recorded through the live functions and then dated to 
 
 | Suite | Count | Covers |
 |---|---|---|
-| pgTAP (`platform/supabase/tests`) | 506 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement and its route comparator, Zcash, cost to serve, outcomes, Impact Intelligence (sponsor scope, small groups hidden, consent, no private keys), mandates, operating economics (who reads it, program scope, no private keys), and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
+| pgTAP (`platform/supabase/tests`) | 930 | RLS and RPC rules per role, the thesis, the pipeline and reconciliation queue, consent, investing, the allocation engine and its vectors, formalisation, settlement and its route comparator, Zcash, cost to serve, outcomes, Impact Intelligence (sponsor scope, small groups hidden, consent, no private keys), mandates, operating economics (who reads it, program scope, no private keys), and structural rules checked from the catalog. Runs locally and against the remote in a rolled-back transaction. |
 | LiteSVM (`programs/empowerfi-audit/tests`) | 28 | every instruction's rules and state machine |
-| Vitest | 176 | engines, the allocation engine's vectors and per-check trace, the settlement route comparator's vectors, the engine page's run plan and demo cases, investor mandates, the five views and their tools against RBAC, commitments, the IDL privacy review, settlement and ramp helpers, languages, UI helpers |
-| Deno | 49 | the vendored engines and commitments against the same vectors, and the MoneyGram quote |
+| Vitest | 251 | engines, the allocation engine's vectors and per-check trace, the settlement route comparator's vectors, the engine page's run plan and demo cases, investor mandates, the five views and their tools against RBAC, commitments, the IDL privacy review, settlement and ramp helpers, the cross-chain crossing's quote vectors, languages, UI helpers |
+| Deno | 51 | the vendored engines and commitments against the same vectors, the ZIP 321 payment URI, and the MoneyGram quote |
 | Devnet scan (`scripts/platform/scan-chain-pii.mts`) | every account | reviewed types only, and none of the database's names, e-mails or amounts |
 
 ## Repository map

@@ -161,6 +161,13 @@ Never committed. The operator key is the one in `~/empowerfi-hackathon-keys/`.
 Write secret values into a temporary file with mode 600 and pass it with
 `--env-file` / `db query -f`, so they never appear on a command line.
 
+**Nothing to set for the crossing.** The ZEC leg's live prices come from NEAR
+Intents' 1Click API, called from the browser with dry quotes — no key, no
+function, no secret, and no deposit address in the reply, so there is nothing
+here that could move funds. If you are looking for a key because a crossing
+panel says the price could not be read, there is none to find: the network was
+unreachable, and every other screen carries on without it.
+
 ## Anchoring locally
 
 The local edge runtime (Deno 2.1-compatible) times out booting this function
