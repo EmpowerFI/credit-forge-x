@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, BadgeCheck, ChevronRight, Loader2, MapPin, ShieldCheck } from "lucide-react";
 import { localized, tr } from "../../i18n";
@@ -9,6 +10,8 @@ import PoolPill from "../../components/product/PoolPill";
 import PrivacyBoundaries from "../../components/product/PrivacyBoundaries";
 import StatusPill from "../../components/product/StatusPill";
 import VerifyOnSolana from "../../components/product/VerifyOnSolana";
+import { RailTick } from "../../components/product/MoneyRail";
+import { railStep, type RailState, useRailReveal } from "../../lib/moneyRail";
 import { type PoolId, poolOf, prototypeNotice } from "../../lib/capital";
 import { DECISION_LABEL, ELIGIBILITY_REASON, percent } from "../../lib/credit";
 import { FUNDING_LABEL, type MarketRow, PROOF_LABEL, type Proof, RISK } from "../../lib/investor";
@@ -80,10 +83,12 @@ function FundedElsewhere({ hasPosition }: { hasPosition: boolean }) {
   );
 }
 
-function Field({ label, children, kind }: { label: string; children: React.ReactNode; kind: "derived" | "proven" | "private" }) {
+function Field({ label, children, kind, state = "settled" }: {
+  label: string; children: React.ReactNode; kind: "derived" | "proven" | "private"; state?: RailState;
+}) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border/60 py-2.5 text-sm last:border-0">
-      <span className="flex items-center gap-2 text-muted-foreground"><DataTag kind={kind} /> {label}</span>
+    <div className={`flex items-center justify-between gap-4 border-b border-border/60 py-2.5 text-sm last:border-0 ${railStep(state)}`}>
+      <span className="flex items-center gap-2 text-muted-foreground"><RailTick state={state} /><DataTag kind={kind} /> {label}</span>
       <span className="num text-right font-medium text-foreground">{children}</span>
     </div>
   );
@@ -107,10 +112,64 @@ function Cell({ label, value, hint, bar, first }: {
   );
 }
 
-/** The proofs, and the model versions that produced them. */
+/**
+ * How the request was judged, shown being judged. These are the credit engine's
+ * own checks, and opening the fold is the button its page has: the run passes
+ * down them in the order they were asked, so what a reader gets for opening is
+ * not a table but the assembly of a verdict.
+ */
+function Underwriting({ row, numeral }: { row: MarketRow; numeral?: string }) {
+  const decision = DECISION_LABEL[row.eligibility_decision];
+  const exceptions = row.eligibility_reasons.filter((r) => !["AFFORDABLE"].includes(r));
+  const checks: { label: string; kind: "derived" | "proven"; value: React.ReactNode }[] = [
+    { label: tr({ en: "Data quality", pt: "Qualidade dos dados" }), kind: "derived",
+      value: row.records_kept_bps !== null
+        ? tr({ en: `${percent(row.records_kept_bps)} of months with records`, pt: `${percent(row.records_kept_bps)} dos meses com registros` })
+        : "\u2014" },
+    { label: tr({ en: "Affordability", pt: "Capacidade de pagamento" }), kind: "derived",
+      value: tr({ en: `${percent(row.affordability_bps)} of the monthly result`, pt: `${percent(row.affordability_bps)} do resultado mensal` }) },
+    { label: tr({ en: "Check-in regularity", pt: "Regularidade dos check-ins" }), kind: "derived",
+      value: tr({ en: `${row.months_reported ?? 0}/6 months reported`, pt: `${row.months_reported ?? 0}/6 meses informados` }) },
+    { label: tr({ en: "Instalment, sized at eligibility", pt: "Parcela, calculada na elegibilidade" }), kind: "derived",
+      value: <>{row.term_months} × {money(row.instalment_cents)}</> },
+    { label: tr({ en: "Manual exceptions", pt: "Exceções manuais" }), kind: "derived",
+      value: exceptions.length === 0 ? tr({ en: "None", pt: "Nenhuma" }) : exceptions.length },
+    { label: tr({ en: "EmpowerFI assessment", pt: "Avaliação da EmpowerFI" }), kind: "proven",
+      value: <span className={`rounded-full border px-2 py-0.5 text-xs ${decision.tone}`}>{decision.title}</span> },
+  ];
+  const [open, setOpen] = useState(false);
+  const rail = useRailReveal<HTMLDivElement>(checks.length, { stepMs: 380, armed: open });
+
+  return (
+    <Panel numeral={numeral} folded onOpenChange={setOpen} title={tr({ en: "How it was underwritten", pt: "Como a análise foi feita" })}
+      description={tr({
+        en: `${decision.title} — her instalment is ${percent(row.affordability_bps)} of the monthly result.`,
+        pt: `${decision.title} — a parcela dela é ${percent(row.affordability_bps)} do resultado mensal.`,
+      })}>
+      <div ref={rail.ref}>
+        {checks.map((c, i) => (
+          <Field key={c.label} label={c.label} kind={c.kind} state={rail.state(i)}>{c.value}</Field>
+        ))}
+      </div>
+      {exceptions.length > 0 && (
+        <ul className="flex flex-wrap gap-2 pt-1">
+          {exceptions.map((r) => (
+            <li key={r} className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">{ELIGIBILITY_REASON[r] ?? r}</li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  );
+}
+
+/**
+ * The proofs, and the model versions that produced them. Folded, but with no
+ * run: these rows were written when the work was done, and a sequence filling
+ * in over them would claim they were being worked out while the reader watched.
+ */
 function Evidence({ row, proofs, numeral }: { row: MarketRow; proofs: Proof[]; numeral?: string }) {
   return (
-      <Panel numeral={numeral} title={tr({ en: "Verifiable evidence", pt: "Evidências verificáveis" })}
+      <Panel numeral={numeral} folded title={tr({ en: "Verifiable evidence", pt: "Evidências verificáveis" })}
         description={tr({
           en: "Each assessment's commitment is on Solana; the record behind it stays private.",
           pt: "O hash de cada avaliação está na Solana; o registro por trás dele fica privado.",
@@ -154,9 +213,7 @@ export default function OpportunityDetail() {
     );
   }
   const risk = RISK[row.risk_band];
-  const decision = DECISION_LABEL[row.eligibility_decision];
   const proofs = (row.proofs as unknown as Proof[]) ?? [];
-  const exceptions = row.eligibility_reasons.filter((r) => !["AFFORDABLE"].includes(r));
   const consent = proofs.find((p) => p.kind === "consent");
   const pool = poolOf(row.funding_pool);
   // What this opportunity's money will do, before any of it has happened: the
@@ -262,43 +319,11 @@ export default function OpportunityDetail() {
 
           <Panel numeral="I" title={tr({ en: "Productive purpose", pt: "Finalidade produtiva" })}>
             <p className="max-w-prose font-heading text-lg italic leading-snug text-foreground">{WHY[row.purpose]}</p>
-            <p className="text-xs text-muted-foreground">
-              <DataTag kind="private" />{" "}
-              {tr({ en: "Her own description of the need stays with her and her community.", pt: "A descrição da necessidade, nas palavras dela, fica com ela e com a comunidade." })}
-            </p>
           </Panel>
 
-          <Panel numeral="II" folded title={tr({ en: "How it was underwritten", pt: "Como a análise foi feita" })}>
-              <div>
-                <Field label={tr({ en: "Data quality", pt: "Qualidade dos dados" })} kind="derived">
-                  {row.records_kept_bps !== null
-                    ? tr({ en: `${percent(row.records_kept_bps)} of months with records`, pt: `${percent(row.records_kept_bps)} dos meses com registros` })
-                    : "—"}
-                </Field>
-                <Field label={tr({ en: "Affordability", pt: "Capacidade de pagamento" })} kind="derived">
-                  {tr({ en: `${percent(row.affordability_bps)} of the monthly result`, pt: `${percent(row.affordability_bps)} do resultado mensal` })}
-                </Field>
-                <Field label={tr({ en: "Check-in regularity", pt: "Regularidade dos check-ins" })} kind="derived">
-                  {tr({ en: `${row.months_reported ?? 0}/6 months reported`, pt: `${row.months_reported ?? 0}/6 meses informados` })}
-                </Field>
-                <Field label={tr({ en: "EmpowerFI assessment", pt: "Avaliação da EmpowerFI" })} kind="proven">
-                  <span className={`rounded-full border px-2 py-0.5 text-xs ${decision.tone}`}>{decision.title}</span>
-                </Field>
-                <Field label={tr({ en: "Manual exceptions", pt: "Exceções manuais" })} kind="derived">
-                  {exceptions.length === 0 ? tr({ en: "None", pt: "Nenhuma" }) : exceptions.length}
-                </Field>
-                <Field label={tr({ en: "Instalment, sized at eligibility", pt: "Parcela, calculada na elegibilidade" })} kind="derived">{row.term_months} × {money(row.instalment_cents)}</Field>
-              </div>
-              {exceptions.length > 0 && (
-                <ul className="flex flex-wrap gap-2 pt-1">
-                  {exceptions.map((r) => (
-                    <li key={r} className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">{ELIGIBILITY_REASON[r] ?? r}</li>
-                  ))}
-                </ul>
-              )}
-          </Panel>
+          <Underwriting row={row} numeral="II" />
 
-          <FundingRoute row={row} numeral="III" />
+          <FundingRoute row={row} numeral="III" folded />
 
           {pool === "global" && (
             <Lifecycle folded numeral="IV" principalCents={row.amount_cents} instalmentCents={row.instalment_cents} termMonths={row.term_months}
@@ -310,11 +335,11 @@ export default function OpportunityDetail() {
           <PrivacyBoundaries numeral={pool === "global" ? "VI" : "V"}>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-4 text-sm">
               <ShieldCheck size={16} className="text-positive" aria-hidden />
-              <span className="text-foreground">{tr({ en: "Shown here because she allowed it.", pt: "Exibida aqui porque ela autorizou." })}</span>
+              <span className="text-foreground">{tr({ en: "Shown because she allowed it.", pt: "Exibida porque ela autorizou." })}</span>
               <span className="text-muted-foreground">
                 {tr({
-                  en: "If she withdraws that, it leaves the market and investors are refunded from the vault, unless the loan has been paid out.",
-                  pt: "Se ela retirar a autorização, a oportunidade sai do mercado e os investidores são reembolsados pelo cofre, a menos que o empréstimo já tenha sido desembolsado.",
+                  en: "Withdraw that and it leaves the market, investors refunded from the vault.",
+                  pt: "Se ela retirar, a oportunidade sai do mercado e os investidores são reembolsados pelo cofre.",
                 })}
               </span>
               {consent?.signature && <ExplorerLink tx={consent.signature} label={tr({ en: "Her consent, on Solana", pt: "O consentimento dela, na Solana" })} />}
@@ -331,8 +356,8 @@ export default function OpportunityDetail() {
               {tr({ en: "Why this opportunity exists", pt: "Por que esta oportunidade existe" })}
             </Link>{" "}
             {tr({
-              en: "— the engines that judged this request, which Brazilian routes could not take it, and what was left for capital from abroad.",
-              pt: "— os motores que avaliaram este pedido, quais rotas brasileiras não puderam atendê-lo, e o que sobrou para o capital de fora.",
+              en: "— the engines that judged it, and what Brazilian capital could not take.",
+              pt: "— os motores que a avaliaram, e o que o capital brasileiro não pôde atender.",
             })}
           </p>
         </div>

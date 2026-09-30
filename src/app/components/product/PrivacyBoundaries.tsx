@@ -9,8 +9,8 @@ export default function PrivacyBoundaries({ children, folded, numeral }: {
   return (
     <Panel folded={folded} numeral={numeral} title={tr({ en: "Privacy boundaries", pt: "Limites de privacidade" })}
       description={tr({
-        en: "Investors get the decision snapshot and cryptographic evidence — never identity, bank data or the financial history behind it.",
-        pt: "Investidores recebem o retrato da decisão e evidências criptográficas — nunca a identidade, os dados bancários ou o histórico financeiro por trás dela.",
+        en: "Investors get the decision and its proof — never her identity, bank data or financial history.",
+        pt: "Investidores recebem a decisão e a prova dela — nunca a identidade, os dados bancários ou o histórico financeiro.",
       })}>
       {children}
     </Panel>

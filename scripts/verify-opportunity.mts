@@ -55,26 +55,32 @@ for (const href of links.slice(0, 4)) {
     + (caution.length ? ` · caution ${JSON.stringify(caution.slice(0, 2))}` : ""));
 }
 
-// The route animates: count the visible legs just after load, then after it runs.
-// The panel's own list, identified by its first leg rather than by a container:
-// the lifecycle also names a Pix to her business.
-const firstLeg = PT ? /USDC de teste dos investidores/ : /Investors' test USDC/;
-const route = page.locator("main ol").filter({ hasText: firstLeg }).first();
-if (await route.count()) {
-  await page.reload({ waitUntil: "networkidle" });
-  await route.scrollIntoViewIfNeeded();
-  // Each leg's own box, not a descendant: opacity does not inherit, so a child
-  // of an invisible box still computes to 1 and a probe on one proves nothing.
-  const legs = () => route.locator("li > span:last-child").evaluateAll(
-    (els) => els.map((el) => Number(getComputedStyle(el).opacity).toFixed(2)).join(" "));
-  console.log(`route, as it comes into view: ${await legs()}`);
-  await settle(page, 900);
-  console.log(`route, part way:             ${await legs()}`);
-  await settle(page, 2600);
-  const done = await legs();
-  console.log(`route, settled:              ${done}`);
-  console.log(`${done.split(" ").every((o) => Number(o) > 0.9) ? "ok  " : "MISS"} every leg ends visible`);
-} else console.log("MISS no funding route on this opportunity");
+// The three folded movements run when they are opened, not when they are
+// scrolled past: a sequence inside a closed <details> has no box and cannot
+// intersect anything, so the fold is the button. Opening one should leave a
+// panel with things still dim, and a moment later nothing dim at all.
+await page.reload({ waitUntil: "networkidle" });
+await settle(page, 1500);
+const MOVEMENTS = PT
+  ? [/Como a análise foi feita/, /Rota de captação/, /Escrito em reais, financiado em dólares/]
+  : [/How it was underwritten/, /Funding route/, /Written in reais, funded in dollars/];
+for (const name of MOVEMENTS) {
+  const fold = page.locator("main details").filter({ has: page.locator("summary", { hasText: name }) }).first();
+  if (!(await fold.count())) { console.log(`--   ${name.source}: not on this opportunity`); continue; }
+  await fold.locator("summary").first().evaluate((el) => el.scrollIntoView({ block: "start" }));
+  // Anything the run has not reached yet, counted on the element that carries
+  // the class: opacity does not inherit, so a child of a dim box computes to 1.
+  const dim = () => fold.evaluate((el) => Array.from(el.querySelectorAll("*"))
+    .filter((n) => Number(getComputedStyle(n as HTMLElement).opacity) < 0.9).length);
+  await fold.locator("summary").first().click();
+  await settle(page, 120);
+  const opening = await dim();
+  await settle(page, 3600);
+  const rest = await dim();
+  console.log(`${opening > 0 && rest === 0 ? "ok  " : "MISS"} ${name.source}: ${opening} dim on opening \u2192 ${rest} once it has run`);
+  await fold.locator("summary").first().click();
+  await settle(page, 200);
+}
 
 const overflow = async () => page.evaluate(() => {
   const out: string[] = [];
@@ -103,7 +109,7 @@ const weight = await page.evaluate(() => {
   const shown = main.innerText.split(/\s+/).filter(Boolean).length;
   let hidden = 0;
   for (const d of Array.from(main.querySelectorAll("details:not([open])"))) {
-    hidden += (d as HTMLElement).innerText.split(/\s+/).filter(Boolean).length;
+    hidden += (d.textContent ?? "").split(/\s+/).filter(Boolean).length;
   }
   return { shown, hidden, panels: main.querySelectorAll("section, .panel").length,
            disclosures: main.querySelectorAll("details").length };
@@ -115,11 +121,13 @@ console.log(`page: ${weight.shown} words shown across ${weight.panels} panels ·
 await page.setViewportSize({ width: 1280, height: 1000 });
 await page.evaluate(() => window.scrollTo(0, 0));
 await settle(page, 500);
+await page.reload({ waitUntil: "networkidle" });
+await settle(page, 1500);
 const folds = await page.locator("main details").count();
 let opened = 0;
 for (let i = 0; i < folds; i += 1) {
   const d = page.locator("main details").nth(i);
-  await d.locator("summary").focus();
+  await d.locator("summary").first().focus();
   await page.keyboard.press("Enter");
   await settle(page, 250);
   if (await d.evaluate((el) => (el as HTMLDetailsElement).open)) opened += 1;

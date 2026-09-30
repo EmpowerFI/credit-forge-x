@@ -2,7 +2,7 @@ import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 /** A titled section of a workspace: title, optional context and actions, then content. */
-export default function Panel({ id, title, description, actions, children, className = "", folded, numeral }: {
+export default function Panel({ id, title, description, actions, children, className = "", folded, numeral, onOpenChange }: {
   id?: string;
   title?: ReactNode;
   description?: ReactNode;
@@ -22,6 +22,12 @@ export default function Panel({ id, title, description, actions, children, class
    * heading in the outline, and costs one line until it is wanted.
    */
   folded?: boolean;
+  /**
+   * Told each time a folded panel opens or closes. What is inside a fold may
+   * want to begin when the reader asks for it — a sequence that fills in only
+   * means anything if it runs while someone is looking at it.
+   */
+  onOpenChange?: (open: boolean) => void;
 }) {
   const GUTTER = "grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-4 sm:grid-cols-[3rem_minmax(0,1fr)]";
   const MOVEMENT = "min-w-0 scroll-mt-32 border-t border-border py-6 first:border-t-0 first:pt-0";
@@ -42,20 +48,27 @@ export default function Panel({ id, title, description, actions, children, class
     // grid its own children can be placed in reliably.
     if (numeral) {
       return (
-        <details id={id} className={`group ${MOVEMENT} ${className}`}>
+        <details id={id} className={`group ${MOVEMENT} ${className}`}
+          onToggle={(e) => onOpenChange?.(e.currentTarget.open)}>
           <summary className={`${GUTTER} cursor-pointer list-none`}>
             <p aria-hidden className="font-heading text-xl font-normal leading-none text-accent sm:text-2xl">{numeral}</p>
             <div className="min-w-0 space-y-1">{head}</div>
           </summary>
           <div className={`${GUTTER} pt-4`}>
             <span aria-hidden />
-            <div className="min-w-0 space-y-4">{children}</div>
+            <div className="min-w-0 space-y-4">
+              {children}
+              {/* Not in the summary: a button nested inside one is a button
+                  that toggles the fold when it is pressed. */}
+              {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+            </div>
           </div>
         </details>
       );
     }
     return (
-      <details id={id} className={`panel group min-w-0 scroll-mt-32 p-5 sm:p-6 ${className}`}>
+      <details id={id} className={`panel group min-w-0 scroll-mt-32 p-5 sm:p-6 ${className}`}
+        onToggle={(e) => onOpenChange?.(e.currentTarget.open)}>
         <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">{head}</div>
           {actions && <div className="flex flex-wrap gap-2">{actions}</div>}

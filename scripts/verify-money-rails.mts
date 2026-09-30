@@ -31,11 +31,16 @@ async function session(view: string) {
   return page;
 }
 
-/** Each leg's own box opacity: opacity does not inherit, so a descendant proves nothing. */
-async function walk(page: Page, label: string, ol: ReturnType<Page["locator"]>) {
+/**
+ * Each leg's own box opacity: opacity does not inherit, so a descendant proves
+ * nothing. `arm` is for a rail behind a fold, where the fold is the clock: it
+ * runs after the reload, because reloading closes what the last probe opened.
+ */
+async function walk(page: Page, label: string, ol: ReturnType<Page["locator"]>, arm?: () => Promise<void>) {
   if (!(await ol.count())) { console.log(`MISS ${label}: no rail found`); return; }
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.reload({ waitUntil: "networkidle" });
+  if (arm) { await settle(page, 1500); await arm(); }
   await ol.first().scrollIntoViewIfNeeded();
   const legs = () => ol.first().locator("li > div, li > span:last-child").evaluateAll(
     (els) => els.map((el) => Number(getComputedStyle(el).opacity).toFixed(2)).join(" "));
@@ -82,8 +87,15 @@ async function walk(page: Page, label: string, ol: ReturnType<Page["locator"]>) 
   if (opp) {
     await page.goto(`${BASE}${opp}`, { waitUntil: "networkidle" });
     await settle(page, 2500);
+    // This one lives behind a fold now, and the fold is its clock: the run
+    // starts when a reader asks how the route was chosen, not when the panel
+    // drifts past. So the probe has to ask.
     const ol = page.locator("main ol").filter({ hasText: PT ? /USDC de teste dos investidores/ : /Investors' test USDC/ }).first();
-    await walk(page, "opportunity · funding route", ol);
+    await walk(page, "opportunity · funding route", ol, async () => {
+      await page.locator("main details")
+        .filter({ has: page.locator("summary", { hasText: PT ? /Rota de captação/ : /Funding route/ }) })
+        .first().locator("summary").first().click();
+    });
   } else console.log("MISS no opportunity to open");
 }
 
