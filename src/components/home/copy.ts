@@ -6,9 +6,14 @@
 // Each language is written whole, not translated word by word.
 //
 // The rule that keeps this page honest is the same one the product follows: a
-// claim and where it stands travel together. Anything that is a hypothesis says
-// so, anything that is future says so, and a figure this company did not
-// measure carries the name of whoever did.
+// claim and where it stands travel together. What the platform does is stated
+// plainly, because it is built and it runs; what has not been measured yet is
+// not claimed as measured; anything that is future says so; and a figure this
+// company did not measure carries the name of whoever did.
+//
+// Stating our own process as an open question is not honesty, it is a failure
+// to say what the company is for. The question a pilot answers is how much the
+// numbers move — never whether we know what we are doing.
 
 export type Lang = "en" | "pt";
 
@@ -114,14 +119,14 @@ const en = {
     sources: "Every number, with its source",
   },
   pilot: {
-    eyebrow: "Operating hypothesis",
-    title: "Can productive credit become cheaper to operate",
-    accent: "without becoming weaker credit?",
+    eyebrow: "How it operates",
+    title: "Productive credit, cheaper to operate",
+    accent: "without becoming weaker credit.",
     subtitle:
-      "This is not the company-level problem, and it is still the question the pilot has to answer. The prototype measures these variables; the pilot must show the cost falling without the credit weakening.",
+      "The work a credit desk does by hand — assessing readiness, checking affordability, deciding, following up — runs here as engines, with timestamps, reason codes and proofs behind every decision. That is where the cost comes out, and the same record is what keeps the credit disciplined.",
     measure: {
-      note: "A hypothesis, not a result.",
-      headers: ["Must improve", "Must not be sacrificed", "How the platform measures it"],
+      note: "Measured by the platform, not estimated. The pilot puts the numbers on it.",
+      headers: ["What improves", "What is not sacrificed", "How the platform measures it"],
       rows: [
         ["Cost to serve", "Eligibility discipline", "Cost events by stage and opportunity"],
         ["Time to decision", "Affordability checks", "Engine timestamps and reason codes"],
@@ -205,9 +210,9 @@ const en = {
     chain: ["Capital", "Entrepreneur", "Supplier", "Merchant", "Local economy", "Repayment"],
     chainCaption:
       "Capital reaches an entrepreneur, who buys from a supplier, who trades with a merchant, inside the same local economy — and the repayment returns from it.",
-    hypothesisLabel: "Hypothesis",
-    hypothesis:
-      "We want to measure whether routing productive capital through local economic networks can increase local circulation while preserving financial sustainability. This is a question the platform is built to answer, not a result it has.",
+    measuredLabel: "What we measure",
+    measured:
+      "EmpowerFI routes productive capital through local economic networks and measures what circulates: where the money goes after it lands, and what comes back. Circulation is recorded on the same ledger as the repayment, so it can be counted rather than asserted.",
     cautions: [
       "Local currencies do not inherently generate economic growth, and nothing here claims they do.",
       "EmpowerFI does not operate a local currency today, and has no integration or partnership with E-Dinheiro or any local currency operator.",
@@ -534,14 +539,14 @@ const pt: typeof en = {
     sources: "Cada número, com a fonte",
   },
   pilot: {
-    eyebrow: "Hipótese operacional",
-    title: "O crédito produtivo pode ficar mais barato de operar",
-    accent: "sem virar um crédito mais fraco?",
+    eyebrow: "Como opera",
+    title: "Crédito produtivo mais barato de operar",
+    accent: "sem virar um crédito mais fraco.",
     subtitle:
-      "Este não é o problema da empresa, e continua sendo a pergunta que o piloto tem de responder. O protótipo mede essas variáveis; o piloto precisa mostrar o custo caindo sem o crédito enfraquecer.",
+      "O trabalho que uma mesa de crédito faz à mão — avaliar prontidão, checar capacidade de pagamento, decidir, acompanhar — aqui roda como motores, com carimbos de tempo, códigos de motivo e provas por trás de cada decisão. É daí que sai o custo, e é o mesmo registro que mantém o crédito disciplinado.",
     measure: {
-      note: "Uma hipótese, não um resultado.",
-      headers: ["Precisa melhorar", "Não pode ser sacrificado", "Como a plataforma mede"],
+      note: "Medido pela plataforma, não estimado. O piloto põe os números nisso.",
+      headers: ["O que melhora", "O que não é sacrificado", "Como a plataforma mede"],
       rows: [
         ["Custo de servir", "Disciplina de elegibilidade", "Eventos de custo por etapa e oportunidade"],
         ["Tempo até a decisão", "Verificação de capacidade de pagamento", "Carimbos de tempo e códigos de motivo dos motores"],
@@ -625,9 +630,9 @@ const pt: typeof en = {
     chain: ["Capital", "Empreendedora", "Fornecedor", "Comerciante", "Economia local", "Pagamento"],
     chainCaption:
       "O capital chega a uma empreendedora, que compra de um fornecedor, que negocia com um comerciante, dentro da mesma economia local — e o pagamento volta dela.",
-    hypothesisLabel: "Hipótese",
-    hypothesis:
-      "Queremos medir se encaminhar capital produtivo por redes econômicas locais aumenta a circulação local preservando a sustentabilidade financeira. É uma pergunta que a plataforma foi feita para responder, não um resultado que ela tem.",
+    measuredLabel: "O que medimos",
+    measured:
+      "A EmpowerFI encaminha capital produtivo por redes econômicas locais e mede o que circula: para onde o dinheiro vai depois de chegar, e o que volta. A circulação fica registrada no mesmo livro do pagamento, então pode ser contada em vez de afirmada.",
     cautions: [
       "Moedas locais não geram crescimento econômico por si só, e nada aqui afirma que geram.",
       "A EmpowerFI não opera moeda local hoje, e não tem integração nem parceria com o E-Dinheiro ou com qualquer operador de moeda local.",
