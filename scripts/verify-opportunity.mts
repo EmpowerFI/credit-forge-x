@@ -81,9 +81,9 @@ const overflow = async () => page.evaluate(() => {
   for (const el of Array.from(document.querySelectorAll<HTMLElement>("main *"))) {
     if (el.classList.contains("sr-only") || el.tagName === "SELECT" || el.classList.contains("truncate")
       || el.classList.contains("overflow-x-auto")) continue;
-    if (el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0) out.push(`${el.tagName.toLowerCase()} ${el.scrollWidth}>${el.clientWidth}`);
+    if (el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0) out.push(`${el.tagName.toLowerCase()}.${el.className.toString().slice(0, 40)} ${el.scrollWidth}>${el.clientWidth} :: ${(el.innerText || "").slice(0, 30).replace(/\n/g, " / ")}`);
   }
-  return out.slice(0, 6);
+  return out.slice(0, 4);
 });
 for (const w of [1440, 1280, 1024, 768, 390]) {
   await page.setViewportSize({ width: w, height: 1000 });

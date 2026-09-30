@@ -107,7 +107,10 @@ function InvestAction({ account, row, micro, disabled }: {
     <div className="space-y-4">
       {step !== "done" && (
         <Button className="h-11 w-full text-base font-semibold" disabled={disabled || busy} onClick={invest}>
-          {busy ? <Loader2 size={18} className="animate-spin" /> : <Wallet size={18} />} {tr({ en: "Invest with Devnet USDC", pt: "Investir com USDC da Devnet" })}
+          {busy ? <Loader2 size={18} className="animate-spin" /> : <Wallet size={18} />}{" "}
+          {micro > 0
+            ? tr({ en: `Invest ${usdc(micro)}`, pt: `Investir ${usdc(micro)}` })
+            : tr({ en: "Invest", pt: "Investir" })}
         </Button>
       )}
       {step && (
@@ -191,6 +194,15 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
   const [method, setMethod] = useState<"usdc" | "zec" | null>(null);
   const via = method ?? (requestId ? "zec" : "usdc");
 
+  // Max is the smaller of what is left to fund and what the wallet holds, and
+  // the fixed amounts only appear while they are fundable.
+  const ceiling = Math.min(remaining, connected && balance > 0 ? balance : remaining);
+  const quickAmounts: [string, string][] = [
+    ...([5, 10, 25].filter((v) => v * 10 ** USDC_DECIMALS <= ceiling)
+      .map((v) => [String(v), String(v)] as [string, string])),
+    [tr({ en: "Max", pt: "Máx." }), String(Math.floor(ceiling / 10 ** USDC_DECIMALS) || ceiling / 10 ** USDC_DECIMALS)],
+  ];
+
   const problem =
     !open ? tr({ en: "This opportunity is no longer raising.", pt: "Esta oportunidade não está mais captando." })
     : micro <= 0 ? tr({ en: "Enter an amount.", pt: "Informe um valor." })
@@ -234,20 +246,22 @@ export default function InvestPanel({ row }: { row: MarketRow }) {
               <span className="num font-semibold text-foreground">{balances.data ? usdc(balance) : "…"}</span>
             </div>
           )}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label htmlFor="invest-amount">{tr({ en: "Amount", pt: "Valor" })}</Label>
-            <div className="relative">
-              <Input id="invest-amount" type="number" inputMode="decimal" min={1} step="1" value={amount}
-                onChange={(e) => setAmount(e.target.value)} className="h-12 pr-16 text-lg font-semibold" />
-              <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">USDC</span>
+            <div className="flex items-baseline gap-2 border-b border-foreground pb-1">
+              <Input id="invest-amount" type="number" inputMode="decimal" min={0} step="1" value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="num h-auto min-w-0 flex-1 border-0 bg-transparent p-0 font-heading text-4xl font-bold leading-none shadow-none focus-visible:ring-0" />
+              <span className="font-heading text-lg text-muted-foreground">{via === "zec" ? "USDC" : "USDC"}</span>
             </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              {[5, 10, 25].filter((v) => v * 10 ** USDC_DECIMALS <= remaining).map((v) => (
-                <button key={v} type="button" onClick={() => setAmount(String(v))}
-                  className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground">{v}</button>
+            <div className="grid grid-cols-4 gap-1.5">
+              {quickAmounts.map(([label, value]) => (
+                <button key={label} type="button" onClick={() => setAmount(value)}
+                  className={`num rounded-lg border px-0 py-1 text-xs transition-colors ${
+                    amount === value ? "border-accent text-accent" : "border-border text-muted-foreground hover:text-foreground"}`}>
+                  {label}
+                </button>
               ))}
-              <button type="button" onClick={() => setAmount(String(Math.floor(Math.min(remaining, connected ? balance || remaining : remaining) / 1e6)))}
-                className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground hover:text-foreground">{tr({ en: "Max", pt: "Máx." })}</button>
             </div>
           </div>
           {problem && micro > 0 && <p className="text-xs text-caution">{problem}</p>}

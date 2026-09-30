@@ -84,13 +84,13 @@ function Assessment({ a, chosen }: { a: PoolAssessment; chosen: boolean }) {
 }
 
 /** The funding route the Capital Allocation Engine chose for this opportunity, and why. */
-export default function FundingRoute({ row }: { row: MarketRow }) {
+export default function FundingRoute({ row, numeral }: { row: MarketRow; numeral?: string }) {
   const pool = poolOf(row.funding_pool);
   const a = row.allocation as unknown as AllocationResult | null;
   if (!a) return null;
   const reasons = (row.allocation_reason_codes ?? []) as AllocationReason[];
   return (
-    <Panel title={tr({ en: "Funding route", pt: "Rota de captação" })}
+    <Panel numeral={numeral} title={tr({ en: "Funding route", pt: "Rota de captação" })}
       description={tr({
         en: "Chosen by the Capital Allocation Engine: feasibility first — liquidity, risk appetite, ticket and mandate — then what it costs her.",
         pt: "Escolhida pelo Motor de Alocação de Capital: primeiro a viabilidade (liquidez, apetite a risco, ticket e mandato), depois quanto custa para ela.",
