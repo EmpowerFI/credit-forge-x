@@ -156,10 +156,14 @@ const scope = [
   },
 ];
 
+// What the pilot measures. The platform already identifies readiness, already
+// prices the effort of serving a small ticket, already carries the evidence an
+// investor funds against — so none of that is in question here. What a pilot
+// produces is the size of the difference, on real businesses and real capital.
 const questions = [
-  "Can we identify better-prepared entrepreneurs before they ask for credit?",
-  "Can we reduce the operational effort needed to serve small tickets?",
-  "Do qualified opportunities carry enough evidence for investors to fund them?",
+  "How much readiness does preparation add before a business asks for credit?",
+  "How far does the platform cut the operational effort of serving a small ticket?",
+  "Which of the evidence a qualified opportunity carries do investors fund against?",
   "What is the Cost to Serve at each stage of the journey?",
   "Was the capital used productively, and what results can we observe?",
   "Does the evidence justify opening the P2P model to investors in both pools?",
@@ -366,7 +370,7 @@ const PilotSectionEn = () => (
 
       <div className="mx-auto max-w-5xl space-y-8">
         <h3 className="text-center font-heading text-2xl font-bold text-foreground md:text-3xl">
-          What the pilot needs to answer
+          What the pilot measures
         </h3>
         <ol className="grid gap-x-10 md:grid-cols-2">
           {questions.map((q, i) => (

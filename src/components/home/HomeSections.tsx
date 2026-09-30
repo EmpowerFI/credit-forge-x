@@ -280,7 +280,7 @@ export const HomeLocalFirst = ({ lang }: { lang: Lang }) => {
   );
 };
 
-/** What can happen after the capital lands — stated as a question, not a result. */
+/** What happens after the capital lands, and what of it this platform counts. */
 export const HomeRails = ({ lang }: { lang: Lang }) => {
   const t = HOME[lang].rails;
   return (
@@ -298,11 +298,11 @@ export const HomeRails = ({ lang }: { lang: Lang }) => {
           />
         </div>
 
-        {/* Marked as a hypothesis in the markup as well as the words: this is
-            the claim a reader is most likely to carry away as a result. */}
+        {/* What this company does and records, set apart from the outside
+            research below it: the two must not be read as one claim. */}
         <div className="mt-12 rounded-sm border-[1.5px] border-gold bg-gold/10 px-7 py-6">
-          <p className="label-ui text-accent">{t.hypothesisLabel}</p>
-          <p className="mt-3 text-lg leading-relaxed text-foreground/90">{t.hypothesis}</p>
+          <p className="label-ui text-accent">{t.measuredLabel}</p>
+          <p className="mt-3 text-lg leading-relaxed text-foreground/90">{t.measured}</p>
         </div>
         <ul className="mt-6 space-y-2">
           {t.cautions.map((c) => (
