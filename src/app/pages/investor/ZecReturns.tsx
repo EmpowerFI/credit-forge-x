@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import LoadError from "../../components/LoadError";
 import Panel from "../../components/product/Panel";
+import { CrossingOut } from "../../components/product/Crossing";
 import StatusPill from "../../components/product/StatusPill";
 import ZcashTx from "../../components/product/ZcashTx";
 import { describeError } from "../../lib/errors";
@@ -40,6 +41,10 @@ export default function ZecReturns({ investmentId, owed, readOnly }: { investmen
   if (returns.isError) return <Panel title={tr({ en: "Returns in ZEC", pt: "Retornos em ZEC" })}><LoadError compact error={returns.error} onRetry={() => returns.refetch()} /></Panel>;
   const d = returns.data;
   const valid = isShieldedTestAddress(address);
+  // Every zatoshi this position has in play, paid or queued. What it is worth
+  // crossing to Solana is the one question a ZEC-paid investor asks that this
+  // page could not answer before.
+  const inPlay = d?.returns.reduce((sum, r) => sum + (r.amount_zat ?? 0), 0) ?? 0;
 
   return (
     <Panel title={tr({ en: "Returns in ZEC", pt: "Retornos em ZEC" })}
@@ -107,6 +112,17 @@ export default function ZecReturns({ investmentId, owed, readOnly }: { investmen
                 </li>
               ))}
             </ul>
+          )}
+          {inPlay > 0 && (
+            <div className="space-y-1.5">
+              <CrossingOut zat={inPlay} />
+              <p className="text-[11px] text-muted-foreground">
+                {tr({
+                  en: "What this ZEC is worth crossing to USDC on Solana today, if you would rather hold dollars than ZEC. EmpowerFI does not make that crossing for you.",
+                  pt: "Quanto este ZEC vale atravessando para USDC na Solana hoje, se você preferir ficar com dólares em vez de ZEC. A EmpowerFI não faz essa travessia por você.",
+                })}
+              </p>
+            </div>
           )}
           <p className="text-xs text-muted-foreground">
             {tr({
