@@ -1,7 +1,10 @@
+import { cloneElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Circle, Loader2 } from "lucide-react";
 import LoadError from "../../components/LoadError";
+import { RailMarker } from "../../components/product/MoneyRail";
+import { railCard, type RailState, useRailReveal } from "../../lib/moneyRail";
 import { DataTag } from "../../components/product/DataLegend";
 import ExplorerLink from "../../components/product/ExplorerLink";
 import ZcashTx from "../../components/product/ZcashTx";
@@ -27,16 +30,31 @@ import { formatDate, formatNumber, tr } from "../../i18n";
 import EvcLabel from "../../components/product/EvcLabel";
 import VerifyButton from "../../components/proof/VerifyButton";
 
-function RouteStep({ n, title, reality, children }: { n: number; title: string; reality: Reality | null; children: React.ReactNode }) {
+function RouteStep({ n, title, reality, children, state = "settled", last }: {
+  n: number; title: string; reality: Reality | null; children: React.ReactNode;
+  state?: RailState; last?: boolean;
+}) {
   return (
-    <li className="grid grid-cols-[1.5rem_1fr] gap-x-3 gap-y-0.5 text-sm">
-      <span className="num row-span-2 flex h-6 w-6 items-center justify-center rounded-full border border-border text-xs text-muted-foreground">{n}</span>
-      <span className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-foreground">{title}</span>
-        {reality && <StatusPill tone={REALITY[reality].tone}>{REALITY[reality].label}</StatusPill>}
-      </span>
-      <span className="text-xs text-muted-foreground">{children}</span>
+    <li className="flex gap-3 text-sm">
+      <RailMarker state={state} first={n === 1} last={last}><span className="num">{n}</span></RailMarker>
+      <div className={`${railCard(state)} space-y-0.5 pb-4`}>
+        <span className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-foreground">{title}</span>
+          {reality && <StatusPill tone={REALITY[reality].tone}>{REALITY[reality].label}</StatusPill>}
+        </span>
+        <span className="block text-xs text-muted-foreground">{children}</span>
+      </div>
     </li>
+  );
+}
+
+/** The route's own list, settling leg by leg once it is scrolled to. */
+function Route({ steps }: { steps: React.ReactElement[] }) {
+  const rail = useRailReveal(steps.length);
+  return (
+    <ol ref={rail.ref}>
+      {steps.map((step, i) => cloneElement(step, { key: i, state: rail.state(i), last: i === steps.length - 1 }))}
+    </ol>
   );
 }
 
@@ -388,38 +406,38 @@ export default function Position() {
           pt: "O caminho do seu capital até o negócio dela e de volta, etapa por etapa: quais são transações que você pode abrir e quais são simuladas.",
         })}>
         {domestic ? (
-          <ol className="space-y-4">
+          <Route steps={[
             <RouteStep n={1} title={tr({ en: "Allocated from the domestic BRL pool", pt: "Alocado pelo pool doméstico em reais" })} reality="simulated">
               {tr({
                 en: `${money(positionReais(inv.amount_cents, inv.amount_micro_usdc, opp.fx_brl_per_usdc_milli))} from Brazilian investors' pool. No bank transfer or wallet in this prototype.`,
                 pt: `${money(positionReais(inv.amount_cents, inv.amount_micro_usdc, opp.fx_brl_per_usdc_milli))} do pool de investidores brasileiros. Sem transferência bancária nem carteira neste protótipo.`,
               })}
-            </RouteStep>
+            </RouteStep>,
             <RouteStep n={2} title={tr({ en: "Held in the P2P structure", pt: "Mantido na estrutura P2P" })} reality={loan?.disbursed_at ? "simulated" : null}>
               {loan?.disbursed_at
                 ? tr({ en: "Formalised by EmpowerFI's P2P desk at the allocation engine's rate.", pt: "Formalizado pela mesa P2P da EmpowerFI, à taxa do Motor de Alocação de Capital." })
                 : tr({ en: "Until EmpowerFI's P2P desk formalises and disburses the loan.", pt: "Até a mesa P2P da EmpowerFI formalizar e desembolsar o empréstimo." })}
-            </RouteStep>
+            </RouteStep>,
             <RouteStep n={3} title={tr({ en: "Paid to her business by Pix", pt: "Pago ao negócio dela por Pix" })} reality={settlement?.pix ? "mock" : null}>
               {settlement?.pix
                 ? <>{money(settlement.pix.brl_cents)}, {tr({ en: "the whole loan", pt: "o empréstimo inteiro" })} · {date(settlement.pix.at)} · <span className="break-all font-mono">{settlement.pix.e2e}</span></>
                 : tr({ en: "Paid when EmpowerFI's P2P desk disburses.", pt: "Pago quando a mesa P2P da EmpowerFI desembolsar." })}
-            </RouteStep>
+            </RouteStep>,
             <RouteStep n={4} title={tr({ en: "Instalments come back to you, in reais", pt: "As parcelas voltam para você, em reais" })} reality={schedule.some((s) => s.payment_id) ? "simulated" : null}>
               {tr({
                 en: "She pays each instalment by Pix (a mock); your share is shown in reais, and is not paid in this prototype. No currency conversion on this route.",
                 pt: "Ela paga cada parcela por Pix (fictício); sua parte aparece em reais e não é paga neste protótipo. Não há conversão de moeda nesta rota.",
               })}
             </RouteStep>
-          </ol>
+          ]} />
         ) : (
-          <ol className="space-y-4">
+          <Route steps={[
             <RouteStep n={1}
               title={zcash ? tr({ en: "Paid in shielded ZEC, credited to the vault", pt: "Pago em ZEC blindado, creditado no cofre" }) : tr({ en: "Into the program's vault", pt: "Para o cofre do programa" })}
               reality={inv.is_simulated ? "simulated" : "real"}>
               {inv.deposit_signature ? <>{usdc(inv.amount_micro_usdc)} · <ExplorerLink tx={inv.deposit_signature} /></>
                 : tr({ en: "A simulated position: no USDC moved.", pt: "Uma posição simulada: nenhum USDC foi movimentado." })}
-            </RouteStep>
+            </RouteStep>,
             <RouteStep n={2} title={tr({ en: "Released to the regulated off-ramp", pt: "Liberado para o off-ramp regulado" })} reality={!loan?.disbursed_at ? null : inv.is_simulated ? "simulated" : "real"}>
               {!loan?.disbursed_at ? tr({ en: "When EmpowerFI's P2P desk disburses the loan.", pt: "Quando a mesa P2P da EmpowerFI desembolsar o empréstimo." })
                 : inv.is_simulated || !settlement?.release ? tr({ en: "Nothing real to release for this position.", pt: "Nada real a liberar nesta posição." })
@@ -432,7 +450,7 @@ export default function Position() {
                     })} · <ExplorerLink tx={settlement.release.signature} />
                   </>
                 ) : tr({ en: "Leaving the vault now.", pt: "Saindo do cofre agora." })}
-            </RouteStep>
+            </RouteStep>,
             <RouteStep n={3}
               title={chosen
                 ? tr({ en: `Converted to reais · ${ROUTE[chosen.route].short}`, pt: `Convertido em reais · ${ROUTE[chosen.route].short}` })
@@ -449,12 +467,12 @@ export default function Position() {
                   pt: `Seus ${usdc(inv.amount_micro_usdc)} ≈ ${money(reaisAtRamp(inv.amount_micro_usdc, opp.fx_brl_per_usdc_milli, settlement?.ramp_bps ?? 50))} a ${reaisRate(opp.fx_brl_per_usdc_milli)} por USDC, menos os ${pct((settlement?.ramp_bps ?? 50) / 100, 2)} da rampa.`,
                 })
                 : tr({ en: "At the ramp, once released.", pt: "Na rampa, depois de liberado." })}
-            </RouteStep>
+            </RouteStep>,
             <RouteStep n={4} title={tr({ en: "Paid to her business by Pix", pt: "Pago ao negócio dela por Pix" })} reality={settlement?.pix ? "mock" : null}>
               {settlement?.pix
                 ? <>{money(settlement.pix.brl_cents)}, {tr({ en: "the whole loan", pt: "o empréstimo inteiro" })} · {date(settlement.pix.at)} · <span className="break-all font-mono">{settlement.pix.e2e}</span></>
                 : tr({ en: "Paid when EmpowerFI's P2P desk disburses.", pt: "Pago quando a mesa P2P da EmpowerFI desembolsar." })}
-            </RouteStep>
+            </RouteStep>,
             <RouteStep n={5} title={tr({ en: "Instalments come back to you", pt: "As parcelas voltam para você" })}
               reality={schedule.some((s) => s.payment_id) ? (inv.is_simulated ? "simulated" : "real") : null}>
               {inv.is_simulated ? tr({ en: "Simulated: your share of each instalment is shown, not paid.", pt: "Simulado: sua parte de cada parcela aparece, mas não é paga." })
@@ -472,7 +490,7 @@ export default function Position() {
                   pt: `Ela paga cada parcela por Pix (fictício); a rampa devolve sua parte ao cofre, que a repassa para a sua carteira na mesma transação. ${schedule.filter((s) => s.payout?.status === "done").length} de ${schedule.filter((s) => s.payment_id).length} repassadas até agora.`,
                 })}
             </RouteStep>
-          </ol>
+          ]} />
         )}
         {/* The mechanism, offered after the money moved rather than before it.
             The engine page takes this code and opens on this request. */}
