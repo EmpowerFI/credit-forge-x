@@ -225,9 +225,11 @@ const MESSAGES: Record<string, string> = localized({
     en: "That is not a shielded Zcash testnet address. Use a unified (utest1…) or Sapling (ztestsapling1…) address: returns stay shielded.",
     pt: "Este não é um endereço blindado da testnet Zcash. Use um endereço unified (utest1…) ou Sapling (ztestsapling1…): os retornos continuam blindados.",
   },
-  not_a_zcash_position: {
-    en: "Only a position paid in shielded ZEC is returned in ZEC.",
-    pt: "Só uma posição paga em ZEC blindado recebe o retorno em ZEC.",
+  // Since a wallet position may also be repaid in shielded ZEC, what is left out
+  // is a simulated one — it has nothing to send — and any other mode.
+  not_a_shielded_position: {
+    en: "This position has nothing to send in ZEC: a simulated allocation moves no money.",
+    pt: "Esta posição não tem nada a enviar em ZEC: uma alocação simulada não move dinheiro.",
   },
   not_your_position: { en: "This position is not yours.", pt: "Esta posição não é sua." },
   ramp_not_configured: {
