@@ -74,16 +74,18 @@ function Stage({ stage, state }: { stage: LifecycleStage; state: StageState }) {
  * §8.2), and the lifecycle line beneath it. Global pool only: it is the pool
  * where the two currencies meet.
  */
-export default function Lifecycle({ principalCents, instalmentCents, termMonths, fxMilli, stages, children }: {
+export default function Lifecycle({ principalCents, instalmentCents, termMonths, fxMilli, stages, children, folded }: {
   principalCents: number;
   instalmentCents: number;
   termMonths: number;
   fxMilli: number | null;
   stages: Record<LifecycleStage, StageState>;
   children?: ReactNode;
+  /** What happens after she commits: worth having, not worth reading first. */
+  folded?: boolean;
 }) {
   return (
-    <Panel title={tr({ en: "Written in reais, funded in dollars", pt: "Escrito em reais, financiado em dólares" })}
+    <Panel folded={folded} title={tr({ en: "Written in reais, funded in dollars", pt: "Escrito em reais, financiado em dólares" })}
       description={tr({
         en: "She owes reais: the principal and every instalment are fixed in her currency, and never move with the exchange rate. The dollar figures are what those reais are worth at the quote this opportunity holds — informational, and never what she repays.",
         pt: "A dívida da empreendedora é em reais: o principal e cada parcela são fixos na moeda dela e não se movem com o câmbio. Os valores em dólar são quanto esses reais valem pela cotação que esta oportunidade carrega — informativos, e nunca o que ela paga.",

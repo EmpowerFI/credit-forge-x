@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, Loader2, MapPin, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BadgeCheck, ChevronRight, Loader2, MapPin, ShieldCheck } from "lucide-react";
 import { localized, tr } from "../../i18n";
 import LoadError from "../../components/LoadError";
 import { DataTag } from "../../components/product/DataLegend";
@@ -9,9 +9,9 @@ import PoolPill from "../../components/product/PoolPill";
 import PrivacyBoundaries from "../../components/product/PrivacyBoundaries";
 import StatusPill from "../../components/product/StatusPill";
 import VerifyOnSolana from "../../components/product/VerifyOnSolana";
-import { poolOf, prototypeNotice } from "../../lib/capital";
+import { type PoolId, poolOf, prototypeNotice } from "../../lib/capital";
 import { DECISION_LABEL, ELIGIBILITY_REASON, percent } from "../../lib/credit";
-import { FUNDING_LABEL, PROOF_LABEL, type Proof, reaisFromUsdc, RISK, title } from "../../lib/investor";
+import { FUNDING_LABEL, type MarketRow, PROOF_LABEL, type Proof, reaisFromUsdc, RISK, title } from "../../lib/investor";
 import { money } from "../../lib/readiness";
 import { reaisRate } from "../../lib/settlement";
 import { usdc } from "../../lib/solana";
@@ -19,7 +19,6 @@ import Lifecycle, { type LifecycleStage, type StageState } from "./Lifecycle";
 import FundingBar from "./FundingBar";
 import FundingRoute from "./FundingRoute";
 import InvestPanel from "./InvestPanel";
-import { CapitalPlanPanel } from "../capital/network/CapitalPlanPanel";
 import { useMarket } from "./queries";
 
 // What an investor needs to decide, and nothing more: the purpose, the size,
@@ -90,6 +89,65 @@ function Field({ label, children, kind }: { label: string; children: React.React
   );
 }
 
+/** What this pool asks, less expected loss. Its own component so the panel can
+ *  sit first in the document and still be the aside at two columns. */
+function ExpectedReturn({ row, pool, grade }: { row: MarketRow; pool: PoolId | null; grade: string }) {
+  return (
+    <>
+<p className="num font-heading text-3xl font-bold text-foreground">
+            {percent(row.indicative_yield_bps)} <span className="text-sm font-normal text-muted-foreground">{tr({ en: "a year", pt: "ao ano" })}</span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {pool === "global"
+              ? tr({
+                en: `What global investors ask for this pool, less expected loss for band ${grade}. Global investors also carry the currency effect the hedge assumes away.`,
+                pt: `O que os investidores globais exigem neste pool, menos a perda esperada da faixa ${grade}. Os investidores globais também assumem o efeito cambial que o hedge deixa de fora.`,
+              })
+              : tr({
+                en: `What domestic investors ask for this pool, less expected loss for band ${grade}.`,
+                pt: `O que os investidores domésticos exigem neste pool, menos a perda esperada da faixa ${grade}.`,
+              })}
+            {row.my_micro_usdc > 0 && tr({
+              en: <> You hold {usdc(row.my_micro_usdc)} ({money(reaisFromUsdc(row.my_micro_usdc, row.fx_brl_per_usdc_milli))}).</>,
+              pt: <> Você tem {usdc(row.my_micro_usdc)} ({money(reaisFromUsdc(row.my_micro_usdc, row.fx_brl_per_usdc_milli))}).</>,
+            })}
+          </p>
+    </>
+  );
+}
+
+/** The proofs, and the model versions that produced them. */
+function Evidence({ row, proofs }: { row: MarketRow; proofs: Proof[] }) {
+  return (
+      <Panel title={tr({ en: "Verifiable evidence", pt: "Evidências verificáveis" })}
+        description={tr({
+          en: "Each assessment's commitment is on Solana; the record behind it stays private.",
+          pt: "O hash de cada avaliação está na Solana; o registro por trás dele fica privado.",
+        })}
+        actions={<VerifyOnSolana proofs={proofs.map((p) => ({ kind: p.kind, signature: p.signature ?? "", account: p.account, commitment: p.commitment }))} />}>
+        <ul className="space-y-3">
+          {proofs.map((p) => (
+            <li key={p.kind} className="flex items-start justify-between gap-3 text-sm">
+              <span>
+                <span className="block text-foreground">{PROOF_LABEL[p.kind] ?? p.kind}</span>
+                {p.signature && <ExplorerLink tx={p.signature} />}
+              </span>
+              <StatusPill tone={p.reconcile === "verified" ? "positive" : p.status === "confirmed" ? "positive" : "caution"}>
+                {p.reconcile === "verified" ? tr({ en: "Verified", pt: "Verificada" })
+                  : p.status === "confirmed" ? tr({ en: "On-chain", pt: "Na blockchain" })
+                  : tr({ en: "Queued", pt: "Na fila" })}
+              </StatusPill>
+            </li>
+          ))}
+          <li className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-muted-foreground">{tr({ en: "Model versions", pt: "Versões dos modelos" })}</span>
+            <span className="text-right font-mono text-xs text-foreground">{row.readiness_model} · {row.eligibility_model}</span>
+          </li>
+        </ul>
+      </Panel>
+  );
+}
+
 export default function OpportunityDetail() {
   const { id } = useParams();
   const market = useMarket();
@@ -154,7 +212,15 @@ export default function OpportunityDetail() {
       </Link>
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="space-y-6">
+        <div className="space-y-6 xl:col-start-2 xl:row-start-1">
+          {pool === "domestic" ? <FundedElsewhere hasPosition={row.my_micro_usdc > 0} /> : <InvestPanel row={row} />}
+          <Panel title={tr({ en: "Expected return · simulated", pt: "Retorno esperado · simulado" })}>
+            <ExpectedReturn row={row} pool={pool} grade={risk.grade} />
+          </Panel>
+          <Evidence row={row} proofs={proofs} />
+        </div>
+
+        <div className="space-y-6 xl:col-start-1 xl:row-start-1">
           <section className="panel space-y-6 p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
@@ -212,9 +278,12 @@ export default function OpportunityDetail() {
               </p>
             </div>
 
-            <div className="space-y-2 border-t border-border pt-5">
-              <h2 className="font-heading text-base font-bold text-foreground">{tr({ en: "Underwriting snapshot", pt: "Resumo da análise de crédito" })}</h2>
-              <div>
+            <details className="space-y-2 border-t border-border pt-5 [&[open]>summary>svg]:rotate-90">
+              <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 font-heading text-base font-bold text-foreground hover:text-accent">
+                <ChevronRight size={15} className="transition-transform text-accent" aria-hidden />
+                {tr({ en: "How it was underwritten", pt: "Como a análise foi feita" })}
+              </summary>
+              <div className="pt-2">
                 <Field label={tr({ en: "Data quality", pt: "Qualidade dos dados" })} kind="derived">
                   {row.records_kept_bps !== null
                     ? tr({ en: `${percent(row.records_kept_bps)} of months with records`, pt: `${percent(row.records_kept_bps)} dos meses com registros` })
@@ -241,17 +310,17 @@ export default function OpportunityDetail() {
                   ))}
                 </ul>
               )}
-            </div>
+            </details>
           </section>
 
           <FundingRoute row={row} />
 
           {pool === "global" && (
-            <Lifecycle principalCents={row.amount_cents} instalmentCents={row.instalment_cents} termMonths={row.term_months}
+            <Lifecycle folded principalCents={row.amount_cents} instalmentCents={row.instalment_cents} termMonths={row.term_months}
               fxMilli={row.fx_brl_per_usdc_milli} stages={stages} />
           )}
 
-          <PrivacyBoundaries>
+          <PrivacyBoundaries folded>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-4 text-sm">
               <ShieldCheck size={16} className="text-positive" aria-hidden />
               <span className="text-foreground">{tr({ en: "Shown here because she allowed it.", pt: "Exibida aqui porque ela autorizou." })}</span>
@@ -265,63 +334,24 @@ export default function OpportunityDetail() {
             </div>
           </PrivacyBoundaries>
 
-          {/* Why this opportunity is here at all. A plan shows what local routes
-              could take and what they could not, and the residual is what an
-              investor in this pool is being asked to fund. It renders only once
-              an operator has run the engine over it. */}
-          <CapitalPlanPanel opportunityId={row.opportunity_id} />
+          {/* Why this opportunity is here at all — which local routes could
+              take it, which could not, and what residual is being offered here
+              — is the engine's subject, and the engine opens on this request. It
+              used to be 665 words of network plan at the foot of a page where
+              someone is deciding whether to commit ten dollars. */}
+          <p className="px-1 text-sm text-muted-foreground">
+            <Link to={`/app/capital/engine?opportunity=${row.code}`} className="text-info hover:underline">
+              {tr({ en: "Why this opportunity exists", pt: "Por que esta oportunidade existe" })}
+            </Link>{" "}
+            {tr({
+              en: "— the engines that judged this request, which Brazilian routes could not take it, and what was left for capital from abroad.",
+              pt: "— os motores que avaliaram este pedido, quais rotas brasileiras não puderam atendê-lo, e o que sobrou para o capital de fora.",
+            })}
+          </p>
         </div>
 
-        <div className="space-y-6">
-          {pool === "domestic" ? <FundedElsewhere hasPosition={row.my_micro_usdc > 0} /> : <InvestPanel row={row} />}
-          <Panel title={tr({ en: "Expected return · simulated", pt: "Retorno esperado · simulado" })}>
-            <p className="num font-heading text-3xl font-bold text-foreground">
-              {percent(row.indicative_yield_bps)} <span className="text-sm font-normal text-muted-foreground">{tr({ en: "a year", pt: "ao ano" })}</span>
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {pool === "global"
-                ? tr({
-                  en: `What global investors ask for this pool, less expected loss for band ${risk.grade}. Global investors also carry the currency effect the hedge assumes away.`,
-                  pt: `O que os investidores globais exigem neste pool, menos a perda esperada da faixa ${risk.grade}. Os investidores globais também assumem o efeito cambial que o hedge deixa de fora.`,
-                })
-                : tr({
-                  en: `What domestic investors ask for this pool, less expected loss for band ${risk.grade}.`,
-                  pt: `O que os investidores domésticos exigem neste pool, menos a perda esperada da faixa ${risk.grade}.`,
-                })}
-              {row.my_micro_usdc > 0 && tr({
-                en: <> You hold {usdc(row.my_micro_usdc)} ({money(reaisFromUsdc(row.my_micro_usdc, row.fx_brl_per_usdc_milli))}).</>,
-                pt: <> Você tem {usdc(row.my_micro_usdc)} ({money(reaisFromUsdc(row.my_micro_usdc, row.fx_brl_per_usdc_milli))}).</>,
-              })}
-            </p>
-          </Panel>
-          <Panel title={tr({ en: "Verifiable evidence", pt: "Evidências verificáveis" })}
-            description={tr({
-              en: "Each assessment's commitment is on Solana; the record behind it stays private.",
-              pt: "O hash de cada avaliação está na Solana; o registro por trás dele fica privado.",
-            })}
-            actions={<VerifyOnSolana proofs={proofs.map((p) => ({ kind: p.kind, signature: p.signature ?? "", account: p.account, commitment: p.commitment }))} />}>
-            <ul className="space-y-3">
-              {proofs.map((p) => (
-                <li key={p.kind} className="flex items-start justify-between gap-3 text-sm">
-                  <span>
-                    <span className="block text-foreground">{PROOF_LABEL[p.kind] ?? p.kind}</span>
-                    {p.signature && <ExplorerLink tx={p.signature} />}
-                  </span>
-                  <StatusPill tone={p.reconcile === "verified" ? "positive" : p.status === "confirmed" ? "positive" : "caution"}>
-                    {p.reconcile === "verified" ? tr({ en: "Verified", pt: "Verificada" })
-                      : p.status === "confirmed" ? tr({ en: "On-chain", pt: "Na blockchain" })
-                      : tr({ en: "Queued", pt: "Na fila" })}
-                  </StatusPill>
-                </li>
-              ))}
-              <li className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-muted-foreground">{tr({ en: "Model versions", pt: "Versões dos modelos" })}</span>
-                <span className="text-right font-mono text-xs text-foreground">{row.readiness_model} · {row.eligibility_model}</span>
-              </li>
-            </ul>
-          </Panel>
-          <p className="px-1 text-xs text-muted-foreground">{prototypeNotice()}</p>
-        </div>
+        <p className="px-1 text-xs text-muted-foreground">{prototypeNotice()}</p>
+
       </div>
     </div>
   );
