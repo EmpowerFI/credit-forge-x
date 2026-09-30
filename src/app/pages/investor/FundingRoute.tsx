@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowRight, Check, ChevronRight, X } from "lucide-react";
 import type { AllocationResult, PoolAssessment } from "@empowerfi/capital-allocation";
 import { cn } from "@/lib/utils";
 import { localized, tr } from "../../i18n";
+import { useRailReveal } from "../../lib/moneyRail";
 import Panel from "../../components/product/Panel";
 import PoolPill from "../../components/product/PoolPill";
 import StatusPill from "../../components/product/StatusPill";
@@ -26,62 +26,34 @@ const STEPS: Record<PoolId, { label: string; reality: Reality }[]> = localized({
 });
 
 /**
- * The route, filling in the order the money moves.
- *
- * A static row of four boxes says "these are the legs". The same row arriving
- * one leg at a time says "this is a journey", which is the claim — and it is
- * the one thing on this page a reader watches rather than reads. It runs once,
- * when the panel is first scrolled into view, so it is not a loop competing
- * with the figures beside it; a reader who arrives with reduced motion asked
- * for gets the finished row immediately.
+ * The route the engine chose, filling in the order the money moves — the same
+ * rail as her page and as the engine's third act, so one movement does not get
+ * three different animations in one product.
  */
 function Route({ pool }: { pool: PoolId }) {
   const steps = STEPS[pool];
-  const [shown, setShown] = useState(0);
-  const rail = useRef<HTMLOListElement>(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const el = rail.current;
-    if (!el || started.current) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShown(steps.length);
-      return;
-    }
-    const io = new IntersectionObserver((entries) => {
-      if (!entries.some((e) => e.isIntersecting) || started.current) return;
-      started.current = true;
-      io.disconnect();
-      let i = 0;
-      const tick = () => {
-        i += 1;
-        setShown(i);
-        if (i < steps.length) window.setTimeout(tick, 420);
-      };
-      window.setTimeout(tick, 120);
-    }, { threshold: 0.35 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [steps.length]);
-
+  const rail = useRailReveal(steps.length);
   return (
-    <ol ref={rail} className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+    <ol ref={rail.ref} className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:gap-y-2">
       {steps.map((s, i) => {
-        const here = i < shown;
+        const state = rail.state(i);
+        const here = state !== "waiting";
         return (
-          <li key={s.label} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <li key={s.label} className="flex items-center gap-2">
             {i > 0 && (
               <span className={cn("transition-opacity duration-300 motion-reduce:transition-none motion-reduce:opacity-100",
                 here ? "opacity-100" : "opacity-20")}>
                 <ArrowRight size={14} className="hidden text-accent sm:block" aria-hidden />
-                <ArrowDown size={14} className="text-accent sm:hidden" aria-hidden />
+                <ArrowDown size={14} className="ml-2 text-accent sm:hidden" aria-hidden />
               </span>
             )}
             <span className={cn(
               "inline-flex flex-wrap items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs text-foreground",
               "transition-[opacity,transform,border-color] duration-500 ease-out",
               "motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-x-0",
-              here ? "border-border bg-secondary/40 opacity-100 translate-x-0" : "border-transparent bg-secondary/20 opacity-0 -translate-x-1")}>
+              state === "running" ? "border-accent/60 bg-accent/5 opacity-100 translate-x-0"
+                : here ? "border-border bg-secondary/40 opacity-100 translate-x-0"
+                  : "border-transparent bg-secondary/20 opacity-0 -translate-x-1")}>
               {s.label} <StatusPill tone={REALITY[s.reality].tone} dot={false}>{REALITY[s.reality].label}</StatusPill>
             </span>
           </li>
