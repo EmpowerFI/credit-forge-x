@@ -97,8 +97,12 @@ function Field({ label, children, kind, state = "settled" }: {
 /** One figure of the band that decides: label, number, and a hint or a hairline. */
 function Cell({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
-    <div className="min-w-0 space-y-1 px-5 py-4 first:pl-0 sm:first:pl-5">
-      <dd className="num font-heading text-2xl font-bold leading-none text-foreground">{value}</dd>
+    <div className="min-w-0 space-y-1 px-4 py-4 first:pl-0 sm:first:pl-4">
+      {/* The serif is wider than the sans it replaced, so the figure is sized
+          against the room it actually has: full size until the sticky panel
+          appears at xl and takes 380px off the row, one step down while it is
+          the tightest, and full size again once the viewport can pay for it. */}
+      <dd className="num font-heading text-xl font-bold leading-none text-foreground sm:text-2xl xl:text-lg 2xl:text-2xl">{value}</dd>
       <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
       {hint && <p className="num text-xs leading-snug text-muted-foreground">{hint}</p>}
     </div>
@@ -120,7 +124,7 @@ function Card({ icon, title, tone = "positive", children }: {
         {icon}
       </span>
       <span className="min-w-0 space-y-1">
-        <span className="block text-sm font-medium text-foreground">{title}</span>
+        <span className="block break-words text-sm font-medium text-foreground">{title}</span>
         <span className="block text-sm leading-snug text-muted-foreground">{children}</span>
       </span>
     </li>

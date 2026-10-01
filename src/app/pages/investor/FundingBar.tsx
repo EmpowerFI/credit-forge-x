@@ -23,7 +23,7 @@ export default function FundingBar({ funded, target, investors, compact = false,
     <div className="space-y-1.5">
       <div className="h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
         aria-label={tr({ en: "Funded", pt: "Captada" })}>
-        <div className={`h-full rounded-full ${pct >= 100 ? "bg-positive" : "bg-primary"}`} style={{ width: `${pct}%` }} />
+        <div className={`h-full rounded-full ${pct >= 100 ? "bg-positive" : "bg-gold"}`} style={{ width: `${pct}%` }} />
       </div>
       <div className="num flex flex-wrap justify-between gap-x-3 text-xs text-muted-foreground">
         {reais ? (
