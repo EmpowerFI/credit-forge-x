@@ -93,7 +93,7 @@ export default function Economics({ o }: { o: EngineOpportunity }) {
 
         <div className="space-y-4 border-t border-border bg-secondary/25 p-5 lg:border-l lg:border-t-0">
           <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-positive">
-            <ShieldCheck size={13} aria-hidden /> {tr({ en: "Must not be sacrificed", pt: "Não pode ser sacrificado" })}
+            <ShieldCheck size={13} aria-hidden /> {tr({ en: "What is not sacrificed", pt: "O que não é sacrificado" })}
           </p>
           <h3 className="font-heading text-base font-bold text-foreground">
             {tr({ en: "What was not skipped to get here", pt: "O que não foi pulado para chegar aqui" })}

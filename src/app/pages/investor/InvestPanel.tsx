@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Check, CircleDashed, ExternalLink, Loader2, Wallet, X } from "lucide-react";
+import { Check, CircleDashed, ExternalLink, Loader2, ShieldCheck, Wallet, X } from "lucide-react";
 import {
   address,
   appendTransactionMessageInstruction,
@@ -25,7 +25,7 @@ import { describeError } from "../../lib/errors";
 import { type MarketRow, usdcFromReais } from "../../lib/investor";
 import { explorerTx, platform } from "../../lib/platform";
 import { CLUSTER, confirmSignature, FAUCETS, rpc, usdc, USDC_DECIMALS, USDC_MINT, usdcAccountOf, vaultAddress } from "../../lib/solana";
-import { LIVE } from "../../lib/zcash";
+import { isShieldedTestAddress, LIVE, setReturnAddress } from "../../lib/zcash";
 import { useBalances } from "../../wallet/useBalances";
 import ConnectWalletDialog from "../../wallet/ConnectWallet";
 import { useWalletEntry } from "../../wallet/WalletSignIn";
@@ -144,9 +144,84 @@ function InvestAction({ account, row, micro, disabled }: {
         <Button variant="secondary" className="w-full" onClick={invest}>{tr({ en: "Try again", pt: "Tentar de novo" })}</Button>
       )}
       {step === "done" && investmentId && (
-        <Button className="w-full" onClick={() => navigate(`/app/investor/positions/${investmentId}`)}>{tr({ en: "View your position", pt: "Ver sua posição" })}</Button>
+        <>
+          <ShieldReturns investmentId={investmentId} />
+          <Button className="w-full" onClick={() => navigate(`/app/investor/positions/${investmentId}`)}>{tr({ en: "View your position", pt: "Ver sua posição" })}</Button>
+        </>
       )}
     </div>
+  );
+}
+
+/**
+ * The one privacy choice a Solana-wallet investor actually has, offered at the
+ * moment it becomes relevant: she has just made a public deposit, and what
+ * comes back to her does not have to be public too.
+ *
+ * Deliberately not offered before the transfer. Nothing about the deposit can
+ * be shielded — the wallet, the amount and the moment are on devnet the instant
+ * she signs — and putting this above the button would suggest otherwise.
+ */
+function ShieldReturns({ investmentId }: { investmentId: string }) {
+  const [value, setValue] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const ok = isShieldedTestAddress(value);
+
+  if (saved) {
+    return (
+      <p className="flex items-start gap-2 rounded-xl border tone-positive px-3 py-2.5 text-xs">
+        <Check size={14} className="mt-0.5 shrink-0" aria-hidden />
+        <span>{tr({
+          en: "From the next instalment on, your share leaves EmpowerFI's shielded treasury on Zcash — not the vault on Solana.",
+          pt: "Da próxima parcela em diante, sua parte sai da tesouraria blindada da EmpowerFI na Zcash — não do cofre na Solana.",
+        })}</span>
+      </p>
+    );
+  }
+  return (
+    <form
+      className="space-y-2 rounded-xl border border-border bg-secondary/30 p-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!ok || saving) return;
+        setError(null);
+        setSaving(true);
+        setReturnAddress({ investmentId }, value)
+          .then(() => setSaved(true))
+          .catch((err) => setError(describeError(err)))
+          .finally(() => setSaving(false));
+      }}
+    >
+      <p className="text-[11px] font-medium uppercase tracking-wider text-accent">
+        {tr({ en: "Your deposit is public. Your returns need not be.", pt: "Seu depósito é público. Seus retornos não precisam ser." })}
+      </p>
+      <Label htmlFor="shield-returns" className="block text-xs text-muted-foreground">
+        {tr({ en: "Shielded Zcash address for your returns (optional)", pt: "Endereço Zcash blindado para seus retornos (opcional)" })}
+      </Label>
+      <div className="flex flex-wrap gap-2">
+        <Input id="shield-returns" className="min-w-0 flex-1 font-mono text-xs" value={value}
+          onChange={(e) => setValue(e.target.value)} autoComplete="off" spellCheck={false}
+          placeholder={tr({ en: "utest1… or ztestsapling1…", pt: "utest1… ou ztestsapling1…" })} />
+        <Button type="submit" size="sm" className="gap-1.5" disabled={!ok || saving}>
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
+          {tr({ en: "Shield them", pt: "Blindar" })}
+        </Button>
+      </div>
+      <p className={`text-[11px] leading-snug ${value && !ok ? "text-caution" : "text-muted-foreground"}`}>
+        {value && !ok
+          ? tr({
+            en: "A unified (utest1…) or Sapling (ztestsapling1…) testnet address. A transparent address would defeat the point.",
+            pt: "Um endereço unificado (utest1…) ou Sapling (ztestsapling1…) da testnet. Um endereço transparente anularia o propósito.",
+          })
+          : tr({
+            en: "Each instalment's share would leave the shielded treasury on Zcash instead of the vault on Solana, so no public ledger shows the size of your position or how it performs. EmpowerFI still reads every figure, and so does the auditor its viewing key is disclosed to: this hides your returns from the public, not from EmpowerFI. You can also do it later, from your position.",
+            pt: "A sua parte de cada parcela sairia da tesouraria blindada na Zcash em vez do cofre na Solana, então nenhum livro público mostra o tamanho da sua posição nem como ela vai. A EmpowerFI continua lendo cada valor, e o auditor a quem ela revela a chave de visualização também: isto esconde seus retornos do público, não da EmpowerFI. Você também pode fazer isso depois, pela sua posição.",
+          })}
+      </p>
+      {error && <p className="text-xs text-alert">{error}</p>}
+    </form>
   );
 }
 

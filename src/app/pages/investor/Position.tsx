@@ -128,9 +128,19 @@ export default function Position() {
       return data as unknown as PositionData;
     },
   });
-  // Paid in shielded ZEC with no Solana wallet: what comes back goes back as ZEC.
-  const zecOnly = position.data?.investment.mode === "zcash" && !position.data.investment.wallet_address && !position.data.investment.is_simulated;
-  const zecReturns = useQuery({ queryKey: zecReturnsKey(id ?? ""), queryFn: () => fetchZecReturns(id!), enabled: Boolean(id && zecOnly) });
+  // Two different questions, and they used to be one flag.
+  //
+  // `canShield` is whether this position may be repaid out of the shielded
+  // treasury at all: it may if real money moved, whichever chain it moved on. A
+  // wallet investor's deposit is public and stays public — that is not something
+  // a later choice can undo — but what comes back to her is hers to shield.
+  //
+  // `shielded` is whether it *is*, which is the only thing that may change what
+  // any of these screens says about where her money goes.
+  const inv0 = position.data?.investment;
+  const canShield = inv0 ? !inv0.is_simulated && (inv0.mode === "zcash" || inv0.mode === "wallet") : false;
+  const zecReturns = useQuery({ queryKey: zecReturnsKey(id ?? ""), queryFn: () => fetchZecReturns(id!), enabled: Boolean(id && canShield) });
+  const shielded = canShield && Boolean(zecReturns.data?.return_address);
   if (position.isPending) return <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Loading", pt: "Carregando" })} />;
   if (position.isError) return <LoadError error={position.error} onRetry={() => position.refetch()} />;
   const { investment: inv, zcash, proof, opportunity: opp, loan, settlement, schedule, servicing, outcome } = position.data;
@@ -197,10 +207,10 @@ export default function Position() {
     },
     settlement: {
       done: inv.is_simulated ? paid > 0 : paidOut > 0,
-      reality: inv.is_simulated ? "simulated" : zecOnly ? "zcash" : "real",
+      reality: inv.is_simulated ? "simulated" : shielded ? "zcash" : "real",
       detail: inv.is_simulated
         ? tr({ en: "Your share is shown, not paid", pt: "Sua parte aparece, mas não é paga" })
-        : zecOnly
+        : shielded
         ? tr({ en: `${obligation(repaid)} owed back to you in shielded ZEC`, pt: `${obligation(repaid)} a voltar para você em ZEC blindado` })
         : tr({ en: `${usdc(repaid)} paid out to your wallet`, pt: `${usdc(repaid)} repassados para a sua carteira` }),
     },
@@ -395,8 +405,9 @@ export default function Position() {
         </Panel>
       </div>
 
-      {zecOnly && (
+      {canShield && (
         <ZecReturns investmentId={inv.id} readOnly={profile?.role !== "capital_provider"}
+          paidWith={inv.mode === "zcash" ? "zcash" : "wallet"}
           owed={inv.status === "refund_due" || schedule.some((s) => s.payout?.status === "held")} />
       )}
 
@@ -476,15 +487,16 @@ export default function Position() {
             <RouteStep n={5} title={tr({ en: "Instalments come back to you", pt: "As parcelas voltam para você" })}
               reality={schedule.some((s) => s.payment_id) ? (inv.is_simulated ? "simulated" : "real") : null}>
               {inv.is_simulated ? tr({ en: "Simulated: your share of each instalment is shown, not paid.", pt: "Simulado: sua parte de cada parcela aparece, mas não é paga." })
-                : !inv.wallet_address ? (zecReturns.data?.return_address
-                  ? tr({
-                    en: "She pays each instalment by Pix (a mock). Your share goes back to you in shielded ZEC, from EmpowerFI's treasury to your return address: real testnet ZEC, at the quote when it is sent.",
-                    pt: "Ela paga cada parcela por Pix (fictício). Sua parte volta para você em ZEC blindado, da tesouraria da EmpowerFI para o seu endereço de retorno: ZEC real da testnet, pela cotação do momento do envio.",
-                  })
-                  : tr({
-                    en: "She pays each instalment by Pix (a mock). Your share is held until you give a shielded return address, below: it then goes back to you in ZEC.",
-                    pt: "Ela paga cada parcela por Pix (fictício). Sua parte fica retida até você informar um endereço de retorno blindado, abaixo: aí ela volta para você em ZEC.",
-                  }))
+                : shielded
+                ? tr({
+                  en: "She pays each instalment by Pix (a mock). Your share goes back to you in shielded ZEC, from EmpowerFI's treasury to your return address: real testnet ZEC, at the quote when it is sent, and nothing of it on a public ledger.",
+                  pt: "Ela paga cada parcela por Pix (fictício). Sua parte volta para você em ZEC blindado, da tesouraria da EmpowerFI para o seu endereço de retorno: ZEC real da testnet, pela cotação do momento do envio, e nada disso num livro público.",
+                })
+                : !inv.wallet_address
+                ? tr({
+                  en: "She pays each instalment by Pix (a mock). Your share is held until you give a shielded return address, below: it then goes back to you in ZEC.",
+                  pt: "Ela paga cada parcela por Pix (fictício). Sua parte fica retida até você informar um endereço de retorno blindado, abaixo: aí ela volta para você em ZEC.",
+                })
                 : tr({
                   en: `She pays each instalment by Pix (a mock); the ramp returns your share to the vault, which pays it to your wallet in the same transaction. ${schedule.filter((s) => s.payout?.status === "done").length} of ${schedule.filter((s) => s.payment_id).length} paid out so far.`,
                   pt: `Ela paga cada parcela por Pix (fictício); a rampa devolve sua parte ao cofre, que a repassa para a sua carteira na mesma transação. ${schedule.filter((s) => s.payout?.status === "done").length} de ${schedule.filter((s) => s.payment_id).length} repassadas até agora.`,
@@ -512,7 +524,7 @@ export default function Position() {
               en: "Instalments fall due monthly from the start of repayment; your share is shown in reais, simulated.",
               pt: "As parcelas vencem todo mês a partir do início dos pagamentos; sua parte aparece em reais, simulada.",
             })
-            : zecOnly
+            : shielded
             ? tr({
               en: "Instalments fall due monthly from the start of repayment; your share goes back to you in shielded ZEC, at the quote when it is sent.",
               pt: "As parcelas vencem todo mês a partir do início dos pagamentos; sua parte volta para você em ZEC blindado, pela cotação do momento do envio.",

@@ -24,10 +24,15 @@ import { fetchPrograms } from "../../lib/impact";
 import { money } from "../../lib/readiness";
 import BusinessModel from "./BusinessModel";
 
-// Can productive credit become cheaper to operate without becoming weaker
-// credit? (refactor spec §2A.) Four pairs: what must improve beside what must
-// not be sacrificed, each with how the prototype measures it. The prototype
-// measures; the pilot tests.
+// What it costs to operate productive credit, and what may not be sacrificed to
+// make it cheaper (refactor spec §2A). Four pairs: the number that falls beside
+// the discipline it may not cost, each with where the platform measures it.
+//
+// Posing that as a question was the wrong shape. The model is built and it runs,
+// and both halves of every pair are instrumented — which is the claim. What a
+// pilot adds is field rates in place of the card's assumed ones, so the honest
+// labels here are about the *inputs*: the rate card is an assumption and the
+// demo's records are simulated. Those stay. Doubting the work does not.
 
 const ALL = "all";
 
@@ -93,7 +98,8 @@ function Line({ label, value, hint }: { label: string; value: ReactNode; hint?: 
  * What a larger ticket would do — a model over the rate card, never over the
  * recorded events, which are facts about work that happened. Nothing in the
  * work changes with the ticket; only the amount it is divided by. That is the
- * hypothesis of small-ticket credit, shown so a reader can check it.
+ * assumption behind small-ticket economics, shown so a reader can check it
+ * rather than take it.
  */
 function TicketModel({ s, measured }: { s: CostSensitivity; measured: number | null }) {
   const rows = s.tickets;
@@ -584,12 +590,12 @@ export default function OperatingEconomics() {
         eyebrow={tr({ en: "Credit & Capital Engine", pt: "Motor de Crédito e Capital" })}
         title={tr({ en: "Operating economics", pt: "Economia operacional" })}
         description={tr({
-          en: "Can productive credit become cheaper to operate without becoming weaker credit?",
-          pt: "O crédito produtivo pode ficar mais barato de operar sem virar um crédito pior?",
+          en: "What it costs to operate productive credit, and what may not be sacrificed to make it cheaper.",
+          pt: "Quanto custa operar crédito produtivo, e o que não pode ser sacrificado para ficar mais barato.",
         })}
         about={tr({
-          en: "EmpowerFI tests a data-driven operating model designed to compress cost to serve while preserving credit discipline, continuous servicing and auditable outcomes. Costs come from the events each stage records, priced by the pilot's rate card; times from the timestamps of the request, the engine runs, the desk's decision and the disbursement; discipline and routing from the engines' own reason codes.",
-          pt: "A EmpowerFI testa um modelo operacional baseado em dados, desenhado para reduzir o custo de servir preservando a disciplina de crédito, o acompanhamento contínuo e resultados auditáveis. Os custos vêm dos eventos que cada etapa registra, precificados pela tabela do piloto; os tempos, das datas do pedido, das rodadas dos motores, da decisão da mesa e do desembolso; a disciplina e o roteamento, dos códigos de motivo dos próprios motores.",
+          en: "EmpowerFI's operating model takes cost out of small-ticket credit without loosening it, and instruments both halves so neither has to be taken on trust. Costs come from the events each stage records, priced by the pilot's rate card; times from the timestamps of the request, the engine runs, the desk's decision and the disbursement; discipline and routing from the engines' own reason codes.",
+          pt: "O modelo operacional da EmpowerFI tira custo do crédito de ticket pequeno sem afrouxá-lo, e instrumenta as duas metades para que nenhuma precise ser aceita na palavra. Os custos vêm dos eventos que cada etapa registra, precificados pela tabela do piloto; os tempos, das datas do pedido, das rodadas dos motores, da decisão da mesa e do desembolso; a disciplina e o roteamento, dos códigos de motivo dos próprios motores.",
         })}
         actions={
           <>
@@ -608,8 +614,8 @@ export default function OperatingEconomics() {
       <p className="flex items-start gap-2.5 rounded-xl border tone-caution px-4 py-3 text-sm">
         <FlaskConical size={16} className="mt-0.5 shrink-0" aria-hidden />
         <span>{tr({
-          en: "A hypothesis this prototype measures, not a result. The pilot must show cost to serve falling without weaker eligibility discipline, affordability checks, follow-up or portfolio quality. Costs are priced by the pilot rate card, an assumption (staff time at R$ 30/h); the demo's businesses, loans and timings are simulated.",
-          pt: "Uma hipótese que este protótipo mede, não um resultado. O piloto precisa mostrar o custo de servir caindo sem piorar a disciplina de elegibilidade, a checagem de capacidade de pagamento, o acompanhamento ou a qualidade da carteira. Os custos seguem a tabela do piloto, uma premissa (tempo de equipe a R$ 30/h); os negócios, empréstimos e prazos da demonstração são simulados.",
+          en: "Every figure below is measured from the events each stage recorded — but on two inputs that are not yet field data: the pilot rate card is an assumption (staff time at R$ 30/h), and the demo's businesses, loans and timings are simulated. The pilot reprices the same four pairs at observed rates.",
+          pt: "Cada número abaixo é medido pelos eventos que cada etapa registrou — mas sobre duas entradas que ainda não são dados de campo: a tabela do piloto é uma premissa (tempo de equipe a R$ 30/h), e os negócios, empréstimos e prazos da demonstração são simulados. O piloto reprecifica os mesmos quatro pares com taxas observadas.",
         })}</span>
       </p>
 

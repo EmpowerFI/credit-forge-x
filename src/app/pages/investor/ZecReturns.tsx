@@ -18,11 +18,22 @@ import {
 import { tr } from "../../i18n";
 
 /**
- * Where what comes back goes, for a position paid in shielded ZEC with no
- * Solana wallet: a shielded address of the investor's, and every instalment
- * share or refund the treasury has paid to it.
+ * Where what comes back goes: a shielded address of the investor's, and every
+ * instalment share or refund the treasury has paid to it.
+ *
+ * Two kinds of position arrive here and they may claim different things. One
+ * paid in shielded ZEC and has no Solana wallet, so nothing about her was ever
+ * public. The other paid with a Solana wallet, which is public and cannot be
+ * made otherwise — the deposit, its amount and its moment are on devnet — and
+ * chooses to have the *returns* leave the shielded treasury instead. For her the
+ * claim is narrower and the panel says so, because "private" would be a lie
+ * about the half that is already on an explorer.
  */
-export default function ZecReturns({ investmentId, owed, readOnly }: { investmentId: string; owed: boolean; readOnly: boolean }) {
+export default function ZecReturns({ investmentId, owed, readOnly, paidWith }: {
+  investmentId: string; owed: boolean; readOnly: boolean;
+  /** How she paid. It decides what this panel may claim about privacy. */
+  paidWith: "wallet" | "zcash";
+}) {
   const queryClient = useQueryClient();
   const returns = useQuery({ queryKey: zecReturnsKey(investmentId), queryFn: () => fetchZecReturns(investmentId), refetchInterval: 20_000 });
   const [address, setAddress] = useState("");
@@ -48,10 +59,15 @@ export default function ZecReturns({ investmentId, owed, readOnly }: { investmen
 
   return (
     <Panel title={tr({ en: "Returns in ZEC", pt: "Retornos em ZEC" })}
-      description={tr({
-        en: "You paid in shielded ZEC and have no Solana wallet here, so what comes back to you — each instalment's share, or a refund — is paid in shielded ZEC from EmpowerFI's treasury, at CoinGecko's quote when it is sent. The conversion from reais is simulated; the ZEC is real testnet ZEC.",
-        pt: "Você pagou em ZEC blindado e não tem carteira Solana aqui, então o que volta para você — sua parte de cada parcela, ou um reembolso — é pago em ZEC blindado pela tesouraria da EmpowerFI, pela cotação da CoinGecko no momento do envio. A conversão de reais é simulada; o ZEC é ZEC real da testnet.",
-      })}>
+      description={paidWith === "zcash"
+        ? tr({
+          en: "You paid in shielded ZEC and have no Solana wallet here, so what comes back to you — each instalment's share, or a refund — is paid in shielded ZEC from EmpowerFI's treasury, at CoinGecko's quote when it is sent. The conversion from reais is simulated; the ZEC is real testnet ZEC.",
+          pt: "Você pagou em ZEC blindado e não tem carteira Solana aqui, então o que volta para você — sua parte de cada parcela, ou um reembolso — é pago em ZEC blindado pela tesouraria da EmpowerFI, pela cotação da CoinGecko no momento do envio. A conversão de reais é simulada; o ZEC é ZEC real da testnet.",
+        })
+        : tr({
+          en: "Your deposit is public. This wallet, this amount, this moment are on Solana devnet, and nothing here can change that. What comes back to you need not be: each instalment's share and any refund leave EmpowerFI's shielded treasury on Zcash, where the amount, the memo and your address are unreadable on either chain — so a public payout no longer tells anyone the size of your position or how it is performing.",
+          pt: "Seu depósito é público. Esta carteira, este valor e este momento estão na devnet da Solana, e nada aqui muda isso. O que volta para você não precisa ser: sua parte de cada parcela e qualquer reembolso saem da tesouraria blindada da EmpowerFI na Zcash, onde o valor, o memo e o seu endereço são ilegíveis nas duas redes — então um repasse público deixa de contar a qualquer um o tamanho da sua posição e como ela vai.",
+        })}>
       {!d ? <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Loading", pt: "Carregando" })} /> : (
         <div className="space-y-4">
           {d.return_address && !editing ? (
@@ -84,6 +100,10 @@ export default function ZecReturns({ investmentId, owed, readOnly }: { investmen
                     pt: "Um endereço unificado (utest1…) ou Sapling (ztestsapling1…) da testnet: endereços transparentes não são aceitos.",
                   })
                   : owed ? tr({ en: "Something is owed to you already: it is sent once you save.", pt: "Já há um valor devido a você: ele é enviado assim que você salvar." })
+                  : paidWith === "wallet" ? tr({
+                    en: "From the next instalment on. Shares already paid to your wallet stay paid, and EmpowerFI still reads every figure — this hides your returns from the public, not from EmpowerFI.",
+                    pt: "Da próxima parcela em diante. As partes já repassadas para a sua carteira continuam repassadas, e a EmpowerFI continua lendo cada valor — isto esconde seus retornos do público, não da EmpowerFI.",
+                  })
                   : tr({ en: "Only EmpowerFI's treasury key and its auditor can see payments to it.", pt: "Só a chave da tesouraria da EmpowerFI e o auditor dela veem os pagamentos para ele." })}
               </p>
             </form>
