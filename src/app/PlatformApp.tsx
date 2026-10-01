@@ -91,12 +91,13 @@ export default function PlatformApp() {
     robots.name = "robots";
     robots.content = "noindex";
     document.head.appendChild(robots);
-    // The product's dark theme, on <html> so dialogs and toasts follow it —
-    // before the first paint, so entering from the light site does not flash.
-    document.documentElement.classList.add("dark");
+    // One product, one surface. The console used to put `.dark` on <html> and
+    // run in the financial treatment while the site stayed editorial; the two
+    // read as different products, so the workspace now inherits the site's
+    // light treatment from `:root:not(.dark)` — its field, its gold, its serif,
+    // its 3px corners — and there is nothing left to toggle.
     return () => {
       robots.remove();
-      document.documentElement.classList.remove("dark");
     };
   }, []);
 

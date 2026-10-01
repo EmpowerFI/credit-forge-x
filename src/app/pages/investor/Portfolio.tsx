@@ -87,7 +87,7 @@ export default function Portfolio() {
                     <span className="text-muted-foreground">{PURPOSE_LABEL[purpose as CreditPurpose]}</span>
                     <span className="num text-foreground">{Math.round((micro / total) * 100)}%</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-secondary"><div className="h-full rounded-full bg-primary" style={{ width: `${(micro / total) * 100}%` }} /></div>
+                  <div className="h-1.5 rounded-full bg-secondary"><div className="h-full rounded-full bg-gold" style={{ width: `${(micro / total) * 100}%` }} /></div>
                 </li>
               ))}
             </ul>
