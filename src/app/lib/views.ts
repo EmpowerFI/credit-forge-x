@@ -42,6 +42,14 @@ export interface View {
   persona: { email: string; name: string; role: Role };
   /** Where "Open" lands. */
   home: Tool;
+  /**
+   * The routes this view owns. No menu renders them any more: each dashboard
+   * carries its own tools in its sidebar, and offering the same doors a second
+   * time on the landing is what made the landing read as a second menu. They
+   * stay because they are still a manifest worth holding — `scripts/ux-paths.mts`
+   * walks every one of them to prove it renders, and views.test.ts checks each
+   * is a path some role can open. Add a route here when a view gains one.
+   */
   primary: Tool[];
   secondary: Tool[];
   icon: LucideIcon;

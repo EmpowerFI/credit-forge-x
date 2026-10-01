@@ -42,7 +42,7 @@ export default function StartPage() {
   return (
     <div className="space-y-10">
       <ViewChoice value={view.id} onChange={(id) => setParams({ as: id }, { replace: true })} />
-      <RoleLanding view={view} onTool={go} busy={busy} locked={locked}
+      <RoleLanding view={view} locked={locked}
         cta={
           <>
             <Button size="lg" className="gap-2" disabled={Boolean(locked) || switching !== null} onClick={() => go(view.home)}>
