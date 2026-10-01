@@ -31,6 +31,18 @@ export interface ZcashRequest {
   scanned_height: number | null;
   scanned_at: string | null;
   credit_signature: string | null;
+  /**
+   * The batch whose single transfer carried this payment into the vault.
+   * `members` is the anonymity set: one member hides nothing, and the screen
+   * says so rather than implying otherwise.
+   */
+  batch: {
+    status: "open" | "sending" | "credited" | "failed";
+    members: number;
+    credited_micro_usdc: number;
+    unit_micro_usdc: number;
+    signature: string | null;
+  } | null;
   investment_id: string | null;
   proof: { status: string; signature: string | null } | null;
   error: string | null;

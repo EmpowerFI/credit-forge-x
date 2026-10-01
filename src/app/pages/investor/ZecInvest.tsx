@@ -99,18 +99,48 @@ function Progress({ r }: { r: ZcashRequest }) {
           </>
         )}
       </Step>
-      <Step state={state(2)} title={tr({ en: "Converted to USDC and credited to the vault", pt: "Convertido em USDC e creditado no cofre" })}>
+      <Step state={state(2)} title={tr({ en: "Carried into the vault, in a batch", pt: "Levado ao cofre, em lote" })}>
         {tr({
-          en: "Simulated conversion at the quote: the operator's devnet USDC transfer.",
-          pt: "Conversão simulada pela cotação: a transferência de USDC da devnet feita pelo operador.",
+          en: "Simulated conversion at the quote, and the operator carries several positions across in one devnet USDC transfer, rounded down to whole units.",
+          pt: "Conversão simulada pela cotação, e o operador leva várias posições de uma vez numa única transferência de USDC na devnet, arredondada para baixo.",
         })}{" "}
         {r.credit_signature && <ExplorerLink tx={r.credit_signature} />}
+        {r.batch && <BatchLine batch={r.batch} />}
       </Step>
       <Step state={r.status === "credited" ? (r.proof?.status === "confirmed" ? "done" : "active") : "waiting"}
         title={tr({ en: "Allocated and proven on Solana", pt: "Alocado e provado na Solana" })}>
         {r.proof?.signature && <ExplorerLink tx={r.proof.signature} />}
       </Step>
     </ol>
+  );
+}
+
+/**
+ * What the chain was shown, and how many positions it could have been. The
+ * anonymity set is the first thing a reader who knows privacy looks for, so a
+ * set of one says plainly that it hides nothing: claiming otherwise would be
+ * worse than not batching at all.
+ */
+function BatchLine({ batch }: { batch: NonNullable<ZcashRequest["batch"]> }) {
+  const alone = batch.members <= 1;
+  const nothingYet = batch.credited_micro_usdc === 0;
+  return (
+    <span className="mt-1 block text-[11px] text-muted-foreground">
+      {nothingYet
+        ? tr({
+            en: `Together the batch is under one unit of ${usdc(batch.unit_micro_usdc)}, so nothing has moved on Solana yet. Your position is booked — your ZEC arrived — and the vault catches up with the next batch.`,
+            pt: `Somado, o lote está abaixo de uma unidade de ${usdc(batch.unit_micro_usdc)}, então nada se moveu na Solana ainda. Sua posição está registrada — seu ZEC chegou — e o cofre acerta no próximo lote.`,
+          })
+        : alone
+          ? tr({
+              en: `One movement of ${usdc(batch.credited_micro_usdc)} carried this position alone, so it hides nothing: a batch of one is not a crowd. Amounts stop being readable once others pay in the same window.`,
+              pt: `Um movimento de ${usdc(batch.credited_micro_usdc)} levou só esta posição, então ele não esconde nada: um lote de um não é multidão. Os valores deixam de ser legíveis quando outras pessoas pagam na mesma janela.`,
+            })
+          : tr({
+              en: `Your capital entered with ${batch.members - 1} other ${batch.members - 1 === 1 ? "position" : "positions"}, in one movement of ${usdc(batch.credited_micro_usdc)}. That number is nobody's amount, so Solana does not show yours.`,
+              pt: `Seu capital entrou junto com ${batch.members - 1} ${batch.members - 1 === 1 ? "outra posição" : "outras posições"}, num movimento único de ${usdc(batch.credited_micro_usdc)}. Esse número não é o valor de ninguém, então a Solana não mostra o seu.`,
+            })}
+    </span>
   );
 }
 

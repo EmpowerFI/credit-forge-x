@@ -1395,6 +1395,7 @@ export type Database = {
           amount_cents: number | null
           amount_micro_usdc: number
           created_at: string
+          credit_batch_id: string | null
           deposit_signature: string | null
           id: string
           investor_id: string
@@ -1414,6 +1415,7 @@ export type Database = {
           amount_cents?: number | null
           amount_micro_usdc: number
           created_at?: string
+          credit_batch_id?: string | null
           deposit_signature?: string | null
           id?: string
           investor_id: string
@@ -1433,6 +1435,7 @@ export type Database = {
           amount_cents?: number | null
           amount_micro_usdc?: number
           created_at?: string
+          credit_batch_id?: string | null
           deposit_signature?: string | null
           id?: string
           investor_id?: string
@@ -3201,12 +3204,64 @@ export type Database = {
         }
         Relationships: []
       }
+      zcash_credit_batches: {
+        Row: {
+          carried_in_micro_usdc: number
+          carried_out_micro_usdc: number
+          claimed_at: string | null
+          confirmed_at: string | null
+          created_at: string
+          credited_micro_usdc: number
+          error: string | null
+          id: string
+          signature: string | null
+          status: Database["public"]["Enums"]["zcash_batch_status"]
+          target_micro_usdc: number
+          unit_micro_usdc: number
+          updated_at: string
+          valid_until: number | null
+        }
+        Insert: {
+          carried_in_micro_usdc: number
+          carried_out_micro_usdc: number
+          claimed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          credited_micro_usdc: number
+          error?: string | null
+          id?: string
+          signature?: string | null
+          status?: Database["public"]["Enums"]["zcash_batch_status"]
+          target_micro_usdc: number
+          unit_micro_usdc: number
+          updated_at?: string
+          valid_until?: number | null
+        }
+        Update: {
+          carried_in_micro_usdc?: number
+          carried_out_micro_usdc?: number
+          claimed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          credited_micro_usdc?: number
+          error?: string | null
+          id?: string
+          signature?: string | null
+          status?: Database["public"]["Enums"]["zcash_batch_status"]
+          target_micro_usdc?: number
+          unit_micro_usdc?: number
+          updated_at?: string
+          valid_until?: number | null
+        }
+        Relationships: []
+      }
       zcash_payment_requests: {
         Row: {
           amount_micro_usdc: number
           amount_zat: number
           confirmed_at: string | null
           created_at: string
+          credit_batch_id: string | null
           credit_claimed_at: string | null
           credit_signature: string | null
           credit_valid_until: number | null
@@ -3232,6 +3287,7 @@ export type Database = {
           amount_zat: number
           confirmed_at?: string | null
           created_at?: string
+          credit_batch_id?: string | null
           credit_claimed_at?: string | null
           credit_signature?: string | null
           credit_valid_until?: number | null
@@ -3257,6 +3313,7 @@ export type Database = {
           amount_zat?: number
           confirmed_at?: string | null
           created_at?: string
+          credit_batch_id?: string | null
           credit_claimed_at?: string | null
           credit_signature?: string | null
           credit_valid_until?: number | null
@@ -4114,6 +4171,10 @@ export type Database = {
         Args: { p_id: string; p_signature: string; p_valid_until: number }
         Returns: undefined
       }
+      zcash_batch_queue: {
+        Args: { p_limit?: number }
+        Returns: Json
+      }
       zcash_position_returns: {
         Args: { p_investment_id: string }
         Returns: Json
@@ -4339,6 +4400,7 @@ export type Database = {
         | "international"
       vault_transfer_kind: "release" | "payout"
       vault_transfer_status: "pending" | "confirmed" | "failed"
+      zcash_batch_status: "open" | "sending" | "credited" | "failed"
       zcash_request_status:
         | "awaiting"
         | "seen"
@@ -4675,6 +4737,7 @@ export const Constants = {
       ],
       vault_transfer_kind: ["release", "payout"],
       vault_transfer_status: ["pending", "confirmed", "failed"],
+      zcash_batch_status: ["open", "sending", "credited", "failed"],
       zcash_request_status: [
         "awaiting",
         "seen",
