@@ -2,6 +2,7 @@ import type { Tone } from "../components/product/StatusPill";
 import type { Database } from "./platform.types";
 import { platform } from "./platform";
 import { formatNumber, getLocale, localized, tr } from "../i18n";
+import { usdc } from "./solana";
 
 // Investing with shielded ZEC (R5): the request an investor pays from any
 // Zcash wallet, and how its progress reads, from the payment on Zcash to the
@@ -183,4 +184,48 @@ export async function setReturnAddress(target: { investmentId: string } | { requ
     ? await platform.rpc("set_zcash_return_address", { p_investment_id: target.investmentId, p_address: address })
     : await platform.rpc("set_zcash_request_return_address", { p_request_id: target.requestId, p_address: address });
   if (error) throw error;
+}
+
+/** The batch a payment was carried in, as `zcash_request` reports it. */
+export type BatchOf = NonNullable<ZcashRequest["batch"]>;
+
+/**
+ * What a batch did for this investor, in one sentence, claiming only what its
+ * counts support. Four cases, and the honesty is in the middle two:
+ *
+ *   nothing credited  the batch has not crossed a whole unit, so no movement
+ *                     exists to hide anything in — but her ZEC arrived, and the
+ *                     book says so while the vault waits.
+ *   several investors the strong claim: the movement's total is nobody's.
+ *   one investor, several positions
+ *                     the amounts blend, the total does not. Saying only the
+ *                     first half here would be the lie worth avoiding.
+ *   one position      it hides nothing, and a reader who knows privacy checks
+ *                     this first, so the screen says it before they ask.
+ */
+export function batchLine(batch: BatchOf): string {
+  if (batch.credited_micro_usdc === 0) {
+    return tr({
+      en: `Together the batch is still under one unit of ${usdc(batch.unit_micro_usdc)}, so nothing has moved on Solana yet. Your position is booked — your ZEC arrived — and the vault catches up with the next batch.`,
+      pt: `Somado, o lote ainda está abaixo de uma unidade de ${usdc(batch.unit_micro_usdc)}, então nada se moveu na Solana ainda. Sua posição está registrada — seu ZEC chegou — e o cofre acerta no próximo lote.`,
+    });
+  }
+  const moved = usdc(batch.credited_micro_usdc);
+  const others = batch.investors - 1;
+  if (others >= 1) {
+    return tr({
+      en: `Your capital entered with ${others} other investor${others === 1 ? "" : "s"}, in one movement of ${moved}. That number is nobody's amount, so Solana shows neither your position nor your total.`,
+      pt: `Seu capital entrou junto com ${others} outra${others === 1 ? "" : "s"} investidora${others === 1 ? "" : "s"}, num movimento único de ${moved}. Esse número não é o valor de ninguém, então a Solana não mostra nem sua posição nem seu total.`,
+    });
+  }
+  if (batch.members > 1) {
+    return tr({
+      en: `One movement of ${moved} carried ${batch.members} of your positions, so none of their sizes is readable — but you were the only investor in it, so the movement itself is yours. It takes someone else paying in the same window to hide the total.`,
+      pt: `Um movimento único de ${moved} levou ${batch.members} posições suas, então nenhum dos tamanhos é legível — mas você foi a única investidora nele, então o movimento inteiro é seu. Esconder o total depende de outra pessoa pagar na mesma janela.`,
+    });
+  }
+  return tr({
+    en: `One movement of ${moved} carried this position alone, so it hides nothing: a batch of one is not a crowd. Amounts stop being readable once others pay in the same window.`,
+    pt: `Um movimento de ${moved} levou só esta posição, então ele não esconde nada: um lote de um não é multidão. Os valores deixam de ser legíveis quando outras pessoas pagam na mesma janela.`,
+  });
 }
