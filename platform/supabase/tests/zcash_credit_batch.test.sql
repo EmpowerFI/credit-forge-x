@@ -26,7 +26,7 @@ select set_config(
   true
 );
 
-select plan(21);
+select plan(23);
 
 -- ------------------------------------------------------------------ fixtures
 -- One request of Lena's, paid in shielded ZEC by five investors in amounts
@@ -196,8 +196,30 @@ select is((select count(*)::int from zcash_payment_requests
   'the payment goes back to waiting, for a later batch to carry');
 
 set local role service_role;
-select is((zcash_batch_claim(10000000)->>'carried_in_micro_usdc')::bigint, 5500000::bigint,
+create temp table retry as select zcash_batch_claim(10000000) as b;
+select is(((select b from retry)->>'carried_in_micro_usdc')::bigint, 5500000::bigint,
   'and the failed batch consumed no carry: only a credited batch is ever read for it');
+
+-- -------------------------- a crowd of payments is not a crowd of people
+
+-- b1 has a payment waiting (the failed batch gave it back) and pays again, so
+-- the next batch carries two positions belonging to one investor. The amounts
+-- blend; the total does not, and the two counts are what let the screen say so.
+-- The batch that claim left open has to go first: a claim resumes an open batch
+-- rather than forming a second one, which is the guard against crediting a
+-- carry twice and here it would simply hand the same batch back.
+select zcash_batch_failed((select (b->>'id')::uuid from retry), 'cleared for the next case');
+select pg_temp.paid('00000000-0000-0000-0000-0000000009b1', 6000000, 107);
+create temp table five as select zcash_batch_claim(10000000) as b;
+set local role postgres;
+-- By id, not by position in the queue: inside one transaction every batch
+-- shares the same created_at, so there is no newest one to ask for.
+select is((select (x->>'members')::int from jsonb_array_elements(zcash_batch_queue(20)->'batches') x
+           where x->>'id' = (select (b->>'id')::text from five)), 2,
+  'the batch carried two positions');
+select is((select (x->>'investors')::int from jsonb_array_elements(zcash_batch_queue(20)->'batches') x
+           where x->>'id' = (select (b->>'id')::text from five)), 1,
+  'but one investor: a crowd of payments is not a crowd of people');
 
 -- ------------------------------- the two rules the database refuses to break
 

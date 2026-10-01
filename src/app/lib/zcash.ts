@@ -32,13 +32,16 @@ export interface ZcashRequest {
   scanned_at: string | null;
   credit_signature: string | null;
   /**
-   * The batch whose single transfer carried this payment into the vault.
-   * `members` is the anonymity set: one member hides nothing, and the screen
-   * says so rather than implying otherwise.
+   * The batch whose single transfer carried this payment into the vault. Two
+   * counts, because they answer different questions: `members` is how many
+   * positions shared the movement, which is what blends the individual amounts,
+   * and `investors` is how many people, which is what blends the totals. The
+   * screen claims on the stricter one.
    */
   batch: {
     status: "open" | "sending" | "credited" | "failed";
     members: number;
+    investors: number;
     credited_micro_usdc: number;
     unit_micro_usdc: number;
     signature: string | null;
