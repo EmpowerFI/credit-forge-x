@@ -1,5 +1,5 @@
 import {
-  ArrowLeftRight, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardCheck, Coins, Cpu, FileCheck2, Gavel, Gem, History, KeyRound,
+  ArrowLeftRight, Banknote, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardCheck, Coins, Cpu, FileCheck2, Gavel, Gem, History, KeyRound,
   LayoutDashboard, MapPin, Network, PieChart, Waypoints, Route as RouteIcon, ServerCog, Share2, ShieldCheck, Split, Sprout, Store, Users, Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -140,9 +140,15 @@ export const SUBNAV: Partial<Record<AreaId, NavItem[]>> = localized({
     { to: "/app/capital/local", label: { en: "Local Economy", pt: "Economia Local" }, icon: MapPin },
     { to: "/app/capital/economics", label: { en: "Operating economics", pt: "Economia operacional" }, icon: BarChart3 },
   ],
+  // Her loan had a page and a route and nothing in this list, so the only way
+  // to it was a URL — and the sidebar on it highlighted "My business", which is
+  // how one person's own screens came to read as two people's. `end` on the
+  // first item is the other half of that: without it, /app/me/loan lit the
+  // index too.
   business: [
-    { to: "/app/me", label: { en: "My business", pt: "Meu negócio" }, icon: Store },
+    { to: "/app/me", label: { en: "My business", pt: "Meu negócio" }, icon: Store, end: true },
     { to: "/app/check-in", label: { en: "Monthly check-in", pt: "Check-in mensal" }, icon: CalendarCheck },
+    { to: "/app/me/loan", label: { en: "My loan", pt: "Meu empréstimo" }, icon: Banknote },
     { to: "/app/consent", label: { en: "Consent", pt: "Consentimento" }, icon: ShieldCheck },
   ],
   investor: [

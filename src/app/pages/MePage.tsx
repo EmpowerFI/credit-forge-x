@@ -19,6 +19,7 @@ import ProofStatus from "../components/ProofStatus";
 import { useAuth } from "../auth/useAuth";
 import { anchorsSettled } from "../lib/anchors";
 import { loadEducation } from "../lib/education";
+import { one } from "../lib/embed";
 import { describeError } from "../lib/errors";
 import { insightsFrom } from "../lib/insights";
 import { requestAssessment, requestEligibility } from "../lib/assessments";
@@ -56,9 +57,17 @@ type Credit = {
     funding_target_micro_usdc: number | null;
     partner: { name: string } | null;
     partner_decisions: { verdict: string; approved_amount_cents: number | null; rate_bps: number | null; term_months: number | null; reason: string | null }[];
-    loans: { status: keyof typeof LOAN_LABEL; principal_cents: number; term_months: number; instalment_cents: number; payments: { instalment_no: number }[] }[];
+    loans: Loan | Loan[] | null;
   } | null;
 } | null;
+
+type Loan = {
+  status: keyof typeof LOAN_LABEL;
+  principal_cents: number;
+  term_months: number;
+  instalment_cents: number;
+  payments: { instalment_no: number }[];
+};
 
 /** Her request's path: EmpowerFI's eligibility, P2P funding in reais, the loan. */
 /** What investors have funded of her request, in reais. */
@@ -70,7 +79,7 @@ function CreditProgress({ credit }: { credit: Credit }) {
   const e = credit.eligibility;
   const o = credit.opportunity;
   const decision = o?.partner_decisions?.at(-1);
-  const loan = o?.loans?.[0];
+  const loan = one(o?.loans);
   return (
     <ol className="space-y-3 border-l-2 border-accent/40 pl-4 text-sm">
       <li>
@@ -135,6 +144,12 @@ function CreditProgress({ credit }: { credit: Credit }) {
             en: `Loan · ${LOAN_LABEL[loan.status]} — ${loan.payments.length} of ${loan.term_months} instalments of ${money(loan.instalment_cents)} paid.`,
             pt: `Empréstimo · ${LOAN_LABEL[loan.status]} — ${loan.payments.length} de ${loan.term_months} parcelas de ${money(loan.instalment_cents)} pagas.`,
           })}
+          {/* The journey ends where the paying happens. Reading here that the
+              loan is running and having nowhere to go is what made one person's
+              two screens read as two people's. */}
+          <Link to="/app/me/loan" className="mt-1 block text-sm font-semibold text-info hover:underline">
+            {tr({ en: "See the loan and pay an instalment →", pt: "Ver o empréstimo e pagar uma parcela →" })}
+          </Link>
         </li>
       )}
     </ol>
@@ -348,7 +363,7 @@ export default function MePage() {
   const monthOpen = recentPeriods().find((period) => !reported.has(period)) ?? null;
   const credit = business.data?.credit ?? null;
   const opportunity = credit?.opportunity ?? null;
-  const loan = opportunity?.loans?.[0];
+  const loan = one(opportunity?.loans);
   const raising = opportunity?.status === "referred" && opportunity.funding_status !== null;
 
   const nextStep: NextStep = consentGap
@@ -375,7 +390,7 @@ export default function MePage() {
                 en: `${loan.payments.length} of ${loan.term_months} instalments of ${money(loan.instalment_cents)} paid, by Pix.`,
                 pt: `${loan.payments.length} de ${loan.term_months} parcelas de ${money(loan.instalment_cents)} pagas, por Pix.`,
               }),
-              cta: tr({ en: "See the loan", pt: "Ver o empréstimo" }), to: "#capital" }
+              cta: tr({ en: "See the loan", pt: "Ver o empréstimo" }), to: "/app/me/loan" }
           : raising
             ? { icon: HandCoins, title: tr({ en: "Your request is raising with investors", pt: "Seu pedido está captando com investidores" }),
                 why: tr({
@@ -556,23 +571,45 @@ export default function MePage() {
           <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Capital", pt: "Capital" })}</h2>
           {intent ? (
             <div className="space-y-4">
+              {/* The same three steps, in the tense they are actually in. Told
+                  in the future to someone three instalments into repaying, this
+                  paragraph read as a request still waiting to happen — which is
+                  most of why her own two screens felt like two different
+                  people's. */}
               <p className="text-sm text-foreground">
-                {tr({
-                  en: (
-                    <>
-                      You asked for <strong>{money(intent.requested_amount_cents)}</strong> for{" "}
-                      {PURPOSE_LABEL[intent.purpose].toLowerCase()}. EmpowerFI assesses whether it fits the business; if it does,
-                      P2P investors fund it and you receive and repay in reais, by Pix.
-                    </>
-                  ),
-                  pt: (
-                    <>
-                      Você pediu <strong>{money(intent.requested_amount_cents)}</strong> para{" "}
-                      {PURPOSE_LABEL[intent.purpose].toLowerCase()}. A EmpowerFI avalia se o valor cabe no negócio; se couber,
-                      investidores P2P financiam o pedido e você recebe e paga em reais, via Pix.
-                    </>
-                  ),
-                })}
+                {loan
+                  ? tr({
+                      en: (
+                        <>
+                          You asked for <strong>{money(intent.requested_amount_cents)}</strong> for{" "}
+                          {PURPOSE_LABEL[intent.purpose].toLowerCase()}. It was assessed, funded by P2P investors and
+                          formalised, and you are repaying it in reais, by Pix.
+                        </>
+                      ),
+                      pt: (
+                        <>
+                          Você pediu <strong>{money(intent.requested_amount_cents)}</strong> para{" "}
+                          {PURPOSE_LABEL[intent.purpose].toLowerCase()}. O pedido foi avaliado, financiado por investidores
+                          P2P e formalizado, e você está pagando em reais, via Pix.
+                        </>
+                      ),
+                    })
+                  : tr({
+                      en: (
+                        <>
+                          You asked for <strong>{money(intent.requested_amount_cents)}</strong> for{" "}
+                          {PURPOSE_LABEL[intent.purpose].toLowerCase()}. EmpowerFI assesses whether it fits the business; if it does,
+                          P2P investors fund it and you receive and repay in reais, by Pix.
+                        </>
+                      ),
+                      pt: (
+                        <>
+                          Você pediu <strong>{money(intent.requested_amount_cents)}</strong> para{" "}
+                          {PURPOSE_LABEL[intent.purpose].toLowerCase()}. A EmpowerFI avalia se o valor cabe no negócio; se couber,
+                          investidores P2P financiam o pedido e você recebe e paga em reais, via Pix.
+                        </>
+                      ),
+                    })}
               </p>
               <CreditProgress credit={business.data?.credit ?? null} />
               {!business.data?.credit?.eligibility && (
@@ -580,7 +617,7 @@ export default function MePage() {
                   {checkEligibility.isPending && <Loader2 size={14} className="mr-1 animate-spin" />} {tr({ en: "Assess my request", pt: "Avaliar meu pedido" })}
                 </Button>
               )}
-              {!business.data?.credit?.opportunity?.loans?.length && (
+              {!loan && (
                 <Button variant="ghost" size="sm" disabled={withdraw.isPending} onClick={() => withdraw.mutate()}>
                   {tr({ en: "Withdraw the request", pt: "Retirar o pedido" })}
                 </Button>
