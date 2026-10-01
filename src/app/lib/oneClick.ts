@@ -27,9 +27,16 @@
 //   · Solana is the one origin the network does not route into ZEC. Ethereum,
 //     Base and Arbitrum USDC all quote; SOL and Solana USDC answer "Quoting for
 //     this pair is not available" unless the funds are already parked inside
-//     NEAR Intents. So the way in is from those three, the way out is to
-//     Solana, and the screens say which is which instead of implying a
-//     round trip that does not exist.
+//     NEAR Intents. So the way in is from those three.
+//
+//   · Which chains ZEC crosses *out* to is not a fact, it is the weather. On the
+//     same day, ZEC → USDC on Solana quoted reliably all morning and by evening
+//     answered NO_QUOTE nine times running at three different sizes, while Base
+//     and Bitcoin still priced. Nothing had changed on our side; a solver
+//     stepped away from one pair. So the way out is asked rather than assumed:
+//     `anyWayOut` tries the destinations in order and the panel names whichever
+//     answered. A screen fixed to one chain would have reported the feature dead
+//     over an afternoon.
 
 import { tr } from "../i18n";
 
@@ -39,7 +46,7 @@ const BASE = "https://1click.chaindefuser.com/v0";
 export const ZEC_ASSET = "nep141:zec.omft.near";
 export const USDC_ON_SOLANA = "nep141:sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near";
 
-/** Where USDC can cross into ZEC from today, in the order a quote is cheapest to try. */
+/** Where USDC can cross into ZEC from, in the order a quote is cheapest to try. */
 export const WAYS_IN = [
   { chain: "base", name: "Base", asset: "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near" },
   { chain: "arb", name: "Arbitrum", asset: "nep141:arb-0xaf88d065e77c8cc2239327c5edb3a432268e5831.omft.near" },
@@ -47,6 +54,26 @@ export const WAYS_IN = [
 ] as const;
 
 export type WayIn = (typeof WAYS_IN)[number]["chain"];
+
+/**
+ * Where ZEC can cross out to, in the order this product would prefer: Solana
+ * first, because that is where an investor here already holds a wallet.
+ *
+ * It is a list and not a constant because which destinations are quotable is a
+ * market condition that changes inside a day. On 30 Sep 2026 ZEC → USDC on
+ * Solana quoted all morning and by evening answered NO_QUOTE while Base and
+ * Bitcoin still quoted — so a panel that could only ask about Solana would have
+ * reported the feature dead when what had happened was that a solver stepped
+ * away from one pair.
+ */
+export const WAYS_OUT = [
+  { chain: "sol", name: "Solana", asset: USDC_ON_SOLANA, probe: "So11111111111111111111111111111111111111112" },
+  { chain: "base", name: "Base", asset: WAYS_IN[0].asset, probe: "0x0000000000000000000000000000000000000001" },
+  { chain: "arb", name: "Arbitrum", asset: WAYS_IN[1].asset, probe: "0x0000000000000000000000000000000000000001" },
+  { chain: "eth", name: "Ethereum", asset: WAYS_IN[2].asset, probe: "0x0000000000000000000000000000000000000001" },
+] as const;
+
+export type WayOut = (typeof WAYS_OUT)[number]["chain"];
 
 /**
  * Addresses that exist only so a dry quote passes the API's validation. A dry
@@ -105,7 +132,10 @@ async function ask(body: Record<string, unknown>): Promise<Crossing> {
     | null;
   if (!res.ok || !json?.quote) {
     const said = json?.message ?? `HTTP ${res.status}`;
-    throw /not available/i.test(said) ? new NoRoute(said) : new Error(said);
+    // "not available" is a pair the network does not carry; "NO_QUOTE" is one
+    // nobody priced just now. Both mean the market is not offering it, which is
+    // a different thing from the request having gone wrong.
+    throw /not available|NO_QUOTE/i.test(said) ? new NoRoute(said) : new Error(said);
   }
   const q = json.quote;
   const usdIn = Number(q.amountInUsd);
@@ -134,21 +164,41 @@ export function intoZec(chain: WayIn, microUsdc: number): Promise<Crossing> {
   });
 }
 
-/** What `zat` of ZEC becomes in USDC on Solana, in micro-USDC, at the market's price now. */
-export function outOfZec(zat: number): Promise<Crossing> {
+/** What `zat` of ZEC becomes in USDC on one chain, in micro-USDC, at the market's price now. */
+export function outOfZec(zat: number, chain: WayOut = "sol"): Promise<Crossing> {
+  const way = WAYS_OUT.find((w) => w.chain === chain)!;
   return ask({
     originAsset: ZEC_ASSET,
-    destinationAsset: USDC_ON_SOLANA,
+    destinationAsset: way.asset,
     amount: String(Math.round(zat)),
-    recipient: PROBE.solana,
+    recipient: way.probe,
     refundTo: PROBE.zcash,
   });
 }
 
+/**
+ * The first way out anybody will price, and which one it was. Solana is asked
+ * first because it is where this product's investors hold wallets; the panel
+ * names whatever answered, because quoting one chain and captioning another
+ * would be the only dishonest way to make this resilient.
+ */
+export async function anyWayOut(zat: number): Promise<{ chain: WayOut; name: string; crossing: Crossing }> {
+  let last: unknown;
+  for (const way of WAYS_OUT) {
+    try {
+      return { chain: way.chain, name: way.name, crossing: await outOfZec(zat, way.chain) };
+    } catch (e) {
+      last = e;
+      if (!(e instanceof NoRoute)) throw e;
+    }
+  }
+  throw last;
+}
+
 export const crossingKey = (leg: string, amount: number) => ["one-click", leg, amount];
 
-/** Why the way in and the way out are different chains. Stated, not worked around. */
+/** Why the way in is not from Solana. Stated, not worked around. */
 export const whySolanaIsOneWay = () => tr({
-  en: "Solana is the one chain this market does not route into ZEC today, so the way in is from Base, Arbitrum or Ethereum — and the way back out is to Solana.",
-  pt: "A Solana é a única rede que este mercado ainda não roteia para ZEC, então a entrada vem de Base, Arbitrum ou Ethereum — e a volta é para a Solana.",
+  en: "Solana is the one chain this market does not route into ZEC, so the way in is from Base, Arbitrum or Ethereum. Which chains ZEC can cross back out to changes with the day, and the panel asks rather than assuming.",
+  pt: "A Solana é a única rede que este mercado não roteia para ZEC, então a entrada vem de Base, Arbitrum ou Ethereum. Para quais redes o ZEC consegue voltar muda com o dia, e o painel pergunta em vez de supor.",
 });

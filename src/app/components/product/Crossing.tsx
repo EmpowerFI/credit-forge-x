@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNumber, tr } from "../../i18n";
-import { crossingKey, intoZec, NoRoute, outOfZec, WAYS_IN, type Crossing as Priced, type WayIn } from "../../lib/oneClick";
+import { anyWayOut, crossingKey, intoZec, NoRoute, WAYS_IN, type Crossing as Priced, type WayIn } from "../../lib/oneClick";
 import { usdc } from "../../lib/solana";
 import { zec } from "../../lib/zcash";
 
@@ -57,7 +57,11 @@ function Figures({ priced, from, to }: { priced: Priced; from: string; to: (base
   );
 }
 
-function Frame({ leg, title, children, right }: { leg: "in" | "out"; title: string; children: React.ReactNode; right?: React.ReactNode }) {
+function Frame({ leg, title, children, right, quoted }: {
+  leg: "in" | "out"; title: string; children: React.ReactNode; right?: React.ReactNode;
+  /** Whether a price actually came back. Nothing was quoted live if nothing was quoted. */
+  quoted: boolean;
+}) {
   return (
     <div data-crossing={leg} className="min-w-0 space-y-1.5 rounded-xl border border-border bg-secondary/30 p-3">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
@@ -65,12 +69,12 @@ function Frame({ leg, title, children, right }: { leg: "in" | "out"; title: stri
         {right}
       </div>
       {children}
-      <p className="text-[11px] leading-snug text-muted-foreground">
+      {quoted && <p className="text-[11px] leading-snug text-muted-foreground">
         {tr({
           en: "Quoted live by NEAR Intents' solver network, which has no testnet — so this price is mainnet and the movement on this page is testnet. Nothing is swapped here.",
           pt: "Cotado ao vivo pela rede de solvers da NEAR Intents, que não tem testnet — então este preço é de mainnet e o movimento desta página é de testnet. Nada é trocado aqui.",
         })}
-      </p>
+      </p>}
     </div>
   );
 }
@@ -81,7 +85,7 @@ function Body({ query, children }: { query: { isPending: boolean; error: unknown
     return (
       <p className="text-xs text-muted-foreground">
         {query.error instanceof NoRoute
-          ? tr({ en: "No route for this pair right now.", pt: "Sem rota para este par agora." })
+          ? tr({ en: "No chain is pricing this crossing right now.", pt: "Nenhuma rede está cotando esta travessia agora." })
           : tr({ en: "The price could not be read just now.", pt: "Não foi possível ler o preço agora." })}
       </p>
     );
@@ -89,20 +93,31 @@ function Body({ query, children }: { query: { isPending: boolean; error: unknown
   return <>{children}</>;
 }
 
-/** What the ZEC of a request or a return is worth crossing back to USDC on Solana. */
+/**
+ * What the ZEC of a return is worth crossing back to USDC, and on which chain.
+ *
+ * Solana is asked first and the title names whatever answered. Which
+ * destinations are quotable moves within a day — ZEC → Solana quoted all one
+ * morning and was gone by evening while Base still priced — so a panel fixed to
+ * one chain would report the whole feature dead over a single solver stepping
+ * away from a single pair.
+ */
 export function CrossingOut({ zat }: { zat: number }) {
   const q = useQuery({
     queryKey: crossingKey("out", zat),
-    queryFn: () => outOfZec(zat),
+    queryFn: () => anyWayOut(zat),
     enabled: zat > 0,
     staleTime: 60_000,
     refetchInterval: 90_000,
     retry: false,
   });
   return (
-    <Frame leg="out" title={tr({ en: "Out to Solana, priced now", pt: "Saída para a Solana, cotada agora" })}>
+    <Frame leg="out" quoted={Boolean(q.data)}
+      title={q.data
+        ? tr({ en: `Out to USDC on ${q.data.name}, priced now`, pt: `Saída para USDC na ${q.data.name}, cotada agora` })
+        : tr({ en: "Out to USDC, priced now", pt: "Saída para USDC, cotada agora" })}>
       <Body query={q}>
-        {q.data && <Figures priced={q.data} from={zec(zat, "main")} to={(base) => usdc(base)} />}
+        {q.data && <Figures priced={q.data.crossing} from={zec(zat, "main")} to={(base) => usdc(base)} />}
       </Body>
     </Frame>
   );
@@ -126,6 +141,7 @@ export function CrossingIn({ microUsdc }: { microUsdc: number }) {
   return (
     <Frame
       leg="in"
+      quoted={Boolean(q.data)}
       title={tr({ en: "In from USDC, priced now", pt: "Entrada a partir de USDC, cotada agora" })}
       right={
         <span className="flex items-center gap-1">
