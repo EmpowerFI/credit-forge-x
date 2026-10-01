@@ -157,6 +157,9 @@ export const SUBNAV: Partial<Record<AreaId, NavItem[]>> = localized({
     { to: "/app/investor/portfolio", label: { en: "Portfolio", pt: "Carteira" }, icon: PieChart },
     { to: "/app/investor/assets", label: { en: "Positions", pt: "Posições" }, icon: Gem },
     { to: "/app/investor/settlement", label: { en: "Settlement", pt: "Liquidação" }, icon: ArrowLeftRight },
+    // The one destination the landing's tool cards carried that no dashboard
+    // did. With the cards gone it would have had no way in at all.
+    { to: "/app/investor/audit", label: { en: "Proofs", pt: "Provas" }, icon: ShieldCheck },
   ],
   desk: [
     { to: "/app/partner", label: { en: "Pipeline", pt: "Pipeline" }, icon: RouteIcon, end: true },

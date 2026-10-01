@@ -6,7 +6,7 @@ import DataLegend from "../components/product/DataLegend";
 import NetworkBadge from "../components/product/NetworkBadge";
 import { useAuth } from "../auth/useAuth";
 import { platformConfigured } from "../lib/platform";
-import { areaOf, DEMO_PASSWORD, OPERATIONS, STORIES } from "../lib/stories";
+import { areaOf, DEMO_PASSWORD, OPERATIONS } from "../lib/stories";
 import { roleOpensPath, type Tool, toolPath, type View, viewById, VIEWS } from "../lib/views";
 import RoleLanding, { ViewChoice } from "../components/views/RoleLanding";
 import { useWalletEntry } from "../wallet/WalletSignIn";
@@ -91,7 +91,7 @@ export default function LoginPage() {
         <div className="space-y-8">
           <ViewChoice value={view.id} onChange={choose} />
           {error && <p className="rounded-lg border tone-alert p-3 text-sm" role="alert">{error}</p>}
-          <RoleLanding view={view} onTool={(tool) => void openTool(tool)} busy={busyTool}
+          <RoleLanding view={view}
             cta={
               <>
                 {investor && (
@@ -116,46 +116,18 @@ export default function LoginPage() {
 
         {entry.dialogs}
 
-        <section className="space-y-4" aria-labelledby="stories-heading">
-          <div className="space-y-1">
-            <h2 id="stories-heading" className="font-heading text-xl font-bold text-foreground">{tr({ en: "One loop, three stories", pt: "Um ciclo, três histórias" })}</h2>
-            <p className="text-sm text-muted-foreground">{tr({
-              en: "The demo follows one opportunity: sponsor evidence → credit intelligence → qualified opportunity → capital → repayment → outcome. The bar at the top of the platform switches demo accounts in one click.",
-              pt: "A demonstração segue uma oportunidade: evidência do patrocinador → inteligência de crédito → oportunidade qualificada → capital → pagamento → resultado. A barra no topo da plataforma troca de conta demo em um clique.",
-            })}</p>
-          </div>
-          <ol className="grid gap-3 md:grid-cols-3">
-            {STORIES.filter((a) => !a.hidden).map((area, i) => {
-              const Icon = area.icon;
-              return (
-                <li key={area.id}>
-                  <button type="button" onClick={() => enter(area.persona.email, DEMO_PASSWORD, landing(area.to, areaOf(next)?.id === area.id))} disabled={busy !== null}
-                    aria-label={tr({ en: `Enter ${area.label}`, pt: `Entrar em ${area.label}` })}
-                    className="panel flex h-full w-full items-start gap-3 p-4 text-left transition-colors hover:border-accent/50 disabled:opacity-60">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground">{i + 1}</span>
-                    <span className="min-w-0 flex-1 space-y-0.5">
-                      <span className="flex items-center justify-between gap-2 text-sm font-semibold text-foreground">
-                        <span className="flex items-center gap-2"><Icon size={15} className="text-accent" aria-hidden /> {area.label}</span>
-                        {busy?.startsWith(area.persona.email) ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} className="text-muted-foreground" />}
-                      </span>
-                      <span className="block text-xs text-muted-foreground">{area.audience}</span>
-                      <span className="block text-[11px] text-muted-foreground">{tr({ en: `Demo account: ${area.persona.name}`, pt: `Conta demo: ${area.persona.name}` })}</span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-          <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-            <span>{tr({ en: "Oversight:", pt: "Supervisão:" })}</span>
-            {oversight.map((area) => (
-              <button key={area.id} type="button" onClick={() => enter(area.persona.email, DEMO_PASSWORD, landing(area.to, areaOf(next)?.id === area.id))} disabled={busy !== null}
-                title={area.audience} className="inline-flex items-center gap-1.5 font-medium text-foreground underline-offset-4 hover:underline disabled:opacity-60">
-                <area.icon size={14} className="text-accent" aria-hidden /> {area.label}
-              </button>
-            ))}
-          </p>
-        </section>
+        {/* Admin and the audit console are in none of the five views above,
+            so this line is the only way in to them. The three story cards
+            that used to sit here opened views the chips already open. */}
+        <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+          <span>{tr({ en: "Oversight:", pt: "Supervisão:" })}</span>
+          {oversight.map((area) => (
+            <button key={area.id} type="button" onClick={() => enter(area.persona.email, DEMO_PASSWORD, landing(area.to, areaOf(next)?.id === area.id))} disabled={busy !== null}
+              title={area.audience} className="inline-flex items-center gap-1.5 font-medium text-foreground underline-offset-4 hover:underline disabled:opacity-60">
+              <area.icon size={14} className="text-accent" aria-hidden /> {area.label}
+            </button>
+          ))}
+        </p>
 
       </main>
     </div>
