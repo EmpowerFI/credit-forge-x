@@ -164,8 +164,38 @@ export type ZcashAudit =
       confirmations_needed: number;
       received_zat: number;
       requests: Partial<Record<ZcashStatus, number>> | null;
+      batches: ZcashBatchQueue;
       receipts: ZcashReceipt[];
     };
+
+/**
+ * The vault against the book, and the batches behind the difference. Published
+ * because a batch hides amounts by crediting the vault in whole units and
+ * carrying the rest, which leaves the vault short of the book between batches —
+ * and a privacy mechanism that hides its own float is bookkeeping with the
+ * lights off.
+ */
+export type ZcashBatchQueue = {
+  booked_micro_usdc: number;
+  credited_micro_usdc: number;
+  queued_micro_usdc: number;
+  awaiting_micro_usdc: number;
+  batches: {
+    id: string;
+    status: "open" | "sending" | "credited" | "failed";
+    signature: string | null;
+    unit_micro_usdc: number;
+    credited_micro_usdc: number;
+    carried_in_micro_usdc: number;
+    carried_out_micro_usdc: number;
+    /** Positions in the batch: what blends the individual amounts. */
+    members: number;
+    /** People in the batch: what blends the totals. One is not a crowd. */
+    investors: number;
+    created_at: string;
+    confirmed_at: string | null;
+  }[];
+};
 
 export function useZcashAudit() {
   return useQuery({
