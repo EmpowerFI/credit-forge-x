@@ -1407,6 +1407,7 @@ export type Database = {
           refund_signature: string | null
           refund_valid_until: number | null
           refunded_at: string | null
+          shielded_return_address: string | null
           status: Database["public"]["Enums"]["investment_status"]
           wallet_address: string | null
         }
@@ -1427,6 +1428,7 @@ export type Database = {
           refund_signature?: string | null
           refund_valid_until?: number | null
           refunded_at?: string | null
+          shielded_return_address?: string | null
           status?: Database["public"]["Enums"]["investment_status"]
           wallet_address?: string | null
         }
@@ -1447,10 +1449,18 @@ export type Database = {
           refund_signature?: string | null
           refund_valid_until?: number | null
           refunded_at?: string | null
+          shielded_return_address?: string | null
           status?: Database["public"]["Enums"]["investment_status"]
           wallet_address?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "investments_credit_batch_id_fkey"
+            columns: ["credit_batch_id"]
+            isOneToOne: false
+            referencedRelation: "zcash_credit_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "investments_investor_id_fkey"
             columns: ["investor_id"]
@@ -3336,6 +3346,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "zcash_payment_requests_credit_batch_id_fkey"
+            columns: ["credit_batch_id"]
+            isOneToOne: false
+            referencedRelation: "zcash_credit_batches"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "zcash_payment_requests_investment_id_fkey"
             columns: ["investment_id"]
             isOneToOne: false
@@ -3961,6 +3978,7 @@ export type Database = {
         Args: {
           p_amount_micro_usdc: number
           p_created_at?: string
+          p_credit_batch_id?: string
           p_deposit_signature?: string
           p_investor_id: string
           p_is_simulated?: boolean
@@ -4141,6 +4159,23 @@ export type Database = {
         Returns: undefined
       }
       withdraw_credit_intent: { Args: never; Returns: undefined }
+      zcash_batch_claim: {
+        Args: { p_limit?: number; p_unit_micro_usdc?: number }
+        Returns: Json
+      }
+      zcash_batch_done: {
+        Args: { p_id: string; p_signature?: string }
+        Returns: Json
+      }
+      zcash_batch_failed: {
+        Args: { p_error: string; p_id: string }
+        Returns: undefined
+      }
+      zcash_batch_queue: { Args: { p_limit?: number }; Returns: Json }
+      zcash_batch_sending: {
+        Args: { p_id: string; p_signature: string; p_valid_until: number }
+        Returns: undefined
+      }
       zcash_configure_treasury: {
         Args: {
           p_address: string
@@ -4150,30 +4185,9 @@ export type Database = {
         }
         Returns: Json
       }
-      zcash_credit_claim: {
-        Args: { p_limit?: number }
-        Returns: {
-          amount_micro_usdc: number
-          credit_signature: string
-          credit_valid_until: number
-          id: string
-        }[]
-      }
-      zcash_credit_done: {
-        Args: { p_id: string; p_signature: string }
-        Returns: Json
-      }
       zcash_credit_failed: {
         Args: { p_error: string; p_id: string }
         Returns: undefined
-      }
-      zcash_credit_sending: {
-        Args: { p_id: string; p_signature: string; p_valid_until: number }
-        Returns: undefined
-      }
-      zcash_batch_queue: {
-        Args: { p_limit?: number }
-        Returns: Json
       }
       zcash_position_returns: {
         Args: { p_investment_id: string }
