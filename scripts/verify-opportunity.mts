@@ -62,8 +62,8 @@ for (const href of links.slice(0, 4)) {
 await page.reload({ waitUntil: "networkidle" });
 await settle(page, 1500);
 const MOVEMENTS = PT
-  ? [/Como a análise foi feita/, /Rota de captação/, /Escrito em reais, financiado em dólares/]
-  : [/How it was underwritten/, /Funding route/, /Written in reais, funded in dollars/];
+  ? [/Rota de captação/, /Escrito em reais, financiado em dólares/]
+  : [/Funding route/, /Written in reais, funded in dollars/];
 for (const name of MOVEMENTS) {
   const fold = page.locator("main details").filter({ has: page.locator("summary", { hasText: name }) }).first();
   if (!(await fold.count())) { console.log(`--   ${name.source}: not on this opportunity`); continue; }
@@ -81,6 +81,29 @@ for (const name of MOVEMENTS) {
   await fold.locator("summary").first().click();
   await settle(page, 200);
 }
+
+// The hierarchy a reader meets before being asked for a wallet: what it is,
+// why it passed, how it was structured, what proves it. Each used to be behind
+// a fold or absent, and the order is the point rather than the wording.
+const body = await page.locator("main").innerText();
+for (const probe of PT
+  ? [/Por que esta oportunidade/i, /Finalidade produtiva/i, /Parcela que cabe/i, /Avaliação/i, /Preserva a privacidade/i,
+     /Como a análise foi feita/i, /Elegibilidade/i, /Rota de financiamento/i,
+     /Evidências verificáveis/i, /Compromisso na blockchain/i, /Registros privados/i, /O consentimento dela/i]
+  : [/Why this opportunity/i, /Productive purpose/i, /Affordable repayment/i, /Assessment/i, /Privacy-preserving/i,
+     /How it was underwritten/i, /Eligibility/i, /Funding route/i,
+     /Verifiable evidence/i, /Onchain commitment/i, /Private records/i, /Her consent/i]) {
+  console.log(`${probe.test(body) ? "ok  " : "MISS"} ${probe.source}`);
+}
+
+// Risk band and readiness are different measurements, and the figures band is
+// where adjacency made them look like one. Readiness belongs with the band in
+// the assessment card, where each is labelled with what it measures.
+const bandLabels = await page.locator("main dl dt").allInnerTexts();
+const readinessInBand = bandLabels.some((t) => /readiness|prontid/i.test(t));
+console.log(`${readinessInBand ? "MISS" : "ok  "} readiness is out of the figures band (${bandLabels.length} figures: ${bandLabels.join(", ")})`);
+const assessment = /(Risk band|Faixa de risco)[\s\S]{0,160}(Business readiness|Prontidão do negócio)/i.test(body);
+console.log(`${assessment ? "ok  " : "MISS"} both scores sit together in the assessment card, each saying what it measures`);
 
 const overflow = async () => page.evaluate(() => {
   const out: string[] = [];
