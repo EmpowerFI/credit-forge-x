@@ -93,7 +93,7 @@ export default function Lifecycle({ principalCents, instalmentCents, termMonths,
   const [open, setOpen] = useState(false);
   const rail = useRailReveal(ORDER.length, { stepMs: 420, armed: folded ? open : undefined });
   return (
-    <Panel folded={folded} numeral={numeral} onOpenChange={setOpen} title={tr({ en: "Written in reais, funded in dollars", pt: "Escrito em reais, financiado em dólares" })}
+    <Panel folded={folded} numeral={numeral} onOpenChange={setOpen} title={tr({ en: "Follow the money, step by step", pt: "Acompanhe o dinheiro, passo a passo" })}
       description={tr({
         en: "She owes reais, fixed in her currency — the dollar figures are never what she repays.",
         pt: "A dívida dela é em reais, fixa na moeda dela — os valores em dólar nunca são o que ela paga.",

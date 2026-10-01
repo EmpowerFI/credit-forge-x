@@ -95,7 +95,7 @@ export default function FundingRoute({ row, numeral, folded }: { row: MarketRow;
   if (!a) return null;
   const chosen = pool ? a[pool] : null;
   return (
-    <Panel numeral={numeral} folded={folded} onOpenChange={setOpen} title={tr({ en: "Funding route", pt: "Rota de captação" })}
+    <Panel numeral={numeral} folded={folded} onOpenChange={setOpen} title={tr({ en: "Compare the two routes", pt: "Compare as duas rotas" })}
       description={chosen ? tr({
         en: `${POOL[pool!].name} — ${bpsPercent(chosen.all_in_bps)} all-in for her, a year.`,
         pt: `${POOL[pool!].name} — ${bpsPercent(chosen.all_in_bps)} de custo total para ela, ao ano.`,
