@@ -206,39 +206,12 @@ function Underwriting({ row }: { row: MarketRow }) {
       value: <span className={`rounded-full border px-2 py-0.5 text-xs ${decision.tone}`}>{decision.title}</span> },
   ];
   const rail = useRailReveal<HTMLDivElement>(checks.length, { stepMs: 380 });
-  const structure = [
-    { no: 1, title: tr({ en: "Eligibility", pt: "Elegibilidade" }),
-      body: tr({
-        en: `Eligible for a smaller amount — her instalment is ${percent(row.affordability_bps)} of the monthly result.`,
-        pt: `Elegível a um valor menor — a parcela dela é ${percent(row.affordability_bps)} do resultado mensal.`,
-      }) },
-    { no: 2, title: tr({ en: "Funding route", pt: "Rota de financiamento" }),
-      body: tr({
-        en: "Which pool could take it, and what it costs her all in — the comparison is below.",
-        pt: "Qual pool pôde atendê-la, e quanto custa para ela no total — a comparação está abaixo.",
-      }) },
-    { no: 3, title: tr({ en: "Written in reais, funded in dollars", pt: "Escrita em reais, financiada em dólares" }),
-      body: tr({
-        en: "She owes reais, fixed in her currency — the dollar figures are never what she repays.",
-        pt: "Ela deve reais, fixos na moeda dela — os valores em dólar nunca são o que ela paga.",
-      }) },
-  ];
-
   return (
-    <Panel title={tr({ en: "How it was underwritten", pt: "Como a análise foi feita" })}
+    <Panel numeral="1" title={tr({ en: "How it was underwritten", pt: "Como a análise foi feita" })}
       description={tr({
-        en: `${decision.title} — a smaller amount, with an affordable instalment and a clear productive use.`,
-        pt: `${decision.title} — um valor menor, com parcela que cabe e um uso produtivo claro.`,
+        en: `${decision.title}. Her instalment is ${percent(row.affordability_bps)} of the monthly result, against a productive use.`,
+        pt: `${decision.title}. A parcela dela é ${percent(row.affordability_bps)} do resultado mensal, contra um uso produtivo.`,
       })}>
-      <ol className="mb-5 grid gap-3 sm:grid-cols-3">
-        {structure.map((c) => (
-          <li key={c.no} className="panel min-w-0 space-y-1 p-4">
-            <span className="num flex size-6 items-center justify-center rounded-full border border-border text-xs font-medium text-muted-foreground">{c.no}</span>
-            <span className="block pt-1 text-sm font-medium text-foreground">{c.title}</span>
-            <span className="block text-sm leading-snug text-muted-foreground">{c.body}</span>
-          </li>
-        ))}
-      </ol>
       <div ref={rail.ref}>
         {checks.map((c, i) => (
           <Field key={c.label} label={c.label} kind={c.kind} state={rail.state(i)}>{c.value}</Field>
@@ -425,10 +398,10 @@ export default function OpportunityDetail() {
 
           <Underwriting row={row} />
 
-          <FundingRoute row={row} folded />
+          <FundingRoute row={row} numeral="2" folded />
 
           {pool === "global" && (
-            <Lifecycle folded principalCents={row.amount_cents} instalmentCents={row.instalment_cents} termMonths={row.term_months}
+            <Lifecycle folded numeral="3" principalCents={row.amount_cents} instalmentCents={row.instalment_cents} termMonths={row.term_months}
               fxMilli={row.fx_brl_per_usdc_milli} stages={stages} />
           )}
 

@@ -88,7 +88,7 @@ for (const name of MOVEMENTS) {
 const body = await page.locator("main").innerText();
 for (const probe of PT
   ? [/Por que esta oportunidade/i, /Finalidade produtiva/i, /Parcela que cabe/i, /Avaliação/i, /Preserva a privacidade/i,
-     /Como a análise foi feita/i, /Elegibilidade/i, /Rota de financiamento/i,
+     /Como a análise foi feita/i, /Elegibilidade/i, /Rota de captação/i,
      /Evidências verificáveis/i, /Compromisso na blockchain/i, /Registros privados/i, /O consentimento dela/i]
   : [/Why this opportunity/i, /Productive purpose/i, /Affordable repayment/i, /Assessment/i, /Privacy-preserving/i,
      /How it was underwritten/i, /Eligibility/i, /Funding route/i,
