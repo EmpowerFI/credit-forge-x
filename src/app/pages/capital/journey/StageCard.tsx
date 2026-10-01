@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import {
-  ArrowRight, Banknote, Coins, Gem, Globe2, HandCoins, Landmark, Split, Sprout, type LucideIcon,
+  ArrowRight, Banknote, Coins, Gem, Globe2, HandCoins, Landmark, Loader2, Split, Sprout, type LucideIcon,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import StatusPill from "../../../components/product/StatusPill";
+import type { RailState } from "../../../lib/moneyRail";
 import { tr } from "../../../i18n";
 import { STAGE, type Stage, type StageKey } from "../../../lib/capitalJourney";
 import { EVIDENCE } from "../../../lib/evidence";
@@ -123,20 +125,30 @@ function Detail({ s }: { s: Stage }) {
   );
 }
 
-export default function StageCard({ s }: { s: Stage }) {
+export default function StageCard({ s, state = "settled" }: { s: Stage; state?: RailState }) {
   const meta = STAGE[s.key];
   const Icon = ICON[s.key];
   const label = EVIDENCE[s.evidence];
+  // Two reasons a card can be dim and they must not fight: the run has not
+  // reached it yet, or the stage never happened. The first is temporary and the
+  // second is the reading, so arrival settles into whichever the stage is.
+  const waiting = state === "waiting";
 
   return (
-    <li className={`panel flex min-w-0 flex-col gap-3 p-4 ${s.happened ? "" : "opacity-70"}`}>
+    <li className={cn(
+      "panel flex min-w-0 flex-col gap-3 p-4 transition-all duration-300 ease-out",
+      "motion-reduce:transition-none motion-reduce:translate-y-0 motion-reduce:opacity-100",
+      waiting ? "translate-y-1 opacity-40" : s.happened ? "translate-y-0 opacity-100" : "translate-y-0 opacity-70",
+      state === "running" && "border-accent/50",
+    )}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span
-            className="num flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground"
+            className={cn("num flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors duration-300 motion-reduce:transition-none",
+              state === "running" ? "bg-accent/15 text-accent" : "bg-muted text-muted-foreground")}
             aria-hidden
           >
-            {s.no}
+            {state === "running" ? <Loader2 size={11} className="animate-spin motion-reduce:animate-none" /> : s.no}
           </span>
           <h3 className="min-w-0 font-heading text-sm font-bold text-foreground">{meta.title}</h3>
         </div>
