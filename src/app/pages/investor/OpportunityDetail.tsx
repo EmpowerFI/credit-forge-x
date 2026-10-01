@@ -95,19 +95,12 @@ function Field({ label, children, kind, state = "settled" }: {
 }
 
 /** One figure of the band that decides: label, number, and a hint or a hairline. */
-function Cell({ label, value, hint, bar, first }: {
-  label: string; value: React.ReactNode; hint?: string; bar?: number | null; first?: boolean;
-}) {
+function Cell({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (
-    <div className={`space-y-1 py-3 ${first ? "lg:pr-4" : "lg:px-4"}`}>
-      <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
+    <div className="min-w-0 space-y-1 px-5 py-4 first:pl-0 sm:first:pl-5">
       <dd className="num font-heading text-2xl font-bold leading-none text-foreground">{value}</dd>
-      {hint && <p className="num text-xs text-muted-foreground">{hint}</p>}
-      {bar !== undefined && bar !== null && (
-        <div className="h-0.5 bg-border" role="presentation">
-          <div className="h-0.5 bg-accent transition-[width] duration-700 motion-reduce:transition-none" style={{ width: `${Math.min(100, bar)}%` }} />
-        </div>
-      )}
+      <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
+      {hint && <p className="num text-xs leading-snug text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -117,10 +110,15 @@ function Cell({ label, value, hint, bar, first }: {
  * why the opportunity had passed at all, which is the wrong order: the question
  * "should I care" comes before "show me the workings".
  */
-function Card({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+function Card({ icon, title, tone = "positive", children }: {
+  icon: React.ReactNode; title: string; tone?: "positive" | "info"; children: React.ReactNode;
+}) {
   return (
     <li className="panel flex min-w-0 gap-3 p-4">
-      <span className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden>{icon}</span>
+      <span aria-hidden
+        className={`flex size-9 shrink-0 items-center justify-center rounded-full ${tone === "info" ? "bg-info/10 text-info" : "bg-positive/10 text-positive"}`}>
+        {icon}
+      </span>
       <span className="min-w-0 space-y-1">
         <span className="block text-sm font-medium text-foreground">{title}</span>
         <span className="block text-sm leading-snug text-muted-foreground">{children}</span>
@@ -145,7 +143,7 @@ function Why({ row }: { row: MarketRow }) {
         <Card icon={<ShoppingCart size={18} />} title={tr({ en: "Productive purpose", pt: "Finalidade produtiva" })}>
           {WHY[row.purpose]}
         </Card>
-        <Card icon={<TrendingUp size={18} />} title={tr({ en: "Affordable repayment", pt: "Parcela que cabe" })}>
+        <Card tone="info" icon={<TrendingUp size={18} />} title={tr({ en: "Affordable repayment", pt: "Parcela que cabe" })}>
           {tr({
             en: `Eligible for a smaller amount — her instalment is ${percent(row.affordability_bps)} of the monthly result.`,
             pt: `Elegível a um valor menor — a parcela dela é ${percent(row.affordability_bps)} do resultado mensal.`,
@@ -164,7 +162,7 @@ function Why({ row }: { row: MarketRow }) {
             {tr({ en: "how well she keeps her own records", pt: "o quanto ela mantém os próprios registros" })}
           </span>
         </Card>
-        <Card icon={<Lock size={18} />} title={tr({ en: "Privacy-preserving", pt: "Preserva a privacidade" })}>
+        <Card tone="info" icon={<Lock size={18} />} title={tr({ en: "Privacy-preserving", pt: "Preserva a privacidade" })}>
           {tr({
             en: "Each assessment's commitment is on Solana; investors get the decision and its proof — never her identity, bank data or financial history.",
             pt: "O hash de cada avaliação está na Solana; os investidores recebem a decisão e a prova dela — nunca a identidade, os dados bancários ou o histórico financeiro.",
@@ -206,16 +204,16 @@ function Underwriting({ row }: { row: MarketRow }) {
       value: <span className={`rounded-full border px-2 py-0.5 text-xs ${decision.tone}`}>{decision.title}</span> },
   ];
   const rail = useRailReveal<HTMLDivElement>(checks.length, { stepMs: 380 });
-  const structure = [
+  const steps = [
     { no: 1, title: tr({ en: "Eligibility", pt: "Elegibilidade" }),
       body: tr({
         en: `Eligible for a smaller amount — her instalment is ${percent(row.affordability_bps)} of the monthly result.`,
         pt: `Elegível a um valor menor — a parcela dela é ${percent(row.affordability_bps)} do resultado mensal.`,
       }) },
-    { no: 2, title: tr({ en: "Funding route", pt: "Rota de financiamento" }),
+    { no: 2, title: tr({ en: "Funding route", pt: "Rota de captação" }),
       body: tr({
-        en: "Which pool could take it, and what it costs her all in — the comparison is below.",
-        pt: "Qual pool pôde atendê-la, e quanto custa para ela no total — a comparação está abaixo.",
+        en: "Which pool could take it, and what it costs her all in for a year.",
+        pt: "Qual pool pôde atendê-la, e quanto custa para ela no total, em um ano.",
       }) },
     { no: 3, title: tr({ en: "Written in reais, funded in dollars", pt: "Escrita em reais, financiada em dólares" }),
       body: tr({
@@ -227,14 +225,14 @@ function Underwriting({ row }: { row: MarketRow }) {
   return (
     <Panel title={tr({ en: "How it was underwritten", pt: "Como a análise foi feita" })}
       description={tr({
-        en: `${decision.title} — a smaller amount, with an affordable instalment and a clear productive use.`,
-        pt: `${decision.title} — um valor menor, com parcela que cabe e um uso produtivo claro.`,
+        en: `${decision.title}. Her instalment is ${percent(row.affordability_bps)} of the monthly result, against a productive use.`,
+        pt: `${decision.title}. A parcela dela é ${percent(row.affordability_bps)} do resultado mensal, contra um uso produtivo.`,
       })}>
       <ol className="mb-5 grid gap-3 sm:grid-cols-3">
-        {structure.map((c) => (
-          <li key={c.no} className="panel min-w-0 space-y-1 p-4">
-            <span className="num flex size-6 items-center justify-center rounded-full border border-border text-xs font-medium text-muted-foreground">{c.no}</span>
-            <span className="block pt-1 text-sm font-medium text-foreground">{c.title}</span>
+        {steps.map((c) => (
+          <li key={c.no} className="panel min-w-0 space-y-2 p-4">
+            <span className="num flex size-7 items-center justify-center rounded-full bg-secondary text-xs font-medium text-muted-foreground">{c.no}</span>
+            <span className="block text-sm font-medium text-foreground">{c.title}</span>
             <span className="block text-sm leading-snug text-muted-foreground">{c.body}</span>
           </li>
         ))}
@@ -272,7 +270,7 @@ function Evidence({ row, proofs }: { row: MarketRow; proofs: Proof[] }) {
           <Card icon={<FileCheck2 size={18} />} title={tr({ en: "Onchain commitment", pt: "Compromisso na blockchain" })}>
             {tr({ en: "Each assessment is recorded on Solana.", pt: "Cada avaliação fica registrada na Solana." })}
           </Card>
-          <Card icon={<EyeOff size={18} />} title={tr({ en: "Private records", pt: "Registros privados" })}>
+          <Card tone="info" icon={<EyeOff size={18} />} title={tr({ en: "Private records", pt: "Registros privados" })}>
             {tr({ en: "The underlying financial record stays private.", pt: "O registro financeiro por trás dela fica privado." })}
           </Card>
           <Card icon={<UserCheck size={18} />} title={tr({ en: "Her consent", pt: "O consentimento dela" })}>
@@ -376,7 +374,7 @@ export default function OpportunityDetail() {
 
         <div className="min-w-0 xl:col-start-1 xl:row-start-1">
           <header className="space-y-4 border-b border-border pb-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="min-w-0 space-y-3">
               <div className="min-w-0 space-y-1">
                 <p className="num text-xs font-medium uppercase tracking-widest text-accent">
                   {row.business_sector ? `${sectorLabel(row.business_sector)} · ` : ""}{row.code}
@@ -394,13 +392,16 @@ export default function OpportunityDetail() {
               <span className="flex flex-wrap items-center gap-2">
                 <PoolPill pool={pool} />
                 <StatusPill tone={FUNDING_LABEL[row.funding_status].tone}>{FUNDING_LABEL[row.funding_status].label}</StatusPill>
+                <StatusPill tone="positive">{tr({ en: "Productive credit", pt: "Crédito produtivo" })}</StatusPill>
               </span>
             </div>
 
-            {/* The five figures that decide, in one band. Expected return was a
-                panel of its own in the aside, where it sat below the fold. */}
-            <dl className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] divide-x divide-border">
-              <Cell label={tr({ en: "Requested", pt: "Pedido" })} value={money(row.amount_cents)} first
+            {/* The figures that decide and the raise behind them, in one
+                bordered block: four numbers read as a row, and the bar that
+                says how much of the ask is already there closes it. */}
+            <div className="panel p-0">
+              <dl className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
+                <Cell label={tr({ en: "Requested", pt: "Pedido" })} value={money(row.amount_cents)}
                 hint={pool === "global"
                   ? tr({
                     en: `≈ ${usdc(row.funding_target_micro_usdc, 0)} at ${reaisRate(row.fx_brl_per_usdc_milli ?? 0, 3)}/USDC, simulated`,
@@ -415,10 +416,12 @@ export default function OpportunityDetail() {
                 hint={tr({ en: "Monthly instalments in reais", pt: "Parcelas mensais em reais" })} />
               <Cell label={tr({ en: "Risk band", pt: "Faixa de risco" })} value={risk.grade}
                 hint={tr({ en: `${LEVEL[row.confidence]} confidence`, pt: `Confiança ${LEVEL[row.confidence]}` })} />
-            </dl>
-
-            <FundingBar funded={row.funded_micro_usdc} target={row.funding_target_micro_usdc} investors={row.investors}
-              pool={pool} fxMilli={row.fx_brl_per_usdc_milli} amountCents={row.amount_cents} />
+              </dl>
+              <div className="border-t border-border px-5 py-4">
+                <FundingBar funded={row.funded_micro_usdc} target={row.funding_target_micro_usdc} investors={row.investors}
+                  pool={pool} fxMilli={row.fx_brl_per_usdc_milli} amountCents={row.amount_cents} />
+              </div>
+            </div>
           </header>
 
           <Why row={row} />
