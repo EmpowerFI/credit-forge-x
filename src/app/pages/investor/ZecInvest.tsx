@@ -15,7 +15,7 @@ import type { MarketRow } from "../../lib/investor";
 import { whySolanaIsOneWay } from "../../lib/oneClick";
 import { usdc } from "../../lib/solana";
 import {
-  checkZcashNow, createZcashRequest, fetchZcashRequest, isShieldedTestAddress, LIVE, paymentUri, POOL_LABEL, setReturnAddress,
+  batchLine, checkZcashNow, createZcashRequest, fetchZcashRequest, isShieldedTestAddress, LIVE, paymentUri, POOL_LABEL, setReturnAddress,
   shieldedExplorerNote, STATUS_LABEL, usdPerZec, ZCASH_FAUCET, zec, type ZcashRequest,
 } from "../../lib/zcash";
 import { formatNumber, tr } from "../../i18n";
@@ -99,12 +99,13 @@ function Progress({ r }: { r: ZcashRequest }) {
           </>
         )}
       </Step>
-      <Step state={state(2)} title={tr({ en: "Converted to USDC and credited to the vault", pt: "Convertido em USDC e creditado no cofre" })}>
+      <Step state={state(2)} title={tr({ en: "Carried into the vault, in a batch", pt: "Levado ao cofre, em lote" })}>
         {tr({
-          en: "Simulated conversion at the quote: the operator's devnet USDC transfer.",
-          pt: "Conversão simulada pela cotação: a transferência de USDC da devnet feita pelo operador.",
+          en: "Simulated conversion at the quote, and the operator carries several positions across in one devnet USDC transfer, rounded down to whole units.",
+          pt: "Conversão simulada pela cotação, e o operador leva várias posições de uma vez numa única transferência de USDC na devnet, arredondada para baixo.",
         })}{" "}
         {r.credit_signature && <ExplorerLink tx={r.credit_signature} />}
+        {r.batch && <span className="mt-1 block text-[11px] text-muted-foreground">{batchLine(r.batch)}</span>}
       </Step>
       <Step state={r.status === "credited" ? (r.proof?.status === "confirmed" ? "done" : "active") : "waiting"}
         title={tr({ en: "Allocated and proven on Solana", pt: "Alocado e provado na Solana" })}>

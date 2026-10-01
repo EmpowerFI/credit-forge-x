@@ -10,7 +10,7 @@ select set_config(
   true
 );
 
-select plan(36);
+select plan(39);
 
 -- ------------------------------------------------------------------ fixtures
 -- One partner, one community, Rita ready and asking. Wanda invests from a
@@ -208,25 +208,37 @@ select is((select count(*)::int from zcash_receipts), 3, 'no receipt was added t
 -- ---------------------------------------------------------------- credit
 
 set local role service_role;
-create temp table claimed as select * from zcash_credit_claim();
-select results_eq($$ select id, amount_micro_usdc, credit_signature from claimed $$,
-  $$ select id, 10000000::bigint, null::text from req where name = 'wanda' $$,
-  'the function claims Wanda''s credit: her amount, nothing sent yet');
-select is((select count(*)::int from zcash_credit_claim()), 0, 'and a second run does not claim it again');
-select throws_ok($$ select zcash_credit_done((select id from claimed), 'sig-credit') $$, 'P0001', 'credit_not_pending',
-  'it is done only with the signature recorded before sending');
-select zcash_credit_sending((select id from claimed), 'sig-credit', 1000);
-select lives_ok($$ select zcash_credit_done((select id from claimed), 'sig-credit') $$, 'the credit lands');
+-- A unit of 10 USDC, so that Wanda's payment is exactly one whole unit and this
+-- file stays about the credit landing. The carry's arithmetic is its own file.
+create temp table claimed as select zcash_batch_claim(10000000) as b;
+select is(((select b from claimed)->>'requests')::int, 1, 'the batch claims Wanda''s payment');
+select is(((select b from claimed)->>'credited_micro_usdc')::bigint, 10000000::bigint,
+  'one whole unit is credited, nothing sent yet');
+select is(((select b from claimed)->>'carried_out_micro_usdc')::bigint, 0::bigint, 'and nothing is carried');
+select is((zcash_batch_claim(10000000)->>'resumed')::boolean, true,
+  'a second run resumes the batch in flight instead of forming another');
+select throws_ok($$ select zcash_batch_done((select (b->>'id')::uuid from claimed), 'sig-credit') $$,
+  'P0001', 'batch_signature_mismatch',
+  'it closes only against the signature recorded before sending');
+select zcash_batch_sending((select (b->>'id')::uuid from claimed), 'sig-credit', 1000);
+select lives_ok($$ select zcash_batch_done((select (b->>'id')::uuid from claimed), 'sig-credit') $$,
+  'the credit lands');
 set local role postgres;
 select results_eq(
   $$ select i.mode::text, i.amount_micro_usdc, i.deposit_signature, i.wallet_address, z.status::text
-     from zcash_payment_requests z join investments i on i.id = z.investment_id where z.id = (select id from claimed) $$,
-  $$ values ('zcash', 10000000::bigint, 'sig-credit', 'WaNdA5555555555555555555555555555555555555', 'credited') $$,
-  'it becomes Wanda''s allocation: mode zcash, the operator''s transfer as its deposit'
+     from zcash_payment_requests z join investments i on i.id = z.investment_id
+     where z.credit_batch_id = (select (b->>'id')::uuid from claimed) $$,
+  $$ values ('zcash', 10000000::bigint, null::text, 'WaNdA5555555555555555555555555555555555555', 'credited') $$,
+  'it becomes Wanda''s allocation: mode zcash, and no transfer of her own'
+);
+select is(
+  (select i.credit_batch_id from investments i where i.credit_batch_id is not null),
+  (select (b->>'id')::uuid from claimed),
+  'the batch is what her position is backed by'
 );
 select ok(
   exists (select 1 from chain_anchors a join zcash_payment_requests z on a.entity_id = z.investment_id
-          where a.kind = 'allocation' and z.id = (select id from claimed)),
+          where a.kind = 'allocation' and z.credit_batch_id = (select (b->>'id')::uuid from claimed)),
   'queued for Solana like any allocation'
 );
 select is((select funded_micro_usdc from qualified_credit_opportunities where id = (select id from rita)), 10000000::bigint,
@@ -241,11 +253,11 @@ select zcash_watch_record(103, 103, 'hash103', jsonb_build_array(
     'memo', 'EmpowerFI allocation ' || (select ref from req where name = 'yara-filled'), 'height', 102)));
 select record_investment('00000000-0000-0000-0000-0000000005b1', (select id from rita), (select target from rita) - 10000000,
   'wallet', 'WaNdA5555555555555555555555555555555555555', 'sig-wanda-fill');
-select is((select count(*)::int from zcash_credit_claim()), 0, 'a request whose opportunity filled is not claimed');
+select ok(zcash_batch_claim(10000000) is null, 'a request whose opportunity filled forms no batch');
 set local role postgres;
 select results_eq(
-  $$ select status::text, credit_signature, error from zcash_payment_requests where id = (select id from req where name = 'yara-filled') $$,
-  $$ values ('failed', null::text, 'the opportunity closed or filled before the payment confirmed') $$,
+  $$ select status::text, credit_batch_id, error from zcash_payment_requests where id = (select id from req where name = 'yara-filled') $$,
+  $$ values ('failed', null::uuid, 'the opportunity closed or filled before the payment confirmed') $$,
   'it fails before any USDC moves, with the reason'
 );
 

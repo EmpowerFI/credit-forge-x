@@ -1395,6 +1395,7 @@ export type Database = {
           amount_cents: number | null
           amount_micro_usdc: number
           created_at: string
+          credit_batch_id: string | null
           deposit_signature: string | null
           id: string
           investor_id: string
@@ -1406,6 +1407,7 @@ export type Database = {
           refund_signature: string | null
           refund_valid_until: number | null
           refunded_at: string | null
+          shielded_return_address: string | null
           status: Database["public"]["Enums"]["investment_status"]
           wallet_address: string | null
         }
@@ -1414,6 +1416,7 @@ export type Database = {
           amount_cents?: number | null
           amount_micro_usdc: number
           created_at?: string
+          credit_batch_id?: string | null
           deposit_signature?: string | null
           id?: string
           investor_id: string
@@ -1425,6 +1428,7 @@ export type Database = {
           refund_signature?: string | null
           refund_valid_until?: number | null
           refunded_at?: string | null
+          shielded_return_address?: string | null
           status?: Database["public"]["Enums"]["investment_status"]
           wallet_address?: string | null
         }
@@ -1433,6 +1437,7 @@ export type Database = {
           amount_cents?: number | null
           amount_micro_usdc?: number
           created_at?: string
+          credit_batch_id?: string | null
           deposit_signature?: string | null
           id?: string
           investor_id?: string
@@ -1444,10 +1449,18 @@ export type Database = {
           refund_signature?: string | null
           refund_valid_until?: number | null
           refunded_at?: string | null
+          shielded_return_address?: string | null
           status?: Database["public"]["Enums"]["investment_status"]
           wallet_address?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "investments_credit_batch_id_fkey"
+            columns: ["credit_batch_id"]
+            isOneToOne: false
+            referencedRelation: "zcash_credit_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "investments_investor_id_fkey"
             columns: ["investor_id"]
@@ -3201,12 +3214,64 @@ export type Database = {
         }
         Relationships: []
       }
+      zcash_credit_batches: {
+        Row: {
+          carried_in_micro_usdc: number
+          carried_out_micro_usdc: number
+          claimed_at: string | null
+          confirmed_at: string | null
+          created_at: string
+          credited_micro_usdc: number
+          error: string | null
+          id: string
+          signature: string | null
+          status: Database["public"]["Enums"]["zcash_batch_status"]
+          target_micro_usdc: number
+          unit_micro_usdc: number
+          updated_at: string
+          valid_until: number | null
+        }
+        Insert: {
+          carried_in_micro_usdc: number
+          carried_out_micro_usdc: number
+          claimed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          credited_micro_usdc: number
+          error?: string | null
+          id?: string
+          signature?: string | null
+          status?: Database["public"]["Enums"]["zcash_batch_status"]
+          target_micro_usdc: number
+          unit_micro_usdc: number
+          updated_at?: string
+          valid_until?: number | null
+        }
+        Update: {
+          carried_in_micro_usdc?: number
+          carried_out_micro_usdc?: number
+          claimed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          credited_micro_usdc?: number
+          error?: string | null
+          id?: string
+          signature?: string | null
+          status?: Database["public"]["Enums"]["zcash_batch_status"]
+          target_micro_usdc?: number
+          unit_micro_usdc?: number
+          updated_at?: string
+          valid_until?: number | null
+        }
+        Relationships: []
+      }
       zcash_payment_requests: {
         Row: {
           amount_micro_usdc: number
           amount_zat: number
           confirmed_at: string | null
           created_at: string
+          credit_batch_id: string | null
           credit_claimed_at: string | null
           credit_signature: string | null
           credit_valid_until: number | null
@@ -3232,6 +3297,7 @@ export type Database = {
           amount_zat: number
           confirmed_at?: string | null
           created_at?: string
+          credit_batch_id?: string | null
           credit_claimed_at?: string | null
           credit_signature?: string | null
           credit_valid_until?: number | null
@@ -3257,6 +3323,7 @@ export type Database = {
           amount_zat?: number
           confirmed_at?: string | null
           created_at?: string
+          credit_batch_id?: string | null
           credit_claimed_at?: string | null
           credit_signature?: string | null
           credit_valid_until?: number | null
@@ -3278,6 +3345,13 @@ export type Database = {
           usd_per_zec_cents?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "zcash_payment_requests_credit_batch_id_fkey"
+            columns: ["credit_batch_id"]
+            isOneToOne: false
+            referencedRelation: "zcash_credit_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "zcash_payment_requests_investment_id_fkey"
             columns: ["investment_id"]
@@ -3904,6 +3978,7 @@ export type Database = {
         Args: {
           p_amount_micro_usdc: number
           p_created_at?: string
+          p_credit_batch_id?: string
           p_deposit_signature?: string
           p_investor_id: string
           p_is_simulated?: boolean
@@ -4084,6 +4159,23 @@ export type Database = {
         Returns: undefined
       }
       withdraw_credit_intent: { Args: never; Returns: undefined }
+      zcash_batch_claim: {
+        Args: { p_limit?: number; p_unit_micro_usdc?: number }
+        Returns: Json
+      }
+      zcash_batch_done: {
+        Args: { p_id: string; p_signature?: string }
+        Returns: Json
+      }
+      zcash_batch_failed: {
+        Args: { p_error: string; p_id: string }
+        Returns: undefined
+      }
+      zcash_batch_queue: { Args: { p_limit?: number }; Returns: Json }
+      zcash_batch_sending: {
+        Args: { p_id: string; p_signature: string; p_valid_until: number }
+        Returns: undefined
+      }
       zcash_configure_treasury: {
         Args: {
           p_address: string
@@ -4093,25 +4185,8 @@ export type Database = {
         }
         Returns: Json
       }
-      zcash_credit_claim: {
-        Args: { p_limit?: number }
-        Returns: {
-          amount_micro_usdc: number
-          credit_signature: string
-          credit_valid_until: number
-          id: string
-        }[]
-      }
-      zcash_credit_done: {
-        Args: { p_id: string; p_signature: string }
-        Returns: Json
-      }
       zcash_credit_failed: {
         Args: { p_error: string; p_id: string }
-        Returns: undefined
-      }
-      zcash_credit_sending: {
-        Args: { p_id: string; p_signature: string; p_valid_until: number }
         Returns: undefined
       }
       zcash_position_returns: {
@@ -4339,6 +4414,7 @@ export type Database = {
         | "international"
       vault_transfer_kind: "release" | "payout"
       vault_transfer_status: "pending" | "confirmed" | "failed"
+      zcash_batch_status: "open" | "sending" | "credited" | "failed"
       zcash_request_status:
         | "awaiting"
         | "seen"
@@ -4675,6 +4751,7 @@ export const Constants = {
       ],
       vault_transfer_kind: ["release", "payout"],
       vault_transfer_status: ["pending", "confirmed", "failed"],
+      zcash_batch_status: ["open", "sending", "credited", "failed"],
       zcash_request_status: [
         "awaiting",
         "seen",

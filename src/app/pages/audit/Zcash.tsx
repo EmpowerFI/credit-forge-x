@@ -11,7 +11,7 @@ import StatusPill from "../../components/product/StatusPill";
 import { formatNumber, tr } from "../../i18n";
 import { usdc } from "../../lib/solana";
 import { POOL_LABEL, RETURN_LABEL, shieldedExplorerNote, STATUS_LABEL, usdPerZec, zec } from "../../lib/zcash";
-import { useZcashAudit, useZcashReturnsAudit } from "./queries";
+import { useZcashAudit, useZcashReturnsAudit, type ZcashBatchQueue } from "./queries";
 
 const ago = (iso: string | null) => {
   if (!iso) return tr({ en: "never", pt: "nunca" });
@@ -129,7 +129,7 @@ zcash-devtool wallet -w ./audit-view list-tx`;
             pt: "Importe a chave em qualquer carteira Zcash que aceite chave de visualização, e ela lista os mesmos pagamentos. Com o zcash-devtool:",
           })}>
           <div className="relative overflow-x-auto rounded-xl border border-border bg-secondary/40">
-            <pre className="p-3 font-mono text-xs leading-relaxed text-foreground">{devtool}</pre>
+            <pre className="overflow-x-auto p-3 font-mono text-xs leading-relaxed text-foreground">{devtool}</pre>
           </div>
           <p className="text-xs text-muted-foreground">
             {tr({
@@ -139,6 +139,8 @@ zcash-devtool wallet -w ./audit-view list-tx`;
           </p>
         </Panel>
       </div>
+
+      <Batches queue={d.batches} />
 
       <Panel title={tr({ en: "Notes received", pt: "Notas recebidas" })}
         description={tr({
@@ -194,6 +196,102 @@ zcash-devtool wallet -w ./audit-view list-tx`;
 }
 
 /** What the treasury paid back in ZEC: instalment shares and refunds, by transaction. */
+/**
+ * The float, in the open. A batch credits the vault in whole units and carries
+ * the remainder, so between batches the vault holds less than the book — by less
+ * than one unit, and belonging to no single investor, because attributing it
+ * would rebuild the link the batch exists to break. Showing it is the price of
+ * the claim: a privacy mechanism that hides its own float is bookkeeping with
+ * the lights off.
+ *
+ * `investors` is printed beside `members` because they are not the same number.
+ * Positions blend the amounts; only people blend the totals, and a batch of one
+ * is labelled as hiding nothing rather than left to look like a crowd.
+ */
+function Batches({ queue }: { queue: ZcashBatchQueue }) {
+  const short = queue.booked_micro_usdc - queue.credited_micro_usdc;
+  return (
+    <Panel title={tr({ en: "Carried into the vault, in batches", pt: "Levado ao cofre, em lotes" })}
+      description={tr({
+        en: "One transfer per batch, rounded down to whole units, so the amount on Solana is the sum of nobody. What the rounding leaves over waits for the next batch, which is why the vault holds less than the book here.",
+        pt: "Uma transferência por lote, arredondada para baixo em unidades inteiras, então o valor na Solana não é a soma de ninguém. O que o arredondamento deixa de fora espera o próximo lote, e é por isso que o cofre tem menos que o livro aqui.",
+      })}>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatTile label={tr({ en: "The book says", pt: "O livro diz" })} value={usdc(queue.booked_micro_usdc)}
+          hint={tr({ en: "every position whose ZEC arrived", pt: "cada posição cujo ZEC chegou" })} />
+        <StatTile label={tr({ en: "The vault was sent", pt: "O cofre recebeu" })} value={usdc(queue.credited_micro_usdc)}
+          hint={tr({ en: "in whole units only", pt: "só em unidades inteiras" })} />
+        <StatTile label={tr({ en: "Waiting for the next batch", pt: "Esperando o próximo lote" })} value={usdc(queue.queued_micro_usdc)}
+          hint={tr({ en: "the rounding's remainder, nobody's in particular", pt: "a sobra do arredondamento, de ninguém em particular" })} />
+        <StatTile label={tr({ en: "Paid, not yet batched", pt: "Pago, ainda sem lote" })} value={usdc(queue.awaiting_micro_usdc)}
+          hint={tr({ en: "confirmed on Zcash, waiting its turn", pt: "confirmado na Zcash, esperando a vez" })} />
+      </div>
+      {short > 0 && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          {tr({
+            en: `The vault is ${usdc(short)} short of the book. That is the rounding waiting to be carried, not a position that was missed: it belongs to the pool rather than to anyone, and the next batch credits it.`,
+            pt: `O cofre está ${usdc(short)} abaixo do livro. Essa é a sobra do arredondamento esperando ser levada, não uma posição esquecida: ela é da pool e não de alguém, e o próximo lote a credita.`,
+          })}
+        </p>
+      )}
+      {queue.batches.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">
+          {tr({ en: "No batch yet.", pt: "Nenhum lote ainda." })}
+        </p>
+      ) : (
+        <div className="relative mt-4 -mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
+          <table className="w-full min-w-[820px] text-sm">
+            <thead className="text-left text-xs text-muted-foreground">
+              <tr>
+                <th className="pb-2 font-medium">{tr({ en: "Moved on Solana", pt: "Movido na Solana" })}</th>
+                <th className="pb-2 font-medium">{tr({ en: "Carried in", pt: "Veio da fila" })}</th>
+                <th className="pb-2 font-medium">{tr({ en: "Carried on", pt: "Foi para a fila" })}</th>
+                <th className="pb-2 font-medium">{tr({ en: "Positions", pt: "Posições" })}</th>
+                <th className="pb-2 font-medium">{tr({ en: "Investors", pt: "Investidoras" })}</th>
+                <th className="pb-2 font-medium">{tr({ en: "Transfer", pt: "Transferência" })}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {queue.batches.map((b) => (
+                <tr key={b.id} className="align-top">
+                  <td className="py-2 num">{usdc(b.credited_micro_usdc)}</td>
+                  <td className="py-2 num text-muted-foreground">{usdc(b.carried_in_micro_usdc)}</td>
+                  <td className="py-2 num text-muted-foreground">{usdc(b.carried_out_micro_usdc)}</td>
+                  <td className="py-2 num">{formatNumber(b.members)}</td>
+                  <td className="py-2">
+                    <span className="num">{formatNumber(b.investors)}</span>
+                    {b.investors <= 1 && (
+                      <span className="block text-[11px] text-muted-foreground">
+                        {tr({ en: "one investor: hides no total", pt: "uma investidora: não esconde total" })}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-2">
+                    {b.signature
+                      ? <ExplorerLink tx={b.signature} />
+                      : <span className="text-xs text-muted-foreground">
+                          {b.status === "credited"
+                            ? tr({ en: "nothing whole to move", pt: "nada inteiro para mover" })
+                            : (STATUS_OF_BATCH[b.status] ?? b.status)}
+                        </span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+/** A batch that has not landed says which way it is waiting. */
+const STATUS_OF_BATCH: Record<string, string> = {
+  open: tr({ en: "forming", pt: "formando" }),
+  sending: tr({ en: "sent, not yet confirmed", pt: "enviada, sem confirmação" }),
+  failed: tr({ en: "failed; its payments went back to the queue", pt: "falhou; os pagamentos voltaram para a fila" }),
+};
+
 function ReturnsPaid({ network }: { network: "test" | "main" }) {
   const returns = useZcashReturnsAudit();
   if (returns.isError) return <LoadError compact error={returns.error} onRetry={() => returns.refetch()} />;

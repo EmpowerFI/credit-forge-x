@@ -11,11 +11,19 @@
 //   2. fetches each transaction that paid the treasury, decrypts its memos,
 //      and hands the database every output it received; the database matches
 //      memos to requests and counts confirmations;
-//   3. for each confirmed payment, the operator moves the same value in devnet
-//      USDC into the program's vault, standing in for NEAR Intents' ZEC→USDC
+//   3. forms a batch of the confirmed payments and moves ONE devnet USDC
+//      transfer into the program's vault, standing in for NEAR Intents' ZEC→USDC
 //      conversion, which has no testnet. The transfer is signed and recorded
 //      before it is sent, and never sent twice (the refunds' discipline); once
-//      it lands, the database records the allocation, anchored on Solana.
+//      it lands, the database records every allocation in it, anchored on Solana.
+//
+//      One transfer per payment is what this used to be, and it undid the
+//      shielding it was serving: the amount on Zcash was unreadable and the same
+//      amount appeared in the vault a minute later, for anyone to read. The batch
+//      is rounded DOWN to whole units and the remainder waits for the next one,
+//      so the number on Solana is the sum of nobody and the operator never moves
+//      money it has not received. The arithmetic is enforced by check
+//      constraints on zcash_credit_batches, not by this file.
 //
 // Secrets: OPERATOR_KEYPAIR, ANCHOR_CRON_SECRET, optional SOLANA_RPC_URL and
 // ZCASH_LIGHTWALLETD; SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY
@@ -142,7 +150,27 @@ async function watch(state: WatchState) {
 
 // --------------------------------------------------------------- Solana
 
-interface Credit { id: string; amount_micro_usdc: number; credit_signature: string | null; credit_valid_until: number | null }
+/**
+ * The denomination the vault is credited in: one thousand USDC. Bigger hides
+ * better and leaves more capital waiting, so it is a commercial decision rather
+ * than a technical one, and it is read from the environment to be changed
+ * without touching this file.
+ */
+const UNIT_MICRO_USDC = Number(Deno.env.get("ZCASH_CREDIT_UNIT_MICRO_USDC") ?? 1_000_000_000);
+
+interface Batch {
+  id: string;
+  status: "open" | "sending" | "credited" | "failed";
+  resumed: boolean;
+  requests: number;
+  unit_micro_usdc: number;
+  target_micro_usdc: number;
+  credited_micro_usdc: number;
+  carried_in_micro_usdc: number;
+  carried_out_micro_usdc: number;
+  signature: string | null;
+  valid_until: number | null;
+}
 
 let operator: KeyPairSigner | undefined;
 const getOperator = async () =>
@@ -172,8 +200,8 @@ async function statusOf(signature: string): Promise<{ status: Status; error?: st
   return s.confirmationStatus === "confirmed" || s.confirmationStatus === "finalized" ? { status: "confirmed" } : { status: "unknown" };
 }
 
-/** Signs the operator's USDC transfer into the vault, records the signature, then sends it. */
-async function sendCredit(c: Credit): Promise<string> {
+/** Signs the batch's single USDC transfer into the vault, records it, then sends it. */
+async function sendBatch(b: Batch): Promise<string> {
   const signer = await getOperator();
   const [authority] = await findVaultAuthorityPda();
   const instruction = getTransferCheckedInstruction({
@@ -181,7 +209,7 @@ async function sendCredit(c: Credit): Promise<string> {
     mint: USDC_MINT,
     destination: await usdcAccount(authority),
     authority: signer,
-    amount: BigInt(c.amount_micro_usdc),
+    amount: BigInt(b.credited_micro_usdc),
     decimals: USDC_DECIMALS,
   });
   const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
@@ -194,8 +222,8 @@ async function sendCredit(c: Credit): Promise<string> {
     ),
   );
   const signature = getSignatureFromTransaction(transaction);
-  const { error } = await db.rpc("zcash_credit_sending", {
-    p_id: c.id, p_signature: signature, p_valid_until: Number(blockhash.lastValidBlockHeight),
+  const { error } = await db.rpc("zcash_batch_sending", {
+    p_id: b.id, p_signature: signature, p_valid_until: Number(blockhash.lastValidBlockHeight),
   });
   if (error) throw new Error(`could not record the signature: ${error.message}`);
   await rpc
@@ -204,42 +232,60 @@ async function sendCredit(c: Credit): Promise<string> {
   return signature;
 }
 
-async function credit(c: Credit): Promise<{ id: string; outcome: string; signature?: string }> {
-  let signature = c.credit_signature;
+async function settle(b: Batch): Promise<Record<string, unknown>> {
+  const shape = {
+    id: b.id, requests: b.requests,
+    credited_micro_usdc: b.credited_micro_usdc,
+    carried_out_micro_usdc: b.carried_out_micro_usdc,
+  };
+
+  // Under one unit there is no whole unit to move, so the batch closes having
+  // moved nothing. The positions are still booked: the ZEC arrived, and the book
+  // records what was received while the vault records what has been carried
+  // across. zcash_batch_queue is where that difference is published.
+  if (b.credited_micro_usdc === 0) {
+    const { error } = await db.rpc("zcash_batch_done", { p_id: b.id });
+    if (error) throw new Error(`could not close an empty batch: ${error.message}`);
+    return { ...shape, outcome: "nothing_whole_to_move" };
+  }
+
+  let signature = b.signature;
   if (signature) {
     const { status, error } = await statusOf(signature);
     if (status === "failed") {
-      await db.rpc("zcash_credit_failed", { p_id: c.id, p_error: error ?? "failed" });
-      return { id: c.id, outcome: "failed", signature };
+      await db.rpc("zcash_batch_failed", { p_id: b.id, p_error: error ?? "failed" });
+      return { ...shape, outcome: "failed", signature };
     }
     if (status === "unknown") {
       const height = Number(await rpc.getBlockHeight({ commitment: "confirmed" }).send());
-      if (c.credit_valid_until === null || height <= c.credit_valid_until) {
-        return { id: c.id, outcome: "pending", signature };
+      if (b.valid_until === null || height <= b.valid_until) {
+        return { ...shape, outcome: "pending", signature };
       }
       signature = null; // expired without landing: safe to sign a new one
     }
   }
   if (!signature) {
-    // Short of USDC, sign nothing: the claim lapses and a later run tries again.
-    if ((await operatorUsdc()) < BigInt(c.amount_micro_usdc)) return { id: c.id, outcome: "operator_needs_usdc" };
-    signature = await sendCredit(c);
+    // Short of USDC, sign nothing: the batch waits and a later run tries again.
+    if ((await operatorUsdc()) < BigInt(b.credited_micro_usdc)) {
+      return { ...shape, outcome: "operator_needs_usdc" };
+    }
+    signature = await sendBatch(b);
   }
 
   for (let i = 0; i < 20; i++) {
     const { status, error } = await statusOf(signature);
     if (status === "confirmed") {
-      const { error: doneError } = await db.rpc("zcash_credit_done", { p_id: c.id, p_signature: signature });
-      if (doneError) throw new Error(`credit landed but was not recorded: ${doneError.message}`);
-      return { id: c.id, outcome: "credited", signature };
+      const { data, error: doneError } = await db.rpc("zcash_batch_done", { p_id: b.id, p_signature: signature });
+      if (doneError) throw new Error(`the batch landed but was not recorded: ${doneError.message}`);
+      return { ...shape, outcome: "credited", signature, booked: (data as { booked?: number } | null)?.booked };
     }
     if (status === "failed") {
-      await db.rpc("zcash_credit_failed", { p_id: c.id, p_error: error ?? "failed" });
-      return { id: c.id, outcome: "failed", signature };
+      await db.rpc("zcash_batch_failed", { p_id: b.id, p_error: error ?? "failed" });
+      return { ...shape, outcome: "failed", signature };
     }
     await sleep(1_500);
   }
-  return { id: c.id, outcome: "pending", signature };
+  return { ...shape, outcome: "pending", signature };
 }
 
 // ------------------------------------------------------------------ entry
@@ -271,15 +317,17 @@ Deno.serve(async (req) => {
     return json({ error: err instanceof Error ? err.message : String(err) }, 502);
   }
 
-  const { data: claimed, error: claimError } = await db.rpc("zcash_credit_claim", { p_limit: 5 });
+  // One batch per run, and the claim hands back the one still in flight rather
+  // than forming a second: a carry read twice would be credited twice.
+  const { data: claimed, error: claimError } = await db.rpc("zcash_batch_claim", {
+    p_unit_micro_usdc: UNIT_MICRO_USDC, p_limit: 20,
+  });
   if (claimError) return json({ scan, error: `claim failed: ${claimError.message}` }, 500);
-  const credits = [];
-  for (const c of (claimed ?? []) as Credit[]) {
-    try {
-      credits.push(await credit(c));
-    } catch (err) {
-      credits.push({ id: c.id, outcome: "error", error: err instanceof Error ? err.message : String(err) });
-    }
+  if (!claimed) return json({ scan, batch: null });
+  const batch = claimed as unknown as Batch;
+  try {
+    return json({ scan, batch: await settle(batch) });
+  } catch (err) {
+    return json({ scan, batch: { id: batch.id, outcome: "error", error: err instanceof Error ? err.message : String(err) } });
   }
-  return json({ scan, credits });
 });

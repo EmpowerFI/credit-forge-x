@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, ChevronRight, Loader2, MapPin, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BadgeCheck, ChevronRight, EyeOff, FileCheck2, Loader2, Lock, MapPin, ShieldCheck, ShoppingCart, TrendingUp, UserCheck } from "lucide-react";
 import { localized, tr } from "../../i18n";
 import LoadError from "../../components/LoadError";
 import { DataTag } from "../../components/product/DataLegend";
@@ -113,12 +113,80 @@ function Cell({ label, value, hint, bar, first }: {
 }
 
 /**
- * How the request was judged, shown being judged. These are the credit engine's
- * own checks, and opening the fold is the button its page has: the run passes
- * down them in the order they were asked, so what a reader gets for opening is
- * not a table but the assembly of a verdict.
+ * One answer, scannable. The page used to make a reader open a fold to learn
+ * why the opportunity had passed at all, which is the wrong order: the question
+ * "should I care" comes before "show me the workings".
  */
-function Underwriting({ row, numeral }: { row: MarketRow; numeral?: string }) {
+function Card({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <li className="panel flex min-w-0 gap-3 p-4">
+      <span className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden>{icon}</span>
+      <span className="min-w-0 space-y-1">
+        <span className="block text-sm font-medium text-foreground">{title}</span>
+        <span className="block text-sm leading-snug text-muted-foreground">{children}</span>
+      </span>
+    </li>
+  );
+}
+
+/**
+ * The four things that decide whether to read further. Readiness sits here with
+ * the risk band rather than beside it in the figures above, where adjacency
+ * implied they were the same measurement: one is what EmpowerFI thinks of the
+ * loan, the other is how well the business keeps its own records.
+ */
+function Why({ row }: { row: MarketRow }) {
+  const risk = RISK[row.risk_band];
+  return (
+    <section className="space-y-3 pt-6">
+      <h2 className="font-heading text-xl font-bold text-foreground">{tr({ en: "Why this opportunity", pt: "Por que esta oportunidade" })}</h2>
+      <p className="text-sm text-muted-foreground">{tr({ en: "Key facts from the underwriting, in simple terms.", pt: "Os fatos da análise, em termos simples." })}</p>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        <Card icon={<ShoppingCart size={18} />} title={tr({ en: "Productive purpose", pt: "Finalidade produtiva" })}>
+          {WHY[row.purpose]}
+        </Card>
+        <Card icon={<TrendingUp size={18} />} title={tr({ en: "Affordable repayment", pt: "Parcela que cabe" })}>
+          {tr({
+            en: `Eligible for a smaller amount — her instalment is ${percent(row.affordability_bps)} of the monthly result.`,
+            pt: `Elegível a um valor menor — a parcela dela é ${percent(row.affordability_bps)} do resultado mensal.`,
+          })}
+        </Card>
+        <Card icon={<ShieldCheck size={18} />} title={tr({ en: "Assessment", pt: "Avaliação" })}>
+          <span className="block">
+            {tr({ en: "Risk band", pt: "Faixa de risco" })} <span className="num font-medium text-foreground">{risk.grade}</span>
+            {" · "}
+            {tr({ en: "EmpowerFI's view of the loan", pt: "a visão da EmpowerFI sobre o empréstimo" })}
+          </span>
+          <span className="block">
+            {tr({ en: "Business readiness", pt: "Prontidão do negócio" })}{" "}
+            <span className="num font-medium text-foreground">{row.readiness_score ?? "\u2014"}/100</span>
+            {" · "}
+            {tr({ en: "how well she keeps her own records", pt: "o quanto ela mantém os próprios registros" })}
+          </span>
+        </Card>
+        <Card icon={<Lock size={18} />} title={tr({ en: "Privacy-preserving", pt: "Preserva a privacidade" })}>
+          {tr({
+            en: "Each assessment's commitment is on Solana; investors get the decision and its proof — never her identity, bank data or financial history.",
+            pt: "O hash de cada avaliação está na Solana; os investidores recebem a decisão e a prova dela — nunca a identidade, os dados bancários ou o histórico financeiro.",
+          })}
+        </Card>
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * How the request was judged, in three sentences and then in full. The three
+ * cards are the structure of the credit — what it is, where the money comes
+ * from, which currency she actually owes — and the engine's own checks sit
+ * under them as the workings.
+ *
+ * The fold is gone: a reader deciding whether to commit should not have to
+ * open anything to find out why the request passed. The staged reveal survives
+ * it — the rail arms on scroll instead of on a click, so the checks still fill
+ * in the order they were asked rather than arriving as a finished table.
+ */
+function Underwriting({ row }: { row: MarketRow }) {
   const decision = DECISION_LABEL[row.eligibility_decision];
   const exceptions = row.eligibility_reasons.filter((r) => !["AFFORDABLE"].includes(r));
   const checks: { label: string; kind: "derived" | "proven"; value: React.ReactNode }[] = [
@@ -137,15 +205,40 @@ function Underwriting({ row, numeral }: { row: MarketRow; numeral?: string }) {
     { label: tr({ en: "EmpowerFI assessment", pt: "Avaliação da EmpowerFI" }), kind: "proven",
       value: <span className={`rounded-full border px-2 py-0.5 text-xs ${decision.tone}`}>{decision.title}</span> },
   ];
-  const [open, setOpen] = useState(false);
-  const rail = useRailReveal<HTMLDivElement>(checks.length, { stepMs: 380, armed: open });
+  const rail = useRailReveal<HTMLDivElement>(checks.length, { stepMs: 380 });
+  const structure = [
+    { no: 1, title: tr({ en: "Eligibility", pt: "Elegibilidade" }),
+      body: tr({
+        en: `Eligible for a smaller amount — her instalment is ${percent(row.affordability_bps)} of the monthly result.`,
+        pt: `Elegível a um valor menor — a parcela dela é ${percent(row.affordability_bps)} do resultado mensal.`,
+      }) },
+    { no: 2, title: tr({ en: "Funding route", pt: "Rota de financiamento" }),
+      body: tr({
+        en: "Which pool could take it, and what it costs her all in — the comparison is below.",
+        pt: "Qual pool pôde atendê-la, e quanto custa para ela no total — a comparação está abaixo.",
+      }) },
+    { no: 3, title: tr({ en: "Written in reais, funded in dollars", pt: "Escrita em reais, financiada em dólares" }),
+      body: tr({
+        en: "She owes reais, fixed in her currency — the dollar figures are never what she repays.",
+        pt: "Ela deve reais, fixos na moeda dela — os valores em dólar nunca são o que ela paga.",
+      }) },
+  ];
 
   return (
-    <Panel numeral={numeral} folded onOpenChange={setOpen} title={tr({ en: "How it was underwritten", pt: "Como a análise foi feita" })}
+    <Panel title={tr({ en: "How it was underwritten", pt: "Como a análise foi feita" })}
       description={tr({
-        en: `${decision.title} — her instalment is ${percent(row.affordability_bps)} of the monthly result.`,
-        pt: `${decision.title} — a parcela dela é ${percent(row.affordability_bps)} do resultado mensal.`,
+        en: `${decision.title} — a smaller amount, with an affordable instalment and a clear productive use.`,
+        pt: `${decision.title} — um valor menor, com parcela que cabe e um uso produtivo claro.`,
       })}>
+      <ol className="mb-5 grid gap-3 sm:grid-cols-3">
+        {structure.map((c) => (
+          <li key={c.no} className="panel min-w-0 space-y-1 p-4">
+            <span className="num flex size-6 items-center justify-center rounded-full border border-border text-xs font-medium text-muted-foreground">{c.no}</span>
+            <span className="block pt-1 text-sm font-medium text-foreground">{c.title}</span>
+            <span className="block text-sm leading-snug text-muted-foreground">{c.body}</span>
+          </li>
+        ))}
+      </ol>
       <div ref={rail.ref}>
         {checks.map((c, i) => (
           <Field key={c.label} label={c.label} kind={c.kind} state={rail.state(i)}>{c.value}</Field>
@@ -167,14 +260,28 @@ function Underwriting({ row, numeral }: { row: MarketRow; numeral?: string }) {
  * run: these rows were written when the work was done, and a sequence filling
  * in over them would claim they were being worked out while the reader watched.
  */
-function Evidence({ row, proofs, numeral }: { row: MarketRow; proofs: Proof[]; numeral?: string }) {
+function Evidence({ row, proofs }: { row: MarketRow; proofs: Proof[] }) {
   return (
-      <Panel numeral={numeral} folded title={tr({ en: "Verifiable evidence", pt: "Evidências verificáveis" })}
+      <Panel title={tr({ en: "Verifiable evidence", pt: "Evidências verificáveis" })}
         description={tr({
           en: "Each assessment's commitment is on Solana; the record behind it stays private.",
           pt: "O hash de cada avaliação está na Solana; o registro por trás dele fica privado.",
         })}
         actions={<VerifyOnSolana proofs={proofs.map((p) => ({ kind: p.kind, signature: p.signature ?? "", account: p.account, commitment: p.commitment }))} />}>
+        <ul className="mb-5 grid gap-3 sm:grid-cols-3">
+          <Card icon={<FileCheck2 size={18} />} title={tr({ en: "Onchain commitment", pt: "Compromisso na blockchain" })}>
+            {tr({ en: "Each assessment is recorded on Solana.", pt: "Cada avaliação fica registrada na Solana." })}
+          </Card>
+          <Card icon={<EyeOff size={18} />} title={tr({ en: "Private records", pt: "Registros privados" })}>
+            {tr({ en: "The underlying financial record stays private.", pt: "O registro financeiro por trás dela fica privado." })}
+          </Card>
+          <Card icon={<UserCheck size={18} />} title={tr({ en: "Her consent", pt: "O consentimento dela" })}>
+            {tr({
+              en: "Shown because she allowed it. Withdraw that and it leaves the market, investors refunded from the vault.",
+              pt: "Exibida porque ela autorizou. Se ela retirar, sai do mercado e os investidores são reembolsados pelo cofre.",
+            })}
+          </Card>
+        </ul>
         <ul className="space-y-3">
           {proofs.map((p) => (
             <li key={p.kind} className="flex items-start justify-between gap-3 text-sm">
@@ -308,42 +415,32 @@ export default function OpportunityDetail() {
                 hint={tr({ en: "Monthly instalments in reais", pt: "Parcelas mensais em reais" })} />
               <Cell label={tr({ en: "Risk band", pt: "Faixa de risco" })} value={risk.grade}
                 hint={tr({ en: `${LEVEL[row.confidence]} confidence`, pt: `Confiança ${LEVEL[row.confidence]}` })} />
-              <Cell label={tr({ en: "Readiness", pt: "Prontidão" })}
-                value={<>{row.readiness_score ?? "—"}<span className="text-base font-medium text-muted-foreground">/100</span></>}
-                bar={row.readiness_score} />
             </dl>
 
             <FundingBar funded={row.funded_micro_usdc} target={row.funding_target_micro_usdc} investors={row.investors}
               pool={pool} fxMilli={row.fx_brl_per_usdc_milli} amountCents={row.amount_cents} />
           </header>
 
-          <Panel numeral="I" title={tr({ en: "Productive purpose", pt: "Finalidade produtiva" })}>
-            <p className="max-w-prose font-heading text-lg italic leading-snug text-foreground">{WHY[row.purpose]}</p>
-          </Panel>
+          <Why row={row} />
 
-          <Underwriting row={row} numeral="II" />
+          <Underwriting row={row} />
 
-          <FundingRoute row={row} numeral="III" folded />
+          <FundingRoute row={row} folded />
 
           {pool === "global" && (
-            <Lifecycle folded numeral="IV" principalCents={row.amount_cents} instalmentCents={row.instalment_cents} termMonths={row.term_months}
+            <Lifecycle folded principalCents={row.amount_cents} instalmentCents={row.instalment_cents} termMonths={row.term_months}
               fxMilli={row.fx_brl_per_usdc_milli} stages={stages} />
           )}
 
-          <Evidence row={row} proofs={proofs} numeral={pool === "global" ? "V" : "IV"} />
+          <Evidence row={row} proofs={proofs} />
 
-          <PrivacyBoundaries numeral={pool === "global" ? "VI" : "V"}>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-4 text-sm">
-              <ShieldCheck size={16} className="text-positive" aria-hidden />
-              <span className="text-foreground">{tr({ en: "Shown because she allowed it.", pt: "Exibida porque ela autorizou." })}</span>
-              <span className="text-muted-foreground">
-                {tr({
-                  en: "Withdraw that and it leaves the market, investors refunded from the vault.",
-                  pt: "Se ela retirar, a oportunidade sai do mercado e os investidores são reembolsados pelo cofre.",
-                })}
-              </span>
-              {consent?.signature && <ExplorerLink tx={consent.signature} label={tr({ en: "Her consent, on Solana", pt: "O consentimento dela, na Solana" })} />}
-            </div>
+          <PrivacyBoundaries>
+            {consent?.signature && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border pt-4 text-sm">
+                <ShieldCheck size={16} className="text-positive" aria-hidden />
+                <ExplorerLink tx={consent.signature} label={tr({ en: "Her consent, on Solana", pt: "O consentimento dela, na Solana" })} />
+              </div>
+            )}
           </PrivacyBoundaries>
 
           {/* Why this opportunity is here at all — which local routes could
