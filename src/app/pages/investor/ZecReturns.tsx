@@ -53,8 +53,8 @@ export default function ZecReturns({ investmentId, owed, readOnly, paidWith }: {
   const d = returns.data;
   const valid = isShieldedTestAddress(address);
   // Every zatoshi this position has in play, paid or queued. What it is worth
-  // crossing to Solana is the one question a ZEC-paid investor asks that this
-  // page could not answer before.
+  // crossing back to dollars is the one question a ZEC-paid investor asks that
+  // this page could not answer before.
   const inPlay = d?.returns.reduce((sum, r) => sum + (r.amount_zat ?? 0), 0) ?? 0;
 
   return (
@@ -138,8 +138,8 @@ export default function ZecReturns({ investmentId, owed, readOnly, paidWith }: {
               <CrossingOut zat={inPlay} />
               <p className="text-[11px] text-muted-foreground">
                 {tr({
-                  en: "What this ZEC is worth crossing to USDC on Solana today, if you would rather hold dollars than ZEC. EmpowerFI does not make that crossing for you.",
-                  pt: "Quanto este ZEC vale atravessando para USDC na Solana hoje, se você preferir ficar com dólares em vez de ZEC. A EmpowerFI não faz essa travessia por você.",
+                  en: "What this ZEC is worth crossing to USDC today, if you would rather hold dollars than ZEC. The panel asks each destination and names the one that answered. EmpowerFI does not make that crossing for you.",
+                  pt: "Quanto este ZEC vale atravessando para USDC hoje, se você preferir ficar com dólares em vez de ZEC. O painel pergunta a cada destino e nomeia o que respondeu. A EmpowerFI não faz essa travessia por você.",
                 })}
               </p>
             </div>
