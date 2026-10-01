@@ -6,9 +6,13 @@ import { DEMO_PASSWORD } from "../src/app/lib/stories";
 const BASE = (process.env.UX_BASE ?? "http://localhost:5199").replace(/\/$/, "");
 const PT = process.env.UX_LOCALE === "pt";
 const settle = (p: Page, ms = 1200) => p.waitForTimeout(ms);
+// Playwright leaves prefers-reduced-motion to the browser and headless Chromium
+// answers "reduce", which finishes every reveal before it can be measured. The
+// run says which state it is reading.
+const MOTION = (process.env.UX_MOTION ?? "no-preference") as "reduce" | "no-preference";
 
 const browser = await chromium.launch();
-const context = await browser.newContext({ viewport: { width: 1280, height: 1100 } });
+const context = await browser.newContext({ viewport: { width: 1280, height: 1100 }, reducedMotion: MOTION });
 await context.addInitScript(
   ([k, v]) => { try { localStorage.setItem(k, v); } catch { /* private mode */ } },
   ["empowerfi.app.locale", PT ? "pt" : "en"] as const);
@@ -75,6 +79,44 @@ const heading = PT ? "Seguindo " : "Following ";
 console.log(`${focused.includes(heading) ? "ok  " : "MISS"} ${heading.trim()} <one request>`);
 console.log(`${focused.includes(PT ? "estreitada a este único pedido" : "narrowed to this one request") ? "ok  " : "MISS"} the stages narrow`);
 console.log("--- focused\n" + focused.slice(focused.indexOf(heading)).split("\n").filter((l) => l.trim()).slice(0, 26).join("\n"));
+
+// The loop fills in, movement by movement, as a reader reaches it.
+//
+// A card is dim for two different reasons and the threshold keeps them apart:
+// the run has not reached it yet (0.4), or the stage never happened on this
+// reading (0.7). So "waiting" is below 0.5, and a settled movement has none
+// even though some of its stages may stay at 0.7 forever.
+const runs = async (sel: string, label: string) => {
+  const ol = page.locator(sel).first();
+  if (!(await ol.count())) { console.log(`MISS ${label}: no list at ${sel}`); return; }
+  await ol.scrollIntoViewIfNeeded();
+  const waiting = () => ol.evaluate((el) => Array.from(el.children)
+    .filter((n) => Number(getComputedStyle(n as HTMLElement).opacity) < 0.5).length);
+  const at = await waiting();
+  await settle(page, 3400);
+  const end = await waiting();
+  const ok = MOTION === "reduce" ? at === 0 && end === 0 : at > 0 && end === 0;
+  console.log(`${ok ? "ok  " : "MISS"} ${label}: ${at} waiting on arrival → ${end} once it has run`);
+};
+
+await page.goto(`${BASE}/app/capital`, { waitUntil: "networkidle" });
+await settle(page, 2200);
+// Movements 1 and 2 hold five stages and two; 3 and 4 hold one each, and a rail
+// of one card has no waiting state to observe. So these two are the probes, and
+// both are below the fold on load, which is what makes the measurement mean
+// something: their rails cannot have started before the scroll.
+await runs("section#movement-1 ol", "movement 1 fills in when reached");
+await runs("section#movement-2 ol", "movement 2 fills in when reached");
+
+// Picking a request replays it, which is the whole point of following one: the
+// query caches, so without a remount a reader would get a settled page.
+await page.evaluate(() => window.scrollTo(0, 0));
+await settle(page, 400);
+await page.getByRole("combobox").first().click();
+await settle(page, 600);
+await page.getByRole("option").nth(1).click();
+await settle(page, 1800);
+await runs("section#movement-1 ol", "it runs again for the request just chosen");
 
 const overflow = async () => page.evaluate(() => {
   const out: string[] = [];

@@ -38,6 +38,12 @@ export function useRailReveal<T extends HTMLElement = HTMLOListElement>(
   // How many have settled. `running` is the one after them, while there is one.
   const [settled, setSettled] = useState(0);
   const [done, setDone] = useState(false);
+  // Whether the clock has started at all. Without it, step 0 reads as "running"
+  // from the first paint — which was invisible on a short rail that starts as it
+  // appears, and wrong on a tall one: a movement waiting below the fold showed a
+  // spinner that had been spinning since the page loaded, claiming work nobody
+  // had asked for yet.
+  const [going, setGoing] = useState(false);
   const ref = useRef<T>(null);
   const started = useRef(false);
 
@@ -47,11 +53,13 @@ export function useRailReveal<T extends HTMLElement = HTMLOListElement>(
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setSettled(count);
       setDone(true);
+      setGoing(true);
       return;
     }
     const timers: number[] = [];
     const run = () => {
       started.current = true;
+      setGoing(true);
       for (let i = 1; i <= count; i += 1) {
         timers.push(window.setTimeout(() => {
           setSettled(i);
@@ -83,7 +91,8 @@ export function useRailReveal<T extends HTMLElement = HTMLOListElement>(
   return {
     ref,
     done,
-    state: (i: number): RailState => (i < settled ? "settled" : i === settled && !done ? "running" : "waiting"),
+    state: (i: number): RailState =>
+      i < settled ? "settled" : going && i === settled && !done ? "running" : "waiting",
   };
 }
 

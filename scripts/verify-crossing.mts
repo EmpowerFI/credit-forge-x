@@ -8,7 +8,10 @@
 // screens need rewriting rather than patching.
 import { chromium, type Page } from "@playwright/test";
 import { DEMO_PASSWORD } from "../src/app/lib/stories";
-import { intoZec, NoRoute, outOfZec, WAYS_IN } from "../src/app/lib/oneClick";
+import { intoZec, NoRoute, outOfZec, WAYS_IN, WAYS_OUT } from "../src/app/lib/oneClick";
+
+/** Cloudflare 5xx or a dead socket: the quote service is down, which is not a finding. */
+const unreachable = (e: unknown) => /HTTP 5\d\d|fetch failed|ECONN|ETIMEDOUT|socket/i.test(String((e as Error).message));
 
 const BASE = (process.env.UX_BASE ?? "http://localhost:5199").replace(/\/$/, "");
 const PT = process.env.UX_LOCALE === "pt";
@@ -21,16 +24,26 @@ for (const w of WAYS_IN) {
     console.log(`ok   in  ${w.name.padEnd(9)} 25 USDC → ${(c.outBase / 1e8).toFixed(8)} ZEC`
       + ` · floor ${(c.minBase / 1e8).toFixed(8)} · costs ${(c.cost * 100).toFixed(2)}% · ~${c.seconds}s`);
   } catch (e) {
-    console.log(`MISS in  ${w.name.padEnd(9)} ${e instanceof NoRoute ? "no route" : "error"}: ${(e as Error).message}`);
+    console.log(`${unreachable(e) ? "--  " : "MISS"} in  ${w.name.padEnd(9)} `
+      + `${unreachable(e) ? "quote service unreachable" : e instanceof NoRoute ? "no route" : "error"}: ${(e as Error).message}`);
   }
 }
-try {
-  const c = await outOfZec(2_000_000);
-  console.log(`ok   out Solana    0.02 ZEC → ${(c.outBase / 1e6).toFixed(6)} USDC`
-    + ` · floor ${(c.minBase / 1e6).toFixed(6)} · costs ${(c.cost * 100).toFixed(2)}% · ~${c.seconds}s`);
-} catch (e) {
-  console.log(`MISS out Solana    ${(e as Error).message}`);
+// Every way out, not just the preferred one. Which destinations are quotable
+// moves within a day: ZEC → Solana priced all one morning and was gone by that
+// evening while Base still priced, so the run reports the row rather than a
+// verdict about the one chain the product would rather use.
+let anyOut = 0;
+for (const w of WAYS_OUT) {
+  try {
+    const c = await outOfZec(2_000_000, w.chain);
+    anyOut += 1;
+    console.log(`ok   out ${w.name.padEnd(9)} 0.02 ZEC → ${(c.outBase / 1e6).toFixed(6)} USDC`
+      + ` · floor ${(c.minBase / 1e6).toFixed(6)} · costs ${(c.cost * 100).toFixed(2)}% · ~${c.seconds}s`);
+  } catch (e) {
+    console.log(`--   out ${w.name.padEnd(9)} ${unreachable(e) ? "quote service unreachable" : e instanceof NoRoute ? "nobody pricing it now" : "error"}: ${(e as Error).message}`);
+  }
 }
+console.log(`${anyOut > 0 ? "ok  " : "MISS"} ${anyOut} of ${WAYS_OUT.length} ways out are being priced — the panel needs one`);
 
 // ---------------------------------------------------------------- the screens
 const browser = await chromium.launch();

@@ -11,6 +11,7 @@ import { tr } from "../../../i18n";
 import { prototypeNotice } from "../../../lib/capital";
 import { MOVEMENT, MOVEMENTS, REACHED, type Journey, type MovementKey, type Stage } from "../../../lib/capitalJourney";
 import { EVIDENCE, weakest } from "../../../lib/evidence";
+import { railStep, useRailReveal } from "../../../lib/moneyRail";
 import { money } from "../../../lib/readiness";
 import Positioning from "./Positioning";
 import StageCard from "./StageCard";
@@ -51,13 +52,17 @@ const evidenceOf = (stages: Stage[]) => EVIDENCE[weakest(stages.map((s) => s.evi
  * numbers are also the page's table of contents.
  */
 function Spine({ j }: { j: Journey }) {
+  // The four figures arrive in the order the money takes them. It is the page's
+  // first gesture and it is the whole argument: this is a loop being counted,
+  // not four totals that happen to share a row.
+  const rail = useRailReveal(MOVEMENTS.length, { stepMs: 380 });
   return (
-    <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {MOVEMENTS.map((k) => {
+    <ol ref={rail.ref} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {MOVEMENTS.map((k, i) => {
         const m = MOVEMENT[k];
         const label = evidenceOf(stagesOf(j, k));
         return (
-          <li key={k} className="min-w-0">
+          <li key={k} className={`min-w-0 ${railStep(rail.state(i))}`}>
             <a
               href={`#movement-${m.no}`}
               className="panel flex h-full min-w-0 flex-col gap-1.5 p-4 transition-colors hover:border-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -85,6 +90,11 @@ function Spine({ j }: { j: Journey }) {
 function Movement({ j, k }: { j: Journey; k: MovementKey }) {
   const m = MOVEMENT[k];
   const stages = stagesOf(j, k);
+  // One rail per movement rather than one for all nine stages. Nine cards span
+  // more than a screen, so a single run would settle the last movement while
+  // nobody was looking at it — and a reader scrolling down would find a list
+  // again, which is the thing this is meant to stop being.
+  const rail = useRailReveal(stages.length, { stepMs: 420 });
   return (
     <section id={`movement-${m.no}`} className="scroll-mt-32 space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -99,8 +109,8 @@ function Movement({ j, k }: { j: Journey; k: MovementKey }) {
         </p>
       </div>
       <p className="max-w-4xl text-sm leading-relaxed text-muted-foreground">{m.claim}</p>
-      <ol className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {stages.map((s) => <StageCard key={s.key} s={s} />)}
+      <ol ref={rail.ref} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {stages.map((s, i) => <StageCard key={s.key} s={s} state={rail.state(i)} />)}
       </ol>
     </section>
   );
@@ -190,7 +200,7 @@ export default function CapitalJourney() {
             </Panel>
           )}
 
-          <Spine j={j} />
+          <Spine key={chosen} j={j} />
 
           {/* This page is the ledger of the loop; the engine is the loop in
               motion. Four figures and nine cards are what a claim looks like
@@ -216,7 +226,7 @@ export default function CapitalJourney() {
               invented — is formed in the first ten seconds, not the last. */}
           <Positioning />
 
-          {MOVEMENTS.map((k) => <Movement key={k} j={j} k={k} />)}
+          {MOVEMENTS.map((k) => <Movement key={`${k}-${chosen}`} j={j} k={k} />)}
         </>
       )}
     </div>
