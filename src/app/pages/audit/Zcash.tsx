@@ -238,8 +238,8 @@ zcash-devtool wallet -w ./audit-view list-tx`;
             </p>
             <p className="text-[11px] leading-relaxed text-muted-foreground">
               {tr({
-                en: "A check that always passes is not a check. This asks the same server about a transaction id that was made up here and never existed. It should come back “not on chain”.",
-                pt: "Uma verificação que sempre passa não verifica nada. Isto pergunta ao mesmo servidor sobre um id de transação inventado aqui, que nunca existiu. A resposta deve ser “não está na rede”.",
+                en: "A check that always passes is not a check. This asks the same server about a transaction id that was made up here and never existed. It should come back “no record on this server”.",
+                pt: "Uma verificação que sempre passa não verifica nada. Isto pergunta ao mesmo servidor sobre um id de transação inventado aqui, que nunca existiu. A resposta deve ser “sem registro neste servidor”.",
               })}
             </p>
             <OnChainCheck txid={INVENTED_TXID} claimedHeight={null} />

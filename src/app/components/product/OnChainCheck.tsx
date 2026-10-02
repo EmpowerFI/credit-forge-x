@@ -23,6 +23,13 @@ import { confirmOnChain, type ZcashOnChain } from "../../lib/zcash";
  * `found: false` is rendered as an answer, not as a broken feature. A server
  * that says no when it has nothing is the only reason its yes means anything,
  * which is also what the control beneath the table demonstrates on purpose.
+ *
+ * It is drawn as a caution rather than a failure, and it says why. The gRPC
+ * status that would separate "never mined" from "the server is having trouble"
+ * travels in an HTTP/2 trailer, which the runtime does not expose, so the
+ * function reads an empty body as not-found. Calling that a flat "not on chain"
+ * would repeat the mistake the explorer link made: presenting one reading of an
+ * ambiguous answer as the only one.
  */
 export default function OnChainCheck({ txid, claimedHeight }: { txid: string; claimedHeight: number | null }) {
   const [state, setState] = useState<"idle" | "asking">("idle");
@@ -107,14 +114,21 @@ export default function OnChainCheck({ txid, claimedHeight }: { txid: string; cl
         </>
       ) : (
         <>
-          <span className="flex items-center gap-1.5 text-xs text-destructive">
-            <X size={12} aria-hidden /> {tr({ en: "Not on chain", pt: "Não está na rede" })}
+          <span className="flex items-center gap-1.5 text-xs text-caution">
+            <X size={12} aria-hidden />
+            {tr({ en: "No record on this server", pt: "Sem registro neste servidor" })}
           </span>
           <span className="text-[11px] text-muted-foreground">
             {server}
             {r.grpc_status != null ? ` · grpc ${r.grpc_status}` : ""}
           </span>
           {r.grpc_message && <span className="text-[11px] text-muted-foreground">{r.grpc_message}</span>}
+          <span className="text-[11px] text-muted-foreground">
+            {tr({
+              en: "This is what a transaction that was never mined looks like, and it is also what a server having trouble looks like. The gRPC status that would tell them apart arrives in an HTTP/2 trailer, which the runtime does not expose. Ask again before concluding anything.",
+              pt: "É assim que aparece uma transação que nunca foi minerada, e é assim também que aparece um servidor com problema. O status gRPC que separaria os dois chega num trailer de HTTP/2, que o runtime não expõe. Pergunte de novo antes de concluir qualquer coisa.",
+            })}
+          </span>
         </>
       )}
       <span className="text-[11px] text-muted-foreground">
