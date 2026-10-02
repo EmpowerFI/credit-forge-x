@@ -145,6 +145,40 @@ export async function createZcashRequest(opportunityId: string, microUsdc: numbe
   return data as ZcashRequest;
 }
 
+/**
+ * What a public Zcash server says about a transaction id, asked live.
+ *
+ * The audit table is read with the treasury's viewing key, which makes it the
+ * only account of a shielded payment — and an account served from EmpowerFI's
+ * own database, which is not evidence about a chain. `GetTransaction` needs the
+ * id and nothing else, so the question can go to a server EmpowerFI does not
+ * run and the height can come back from someone else.
+ *
+ * `found: false` is an answer, not a failure: a server that says no when it has
+ * nothing is the reason its yes is worth anything.
+ */
+export interface ZcashOnChain {
+  server: string;
+  asked_at: string;
+  reachable: boolean;
+  found: boolean;
+  grpc_status?: number | null;
+  grpc_message?: string | null;
+  height?: number | null;
+  bytes?: number | null;
+  version?: number | null;
+  error?: string;
+}
+
+export async function confirmOnChain(txid: string): Promise<ZcashOnChain> {
+  const { data, error } = await platform.functions.invoke("zcash-confirm", { body: { txid } });
+  if (error) {
+    const body = await (error as { context?: Response }).context?.json?.().catch(() => null);
+    throw new Error(body?.error ?? error.message);
+  }
+  return data as ZcashOnChain;
+}
+
 export async function fetchZcashRequest(id: string): Promise<ZcashRequest> {
   const { data, error } = await platform.rpc("zcash_request", { p_id: id });
   if (error) throw error;
