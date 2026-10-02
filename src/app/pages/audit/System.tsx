@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, CircleDashed, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleDashed } from "lucide-react";
 import { fetchPlatformConfig, findConfigPda } from "@empowerfi/audit-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
@@ -9,6 +9,7 @@ import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
 import { localized, tr } from "../../i18n";
 import { PROGRAM_ID, rpc, sol, usdc, vaultAddress } from "../../lib/solana";
+import { vaultNote, vaultStanding } from "../../lib/vault";
 import { useSystemAudit } from "./queries";
 
 const ago = (iso: string | null) => {
@@ -56,8 +57,11 @@ export default function System() {
   const d = q.data;
   const queued = d.anchors.pending + d.anchors.submitted;
   const flagged = d.reconcile.missing + d.reconcile.mismatch;
-  const vaultMatches = chain.data?.vaultMicro !== null && chain.data?.vaultMicro !== undefined
-    ? chain.data.vaultMicro === BigInt(d.vault.expected_micro_usdc) : null;
+  // Equality was the wrong test here too: a vault holding more than the book
+  // claims is unclaimed money, not a failure. See lib/vault.
+  const standing = vaultStanding(chain.data?.vaultMicro, d.vault.expected_micro_usdc);
+  const vaultGap = chain.data?.vaultMicro === null || chain.data?.vaultMicro === undefined
+    ? 0 : Number(chain.data.vaultMicro - BigInt(d.vault.expected_micro_usdc));
 
   return (
     <div className="space-y-6">
@@ -119,15 +123,21 @@ export default function System() {
               </span>
             </Row>
           </dl>
-          <p className={`flex items-center gap-2 text-sm ${vaultMatches === null ? "text-muted-foreground" : vaultMatches ? "text-positive" : "text-caution"}`}>
-            {vaultMatches === null ? <CircleDashed size={16} /> : vaultMatches ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-            {vaultMatches === null ? tr({ en: "Comparing with Solana…", pt: "Comparando com a Solana…" })
-              : vaultMatches ? tr({ en: "The vault holds exactly what the database accounts for.", pt: "O cofre tem exatamente o que o banco de dados registra." })
-              : tr({
-                en: "The vault and the database differ: a transfer not recorded here, or one on its way.",
-                pt: "O cofre e o banco de dados divergem: uma transferência não registrada aqui, ou uma a caminho.",
-              })}
-          </p>
+          <div className={`flex items-start gap-2 text-sm ${
+            standing === "unknown" ? "text-muted-foreground" : standing === "short" ? "text-caution" : "text-positive"}`}>
+            {standing === "unknown" ? <CircleDashed size={16} className="mt-0.5 shrink-0" />
+              : standing === "short" ? <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              : <CheckCircle2 size={16} className="mt-0.5 shrink-0" />}
+            <span>
+              {standing === "unknown" ? tr({ en: "Comparing with Solana…", pt: "Comparando com a Solana…" })
+                : standing === "exact" ? tr({ en: "The vault holds exactly what the database accounts for.", pt: "O cofre tem exatamente o que o banco de dados registra." })
+                : standing === "surplus" ? tr({ en: "Everything the database accounts for is covered.", pt: "Tudo o que o banco de dados registra está coberto." })
+                : tr({ en: "The vault holds less than the database accounts for.", pt: "O cofre tem menos do que o banco de dados registra." })}
+              {vaultNote(standing, usdc, Math.abs(vaultGap)) && (
+                <span className="mt-0.5 block text-xs text-muted-foreground">{vaultNote(standing, usdc, Math.abs(vaultGap))}</span>
+              )}
+            </span>
+          </div>
           {chain.isError && <p className="text-xs text-alert">{tr({ en: "Could not read devnet:", pt: "Não foi possível ler a devnet:" })} {(chain.error as Error).message}</p>}
         </Panel>
 
