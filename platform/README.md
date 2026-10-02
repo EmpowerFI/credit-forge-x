@@ -154,6 +154,7 @@ Never committed. The operator key is the one in `~/empowerfi-hackathon-keys/`.
 | | `SOLANA_RPC_URL` | Helius devnet URL, from `~/empowerfi-hackathon-keys/helius-devnet-rpc.url` (it carries the API key). Falls back to the public devnet RPC if unset |
 | | `MONEYGRAM_BASE_URL`, `MONEYGRAM_SECRET_KEY` | MoneyGram Ramps sandbox, from `~/empowerfi-hackathon-keys/moneygram/sandbox.env`; only `ramp-quote` reads them |
 | | `ZCASH_LIGHTWALLETD` | optional; defaults to a public Zcash testnet lightwalletd |
+| | `ZCASH_CREDIT_UNIT_MICRO_USDC` | the whole unit a batch credits the vault in; defaults to `1000000000` ($1,000). **Set it, or nothing moves:** a batch only credits once it crosses a whole unit, and on testnet no demo reaches a thousand dollars. The demo uses `10000000` ($10) — production hides behind a large unit, a demo needs one small enough to see |
 | Database (`scripts/platform/zcash-treasury.mts`) | the treasury's address and unified viewing key | read by `zcash-watch` and by auditors; the spending key never leaves the wallet outside the repository |
 | Vault (`select vault.create_secret(value, name)`) | `anchor_submit_url` | `<functions url>/anchor-submit` |
 | | `anchor_cron_secret` | same value as `ANCHOR_CRON_SECRET` |
