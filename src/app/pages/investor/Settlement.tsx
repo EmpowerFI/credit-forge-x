@@ -18,6 +18,7 @@ import { fetchRampQuote, inRampRange, RAMP_MIN_MICRO_USDC, rampFeeBps, rampQuote
 import { money } from "../../lib/readiness";
 import { mockPixE2e, reaisAtRamp, REALITY, type Reality, type SettlementOverview, WHAT_IS_REAL } from "../../lib/settlement";
 import { rpc, usdc, vaultAddress } from "../../lib/solana";
+import { vaultStanding } from "../../lib/vault";
 import { formatDateTime, formatNumber, formatTime, tr } from "../../i18n";
 
 /** A percentage to two places: 0.50% or 0,50%. */
@@ -265,11 +266,21 @@ export default function Settlement() {
             <StatTile label={tr({ en: "On its way to you", pt: "A caminho de você" })} value={usdc(d.mine.due_micro_usdc)} hint={tr({ en: "instalments being paid out", pt: "parcelas sendo repassadas" })} />
             <StatTile label={tr({ en: "Held for you", pt: "Retido para você" })} value={usdc(d.mine.held_micro_usdc)}
               hint={tr({ en: "ZEC positions with no Solana wallet", pt: "posições em ZEC sem carteira Solana" })} hintTone={d.mine.held_micro_usdc ? "caution" : undefined} />
-            <StatTile label={tr({ en: "In the vault", pt: "No cofre" })} value={chain.data ? usdc(chain.data.micro) : chain.isPending ? "…" : "—"}
-              hint={chain.data && chain.data.micro === d.vault.in_vault_micro_usdc
-                ? tr({ en: "matches every recorded movement", pt: "confere com cada movimentação registrada" })
-                : tr({ en: `ledger says ${usdc(d.vault.in_vault_micro_usdc)}`, pt: `o livro-razão diz ${usdc(d.vault.in_vault_micro_usdc)}` })}
-              hintTone={chain.data && chain.data.micro === d.vault.in_vault_micro_usdc ? "positive" : "caution"} />
+            {/* An investor asks one thing of this tile: is what I am owed
+                covered? A vault holding more than the book claims answered that
+                with a caution, which is the wrong answer. See lib/vault. */}
+            {(() => {
+              const standing = vaultStanding(chain.data?.micro, d.vault.in_vault_micro_usdc);
+              return (
+                <StatTile label={tr({ en: "In the vault", pt: "No cofre" })} value={chain.data ? usdc(chain.data.micro) : chain.isPending ? "…" : "—"}
+                  hint={standing === "exact"
+                    ? tr({ en: "matches every recorded movement", pt: "confere com cada movimentação registrada" })
+                    : standing === "surplus"
+                      ? tr({ en: "covers every recorded movement", pt: "cobre cada movimentação registrada" })
+                      : tr({ en: `ledger says ${usdc(d.vault.in_vault_micro_usdc)}`, pt: `o livro-razão diz ${usdc(d.vault.in_vault_micro_usdc)}` })}
+                  hintTone={standing === "short" ? "caution" : standing === "unknown" ? undefined : "positive"} />
+              );
+            })()}
           </div>
 
           <Panel title={tr({ en: "Domestic P2P · the route", pt: "P2P Doméstico · a rota" })}

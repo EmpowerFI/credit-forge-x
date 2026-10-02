@@ -21,6 +21,7 @@ import type { AnchorKind } from "../lib/platform";
 import { checkOnChain, fetchSharedReport, proofIssue, type ChainCheck, type SharedReport } from "../lib/report";
 import { money } from "../lib/readiness";
 import { usdc } from "../lib/solana";
+import { vaultNote, vaultOk, vaultStanding } from "../lib/vault";
 import { shieldedExplorerNote, zec } from "../lib/zcash";
 
 const CONSENT_CHECK: Record<string, string> = localized({
@@ -107,14 +108,26 @@ function ChainResult({ c, expected, title }: { c: ChainCheck; expected: number; 
           })}
         </Verdict>
       )}
-      <Verdict ok={c.vault.chain_micro_usdc === null ? null : c.vault.chain_micro_usdc === expected}>
-        {tr({
-          en: `The vault holds ${c.vault.chain_micro_usdc === null ? "no account yet" : usdc(c.vault.chain_micro_usdc)}; the ledger says ${usdc(expected)}`,
-          pt: `O cofre tem ${c.vault.chain_micro_usdc === null ? "nenhuma conta ainda" : usdc(c.vault.chain_micro_usdc)}; o livro-razão diz ${usdc(expected)}`,
-        })}
-        {c.vault.chain_micro_usdc !== null && c.vault.chain_micro_usdc !== expected
-          && tr({ en: " (it may have moved since the report was made)", pt: " (ele pode ter mudado desde que o relatório foi feito)" })}
-      </Verdict>
+      {(() => {
+        // Equality was the wrong test: it crossed out the ordinary case, a
+        // devnet vault holding test funds no investment claims. See lib/vault.
+        const standing = vaultStanding(c.vault.chain_micro_usdc, expected);
+        const note = vaultNote(standing, usdc, Math.abs((c.vault.chain_micro_usdc ?? 0) - expected));
+        return (
+          <Verdict ok={vaultOk(standing)}>
+            {tr({
+              en: `The vault holds ${c.vault.chain_micro_usdc === null ? "no account yet" : usdc(c.vault.chain_micro_usdc)}; the ledger says ${usdc(expected)}`,
+              pt: `O cofre tem ${c.vault.chain_micro_usdc === null ? "nenhuma conta ainda" : usdc(c.vault.chain_micro_usdc)}; o livro-razão diz ${usdc(expected)}`,
+            })}
+            {note && (
+              <span className="block text-xs text-muted-foreground">
+                {note}{" "}
+                {tr({ en: "It may also have moved since the report was made.", pt: "Ele também pode ter mudado desde que o relatório foi feito." })}
+              </span>
+            )}
+          </Verdict>
+        );
+      })()}
       {c.proofs.problems.length > 0 && (
         <ul className="space-y-1 text-xs text-alert">
           {c.proofs.problems.slice(0, 10).map((p) => <li key={p.signature}>{PROOF_KIND_LABEL[p.kind as AnchorKind] ?? p.kind}: {proofIssue(p.issue)} · <ExplorerLink tx={p.signature} /></li>)}
