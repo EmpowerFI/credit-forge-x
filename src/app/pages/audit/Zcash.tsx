@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
 import ExplorerLink from "../../components/product/ExplorerLink";
 import Panel from "../../components/product/Panel";
-import OnChainCheck from "../../components/product/OnChainCheck";
 import ZcashTx from "../../components/product/ZcashTx";
 import StatTile from "../../components/product/StatTile";
 import StatusPill from "../../components/product/StatusPill";
@@ -14,14 +13,6 @@ import { formatNumber, tr } from "../../i18n";
 import { usdc } from "../../lib/solana";
 import { POOL_LABEL, RETURN_LABEL, shieldedExplorerNote, STATUS_LABEL, usdPerZec, zec } from "../../lib/zcash";
 import { useZcashAudit, useZcashReturnsAudit, type ZcashBatchQueue } from "./queries";
-
-/**
- * A transaction id invented here, used by the control under the notes table. It
- * is hex so the server will accept the question, and a question the chain has
- * no answer to, so a reader can watch the same button return "not on chain" and
- * know the confirmations above are not a rubber stamp.
- */
-const INVENTED_TXID = "deadbeef".repeat(8);
 
 const ago = (iso: string | null) => {
   if (!iso) return tr({ en: "never", pt: "nunca" });
@@ -197,7 +188,6 @@ zcash-devtool wallet -w ./audit-view list-tx`;
                           {tr({ en: "How to check this", pt: "Como verificar isto" })}
                           <ArrowUpRight size={11} aria-hidden />
                         </Link>
-                        <OnChainCheck txid={r.txid} claimedHeight={r.height} />
                         {span > 1 && (
                           <span className="text-[11px] text-info">
                             {tr({
@@ -231,25 +221,10 @@ zcash-devtool wallet -w ./audit-view list-tx`;
         <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4">
           <p className="text-xs leading-relaxed text-muted-foreground">
             {tr({
-              en: "“Confirm on chain” sends the transaction id, and nothing else, to a public Zcash server EmpowerFI does not run. No viewing key is involved: the height and the size come back from a third party, and you can watch them agree with the height this table reports. The amount under “shared USDC credit” is deliberately not the amount of any single payment — several ZEC payments are credited to the vault in one transfer, in whole units, with the remainder carried to the next batch. Attributing that remainder to one investor would rebuild the link the batch exists to break.",
-              pt: "“Confirmar na rede” envia o id da transação, e nada mais, para um servidor Zcash público que a EmpowerFI não opera. Nenhuma chave de visualização entra nisso: a altura e o tamanho voltam de um terceiro, e dá para ver que concordam com a altura que esta tabela informa. O valor em “crédito compartilhado em USDC” não é o valor de nenhum pagamento isolado, de propósito — vários pagamentos em ZEC são creditados ao cofre numa única transferência, em unidades inteiras, com o resto levado para o lote seguinte. Atribuir esse resto a uma investidora reconstruiria justamente o vínculo que o lote existe para quebrar.",
+              en: "“How to check this” opens a page that asks a public Zcash server about the transaction and hands over the viewing key, with the output each check should produce. The amount under “shared USDC credit” is deliberately not the amount of any single payment — several ZEC payments are credited to the vault in one transfer, in whole units, with the remainder carried to the next batch. Attributing that remainder to one investor would rebuild the link the batch exists to break.",
+              pt: "“Como verificar isto” abre uma página que pergunta a um servidor Zcash público sobre a transação e entrega a chave de visualização, com a saída que cada checagem deve produzir. O valor em “crédito compartilhado em USDC” não é o valor de nenhum pagamento isolado, de propósito — vários pagamentos em ZEC são creditados ao cofre numa única transferência, em unidades inteiras, com o resto levado para o lote seguinte. Atribuir esse resto a uma investidora reconstruiria justamente o vínculo que o lote existe para quebrar.",
             })}
           </p>
-          <div className="flex flex-col gap-2 rounded-md border border-dashed border-border p-3">
-            <p className="text-xs text-foreground">
-              {tr({
-                en: "Check that the server can say no",
-                pt: "Confira que o servidor sabe dizer não",
-              })}
-            </p>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              {tr({
-                en: "A check that always passes is not a check. This asks the same server about a transaction id that was made up here and never existed. It should come back “no record on this server”.",
-                pt: "Uma verificação que sempre passa não verifica nada. Isto pergunta ao mesmo servidor sobre um id de transação inventado aqui, que nunca existiu. A resposta deve ser “sem registro neste servidor”.",
-              })}
-            </p>
-            <OnChainCheck txid={INVENTED_TXID} claimedHeight={null} />
-          </div>
         </div>
       </Panel>
 
