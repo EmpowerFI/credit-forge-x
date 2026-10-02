@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Check, Copy, Eye, EyeOff, KeyRound } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowUpRight, Check, Copy, Eye, EyeOff, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
@@ -191,6 +192,11 @@ zcash-devtool wallet -w ./audit-view list-tx`;
                     <td className="py-2.5 pr-4 align-top" rowSpan={span}>
                       <span className="flex flex-col items-start gap-1.5">
                         <ZcashTx txid={r.txid} network={d.network} />
+                        <Link to={`/app/audit/zcash/${r.txid}`}
+                          className="inline-flex items-center gap-1 text-xs text-info hover:underline">
+                          {tr({ en: "How to check this", pt: "Como verificar isto" })}
+                          <ArrowUpRight size={11} aria-hidden />
+                        </Link>
                         <OnChainCheck txid={r.txid} claimedHeight={r.height} />
                         {span > 1 && (
                           <span className="text-[11px] text-info">

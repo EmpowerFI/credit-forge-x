@@ -32,6 +32,7 @@ const AuditModels = lazy(() => import("./pages/audit/Models"));
 const AuditConsents = lazy(() => import("./pages/audit/Consents"));
 const AuditSystem = lazy(() => import("./pages/audit/System"));
 const AuditZcash = lazy(() => import("./pages/audit/Zcash"));
+const AuditZcashTransaction = lazy(() => import("./pages/audit/ZcashTransaction"));
 const AuditReports = lazy(() => import("./pages/audit/Reports"));
 // A shared audit report opens without an account.
 const ReportPage = lazy(() => import("./pages/ReportPage"));
@@ -148,6 +149,7 @@ function Pages() {
           <Route path="models" element={<Suspense fallback={loading}><AuditModels /></Suspense>} />
           <Route path="consents" element={<Suspense fallback={loading}><AuditConsents /></Suspense>} />
           <Route path="zcash" element={<Suspense fallback={loading}><AuditZcash /></Suspense>} />
+          <Route path="zcash/:txid" element={<Suspense fallback={loading}><AuditZcashTransaction /></Suspense>} />
           <Route path="system" element={<Suspense fallback={loading}><AuditSystem /></Suspense>} />
           <Route path="reports" element={<Suspense fallback={loading}><AuditReports /></Suspense>} />
         </Route>
