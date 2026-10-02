@@ -93,22 +93,39 @@ export const usdPerZec = (cents: number) =>
   `${getLocale() === "pt" ? "US$ " : "$"}${formatNumber(cents / 100, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
- * What an explorer can and cannot say about a shielded payment, wherever one
- * is linked. The link is the first thing a reader clicks and it often answers
- * "Transaction Not Found": testnet explorers lag, and not every one indexes
- * the newest shielded pool. Without this sentence beside it, that reads as
- * the payment having failed, when the payment is exactly what the explorer
- * was never able to show.
+ * Why this table stands in for a block explorer, said before the reader looks
+ * for one. On mainnet an explorer would confirm a transaction exists; on
+ * testnet none of ours can, and a link that always answers "Transaction Not
+ * Found" reads as a failed or invented payment.
+ *
+ * Measured 2 Oct 2026 against testnet.zcashexplorer.app, because the earlier
+ * guess here ("explorers lag") was wrong and would not survive a reader who
+ * checks: its indexer was *ahead* of our transactions at height 4,441,713, and
+ * a transaction id taken from its own block listing resolved normally — while
+ * all 20 ids from both EmpowerFI wallets returned not-found. Every note in the
+ * treasury is in the Ironwood pool, added in NU6.3, which testnet explorers do
+ * not index. So the explorer is current and correct, and simply has nothing to
+ * show: a shielded transaction carries no address, value or memo in the clear.
+ *
+ * The replacement is this table plus the viewing key beneath it, which is a
+ * stronger artefact than the link ever was — it carries the value, the pool and
+ * the memo, and it can be reproduced by anyone holding the key.
  */
 export const shieldedExplorerNote = () => tr({
-  en: "A shielded transaction shows no amount, no memo and no addresses on an explorer — that is the point of it. An explorer can only say that a transaction exists, and testnet explorers often lag or do not index the newest shielded pool, so this link may find nothing. What proves the payment is the treasury's viewing key, which the audit console hands over with the commands to read the same notes without trusting EmpowerFI.",
-  pt: "Uma transação blindada não mostra valor, memo nem endereços em um explorador — é exatamente esse o ponto dela. Um explorador só consegue dizer que uma transação existe, e exploradores de testnet costumam atrasar ou não indexar o pool blindado mais novo, então este link pode não achar nada. Quem prova o pagamento é a chave de visualização do tesouro, que o console de auditoria entrega com os comandos para ler as mesmas notas sem confiar na EmpowerFI.",
+  en: "This table is what a block explorer would be, and no explorer can replace it. A shielded transaction carries no address, no value and no memo in the clear, so there is nothing for one to display; the notes below sit in Zcash's Ironwood pool, added in NU6.3, which testnet explorers do not index at all. Every figure here was read with the treasury's viewing key, which is published under this table: it reads every note and can spend nothing, so anyone can reproduce this list in their own wallet without trusting EmpowerFI.",
+  pt: "Esta tabela é o que um explorador de blocos seria, e nenhum explorador pode substituí-la. Uma transação blindada não carrega endereço, valor nem memo em claro, então não há o que um exibir; as notas abaixo estão no pool Ironwood da Zcash, criado na NU6.3, que exploradores de testnet não indexam. Cada número aqui foi lido com a chave de visualização do tesouro, publicada abaixo desta tabela: ela lê todas as notas e não gasta nada, de modo que qualquer pessoa reproduz esta lista na própria carteira sem confiar na EmpowerFI.",
 });
 
-/** The same caution, short enough to sit on the link itself. */
+/** Why a testnet row carries no explorer link, short enough to sit in the cell. */
 export const explorerCaveat = () => tr({
-  en: "An explorer can only say a transaction exists — never the amount, the memo or the addresses. Testnet explorers often lag, so it may find nothing.",
-  pt: "Um explorador só consegue dizer que a transação existe — nunca o valor, o memo ou os endereços. Exploradores de testnet costumam atrasar, então pode não achar nada.",
+  en: "No explorer link on testnet: a shielded transaction has no address, value or memo to show, and the Ironwood pool these notes use is not indexed by testnet explorers. The row above is the record; the viewing key below reproduces it.",
+  pt: "Sem link de explorador na testnet: uma transação blindada não tem endereço, valor ou memo a mostrar, e o pool Ironwood destas notas não é indexado por exploradores de testnet. A linha acima é o registro; a chave de visualização abaixo o reproduz.",
+});
+
+/** The in-cell label where a mainnet build would show an explorer link. */
+export const explorerUnavailable = () => tr({
+  en: "not on any explorer",
+  pt: "fora dos exploradores",
 });
 
 /** A shielded transaction on a Zcash explorer: that it exists and when — never amounts, memos or addresses. */
