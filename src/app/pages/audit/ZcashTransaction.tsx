@@ -36,6 +36,13 @@ import { useZcashAudit } from "./queries";
  * only its own answer proves nothing; a page that predicts someone else's
  * answer is wrong in public when it lies.
  */
+/**
+ * An id invented here for the control beside check 1. It is hex, so the server
+ * accepts the question, and it answers nothing, so a reader can watch the same
+ * call come back empty and know the confirmation above is not a rubber stamp.
+ */
+const INVENTED_TXID = "deadbeef".repeat(8);
+
 export default function ZcashTransaction() {
   const { txid = "" } = useParams();
   const q = useZcashAudit();
@@ -187,6 +194,18 @@ export default function ZcashTransaction() {
               {tr({ en: "Or let this page make the same call now:", pt: "Ou deixe esta página fazer a mesma chamada agora:" })}
             </p>
             <OnChainCheck txid={txid} claimedHeight={height} />
+          </div>
+          <div className="flex flex-col gap-2 rounded-md border border-dashed border-border p-3">
+            <p className="text-xs text-foreground">
+              {tr({ en: "Check that the server can say no", pt: "Confira que o servidor sabe dizer não" })}
+            </p>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              {tr({
+                en: "A check that always passes is not a check. This asks the same server about a transaction id invented on this page, which never existed. It should come back “no record on this server” — and the answer above is worth something because this one is not.",
+                pt: "Uma verificação que sempre passa não verifica nada. Isto pergunta ao mesmo servidor sobre um id de transação inventado nesta página, que nunca existiu. A resposta deve ser “sem registro neste servidor” — e a resposta acima vale alguma coisa porque esta não vale.",
+              })}
+            </p>
+            <OnChainCheck txid={INVENTED_TXID} claimedHeight={null} />
           </div>
         </div>
       </Panel>
