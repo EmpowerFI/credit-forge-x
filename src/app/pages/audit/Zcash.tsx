@@ -65,6 +65,7 @@ export default function Zcash() {
   const net = d.network === "test" ? "Zcash testnet" : "Zcash mainnet";
   const devtool = `zcash-devtool wallet -w ./audit-view init-fvk --name audit --fvk "$UFVK" --birthday ${d.birthday_height} -s zecrocks
 zcash-devtool wallet -w ./audit-view sync -s zecrocks
+zcash-devtool wallet -w ./audit-view enhance -s zecrocks
 zcash-devtool wallet -w ./audit-view list-tx`;
 
   return (
@@ -147,6 +148,9 @@ zcash-devtool wallet -w ./audit-view list-tx`;
           en: "Every shielded note the viewing key decrypts, newest first, with what it paid for.",
           pt: "Cada nota blindada que a chave de visualização decifra, das mais recentes às mais antigas, com o que ela pagou.",
         })}>
+        <p className="mb-4 border-l-2 border-info/60 pl-3 text-xs leading-relaxed text-muted-foreground">
+          {shieldedExplorerNote()}
+        </p>
         <div className="relative -mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
           <table className="w-full min-w-[980px] text-sm">
             <thead className="text-left text-xs text-muted-foreground">
@@ -186,7 +190,6 @@ zcash-devtool wallet -w ./audit-view list-tx`;
               {d.receipts.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">{tr({ en: "Nothing received yet.", pt: "Nada recebido ainda." })}</td></tr>}
             </tbody>
           </table>
-          <p className="pt-3 text-xs text-muted-foreground">{shieldedExplorerNote()}</p>
         </div>
       </Panel>
 
