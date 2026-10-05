@@ -112,3 +112,11 @@ Deployed on Vercel: [`vercel.json`](vercel.json) sets the Vite preset and a SPA 
 | `npm run build` | production build to `dist/` |
 | `npm run preview` | preview the build |
 | `npm run lint` | ESLint |
+
+## License
+
+MIT, in [`LICENSE`](LICENSE). The frontend, the Anchor program and the product schema are open: a reader can run the platform, deploy the proof program to a cluster of their own, and recompute any commitment without asking us.
+
+The **v1 allocation model is public on purpose**, not by oversight. `capital_fit_weights()`, `allocation_expected_loss_bps()`, `rate_card_at()` and the rest of the decision functions are in the migrations under `platform/supabase`, with their weights and thresholds, because a model that decides who gets capital should be auditable by the people it decides about — which is the same argument this product makes about impact reporting. A model nobody can read is the thing we are replacing.
+
+What is not here is the calibration. v1 is an informed prior, set before the product had a single real repayment; the value is in what changes it, and that comes from data EmpowerFI will hold rather than from the formula. Later versions are calibrated in a separate private repository and reach this one as a `model_version` on an attestation, so a commitment made under one version stays checkable after the next one ships.
