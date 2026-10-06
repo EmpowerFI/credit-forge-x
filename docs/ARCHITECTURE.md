@@ -154,6 +154,16 @@ It has 17 instructions, all signed by the operator key except `initialize_platfo
 
 The program has 28 LiteSVM tests.
 
+### Why not the Solana Attestation Service
+
+There is a native attestation layer on Solana, and it is a fair question why this program exists beside it. The **Solana Attestation Service** is live on mainnet at `22zoJMtdu4tQc2PzL74ZUT7FrwgB1Udec8DdW4yw4BdG`, MIT, built by the Solana Identity Group with the Solana Foundation and announced on 23 May 2025. It gives three primitives — a *credential* that says who may attest, a *schema* that fixes the structure, and an *attestation* — plus a tokenized variant that puts the credential in the holder's own wallet through Token-2022. Checked against the program's source and the deployed account on 5 October 2026.
+
+It does not replace this program, and the reason is the list above rather than a preference. Reading `create_attestation`, SAS validates four things: the signer is authorized on the credential, the schema is not paused, the credential matches the schema, and the data conforms to the schema's layout. It never reads another attestation. So none of the seven rules survive the move: eligibility could be written with no readiness behind it, a loan could skip from `Draft` to `Paid`, an outcome could land on a loan that never disbursed. Those refusals are the reason an auditor can trust the sequence and not just the hashes, and enforcing them in Postgres instead would mean the chain guarantees nothing about order — which is the claim this layer exists to make.
+
+Three narrower differences also matter here. `close_attestation` lets a signer or authority remove an attestation, and `anchor_consent` is append-only on purpose: each change of mind is the next record and none is ever overwritten, which a deletable attestation cannot promise. An attestation carries an `expiry`, designed for a credential that goes stale like a KYC check, while these are historical facts that should not expire. And SAS custodies no tokens, so `vault_transfer` would stay here regardless. One rule *would* come for free: the attestation PDA is seeded by a nonce, so encoding `(borrower, period)` there gives one-per-month without code — one of the seven.
+
+Where SAS fits is the part this repository has not built. Investor KYC, accreditation status and eligibility by jurisdiction are its documented use case and a requirement of the regulated P2P architecture this prototype points at, where knowing who the creditor is carries a legal obligation. An investor holding a KYC attestation from an existing issuer should reuse it rather than have EmpowerFI build another verification flow, and the tokenized variant fits the selective-disclosure model the rest of the product already follows. That is an integration, not a replacement.
+
 ## The audit screen
 
 `/app/audit/:kind/:id`, for anyone allowed to see that record, does the following in the browser:
