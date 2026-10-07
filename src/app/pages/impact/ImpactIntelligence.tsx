@@ -15,7 +15,7 @@ import { bpsPercent } from "../../lib/capital";
 import { fetchImpactIntelligence, fetchPrograms, type ImpactIntelligence as Data } from "../../lib/impact";
 import { money, monthLabel } from "../../lib/readiness";
 import { Evidence, Funnel, Mobilisation, Opportunities, Operators, Outcomes, Segments } from "./parts";
-import { BrandImpact, ProgramSummary, SponsorBoundary } from "./sponsorship";
+import { BrandExposure, ProgramSummary, SponsorBoundary } from "./sponsorship";
 import SponsorWordmark from "../../components/product/SponsorWordmark";
 import { sponsorshipFor } from "../../lib/sponsorship";
 
@@ -220,7 +220,7 @@ const SECTIONS: { id: string; label: string }[] = localized([
   { id: "opportunities", label: { en: "Opportunities", pt: "Oportunidades" } },
   { id: "evidence", label: { en: "Evidence", pt: "Evidência" } },
   { id: "segments", label: { en: "Segments", pt: "Segmentos" } },
-  { id: "brand", label: { en: "Brand Impact", pt: "Impacto de marca" } },
+  { id: "brand", label: { en: "Brand exposure", pt: "Exposição da marca" } },
 ]);
 
 function SectionIndex() {
@@ -338,7 +338,7 @@ export default function ImpactIntelligence() {
           <Opportunities data={data} />
           <Evidence data={data} />
           <Segments data={data} />
-          <BrandImpact sponsor={data.sponsor.name} />
+          <BrandExposure data={data} sponsor={data.sponsor.name} />
           <Operators data={data} />
           <SponsorBoundary sponsor={data.sponsor.name} />
         </>
