@@ -3856,6 +3856,19 @@ export type Database = {
         Returns: string
       }
       my_loan: { Args: never; Returns: Json }
+      my_program_sponsorship: {
+        Args: never
+        Returns: {
+          description: string
+          is_simulated: boolean
+          period_end: string
+          period_start: string
+          program_id: string
+          program_name: string
+          sponsor_kind: Database["public"]["Enums"]["sponsor_kind"]
+          sponsor_name: string
+        }[]
+      }
       operating_economics: { Args: { p_program_id?: string }; Returns: Json }
       opportunity_economics: {
         Args: { p_opportunity_id: string }
