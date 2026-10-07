@@ -1,77 +1,67 @@
-import { Lock } from "lucide-react";
+import { CalendarRange, Lock, MapPin, Megaphone, Users } from "lucide-react";
 import Panel from "../../components/product/Panel";
-import StatusPill from "../../components/product/StatusPill";
+import StatTile from "../../components/product/StatTile";
 import { formatNumber, tr } from "../../i18n";
-import { BRAND_LIFT, type BrandLift } from "../../lib/sponsorship";
 import type { ImpactIntelligence } from "../../lib/impact";
 import { money } from "../../lib/readiness";
 
 const pct = (part: number, whole: number) => (whole > 0 ? `${formatNumber(Math.round((part / whole) * 100))}%` : "—");
 
-/** DEMO DATA, said in the one place a reader looks for a caveat: beside the number. */
-const demoPill = () => (
-  <StatusPill tone="caution" dot={false}>{tr({ en: "Demo data", pt: "Dados de demonstração" })}</StatusPill>
-);
-
-/**
- * One question, as two bars on one track: where the cohort started and where it
- * is now. Drawn as a shared axis so the gap is the thing the eye reads, because
- * the gap is the measurement — a sponsor who sees only "68%" learns nothing
- * about whether paying for the programme moved it.
- */
-function Lift({ m }: { m: BrandLift }) {
-  const delta = m.now - m.before;
-  return (
-    <li className="space-y-1.5">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-        <span className="text-sm font-medium text-foreground">{m.label}</span>
-        <span className="num text-sm text-muted-foreground">
-          {m.before}% <span aria-hidden>→</span> <span className="font-semibold text-foreground">{m.now}%</span>
-          <span className={delta >= 0 ? "ml-1.5 text-positive" : "ml-1.5 text-alert"}>
-            {delta >= 0 ? "+" : ""}{delta}
-          </span>
-        </span>
-      </div>
-      {/* Two fills on one track. The darker one is where the cohort started and
-          the lighter one is where it is now, so what the eye reads is the band
-          between them — which is the measurement, not either number alone. */}
-      <div className="relative h-6 overflow-hidden rounded-md bg-secondary/50"
-        role="img" aria-label={tr({
-          en: `${m.label}: ${m.before}% before the program, ${m.now}% now`,
-          pt: `${m.label}: ${m.before}% antes do programa, ${m.now}% agora`,
-        })}>
-        <div className="absolute inset-y-0 left-0 bg-accent/40" style={{ width: `${Math.min(100, m.now)}%` }} />
-        <div className="absolute inset-y-0 left-0 border-r-2 border-accent bg-accent/70"
-          style={{ width: `${Math.min(100, m.before)}%` }} />
-      </div>
-      <p className="text-xs italic text-muted-foreground">{m.question}</p>
-    </li>
-  );
+/** Whole months the programme runs, from its own period. */
+function months(from: string, to: string): number {
+  const a = new Date(`${from}T12:00:00`), b = new Date(`${to}T12:00:00`);
+  return Math.max(1, Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
 }
 
 /**
- * Did sponsoring the programme change how participants see the sponsor?
+ * What the sponsor's money buys in visibility, counted rather than surveyed.
  *
- * The sponsor's own question, and the only part of this dashboard that is not
- * computed from a record. It is demo data and says so three times — in the
- * pill, in the description and under the bars — because a perception figure is
- * the easiest number in the product to invent and the hardest for a reader to
- * falsify.
+ * The earlier version of this section reported perception — awareness, positive
+ * perception, consideration — as before-and-after shares. Those numbers cannot
+ * exist without asking participants, and EmpowerFI does not turn a participant
+ * into a survey respondent: she is here for her business, and a woman mid-way
+ * through a credit assessment does not experience an optional question as
+ * optional. So the questions are not asked, and the figures they would have
+ * produced are not shown.
+ *
+ * What is left is better, because every number here is arithmetic on the
+ * programme's own configuration rather than an opinion collected from someone:
+ * how many women the programme reaches, across how many communities, for how
+ * long, and how many times the sponsor is named in the journey it paid for.
+ * Nothing is tracked to produce it — no view counted, no click recorded — which
+ * is the same rule the rest of the product already holds: engagement data is
+ * not a thing this product collects about her.
+ *
+ * The product is impact measurement, not marketing. A sponsor is owed its name
+ * in front of the cohort it funds; it is not owed the cohort's attention.
  */
-export function BrandImpact({ sponsor }: { sponsor: string }) {
+export function BrandExposure({ data, sponsor }: { data: ImpactIntelligence; sponsor: string }) {
+  const n = months(data.program.period_start, data.program.period_end);
   return (
-    <Panel id="brand" title={tr({ en: "Brand Impact", pt: "Impacto de marca" })}
-      actions={demoPill()}
+    <Panel id="brand" title={tr({ en: "Brand exposure", pt: "Exposição da marca" })}
       description={tr({
-        en: `Brand Impact measures aggregated participant perception before and during the sponsored program. No individual answer is stored against a participant, and none is shown here. The figures below are demo data: no participant has been asked these questions yet.`,
-        pt: `O impacto de marca mede a percepção agregada das participantes antes e durante o programa patrocinado. Nenhuma resposta individual é guardada vinculada a uma participante, e nenhuma aparece aqui. Os números abaixo são dados de demonstração: nenhuma participante foi perguntada ainda.`,
+        en: `Where ${sponsor} appears, and to how many. Counted from the program's own shape — no participant is surveyed and nothing she does is tracked to produce these figures.`,
+        pt: `Onde a ${sponsor} aparece, e para quantas. Contado a partir da própria configuração do programa — nenhuma participante é pesquisada e nada do que ela faz é rastreado para produzir estes números.`,
       })}>
-      <ul className="space-y-4">{BRAND_LIFT.map((m) => <Lift key={m.id} m={m} />)}</ul>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile icon={<Users size={14} />} label={tr({ en: "Entrepreneurs reached", pt: "Empreendedoras alcançadas" })}
+          value={formatNumber(data.hero.reached)}
+          hint={tr({ en: "every one of them sees the sponsorship", pt: "todas elas veem o patrocínio" })} />
+        <StatTile icon={<MapPin size={14} />} label={tr({ en: "Communities", pt: "Comunidades" })}
+          value={formatNumber(data.communities.length)}
+          hint={data.communities.map((c) => c.city).filter(Boolean).join(" · ")} />
+        <StatTile icon={<CalendarRange size={14} />} label={tr({ en: "Months running", pt: "Meses de duração" })}
+          value={formatNumber(n)}
+          hint={tr({ en: "for the whole program", pt: "durante todo o programa" })} />
+        <StatTile icon={<Megaphone size={14} />} label={tr({ en: "Placements", pt: "Inserções" })}
+          value="1"
+          hint={tr({ en: "one card in her journey, not every screen", pt: "um card na jornada dela, não em toda tela" })} />
+      </div>
       <p className="mt-4 flex items-start gap-2 rounded-lg bg-secondary/40 p-3 text-xs text-muted-foreground">
         <Lock size={13} className="mt-0.5 shrink-0" aria-hidden />
         <span>{tr({
-          en: `Answers are optional for the participant, reported to ${sponsor} only as a share of the cohort, and never presented as an individual profile. Declining changes nothing about her readiness, her eligibility or her access to capital.`,
-          pt: `As respostas são opcionais para a participante, reportadas à ${sponsor} apenas como percentual da turma, e nunca apresentadas como perfil individual. Recusar não altera nada no seu preparo, na sua elegibilidade ou no seu acesso a capital.`,
+          en: `What ${sponsor} does not receive is measured perception — whether sponsoring changed how participants see it. That would mean surveying them, and EmpowerFI does not do that: she is here for her business. A sponsor who wants brand lift measured runs its own study. This product measures impact, not marketing.`,
+          pt: `O que a ${sponsor} não recebe é percepção medida — se patrocinar mudou como as participantes a enxergam. Isso exigiria pesquisá-las, e a EmpowerFI não faz isso: ela está aqui pelo negócio dela. Um patrocinador que queira medir percepção roda o próprio estudo. Este produto mede impacto, não marketing.`,
         })}</span>
       </p>
     </Panel>
@@ -87,17 +77,22 @@ export function BrandImpact({ sponsor }: { sponsor: string }) {
 export function ProgramSummary({ data, sponsor }: { data: ImpactIntelligence; sponsor: string }) {
   const h = data.hero;
   const business: { label: string; value: string }[] = [
-    { label: tr({ en: "Participation", pt: "Participação" }), value: formatNumber(h.reached) },
-    { label: tr({ en: "Businesses monitored", pt: "Negócios acompanhados" }), value: formatNumber(h.reporting) },
+    { label: tr({ en: "Businesses monitored", pt: "Negócios acompanhados" }), value: `${formatNumber(h.reporting)} · ${pct(h.reporting, h.reached)}` },
     { label: tr({ en: "Financially ready", pt: "Preparadas financeiramente" }), value: `${formatNumber(h.credit_ready)} · ${pct(h.credit_ready, h.reached)}` },
     { label: tr({ en: "Capital mobilised", pt: "Capital mobilizado" }), value: money(h.capital_mobilized_cents) },
     { label: tr({ en: "Outcomes measured", pt: "Resultados medidos" }), value: formatNumber(h.outcomes_measured) },
   ];
+  const exposure: { label: string; value: string }[] = [
+    { label: tr({ en: "Entrepreneurs reached", pt: "Empreendedoras alcançadas" }), value: formatNumber(h.reached) },
+    { label: tr({ en: "Communities", pt: "Comunidades" }), value: formatNumber(data.communities.length) },
+    { label: tr({ en: "Months running", pt: "Meses de duração" }), value: formatNumber(months(data.program.period_start, data.program.period_end)) },
+    { label: tr({ en: "Placements in her journey", pt: "Inserções na jornada dela" }), value: "1" },
+  ];
   return (
     <Panel id="summary" title={tr({ en: "Program Summary", pt: "Resumo do programa" })}
       description={tr({
-        en: "Measure what changed for the businesses — and what your support means to the people behind them.",
-        pt: "Meça o que mudou para os negócios — e o que o seu apoio significa para as pessoas por trás deles.",
+        en: "What changed for the businesses, and what your support put in front of the women behind them.",
+        pt: "O que mudou para os negócios, e o que o seu apoio colocou diante das mulheres por trás deles.",
       })}>
       <div className="grid gap-5 sm:grid-cols-2">
         <section aria-labelledby="summary-business" className="space-y-2.5">
@@ -117,21 +112,22 @@ export function ProgramSummary({ data, sponsor }: { data: ImpactIntelligence; sp
           </p>
         </section>
         <section aria-labelledby="summary-brand" className="space-y-2.5">
-          <h3 id="summary-brand" className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {tr({ en: "Brand impact", pt: "Impacto de marca" })} {demoPill()}
+          <h3 id="summary-brand" className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {tr({ en: "Brand exposure", pt: "Exposição da marca" })}
           </h3>
           <dl className="divide-y divide-border/60">
-            {BRAND_LIFT.map((m) => (
-              <div key={m.id} className="flex items-baseline justify-between gap-3 py-2 first:pt-0">
-                <dt className="text-sm text-muted-foreground">{m.label}</dt>
-                <dd className="num text-sm text-muted-foreground">
-                  {m.before}% <span aria-hidden>→</span> <span className="font-semibold text-foreground">{m.now}%</span>
-                </dd>
+            {exposure.map((r) => (
+              <div key={r.label} className="flex items-baseline justify-between gap-3 py-2 first:pt-0">
+                <dt className="text-sm text-muted-foreground">{r.label}</dt>
+                <dd className="num text-sm font-semibold text-foreground">{r.value}</dd>
               </div>
             ))}
           </dl>
           <p className="text-xs text-muted-foreground">
-            {tr({ en: `Aggregated perception across the cohort, reported to ${sponsor} as shares only.`, pt: `Percepção agregada da turma, reportada à ${sponsor} apenas como percentuais.` })}
+            {tr({
+              en: `Counted from the program's own shape. ${sponsor} is named in front of the cohort it funds; how the cohort feels about it is not measured here.`,
+              pt: `Contado a partir da configuração do programa. A ${sponsor} é nomeada diante da turma que financia; o que a turma acha dela não é medido aqui.`,
+            })}
           </p>
         </section>
       </div>
@@ -151,8 +147,8 @@ export function SponsorBoundary({ sponsor }: { sponsor: string }) {
       <span>
         <span className="font-medium text-foreground">{tr({ en: "Participant-level financial and business data remains private.", pt: "Os dados financeiros e de negócio de cada participante permanecem privados." })}</span>{" "}
         {tr({
-          en: `${sponsor} receives aggregated program insights and verified impact evidence — never a name, a business, a reported figure or an individual answer. Any financial product offer would be a separate arrangement and would require each entrepreneur's explicit consent.`,
-          pt: `A ${sponsor} recebe indicadores agregados do programa e evidência de impacto verificável — nunca um nome, um negócio, um valor informado ou uma resposta individual. Qualquer oferta de produto financeiro seria um acordo separado e exigiria consentimento explícito de cada empreendedora.`,
+          en: `${sponsor} receives aggregated program insights and verified impact evidence — never a name, a business or a reported figure. It is never asked for either: EmpowerFI does not survey participants on a sponsor's behalf, because the product measures impact, not marketing. Any financial product offer would be a separate arrangement and would require each entrepreneur's explicit consent.`,
+          pt: `A ${sponsor} recebe indicadores agregados do programa e evidência de impacto verificável — nunca um nome, um negócio ou um valor informado. Nada disso é perguntado a ninguém: a EmpowerFI não pesquisa participantes em nome de patrocinador, porque o produto mede impacto, não marketing. Qualquer oferta de produto financeiro seria um acordo separado e exigiria consentimento explícito de cada empreendedora.`,
         })}
       </span>
     </p>
