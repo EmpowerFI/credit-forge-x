@@ -32,7 +32,7 @@ Two answers worth having ready, neither of them a beat:
 
 | # | Time | Story · account | Do | Say |
 |---|---|---|---|---|
-| 1 | 0:00 | 1 · `sponsor@demo.empowerfi.io` | On the login page, **View platform as: Program Sponsor / ESG** → **Enter as demo · Helena Prado**. | "A foundation funds a program that four communities run. What did it buy, and can it verify it?" |
+| 1 | 0:00 | 1 · `sponsor@demo.empowerfi.io` | On the login page, **View platform as: Program Sponsor / ESG** → **Enter as demo · Helena Prado**. | "A company funds a cohort that four communities run. What did it buy, and can it verify it?" |
 | 2 | 0:15 | Sponsor | Read the header and hero: funding deployed, reached, reporting, credit ready, capital requested and mobilised, repayment, outcome coverage. Then the funnel from **Sponsored** to **Performing**, and **Segments** ("groups under 5 hidden"). | "Program execution becomes evidence, and the same data qualifies credit. Aggregates only: no name, no figure she reported." |
 | 3 | 0:40 | Sponsor | **Drill into an opportunity** → **Run the engine** on a code. | "Each business appears by a pseudonymous code, and only if she consented to be shown to investors." |
 | 4 | 0:50 | Sponsor | The engine opens on that code, already selected → **RUN CREDIT ENGINE**: business data, preparation, readiness, affordability, risk, eligibility. | "Engine 1 asks whether this business should become a qualified credit opportunity." |
