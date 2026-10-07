@@ -369,12 +369,6 @@ export default function OpportunityDetail() {
       </Link>
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        {/* Only the decision. It follows the reader down the argument rather
-            than scrolling away from it, and the two panels that used to sit
-            under it are now a figure in the header and a movement of the page. */}
-        <div className="xl:col-start-2 xl:row-start-1 xl:sticky xl:top-6 xl:self-start">
-          {pool === "domestic" ? <FundedElsewhere hasPosition={row.my_micro_usdc > 0} /> : <InvestPanel row={row} />}
-        </div>
 
         <div className="min-w-0 xl:col-start-1 xl:row-start-1">
           <header className="space-y-4 border-b border-border pb-6">
@@ -464,6 +458,20 @@ export default function OpportunityDetail() {
               pt: "— os motores que a avaliaram, e o que o capital brasileiro não pôde atender.",
             })}
           </p>
+        </div>
+
+        {/* Only the decision. It follows the reader down the argument rather
+            than scrolling away from it, and the two panels that used to sit
+            under it are now a figure in the header and a movement of the page.
+            It comes last in the source although it sits on the right, and that
+            is deliberate: both columns pin themselves with col-start and
+            row-start, so at xl the order here changes nothing, while below xl
+            the grid collapses to one column and source order is all there is.
+            Written first, the ask landed above the argument and pushed the
+            title, the figures and the reasoning under the fold — the page
+            asking before it argued, which is the opposite of what it is for. */}
+        <div className="xl:col-start-2 xl:row-start-1 xl:sticky xl:top-6 xl:self-start">
+          {pool === "domestic" ? <FundedElsewhere hasPosition={row.my_micro_usdc > 0} /> : <InvestPanel row={row} />}
         </div>
 
         <p className="px-1 text-xs text-muted-foreground">{prototypeNotice()}</p>
