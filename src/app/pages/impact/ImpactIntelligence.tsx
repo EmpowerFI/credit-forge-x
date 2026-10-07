@@ -15,6 +15,9 @@ import { bpsPercent } from "../../lib/capital";
 import { fetchImpactIntelligence, fetchPrograms, type ImpactIntelligence as Data } from "../../lib/impact";
 import { money, monthLabel } from "../../lib/readiness";
 import { Evidence, Funnel, Mobilisation, Opportunities, Operators, Outcomes, Segments } from "./parts";
+import { BrandImpact, ProgramSummary, SponsorBoundary } from "./sponsorship";
+import SponsorWordmark from "../../components/product/SponsorWordmark";
+import { sponsorshipFor } from "../../lib/sponsorship";
 
 const pct = (part: number, whole: number) => (whole > 0 ? `${formatNumber(Math.round((part / whole) * 100))}%` : "—");
 
@@ -56,8 +59,13 @@ function Header({ data }: { data: Data }) {
   return (
     <div className="panel grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
       <div className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{tr({ en: "Sponsor", pt: "Patrocinador" })}</p>
-        <p className="font-semibold text-foreground">{data.sponsor.name}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{tr({ en: "Sponsored by", pt: "Patrocinado por" })}</p>
+        {/* The sponsor's own mark, at the size of a line of text: the cohort is
+            EmpowerFI's and the page is EmpowerFI's, so a guest brand is named
+            rather than given the room a host would take. */}
+        {sponsorshipFor(data.sponsor.name)
+          ? <SponsorWordmark name={data.sponsor.name} className="h-5 w-auto text-foreground" />
+          : <p className="font-semibold text-foreground">{data.sponsor.name}</p>}
         <p className="text-xs text-muted-foreground">{SPONSOR_KIND[data.sponsor.kind]()}</p>
       </div>
       <div className="space-y-1">
@@ -205,12 +213,14 @@ function Headline({ data }: { data: Data }) {
 
 /** A long page needs a map: the sections, one click away. */
 const SECTIONS: { id: string; label: string }[] = localized([
+  { id: "summary", label: { en: "Summary", pt: "Resumo" } },
   { id: "funnel", label: { en: "Funnel", pt: "Funil" } },
   { id: "capital", label: { en: "Capital", pt: "Capital" } },
   { id: "outcomes", label: { en: "Outcomes", pt: "Resultados" } },
   { id: "opportunities", label: { en: "Opportunities", pt: "Oportunidades" } },
   { id: "evidence", label: { en: "Evidence", pt: "Evidência" } },
   { id: "segments", label: { en: "Segments", pt: "Segmentos" } },
+  { id: "brand", label: { en: "Brand Impact", pt: "Impacto de marca" } },
 ]);
 
 function SectionIndex() {
@@ -319,6 +329,7 @@ export default function ImpactIntelligence() {
           <NextActions data={data} />
           <Headline data={data} />
           <SectionIndex />
+          <ProgramSummary data={data} sponsor={data.sponsor.name} />
           <div className="grid gap-6 lg:grid-cols-5">
             <Funnel data={data} />
             <Mobilisation data={data} />
@@ -327,7 +338,9 @@ export default function ImpactIntelligence() {
           <Opportunities data={data} />
           <Evidence data={data} />
           <Segments data={data} />
+          <BrandImpact sponsor={data.sponsor.name} />
           <Operators data={data} />
+          <SponsorBoundary sponsor={data.sponsor.name} />
         </>
       )}
     </div>
