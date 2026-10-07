@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import MemberEducation from "../components/MemberEducation";
 import PageEvidence from "../components/product/PageEvidence";
 import PageHeader from "../components/product/PageHeader";
+import SponsoredBy from "../components/product/SponsoredBy";
+import { useMySponsorship } from "../lib/sponsorship";
 import ProofStatus from "../components/ProofStatus";
 import { useAuth } from "../auth/useAuth";
 import { anchorsSettled } from "../lib/anchors";
@@ -258,6 +260,7 @@ export default function MePage() {
     enabled: Boolean(communityId && id),
     queryFn: () => loadEducation(communityId!, [id!]),
   });
+  const sponsorship = useMySponsorship(Boolean(id));
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["platform"] });
 
@@ -464,6 +467,10 @@ export default function MePage() {
         } />
 
       <NextStepCard step={nextStep} />
+
+      {/* Who paid for the programme she is in — below her next step, never above
+          it: what she has to do with her business outranks who funded it. */}
+      {sponsorship.data && <SponsoredBy row={sponsorship.data} />}
 
       {/* Consent, when it is in force: what is missing is said by the next step, with a button. */}
       {!consentGap && consent && (

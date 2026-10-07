@@ -35,9 +35,13 @@ const PARTNER = {
 };
 const FORMER_PARTNER_NAME = "Cooperativa Horizonte (demo)";
 
-// The sponsor Impact Intelligence is sold to (refactor spec, 16 Sep): a
-// fictional foundation funding a programme the four demo communities run.
-const SPONSOR = { name: "Instituto Ponte de Impacto (demo)", kind: "foundation" as const, is_simulated: true };
+// The sponsor Impact Intelligence is sold to: NOVA, an invented company whose
+// ESG budget pays for a cohort the four demo communities run. A company rather
+// than a foundation, because the commercial concept being demonstrated is a
+// company buying measured impact and brand lift — a foundation buys only the
+// first. NOVA exists nowhere: the name, the wordmark and every figure reported
+// for it are made up for this demo.
+const SPONSOR = { name: "NOVA", kind: "company" as const, is_simulated: true };
 
 // The demo investor manages an impact fund: an investor with a mandate.
 const IRENE_MANDATE = {

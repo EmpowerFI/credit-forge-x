@@ -314,13 +314,15 @@ const byName = new Map(communities.map((c) => [c.name, c]));
 // ---------------------------------------------------------------- programme
 // The sponsor's programme the four communities run (refactor spec, 16 Sep):
 // its budget is what a sponsor would report, simulated here.
+// Six months over the four communities, which is the 100 members seeded above:
+// 40 in Grajaú, 25, 20 and 15 in the rest.
 const PROGRAM = {
-  name: "Crescer Juntas 2026 (demo)",
-  description: "Preparation, monthly business records and a route to productive credit for women-led businesses in four communities.",
-  period_start: "2026-06-01", period_end: "2027-05-31",
+  name: "NOVA Women in Business Program",
+  description: "Financial readiness and business growth program powered by EmpowerFI.",
+  period_start: "2026-06-01", period_end: "2026-11-30",
   funding_committed_cents: 25_000_000, funding_deployed_cents: 17_500_000, is_simulated: true,
 };
-const sponsor = (await must("sponsor", db.from("sponsors").select("id, name").eq("name", "Instituto Ponte de Impacto (demo)").maybeSingle())) as
+const sponsor = (await must("sponsor", db.from("sponsors").select("id, name").eq("name", "NOVA").maybeSingle())) as
   { id: string; name: string } | null;
 if (sponsor) {
   const program = await must("programme", db.from("programs")
