@@ -29,6 +29,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { localized } from "../i18n";
 import { platform } from "./platform";
+import type { Database } from "./platform.types";
 
 /** A sponsor this build knows how to dress a programme for. */
 export interface Sponsorship {
@@ -102,16 +103,7 @@ export const BRAND_LIFT: BrandLift[] = localized([
 ]);
 
 /** What `my_program_sponsorship()` returns: a programme and its sponsor, never a budget. */
-export interface SponsorshipRow {
-  program_id: string;
-  program_name: string;
-  description: string | null;
-  period_start: string;
-  period_end: string;
-  sponsor_name: string;
-  sponsor_kind: string;
-  is_simulated: boolean;
-}
+export type SponsorshipRow = Database["public"]["Functions"]["my_program_sponsorship"]["Returns"][number];
 
 /** The programme and sponsor behind the caller's own community, or nothing. */
 export function useMySponsorship(enabled: boolean) {
@@ -120,12 +112,7 @@ export function useMySponsorship(enabled: boolean) {
     enabled,
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      // `platform.types.ts` is generated from the pushed schema (`npm run
-      // platform:types`), so this function is not in it until its migration is
-      // applied. The cast is the bridge, and it goes away on the next
-      // generation rather than staying as a permanent escape hatch.
-      const { data, error } = await (platform.rpc as unknown as
-        (fn: string) => Promise<{ data: SponsorshipRow[] | null; error: { message: string } | null }>)("my_program_sponsorship");
+      const { data, error } = await platform.rpc("my_program_sponsorship");
       if (error) throw error;
       return (data ?? [])[0] ?? null;
     },

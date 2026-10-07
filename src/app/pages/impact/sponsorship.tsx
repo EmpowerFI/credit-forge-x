@@ -32,13 +32,16 @@ function Lift({ m }: { m: BrandLift }) {
           </span>
         </span>
       </div>
+      {/* Two fills on one track. The darker one is where the cohort started and
+          the lighter one is where it is now, so what the eye reads is the band
+          between them — which is the measurement, not either number alone. */}
       <div className="relative h-6 overflow-hidden rounded-md bg-secondary/50"
         role="img" aria-label={tr({
           en: `${m.label}: ${m.before}% before the program, ${m.now}% now`,
           pt: `${m.label}: ${m.before}% antes do programa, ${m.now}% agora`,
         })}>
-        <div className="absolute inset-y-0 left-0 bg-accent/25" style={{ width: `${Math.min(100, m.now)}%` }} />
-        <div className="absolute inset-y-0 left-0 border-r-2 border-muted-foreground/60 bg-muted-foreground/15"
+        <div className="absolute inset-y-0 left-0 bg-accent/40" style={{ width: `${Math.min(100, m.now)}%` }} />
+        <div className="absolute inset-y-0 left-0 border-r-2 border-accent bg-accent/70"
           style={{ width: `${Math.min(100, m.before)}%` }} />
       </div>
       <p className="text-xs italic text-muted-foreground">{m.question}</p>
