@@ -7,7 +7,7 @@ import NetworkBadge from "../components/product/NetworkBadge";
 import { useAuth } from "../auth/useAuth";
 import { platformConfigured } from "../lib/platform";
 import { areaOf, DEMO_PASSWORD, OPERATIONS } from "../lib/stories";
-import { roleOpensPath, type Tool, toolPath, type View, viewById, VIEWS } from "../lib/views";
+import { offeredView, roleOpensPath, type Tool, toolPath, type View, VIEWS } from "../lib/views";
 import RoleLanding, { ViewChoice } from "../components/views/RoleLanding";
 import { useWalletEntry } from "../wallet/WalletSignIn";
 import { prototypeNotice } from "../lib/capital";
@@ -19,7 +19,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const next = params.get("next")?.startsWith("/app") ? params.get("next")! : "/app";
-  const view = viewById(params.get("as")) ?? VIEWS[0];
+  const view = offeredView(params.get("as")) ?? VIEWS[0];
 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);

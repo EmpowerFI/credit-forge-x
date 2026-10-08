@@ -156,7 +156,9 @@ function StoryBar({ current, onNavigate, vertical = false }: { current?: Area; o
   const { profile } = useAuth();
   const { open, switching, visible } = useOpenArea();
   const stories = STORIES.filter((a) => !a.hidden && visible(a));
-  const operations = OPERATIONS.filter(visible);
+  // `hidden` used to be honoured for the stories only, so an operations area
+  // marked hidden stayed in this menu — the flag half-applied.
+  const operations = OPERATIONS.filter((a) => !a.hidden && visible(a));
   const go = (area: Area) => { onNavigate?.(); void open(area); };
   const switchHint = (area: Area) => canOpen(area, profile?.role) ? undefined
     : tr({ en: `Opens as the demo ${area.persona.name}`, pt: `Abre como ${area.persona.name}, conta demo` });

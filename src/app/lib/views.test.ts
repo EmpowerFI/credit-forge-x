@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { opensView, roleOpens, roleOpensPath, toolPath, viewById, viewOf, VIEWS } from "./views";
+import { offeredView, opensView, roleOpens, roleOpensPath, toolPath, viewById, viewOf, VIEWS } from "./views";
+import { AREAS } from "./stories";
 
 describe("views: View platform as", () => {
   it("has the five views of the spec, in order", () => {
@@ -56,6 +57,25 @@ describe("views: View platform as", () => {
     expect(opensView(viewById("entrepreneur")!, "partner")).toBe(false);
     expect(opensView(viewById("sponsor")!, "admin")).toBe(true);
     expect(opensView(viewById("entrepreneur")!, "admin")).toBe(false);
+  });
+
+  it("offers four views: the desk went out of the choosers with the area it opens", () => {
+    expect(VIEWS.filter((v) => !v.hidden).map((v) => v.id)).toEqual(["sponsor", "investor", "community", "entrepreneur"]);
+    // Both halves, because either one alone is a half-closed door: a chip that
+    // opens a room off the map, or a room off the map still reachable by chip.
+    expect(viewById("operator")!.hidden).toBe(true);
+    expect(AREAS.find((a) => a.id === "desk")!.hidden).toBe(true);
+    // A typed `?as=operator` does not put the landing back.
+    expect(offeredView("operator")).toBeUndefined();
+    expect(offeredView("investor")?.id).toBe("investor");
+  });
+
+  it("keeps the hidden view as a manifest, so its paths are still walked and its role still holds it", () => {
+    // `ux-paths.mts` reads VIEWS, and the desk is still routed behind the same
+    // RBAC: hiding it from a menu is not removing it from the product.
+    expect(viewOf("partner")?.id).toBe("operator");
+    expect(roleOpensPath("/app/partner", "partner")).toBe(true);
+    expect(roleOpensPath("/app/partner", "entrepreneur")).toBe(false);
   });
 
   it("opens a community tool inside the leader's community, or asks home to find it", () => {

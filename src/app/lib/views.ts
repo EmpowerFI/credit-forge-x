@@ -8,9 +8,11 @@ import type { Role } from "./platform";
 import { areaOf } from "./stories";
 
 // "View platform as" (refactor spec §3A, 17 Sep). Five views, each with its
-// value, its tools and a demo account. A view is a lens, not a permission: the
-// routes stay behind RBAC, and an account only opens a view its role holds —
-// except demo accounts, which switch to the view's demo persona.
+// value, its tools and a demo account — four of them offered, since the
+// operator view went out of the choosers with the desk it opens. A view is a
+// lens, not a permission: the routes stay behind RBAC, and an account only
+// opens a view its role holds — except demo accounts, which switch to the
+// view's demo persona.
 //
 // Three destinations left this file and none of them left the product: the
 // Capital Network, operating economics and the Capital Journey are still
@@ -53,6 +55,14 @@ export interface View {
   primary: Tool[];
   secondary: Tool[];
   icon: LucideIcon;
+  /**
+   * Kept as a manifest, offered in no chooser. A view whose only destination is
+   * a hidden area would be a front door to a room taken off the map, so it
+   * leaves "View platform as" with the area. Its role still holds it, so a
+   * partner signing in still gets its start page and its name in the header,
+   * and `ux-paths.mts` still walks every path it lists.
+   */
+  hidden?: boolean;
 }
 
 const t = (tool: Omit<Tool, "label" | "what"> & { label: { en: string; pt: string }; what: { en: string; pt: string } }) => tool;
@@ -162,6 +172,7 @@ export const VIEWS: View[] = localized([
     // opportunity existed. The nine other analytics screens this list used to
     // carry are still routed and no longer offered here.
     secondary: [LOCAL],
+    hidden: true,
   },
   {
     id: "community", icon: Users,
@@ -227,6 +238,13 @@ export const VIEWS: View[] = localized([
 ]);
 
 export const viewById = (id: string | null | undefined) => VIEWS.find((v) => v.id === id);
+
+/** A view the choosers offer. `?as=` is a URL anyone may type, and a hidden
+ *  view answering it would put back the landing the chips no longer show. */
+export const offeredView = (id: string | null | undefined) => {
+  const view = viewById(id);
+  return view && !view.hidden ? view : undefined;
+};
 
 /** The view an account's role holds. Admins and auditors oversee every view and hold none. */
 export const viewOf = (role: Role | undefined) => VIEWS.find((v) => role && v.roles.includes(role));

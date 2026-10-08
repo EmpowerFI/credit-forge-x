@@ -7,7 +7,7 @@ import { useAuth } from "../auth/useAuth";
 import { useOpenArea } from "../auth/useOpenArea";
 import { tr } from "../i18n";
 import { ROLE_LABEL } from "../lib/platform";
-import { opensView, type Tool, toolPath, viewById, viewOf, VIEWS } from "../lib/views";
+import { offeredView, opensView, type Tool, toolPath, viewOf, VIEWS } from "../lib/views";
 import { useLedCommunity } from "./community/queries";
 
 /**
@@ -22,7 +22,7 @@ export default function StartPage() {
   const { openView, switching, demo } = useOpenArea();
   const led = useLedCommunity();
   const [busy, setBusy] = useState<Tool | null>(null);
-  const view = viewById(params.get("as")) ?? viewOf(profile?.role) ?? VIEWS[0];
+  const view = offeredView(params.get("as")) ?? viewOf(profile?.role) ?? VIEWS[0];
   const opens = opensView(view, profile?.role);
 
   const go = async (tool: Tool) => {
