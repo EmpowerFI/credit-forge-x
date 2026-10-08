@@ -43,6 +43,6 @@ export function useOpenArea() {
   return {
     open, openView, switching, demo,
     visible: (area: Area) => demo || canOpen(area, profile?.role),
-    viewVisible: (view: View) => demo || opensView(view, profile?.role),
+    viewVisible: (view: View) => !view.hidden && (demo || opensView(view, profile?.role)),
   };
 }

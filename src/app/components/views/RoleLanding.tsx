@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils";
 import { tr } from "../../i18n";
 import { type View, VIEWS } from "../../lib/views";
 
-/** "View platform as": the five views as one choice. */
+/** "View platform as": the views on offer, as one choice. A hidden view is not
+ * one of them — see `View.hidden`. */
 export function ViewChoice({ value, onChange, className }: { value: View["id"]; onChange: (id: View["id"]) => void; className?: string }) {
   return (
     <div className={cn("space-y-2", className)}>
@@ -11,7 +12,7 @@ export function ViewChoice({ value, onChange, className }: { value: View["id"]; 
         {tr({ en: "View platform as", pt: "Ver plataforma como" })}
       </p>
       <div role="radiogroup" aria-labelledby="view-choice-label" className="flex flex-wrap gap-2">
-        {VIEWS.map((v) => {
+        {VIEWS.filter((v) => !v.hidden).map((v) => {
           const Icon = v.icon;
           const active = v.id === value;
           return (

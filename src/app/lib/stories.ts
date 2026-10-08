@@ -34,7 +34,8 @@ export interface Area {
   persona: { email: string; name: string };
   icon: LucideIcon;
   /** Reached from the money it explains, not from a menu: the area resolves so
-   * the shell knows where you are, and is left out of the numbered bar. */
+   * the shell knows where you are, and is left out of the numbered bar and out
+   * of the Operations menu. Its routes and its RBAC are untouched. */
   hidden?: boolean;
 }
 
@@ -81,11 +82,20 @@ export const OPERATIONS: Area[] = localized([
     audience: { en: "Cohorts, education and check-ins, run by the community.", pt: "Turmas, formação e check-ins, conduzidos pela comunidade." },
     roles: ["community_leader", "admin", "auditor"], persona: { email: "leader@demo.empowerfi.io", name: "Lúcia Santos" },
   },
+  // Out of the menu, like the engine and for the same reason: the desk is not a
+  // thing to understand, it is a thing that already happened to a loan. Its six
+  // screens are the back office of a decision the allocation engine took, and
+  // offering them beside the five areas a visitor is meant to read made the
+  // product look like more product than it is. It stays routed, stays behind
+  // the same RBAC, and is still where a partner signing in lands (`HOME`); the
+  // way in for everyone else is the money it handled — the Capital Journey
+  // links to its portfolio and its servicing from the steps they explain.
   {
     id: "desk", to: "/app/partner", prefix: ["/app/partner"], icon: Briefcase,
     label: { en: "P2P desk", pt: "Mesa P2P" },
     audience: { en: "Formalisation, simulated Pix, servicing and outcomes.", pt: "Formalização, Pix simulado, acompanhamento e resultados." },
     roles: ["partner", "admin", "auditor"], persona: { email: "partner@demo.empowerfi.io", name: "Paulo Mendes" },
+    hidden: true,
   },
   {
     id: "admin", to: "/app/admin", prefix: ["/app/admin"], icon: ClipboardCheck,
