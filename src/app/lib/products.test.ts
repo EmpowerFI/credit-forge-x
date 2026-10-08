@@ -45,6 +45,24 @@ describe("matchProducts", () => {
       ["ready", "potential", "explore"].indexOf(a) - ["ready", "potential", "explore"].indexOf(b)));
   });
 
+  it("pins every real partner and no invented one, so the pin is a category and not a favour", () => {
+    // A pin some real partners got and others did not would be a ranking
+    // again, only an unexplained one.
+    for (const p of PRODUCTS) expect(Boolean(p.featured), p.id).toBe(Boolean(p.real));
+  });
+
+  it("keeps the pinned products in their own fit order, not in the order they were pinned", () => {
+    // Both real partners are explore to a baker and ready to nobody, so they
+    // hold catalogue order; to a lettings agency the guarantee rises and the
+    // pair reorders on fit rather than on who was added first.
+    const toAnAgency = matchProducts({ ...prepared, sector: "imobili\u00e1ria" });
+    const pinned = toAnAgency.filter((m) => m.featured);
+    expect(pinned.map((m) => [m.product.id, m.fit])).toEqual([
+      ["rental-guarantee", "ready"],
+      ["advisor-agents", "explore"],
+    ]);
+  });
+
   it("pins the position and not the verdict", () => {
     // The pin is placement. If it could lift a fit too, the page would be
     // telling her a featured product suits her better than it does — so the
@@ -92,7 +110,6 @@ describe("matchProducts", () => {
     expect(unpinned.map((m) => [m.product.id, m.fit, m.because])).toEqual([
       ["productive-microloan", "ready", "READY_NOT_ASKED"],
       ["business-payments", "ready", "STEADY_AND_ORGANISED"],
-      ["advisor-agents", "explore", "BUILT_FOR_ADVISORY_OFFICES"],
       ["cross-border-payments", "explore", "SALES_ARE_LOCAL"],
     ]);
   });

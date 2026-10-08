@@ -20,9 +20,10 @@
 //   · **Nobody pays to be here.** No placement is for sale, no provider is told
 //     she looked, and a product that paid for its position would make her
 //     readiness into inventory — the months she reported were not given for
-//     that. One provider is pinned to the front (`featured`), at the founder's
-//     decision, because it is a real partnership being prospected and the demo
-//     is about showing it. That is not the same as selling the position, and
+//     that. The real partners are pinned to the front (`featured`), at the
+//     founder's decision, because they are partnerships being prospected and
+//     the demo is about showing them — all of them, so the pin is a category
+//     rather than a favour. That is not the same as selling the position, and
 //     the difference only holds while the screen says which it is: a featured
 //     card is marked as featured, and the page says the rest are ordered by
 //     fit. Pinning something silently is how the first one gets sold.
@@ -109,7 +110,10 @@ export interface FinancialProduct {
   /**
    * Pinned to the front of the list, ahead of fit. Nothing buys this: it marks
    * a real partnership being prospected, and the card it produces says it is
-   * featured so the order stays readable. See the second rule in the header.
+   * featured so the order stays readable. Every real provider carries it and no
+   * invented one does, which is what keeps it from being a favour — a pin that
+   * some real partners got and others did not would be a ranking again, just an
+   * unexplained one. See the second rule in the header.
    */
   featured?: boolean;
   /** Where "explore this" goes, when the platform itself can answer it. */
@@ -190,6 +194,7 @@ export const PRODUCTS: FinancialProduct[] = localized([
     },
     geography: ["BR"],
     integration: "none",
+    featured: true,
     real: {
       // No mark: the company has not given one, so the card draws the
       // placeholder rather than something invented for it.
