@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowRight, Building2, CreditCard, Globe2, Lock, Wallet } from "lucide-react";
+import { ArrowRight, Building2, CreditCard, Globe2, KeyRound, Lock, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
@@ -27,10 +27,11 @@ const CATEGORY: Record<ProductCategory, string> = localized({
   working_capital: { en: "Working capital", pt: "Capital de giro" },
   payments: { en: "Payment infrastructure", pt: "Infraestrutura de pagamentos" },
   cross_border: { en: "Cross-border · stablecoin", pt: "Transfronteiriço · stablecoin" },
+  guarantee: { en: "Guarantees", pt: "Garantias" },
 });
 
 const CATEGORY_ICON: Record<ProductCategory, typeof Wallet> = {
-  working_capital: Wallet, payments: CreditCard, cross_border: Globe2,
+  working_capital: Wallet, payments: CreditCard, cross_border: Globe2, guarantee: KeyRound,
 };
 
 const BECAUSE: Record<BecauseCode, string> = localized({
@@ -58,6 +59,14 @@ const BECAUSE: Record<BecauseCode, string> = localized({
     en: "Your sales are local, so there is nothing to cross a border yet. Here if that changes.",
     pt: "Suas vendas são locais, então ainda não há o que atravessar fronteira. Fica aqui se isso mudar.",
   },
+  LETTINGS_IS_THE_CUSTOMER: {
+    en: "You let property, which is exactly who this is built for: your agency offers it, and the tenant pays for it.",
+    pt: "Você trabalha com locação, que é exatamente para quem isto foi feito: a sua imobiliária oferece, e o inquilino paga.",
+  },
+  RUNS_THROUGH_AGENCIES: {
+    en: "This reaches tenants through lettings agencies, so it fits if your business is one. Your months say nothing about it either way.",
+    pt: "Isto chega aos inquilinos pelas imobiliárias, então serve se o seu negócio for uma. Seus meses não dizem nada sobre isso.",
+  },
 });
 
 const GAP: Record<GapCode, (n?: number) => string> = {
@@ -76,11 +85,18 @@ function ProductCard({ m }: { m: Match }) {
     <li className="flex flex-col gap-3 rounded-2xl border border-border p-5">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          {/* A placeholder rather than a logo: no provider here is real, and a
-              borrowed mark would be the one thing on this page that lied. */}
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-muted-foreground" aria-hidden>
-            <Building2 size={18} />
-          </span>
+          {/* A real company's own mark, used with its permission; a placeholder
+              for the invented ones, because a borrowed mark for a provider that
+              does not exist would be the one thing on this page that lied. The
+              mark is bundled, so showing it fetches nothing from anyone. */}
+          {m.product.real
+            ? <img src={m.product.real.logo} alt={m.product.provider}
+                className="h-10 w-10 shrink-0 rounded-xl object-cover" width={40} height={40} loading="lazy" />
+            : (
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary text-muted-foreground" aria-hidden>
+                <Building2 size={18} />
+              </span>
+            )}
           <div className="min-w-0 space-y-0.5">
             <p className="font-heading text-base font-bold leading-tight text-foreground">{m.product.name}</p>
             <p className="text-xs text-muted-foreground">
@@ -104,7 +120,12 @@ function ProductCard({ m }: { m: Match }) {
         <span className="text-xs text-muted-foreground">
           {m.product.provider_id === "efi-p2p"
             ? tr({ en: "This platform · nothing is applied for here", pt: "Esta plataforma · nada é solicitado aqui" })
-            : tr({ en: "Fictional provider · nothing is applied for here", pt: "Provedora fictícia · nada é solicitado aqui" })}
+            : m.product.real
+              ? tr({
+                en: "Real company · a prospective partner, not connected · nothing is applied for here",
+                pt: "Empresa real · parceria em prospecção, sem integração · nada é solicitado aqui",
+              })
+              : tr({ en: "Fictional provider · nothing is applied for here", pt: "Provedora fictícia · nada é solicitado aqui" })}
         </span>
         {m.product.to
           ? (
@@ -138,7 +159,7 @@ export default function FinancialOpportunities() {
     enabled: Boolean(profile),
     queryFn: async () => {
       const { data, error } = await platform
-        .from("entrepreneurs").select("id, business_name").eq("profile_id", profile!.id).maybeSingle();
+        .from("entrepreneurs").select("id, business_name, business_sector").eq("profile_id", profile!.id).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -173,7 +194,8 @@ export default function FinancialOpportunities() {
     },
     missing: (r.missing_requirements ?? []).map((x) => String((x as { code?: string })?.code ?? x)),
     has_request: Boolean(state.data?.has_request),
-  }) : [], [r, state.data?.has_request]);
+    sector: me.data?.business_sector,
+  }) : [], [r, state.data?.has_request, me.data?.business_sector]);
 
   if (me.isError) return <LoadError error={me.error} onRetry={() => me.refetch()} />;
   if (state.isError) return <LoadError error={state.error} onRetry={() => state.refetch()} />;
@@ -192,14 +214,14 @@ export default function FinancialOpportunities() {
             <>
               <p>Matched by rules you can read, against the readiness your own check-ins produced. It is not machine learning and there is no second score: it reads the same assessment your business page shows.</p>
               <p>Nothing here is an approval. Each provider decides with its own rules. No provider pays to appear, none is told you looked, and the order is by fit alone.</p>
-              <p>The providers are invented for this prototype.</p>
+              <p>Most providers are invented for this prototype. Mutav is a real company, named and marked with its permission — a partnership being prospected, not one that exists, and nothing here is connected to it.</p>
             </>
           ),
           pt: (
             <>
               <p>Casado por regras que você pode ler, contra a prontidão que os seus próprios check-ins produziram. Não é machine learning e não há um segundo score: ele lê a mesma avaliação que a sua página do negócio mostra.</p>
               <p>Nada aqui é aprovação. Cada provedora decide com as regras dela. Nenhuma paga para aparecer, nenhuma é avisada de que você olhou, e a ordem é só por adequação.</p>
-              <p>As provedoras são inventadas para este protótipo.</p>
+              <p>A maioria das provedoras é inventada para este protótipo. A Mutav é uma empresa real, nomeada e com a marca usada com a permissão dela — uma parceria em prospecção, não uma que exista, e nada aqui está integrado a ela.</p>
             </>
           ),
         })}
