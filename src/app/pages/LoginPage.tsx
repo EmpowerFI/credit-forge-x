@@ -61,7 +61,13 @@ export default function LoginPage() {
     setParams(p, { replace: true });
   };
   const investor = view.id === "investor";
-  const oversight = OPERATIONS.filter((a) => a.id === "admin" || a.id === "audit");
+  // Admin and the audit console were the whole of this line, because they are
+  // the areas no view holds. The P2P desk joined them on 8 Oct when it left the
+  // Operations menu: taking it out of the product's navigation was the point,
+  // but taking Paulo Mendes out of reach was not — with no chip and no menu
+  // entry, nothing in the interface could become the desk at all. This line is
+  // where an area in no view belongs.
+  const oversight = OPERATIONS.filter((a) => a.hidden || a.id === "admin" || a.id === "audit");
 
   return (
     <div className="min-h-screen bg-background">
@@ -116,9 +122,9 @@ export default function LoginPage() {
 
         {entry.dialogs}
 
-        {/* Admin and the audit console are in none of the five views above,
-            so this line is the only way in to them. The three story cards
-            that used to sit here opened views the chips already open. */}
+        {/* The areas no view above holds, so this line is the only way in to
+            them: the P2P desk, admin and the audit console. The three story
+            cards that used to sit here opened views the chips already open. */}
         <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
           <span>{tr({ en: "Oversight:", pt: "Supervisão:" })}</span>
           {oversight.map((area) => (

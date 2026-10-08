@@ -24,7 +24,7 @@
 //   UX_BASE=http://localhost:5173 npm run test:ux-paths
 import { chromium, type Page } from "@playwright/test";
 import { setCurrentLocale, type Locale } from "../src/app/i18n";
-import { DEMO_PASSWORD } from "../src/app/lib/stories";
+import { areaOf, DEMO_PASSWORD } from "../src/app/lib/stories";
 import { toolPath, VIEWS, type View } from "../src/app/lib/views";
 
 const BASE = (process.env.UX_BASE ?? "http://localhost:5173").replace(/\/$/, "");
@@ -66,6 +66,11 @@ async function visit(page: Page, path: string): Promise<string | null> {
  * does. `from` is a protected page to be bounced off first, which leaves
  * ?next= behind — the state in which choosing a different view used to strand
  * the visitor on a page that persona cannot open.
+ *
+ * A hidden view has no chip, so its door is the Oversight line, named after the
+ * area rather than the view. Without this, the run silently entered as whoever
+ * the chips defaulted to and reported that persona's refusals as the hidden
+ * view's dead ends — nine of them, all saying the same thing twice removed.
  */
 async function enterAs(page: Page, view: View, from?: string): Promise<string> {
   await page.goto(`${BASE}${from ?? "/app/login"}`, { waitUntil: "networkidle" });
@@ -74,6 +79,13 @@ async function enterAs(page: Page, view: View, from?: string): Promise<string> {
     await gate.fill(GATE);
     await page.keyboard.press("Enter");
     await page.waitForLoadState("networkidle");
+  }
+  if (view.hidden) {
+    const area = areaOf(view.home.to);
+    if (!area) throw new Error(`${view.id}: a hidden view's home belongs to no area, so it has no door`);
+    await page.getByRole("button", { name: area.label, exact: true }).first().click();
+    await settle(page, 4000);
+    return page.url().replace(BASE, "");
   }
   const choice = page.getByRole("radio", { name: view.label, exact: true }).first();
   if (await choice.count()) {
