@@ -17,11 +17,15 @@
 //
 // Two rules hold this honest, and both are structural rather than promises:
 //
-//   · **She pulls; nobody pays to be here.** The catalogue is ordered by fit
-//     and never by payment, there is no placement to buy, and no provider is
-//     told she looked. A product that paid for its position would make her
-//     readiness into inventory, and the months she reported were not given for
-//     that.
+//   · **Nobody pays to be here.** No placement is for sale, no provider is told
+//     she looked, and a product that paid for its position would make her
+//     readiness into inventory — the months she reported were not given for
+//     that. One provider is pinned to the front (`featured`), at the founder's
+//     decision, because it is a real partnership being prospected and the demo
+//     is about showing it. That is not the same as selling the position, and
+//     the difference only holds while the screen says which it is: a featured
+//     card is marked as featured, and the page says the rest are ordered by
+//     fit. Pinning something silently is how the first one gets sold.
 //   · **Nothing here is an approval.** This says a product exists and why it
 //     might suit her. Whether she gets it is the provider's decision, made
 //     with its own rules, and the screen says so rather than implying a
@@ -93,6 +97,12 @@ export interface FinancialProduct {
   integration: IntegrationStatus;
   /** Set when the provider is a real company. Absent means invented. */
   real?: RealProvider;
+  /**
+   * Pinned to the front of the list, ahead of fit. Nothing buys this: it marks
+   * a real partnership being prospected, and the card it produces says it is
+   * featured so the order stays readable. See the second rule in the header.
+   */
+  featured?: boolean;
   /** Where "explore this" goes, when the platform itself can answer it. */
   to?: string;
 }
@@ -148,6 +158,7 @@ export const PRODUCTS: FinancialProduct[] = localized([
     },
     geography: ["BR"],
     integration: "none",
+    featured: true,
     real: {
       logo: mutavLogo,
       authorised: "Named and marked with Mutav's permission, obtained by the founder (8 Oct 2026). No partnership is signed; the company is being prospected.",
@@ -208,6 +219,8 @@ export interface Match {
   gap?: GapCode;
   /** Requirements still open on her readiness, when the gap is those. */
   open_requirements?: number;
+  /** Pinned ahead of fit, and saying so. Mirrors `product.featured`. */
+  featured?: boolean;
 }
 
 const RANK: Record<Fit, number> = { ready: 0, potential: 1, explore: 2 };
@@ -275,5 +288,11 @@ export function matchProducts(input: MatchInput): Match[] {
         return { product, fit: "explore", because: "SALES_ARE_LOCAL" };
     }
   });
-  return out.sort((a, b) => RANK[a.fit] - RANK[b.fit]);
+  // Carried onto the match so the card can say it is featured, rather than the
+  // screen having to reach back into the catalogue to find out why it is first.
+  for (const m of out) if (m.product.featured) m.featured = true;
+  // Featured first, then fit. Both halves are stable, so two featured products
+  // keep their own fit order and the rest are untouched.
+  return out.sort((a, b) =>
+    Number(Boolean(b.product.featured)) - Number(Boolean(a.product.featured)) || RANK[a.fit] - RANK[b.fit]);
 }

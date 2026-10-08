@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowRight, Building2, CreditCard, Globe2, KeyRound, Lock, Wallet } from "lucide-react";
+import { ArrowRight, Building2, CreditCard, Globe2, KeyRound, Lock, Star, Wallet } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../../components/LoadError";
@@ -82,7 +83,19 @@ function ProductCard({ m }: { m: Match }) {
   const Icon = CATEGORY_ICON[m.product.category];
   const fit = FIT[m.fit];
   return (
-    <li className="flex flex-col gap-3 rounded-2xl border border-border p-5">
+    <li className={cn(
+      "flex flex-col gap-3 rounded-2xl border p-5",
+      // A featured card is pinned ahead of fit, so it is drawn as the different
+      // thing it is. Without that it would read as the best match, which for
+      // most businesses it is not.
+      m.featured ? "border-accent/60 bg-accent/[0.04] ring-1 ring-accent/20" : "border-border",
+    )}>
+      {m.featured && (
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-accent">
+          <Star size={12} aria-hidden />
+          {tr({ en: "Featured partner · placed here, not ranked here", pt: "Parceira em destaque · posta aqui, não classificada aqui" })}
+        </p>
+      )}
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="flex min-w-0 items-start gap-3">
           {/* A real company's own mark, used with its permission; a placeholder
@@ -213,14 +226,14 @@ export default function FinancialOpportunities() {
           en: (
             <>
               <p>Matched by rules you can read, against the readiness your own check-ins produced. It is not machine learning and there is no second score: it reads the same assessment your business page shows.</p>
-              <p>Nothing here is an approval. Each provider decides with its own rules. No provider pays to appear, none is told you looked, and the order is by fit alone.</p>
+              <p>Nothing here is an approval. Each provider decides with its own rules. No provider pays to appear and none is told you looked. The order is by fit, except for a featured partner placed at the front — the card says so, so you can tell the two apart.</p>
               <p>Most providers are invented for this prototype. Mutav is a real company, named and marked with its permission — a partnership being prospected, not one that exists, and nothing here is connected to it.</p>
             </>
           ),
           pt: (
             <>
               <p>Casado por regras que você pode ler, contra a prontidão que os seus próprios check-ins produziram. Não é machine learning e não há um segundo score: ele lê a mesma avaliação que a sua página do negócio mostra.</p>
-              <p>Nada aqui é aprovação. Cada provedora decide com as regras dela. Nenhuma paga para aparecer, nenhuma é avisada de que você olhou, e a ordem é só por adequação.</p>
+              <p>Nada aqui é aprovação. Cada provedora decide com as regras dela. Nenhuma paga para aparecer e nenhuma é avisada de que você olhou. A ordem é por adequação, exceto por uma parceira em destaque posta na frente — o cartão diz isso, então dá para distinguir as duas coisas.</p>
               <p>A maioria das provedoras é inventada para este protótipo. A Mutav é uma empresa real, nomeada e com a marca usada com a permissão dela — uma parceria em prospecção, não uma que exista, e nada aqui está integrado a ela.</p>
             </>
           ),
