@@ -1,8 +1,4 @@
-import {
-  ArrowLeftRight, Banknote, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardCheck, Coins, Cpu, FileCheck2, Gavel, Gem, History, KeyRound,
-  LayoutDashboard, MapPin, Network, PieChart, Waypoints, Route as RouteIcon, ServerCog, Share2, ShieldCheck, Split, Sprout, Store, Users, Wallet,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowLeftRight, Banknote, BarChart3, Briefcase, CalendarCheck, CalendarClock, ClipboardCheck, Coins, Cpu, FileCheck2, Gavel, Gem, History, KeyRound, LayoutDashboard, MapPin, Network, PieChart, Route as RouteIcon, ServerCog, Share2, ShieldCheck, Sparkles, Split, Sprout, Store, Users, Wallet, Waypoints, type LucideIcon } from "lucide-react";
 import { localized } from "../i18n";
 import type { Role } from "./platform";
 
@@ -148,6 +144,7 @@ export const SUBNAV: Partial<Record<AreaId, NavItem[]>> = localized({
   business: [
     { to: "/app/me", label: { en: "My business", pt: "Meu negócio" }, icon: Store, end: true },
     { to: "/app/check-in", label: { en: "Monthly check-in", pt: "Check-in mensal" }, icon: CalendarCheck },
+    { to: "/app/me/opportunities", label: { en: "Financial opportunities", pt: "Oportunidades financeiras" }, icon: Sparkles },
     { to: "/app/me/loan", label: { en: "My loan", pt: "Meu empréstimo" }, icon: Banknote },
     { to: "/app/consent", label: { en: "Consent", pt: "Consentimento" }, icon: ShieldCheck },
   ],

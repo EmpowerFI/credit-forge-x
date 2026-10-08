@@ -1,0 +1,100 @@
+// The matching rules, read back as sentences.
+//
+// Each case is a business a person can picture, and the expectation is the
+// sentence the screen would say about her. The point of testing a rules engine
+// is that the rules stay sayable: if a case here stops reading like something
+// you could tell an entrepreneur, the rule behind it has drifted.
+import { describe, expect, it } from "vitest";
+import { matchProducts, PRODUCTS, type MatchInput } from "./products";
+
+const of = (p: ReturnType<typeof matchProducts>, id: string) => p.find((m) => m.product.id === id)!;
+
+/** Six months reported in a row, numbers that hold together, credit-ready. */
+const prepared: MatchInput = {
+  status: "CREDIT_READY",
+  components: { preparation: 23, regularity: 25, data_quality: 25, business: 24 },
+  missing: [],
+  has_request: false,
+};
+
+/** Two months in, nothing wrong, simply not enough yet. */
+const starting: MatchInput = {
+  status: "NEEDS_MORE_DATA",
+  components: { preparation: 12, regularity: 8, data_quality: 17, business: 10 },
+  missing: ["INSUFFICIENT_HISTORY", "CORE_EDUCATION_INCOMPLETE"],
+  has_request: false,
+};
+
+describe("matchProducts", () => {
+  it("offers every product in the catalogue, every time", () => {
+    for (const input of [prepared, starting]) {
+      expect(matchProducts(input)).toHaveLength(PRODUCTS.length);
+    }
+  });
+
+  it("sorts what fits above what does not", () => {
+    const fits = matchProducts(prepared).map((m) => m.fit);
+    expect(fits).toEqual([...fits].sort((a, b) =>
+      ["ready", "potential", "explore"].indexOf(a) - ["ready", "potential", "explore"].indexOf(b)));
+  });
+
+  it("a credit-ready business is ready for a productive loan", () => {
+    expect(of(matchProducts(prepared), "productive-microloan")).toMatchObject({
+      fit: "ready", because: "READY_NOT_ASKED",
+    });
+  });
+
+  it("and says so differently once she has asked", () => {
+    expect(of(matchProducts({ ...prepared, has_request: true }), "productive-microloan").because)
+      .toBe("READY_AND_ASKED");
+  });
+
+  it("a business still gathering months is not refused, it is told what is open", () => {
+    const m = of(matchProducts(starting), "productive-microloan");
+    expect(m.fit).toBe("potential");
+    expect(m.gap).toBe("REQUIREMENTS_OPEN");
+    expect(m.open_requirements).toBe(2);
+  });
+
+  it("with nothing open, the gap is simply another month", () => {
+    const m = of(matchProducts({ ...starting, missing: [] }), "productive-microloan");
+    expect(m.gap).toBe("ONE_MORE_MONTH");
+    expect(m.open_requirements).toBeUndefined();
+  });
+
+  it("payments opens on regular months that hold together, not on being credit-ready", () => {
+    // Not credit-ready, but reporting every month with clean numbers.
+    const regular = { ...starting, components: { ...starting.components, regularity: 20, data_quality: 22 } };
+    expect(of(matchProducts(regular), "business-payments").fit).toBe("ready");
+  });
+
+  it("and stays potential when the months are irregular, however good the rest is", () => {
+    const patchy = { ...prepared, components: { ...prepared.components, regularity: 10 } };
+    const m = of(matchProducts(patchy), "business-payments");
+    expect(m.fit).toBe("potential");
+    expect(m.gap).toBe("A_FEW_MORE_MONTHS");
+  });
+
+  it("and stays potential when the numbers do not hold together", () => {
+    const noisy = { ...prepared, components: { ...prepared.components, data_quality: 9 } };
+    expect(of(matchProducts(noisy), "business-payments").fit).toBe("potential");
+  });
+
+  it("never pushes a local business across a border, however prepared she is", () => {
+    const m = of(matchProducts(prepared), "cross-border-payments");
+    expect(m.fit).toBe("explore");
+    expect(m.because).toBe("SALES_ARE_LOCAL");
+    expect(m.gap).toBeUndefined();
+  });
+
+  it("promises nothing: no product carries a rate, a fee or an approval", () => {
+    const text = JSON.stringify(PRODUCTS);
+    for (const word of ["rate", "apr", "approved", "approval", "guarantee", "%"]) {
+      expect(text.toLowerCase()).not.toContain(word);
+    }
+  });
+
+  it("every provider is still a mock, so nothing on screen implies a real integration", () => {
+    expect(PRODUCTS.every((p) => p.integration === "mock")).toBe(true);
+  });
+});
