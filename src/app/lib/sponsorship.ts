@@ -30,7 +30,27 @@
 // SPONSORS below is demo configuration, matched by the sponsor's name. There is
 // no sponsor-administration product here and this iteration does not build one:
 // the point is to show a prospective sponsor what the layer looks like, so one
-// fictional company is enough.
+// sponsor is enough.
+//
+// That sponsor is now a real organisation named as a hypothesis, at the
+// founder's decision (8 Oct) and against my advice: she wants the ESG dashboard
+// to show the kind of sponsor this layer is for, and the Solana Foundation is
+// the recognisable example in the ecosystem this is submitted to. It does not
+// sponsor this programme and has no relationship with EmpowerFI.
+//
+// So `hypothetical` and `disclosure` exist, and two rules hold them:
+//
+//   · **The label travels with the name.** Every place the name is rendered
+//     renders the disclaimer in the same visual unit, so a cropped screenshot
+//     or a paused video frame cannot carry the claim without the correction.
+//   · **No mark is drawn for it.** `SponsorWordmark` invents a corporate
+//     wordmark; inventing one for a real organisation is manufacturing its
+//     branding, which is a different and worse thing than naming it. A
+//     hypothetical sponsor is set in the page's own type.
+//
+// Both rules are structural: the renderers branch on `hypothetical`, so adding
+// a real name without a disclaimer is not a thing this configuration can
+// express.
 
 import { useQuery } from "@tanstack/react-query";
 
@@ -46,18 +66,37 @@ export interface Sponsorship {
   enables: string;
   /** Why the sponsor says it is paying. Informational, never an offer. */
   because: string;
+  /**
+   * Set when the sponsor is a real organisation named as an illustration. A
+   * short line for the slots beside the name; its presence also suppresses the
+   * drawn wordmark. See this file's header for why both.
+   */
+  hypothetical?: string;
+  /** The same thing said in full, for a panel with room for a sentence. */
+  disclosure?: string;
 }
 
 export const SPONSORS: Sponsorship[] = localized([
   {
-    sponsor: "NOVA",
+    sponsor: "Solana Foundation",
     enables: {
-      en: "This journey is offered with the support of NOVA.",
-      pt: "Esta jornada é oferecida com o apoio da NOVA.",
+      en: "In this example, the journey is offered with the support of the Solana Foundation.",
+      pt: "Neste exemplo, a jornada é oferecida com o apoio da Solana Foundation.",
     },
+    // Conditional on purpose: a reason attributed to an organisation that never
+    // gave one would be words in its mouth, so this is the reason such a
+    // sponsor would have, said as ours.
     because: {
-      en: "NOVA is supporting this program to help women entrepreneurs strengthen their businesses and their financial readiness.",
-      pt: "A NOVA apoia este programa para ajudar mulheres empreendedoras a fortalecer seus negócios e seu preparo financeiro.",
+      en: "An example of why an ecosystem foundation would fund a cohort like this one: preparing entrepreneurs for credit, and measuring what changed in their businesses. It is not a statement by the Solana Foundation.",
+      pt: "Um exemplo de por que uma fundação de ecossistema financiaria uma turma como esta: preparar empreendedoras para o crédito e medir o que mudou nos negócios delas. Não é uma declaração da Solana Foundation.",
+    },
+    hypothetical: {
+      en: "Hypothetical example · not a sponsor of this program",
+      pt: "Exemplo hipotético · não patrocina este programa",
+    },
+    disclosure: {
+      en: "The Solana Foundation is named here as a hypothetical sponsor, to show what this layer looks like for the kind of funder it is built for. It does not sponsor this program, it has no relationship with EmpowerFI, and nothing on this page came from it.",
+      pt: "A Solana Foundation é nomeada aqui como patrocinadora hipotética, para mostrar como esta camada funciona para o tipo de financiador a que ela se destina. Ela não patrocina este programa, não tem relação com a EmpowerFI, e nada nesta página veio dela.",
     },
   },
 ]);

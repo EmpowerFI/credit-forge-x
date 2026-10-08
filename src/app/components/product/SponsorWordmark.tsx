@@ -4,11 +4,19 @@ import { tr } from "../../i18n";
  * A sponsor's wordmark, drawn rather than fetched: no logo file, no remote
  * request, nothing that could be mistaken for a real company's asset.
  *
- * NOVA is invented for the demo. The mark is a plain geometric wordmark — an
- * arc over the letters, which reads as a rising curve — chosen to look like a
- * corporate mark without resembling any particular one. It carries its own
- * colours rather than the product's accent, because a sponsor's brand should
- * read as a guest on the page and not as EmpowerFI's own.
+ * The mark is a plain geometric wordmark — an arc over the letters, which reads
+ * as a rising curve — chosen to look like a corporate mark without resembling
+ * any particular one. It carries its own colours rather than the product's
+ * accent, because a sponsor's brand should read as a guest on the page and not
+ * as EmpowerFI's own.
+ *
+ * **Only for an invented sponsor.** The whole component manufactures branding,
+ * so pointing it at a real organisation's name would be inventing that
+ * organisation's logo — a worse claim than naming it, and one a reader has no
+ * way to see through. Every call site is guarded by `!dressing.hypothetical`
+ * (see `lib/sponsorship.ts`), which is why nothing renders it today: the demo's
+ * sponsor is a real foundation named as a hypothesis, and it is set in the
+ * page's own type instead. The component stays for the next invented one.
  */
 export default function SponsorWordmark({ name, className }: { name: string; className?: string }) {
   return (

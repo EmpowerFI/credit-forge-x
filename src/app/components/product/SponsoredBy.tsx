@@ -34,13 +34,24 @@ export default function SponsoredBy({ row }: { row: SponsorshipRow }) {
           </p>
         </div>
         <div className="space-y-1.5 text-right">
-          {dressing
+          {/* A drawn mark only for an invented sponsor: see SponsorWordmark. A
+              real name is set in the page's own type, with the hypothesis
+              beside it rather than a manufactured logo above it. */}
+          {dressing && !dressing.hypothetical
             ? <SponsorWordmark name={row.sponsor_name} className="ml-auto h-5 w-auto text-foreground" />
             : <p className="font-semibold text-foreground">{row.sponsor_name}</p>}
+          {dressing?.hypothetical && (
+            <p className="text-[11px] font-medium text-caution">{dressing.hypothetical}</p>
+          )}
           <p className="text-[11px] text-muted-foreground">{tr({ en: "Powered by EmpowerFI", pt: "Com tecnologia EmpowerFI" })}</p>
         </div>
       </div>
       {dressing && <p className="mt-3 border-t border-border/60 pt-3 text-sm text-muted-foreground">{dressing.because}</p>}
+      {/* In the same box as the name, so a screenshot of this card cannot carry
+          the sponsorship without carrying the correction. */}
+      {dressing?.disclosure && (
+        <p className="mt-3 rounded-lg border tone-caution px-3 py-2 text-xs">{dressing.disclosure}</p>
+      )}
       <p className="mt-3 text-xs text-muted-foreground">
         {tr({
           en: `${row.sponsor_name} sees how the program is going as a whole. It never sees your name, your business, your numbers or your answers. · ${formatDate(`${row.period_start}T12:00:00`)} – ${formatDate(`${row.period_end}T12:00:00`)}`,

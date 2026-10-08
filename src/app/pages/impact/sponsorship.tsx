@@ -4,6 +4,7 @@ import StatTile from "../../components/product/StatTile";
 import { formatNumber, tr } from "../../i18n";
 import type { ImpactIntelligence } from "../../lib/impact";
 import { money } from "../../lib/readiness";
+import { sponsorshipFor } from "../../lib/sponsorship";
 
 const pct = (part: number, whole: number) => (whole > 0 ? `${formatNumber(Math.round((part / whole) * 100))}%` : "—");
 
@@ -57,6 +58,12 @@ export function BrandExposure({ data, sponsor }: { data: ImpactIntelligence; spo
           value="1"
           hint={tr({ en: "one card in her journey, not every screen", pt: "um card na jornada dela, não em toda tela" })} />
       </div>
+      {/* The brand panel is the one a sponsor screenshots, so of all the places
+          the name appears this is the one that most needs the hypothesis with
+          it. */}
+      {sponsorshipFor(sponsor)?.disclosure && (
+        <p className="mt-4 rounded-lg border tone-caution px-3 py-2 text-xs">{sponsorshipFor(sponsor)!.disclosure}</p>
+      )}
       <p className="mt-4 flex items-start gap-2 rounded-lg bg-secondary/40 p-3 text-xs text-muted-foreground">
         <Lock size={13} className="mt-0.5 shrink-0" aria-hidden />
         <span>{tr({
