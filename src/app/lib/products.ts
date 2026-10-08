@@ -30,23 +30,55 @@
 // The matching is rules-based and each rule is readable above. It is not
 // machine learning and does not claim to be.
 //
-// Providers are invented for this build. The catalogue carries the shape a real
-// one would — provider id, category, geography, requirements, integration
-// status — so a partner can be added without reshaping anything, but no real
-// institution is named and no rate, fee or approval is quoted.
+// Most providers are invented for this build. The catalogue carries the shape a
+// real one would — provider id, category, geography, integration status — so a
+// partner can be added without reshaping anything.
+//
+// From 8 Oct one of them is real: **Mutav**, named and marked with its
+// permission, which the founder obtained and which `real.authorised` records.
+// A real company in this list changes what the page may claim, so three things
+// are structural rather than remembered:
+//
+//   · `real` carries the authorisation and the source of every factual claim
+//     made about the company, so a description here is checkable rather than
+//     recalled.
+//   · `integration: "none"` says there is no connection to it — not a mock of
+//     one. Nothing is sent, nothing is applied for, and no partnership is
+//     signed; it is a company being prospected.
+//   · The card and the page say which providers are invented and which are not,
+//     because "the providers are invented for this prototype" stopped being
+//     true the moment one of them was not.
+//
+// No rate, fee or approval is quoted for anyone, real or invented.
 
 import { localized } from "../i18n";
 import type { ReadinessStatus } from "./readiness";
+import mutavLogo from "../../assets/provider-mutav.png";
 
-export const MATCHING_MODEL_VERSION = "product-match-v0.1.0";
+// v0.2.0: the catalogue gained a real company and a rule that reads her sector.
+export const MATCHING_MODEL_VERSION = "product-match-v0.2.0";
 
 /** How well a product fits, worst to best. The order is the sort order. */
 export type Fit = "explore" | "potential" | "ready";
 
-export type ProductCategory = "working_capital" | "payments" | "cross_border";
+export type ProductCategory = "working_capital" | "payments" | "cross_border" | "guarantee";
 
-/** How far a provider is from being real here. Every demo product is `mock`. */
-export type IntegrationStatus = "mock" | "sandbox" | "live";
+/**
+ * What exists between this platform and the provider. `none` is a real company
+ * with nothing built to it; `mock` is an invented provider, which cannot have
+ * an integration because it cannot have anything. Neither sends anything.
+ */
+export type IntegrationStatus = "none" | "mock" | "sandbox" | "live";
+
+/** A real company, named here with its permission rather than invented. */
+export interface RealProvider {
+  /** Its own mark, bundled as an asset; see the note on the card's placeholder. */
+  logo: string;
+  /** Who allowed the name and the mark to be used here, and when. */
+  authorised: string;
+  /** Where every factual claim made about it came from. */
+  source: string;
+}
 
 export interface FinancialProduct {
   id: string;
@@ -59,6 +91,8 @@ export interface FinancialProduct {
   /** Where it is offered. `BR` for everything in this build. */
   geography: string[];
   integration: IntegrationStatus;
+  /** Set when the provider is a real company. Absent means invented. */
+  real?: RealProvider;
   /** Where "explore this" goes, when the platform itself can answer it. */
   to?: string;
 }
@@ -96,6 +130,31 @@ export const PRODUCTS: FinancialProduct[] = localized([
     integration: "mock",
   },
   {
+    id: "rental-guarantee",
+    provider_id: "mutav",
+    provider: "Mutav",
+    // "Fiança locatícia" is what the instrument is called in Brazil, and what
+    // Mutav calls itself the issuer of — which also stops the card printing its
+    // name and its category as the same two words.
+    name: { en: "Rental guarantee", pt: "Fiança locatícia" },
+    category: "guarantee",
+    // Written from the agency's side, because that is who Mutav sells to: it
+    // issues the bond to the agency, and the tenant pays the fee. An
+    // entrepreneur who runs a lettings agency is its customer, not a stretch
+    // from one.
+    need: {
+      en: "Offer your tenants a guarantee instead of asking them for a guarantor, with the reserve behind it recorded on chain.",
+      pt: "Oferecer garantia aos seus inquilinos em vez de exigir fiador, com a reserva por trás dela registrada em blockchain.",
+    },
+    geography: ["BR"],
+    integration: "none",
+    real: {
+      logo: mutavLogo,
+      authorised: "Named and marked with Mutav's permission, obtained by the founder (8 Oct 2026). No partnership is signed; the company is being prospected.",
+      source: "https://stoxs.club/startups/mutav",
+    },
+  },
+  {
     id: "cross-border-payments",
     provider_id: "mock-corredor",
     provider: { en: "Corredor (fictional)", pt: "Corredor (fictícia)" },
@@ -119,6 +178,13 @@ export interface MatchInput {
   missing: string[];
   /** Whether she has already asked for capital here. */
   has_request: boolean;
+  /**
+   * Her business sector, as the community leader typed it — free text, so this
+   * is matched loosely and in either language. Only the guarantee rule reads
+   * it: that product is sold through lettings agencies, so the question it
+   * answers is what her business *is*, not how her months went.
+   */
+  sector?: string | null;
 }
 
 export type BecauseCode =
@@ -127,7 +193,9 @@ export type BecauseCode =
   | "MONTHS_BEING_RECORDED"
   | "STEADY_AND_ORGANISED"
   | "REGULARITY_OPENS_IT"
-  | "SALES_ARE_LOCAL";
+  | "SALES_ARE_LOCAL"
+  | "LETTINGS_IS_THE_CUSTOMER"
+  | "RUNS_THROUGH_AGENCIES";
 
 export type GapCode = "REQUIREMENTS_OPEN" | "ONE_MORE_MONTH" | "A_FEW_MORE_MONTHS";
 
@@ -143,6 +211,15 @@ export interface Match {
 }
 
 const RANK: Record<Fit, number> = { ready: 0, potential: 1, explore: 2 };
+
+/**
+ * Whether her business lets property. The sector is free text a leader types,
+ * so this strips accents and looks for the words either language would use
+ * rather than demanding an enum the database does not have.
+ */
+const LETTINGS = /(imobili|imovei|aluguel|locac|real.?estate|letting|rental|property)/;
+const letsProperty = (sector: string | null | undefined) =>
+  LETTINGS.test((sector ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase());
 
 /** Consistent months, which is what a payments provider actually needs to see. */
 const REGULAR = 18;
@@ -160,7 +237,11 @@ const ORGANISED = 18;
  *     regularity and data-quality components measure;
  *   · cross-border needs a reason to cross a border, and a local business does
  *     not have one — so it stays something to look at, never a suggestion that
- *     she should.
+ *     she should;
+ *   · a rental guarantee is sold through lettings agencies, so it asks what her
+ *     business is rather than how her months went — the one rule here that
+ *     reads no component at all, which is the honest shape for a product her
+ *     readiness has nothing to say about.
  */
 export function matchProducts(input: MatchInput): Match[] {
   const { status, components: c, missing } = input;
@@ -181,6 +262,14 @@ export function matchProducts(input: MatchInput): Match[] {
           ? { product, fit: "ready", because: "STEADY_AND_ORGANISED" }
           : { product, fit: "potential", because: "REGULARITY_OPENS_IT", gap: "A_FEW_MORE_MONTHS" };
       }
+      case "guarantee":
+        // Nothing in her readiness answers this one, and pretending otherwise
+        // would be the page inventing a reason. A rental guarantee is sold to
+        // the agency and paid for by the tenant, so the only honest question is
+        // whether her business is an agency.
+        return letsProperty(input.sector)
+          ? { product, fit: "ready", because: "LETTINGS_IS_THE_CUSTOMER" }
+          : { product, fit: "explore", because: "RUNS_THROUGH_AGENCIES" };
       case "cross_border":
       default:
         return { product, fit: "explore", because: "SALES_ARE_LOCAL" };

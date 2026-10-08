@@ -88,13 +88,65 @@ describe("matchProducts", () => {
   });
 
   it("promises nothing: no product carries a rate, a fee or an approval", () => {
-    const text = JSON.stringify(PRODUCTS);
-    for (const word of ["rate", "apr", "approved", "approval", "guarantee", "%"]) {
-      expect(text.toLowerCase()).not.toContain(word);
+    const text = JSON.stringify(PRODUCTS).toLowerCase();
+    // Whole words, and "guarantee" is no longer among them: it used to stand
+    // for "we guarantee you will get this", and it is now the name of a
+    // product. "Guaranteed" is the promise; a guarantee is a thing you buy.
+    for (const word of ["rates?", "apr", "approved", "approval", "guaranteed", "garantido"]) {
+      expect(text, word).not.toMatch(new RegExp(`\\b${word}\\b`));
+    }
+    expect(text).not.toContain("%");
+  });
+
+  it("is connected to nothing, whether the provider exists or not", () => {
+    // `none` is a real company with nothing built to it; `mock` is an invented
+    // one, which cannot have an integration because it cannot have anything.
+    expect(PRODUCTS.every((p) => p.integration === "none" || p.integration === "mock")).toBe(true);
+  });
+
+  it("names a real company only with an authorisation and a source for what it says about it", () => {
+    for (const p of PRODUCTS.filter((x) => x.real)) {
+      expect(p.real!.authorised, p.id).toMatch(/permission/i);
+      expect(p.real!.source, p.id).toMatch(/^https:\/\//);
+      expect(p.real!.logo, p.id).toBeTruthy();
+      // A real company is not sold as a partner it is not.
+      expect(p.integration, p.id).toBe("none");
     }
   });
 
-  it("every provider is still a mock, so nothing on screen implies a real integration", () => {
-    expect(PRODUCTS.every((p) => p.integration === "mock")).toBe(true);
+  it("invents no mark for an invented provider, and claims no permission it has none of", () => {
+    for (const p of PRODUCTS.filter((x) => !x.real)) {
+      expect(p.integration, p.id).toBe("mock");
+    }
+  });
+
+  describe("the rental guarantee, which her readiness cannot answer", () => {
+    it("fits a business that lets property, which is who it is sold to", () => {
+      const m = of(matchProducts({ ...prepared, sector: "imobili\u00e1ria" }), "rental-guarantee");
+      expect(m.fit).toBe("ready");
+      expect(m.because).toBe("LETTINGS_IS_THE_CUSTOMER");
+    });
+
+    it("reads the sector however the leader typed it, in either language", () => {
+      for (const sector of ["Imobili\u00e1ria", "imoveis e locacao", "Real Estate", "lettings agency", "aluguel"]) {
+        expect(of(matchProducts({ ...prepared, sector }), "rental-guarantee").fit, sector).toBe("ready");
+      }
+    });
+
+    it("stays something to look at for every other business, however prepared she is", () => {
+      for (const sector of ["food", "beauty", "retail", undefined, null, ""]) {
+        const m = of(matchProducts({ ...prepared, sector }), "rental-guarantee");
+        expect(m.fit, String(sector)).toBe("explore");
+        expect(m.because).toBe("RUNS_THROUGH_AGENCIES");
+      }
+    });
+
+    it("reads no component at all, so her months cannot move it either way", () => {
+      const bare = { ...starting, sector: "padaria" };
+      const strong = { ...prepared, sector: "padaria" };
+      expect(of(matchProducts(bare), "rental-guarantee")).toEqual(of(matchProducts(strong), "rental-guarantee"));
+      // And it never carries a gap: there is nothing she could do to close one.
+      expect(of(matchProducts(bare), "rental-guarantee").gap).toBeUndefined();
+    });
   });
 });
