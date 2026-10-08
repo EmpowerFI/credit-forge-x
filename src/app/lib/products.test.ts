@@ -60,6 +60,31 @@ describe("matchProducts", () => {
     expect(toAnAgency.fit).toBe("ready");
   });
 
+  describe("advisor agents, which her readiness cannot answer either", () => {
+    it("fits a business that advises other people on their money", () => {
+      const m = of(matchProducts({ ...prepared, sector: "assessoria de investimentos" }), "advisor-agents");
+      expect(m.fit).toBe("ready");
+      expect(m.because).toBe("ADVISORY_IS_THE_CUSTOMER");
+    });
+
+    it("stays something to look at for every other business", () => {
+      for (const sector of ["food", "imobili\u00e1ria", "beauty", undefined, ""]) {
+        const m = of(matchProducts({ ...prepared, sector }), "advisor-agents");
+        expect(m.fit, String(sector)).toBe("explore");
+        expect(m.because).toBe("BUILT_FOR_ADVISORY_OFFICES");
+      }
+    });
+
+    it("does not confuse the two sectors: a lettings agency is not an advisory office", () => {
+      const lettings = matchProducts({ ...prepared, sector: "imobili\u00e1ria" });
+      expect(of(lettings, "rental-guarantee").fit).toBe("ready");
+      expect(of(lettings, "advisor-agents").fit).toBe("explore");
+      const advisory = matchProducts({ ...prepared, sector: "escrit\u00f3rio de investimentos" });
+      expect(of(advisory, "advisor-agents").fit).toBe("ready");
+      expect(of(advisory, "rental-guarantee").fit).toBe("explore");
+    });
+  });
+
   it("leaves everything it did not pin exactly where the rules put it", () => {
     // Removing the pin must change the order and nothing else, so the three
     // unpinned products carry the same verdicts they did before any of this.
@@ -67,6 +92,7 @@ describe("matchProducts", () => {
     expect(unpinned.map((m) => [m.product.id, m.fit, m.because])).toEqual([
       ["productive-microloan", "ready", "READY_NOT_ASKED"],
       ["business-payments", "ready", "STEADY_AND_ORGANISED"],
+      ["advisor-agents", "explore", "BUILT_FOR_ADVISORY_OFFICES"],
       ["cross-border-payments", "explore", "SALES_ARE_LOCAL"],
     ]);
   });
@@ -137,14 +163,19 @@ describe("matchProducts", () => {
     expect(PRODUCTS.every((p) => p.integration === "none" || p.integration === "mock")).toBe(true);
   });
 
-  it("names a real company only with an authorisation and a source for what it says about it", () => {
-    for (const p of PRODUCTS.filter((x) => x.real)) {
+  it("names a real company only with an authorisation, a source and a site", () => {
+    const real = PRODUCTS.filter((x) => x.real);
+    expect(real.length).toBeGreaterThan(0);
+    for (const p of real) {
       expect(p.real!.authorised, p.id).toMatch(/permission/i);
       expect(p.real!.source, p.id).toMatch(/^https:\/\//);
-      expect(p.real!.logo, p.id).toBeTruthy();
+      expect(p.real!.site, p.id).toMatch(/^https:\/\//);
       // A real company is not sold as a partner it is not.
       expect(p.integration, p.id).toBe("none");
     }
+    // A mark only where the company gave one; the card draws a placeholder for
+    // the rest rather than inventing one.
+    expect(PRODUCTS.find((x) => x.provider_id === "ash")!.real!.logo).toBeUndefined();
   });
 
   it("invents no mark for an invented provider, and claims no permission it has none of", () => {
