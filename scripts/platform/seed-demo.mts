@@ -316,13 +316,15 @@ const byName = new Map(communities.map((c) => [c.name, c]));
 // its budget is what a sponsor would report, simulated here.
 // Six months over the four communities, which is the 100 members seeded above:
 // 40 in Grajaú, 25, 20 and 15 in the rest.
+// A name of its own rather than the sponsor's: see rename-demo-sponsor.mts for
+// why a real foundation does not become a programme's title.
 const PROGRAM = {
-  name: "NOVA Women in Business Program",
+  name: "Women in Business Program",
   description: "Financial readiness and business growth program powered by EmpowerFI.",
   period_start: "2026-06-01", period_end: "2026-11-30",
   funding_committed_cents: 25_000_000, funding_deployed_cents: 17_500_000, is_simulated: true,
 };
-const sponsor = (await must("sponsor", db.from("sponsors").select("id, name").eq("name", "NOVA").maybeSingle())) as
+const sponsor = (await must("sponsor", db.from("sponsors").select("id, name").eq("name", "Solana Foundation").maybeSingle())) as
   { id: string; name: string } | null;
 if (sponsor) {
   const program = await must("programme", db.from("programs")

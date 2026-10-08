@@ -35,13 +35,18 @@ const PARTNER = {
 };
 const FORMER_PARTNER_NAME = "Cooperativa Horizonte (demo)";
 
-// The sponsor Impact Intelligence is sold to: NOVA, an invented company whose
-// ESG budget pays for a cohort the four demo communities run. A company rather
-// than a foundation, because the commercial concept being demonstrated is a
-// company buying measured impact and brand lift — a foundation buys only the
-// first. NOVA exists nowhere: the name, the wordmark and every figure reported
-// for it are made up for this demo.
-const SPONSOR = { name: "NOVA", kind: "company" as const, is_simulated: true };
+// The sponsor Impact Intelligence is sold to. This was NOVA, an invented
+// company; from 8 Oct it is the Solana Foundation, named as a hypothesis at the
+// founder's decision, because the ESG dashboard reads more clearly when the
+// example sponsor is the kind of funder the layer is actually built for.
+//
+// It does not sponsor this programme and has no relationship with EmpowerFI.
+// `is_simulated` is true, as every figure reported for it is, and the UI is
+// what makes the hypothesis legible: `src/app/lib/sponsorship.ts` carries the
+// disclaimer and suppresses the drawn wordmark, so no screen names it without
+// correcting the claim in the same box. Change the name here and the disclaimer
+// there together, or not at all.
+const SPONSOR = { name: "Solana Foundation", kind: "foundation" as const, is_simulated: true };
 
 // The demo investor manages an impact fund: an investor with a mandate.
 const IRENE_MANDATE = {

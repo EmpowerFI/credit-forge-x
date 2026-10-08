@@ -13,8 +13,14 @@
 // because the TAZ was really spent.
 //
 // So the sponsored-cohort demo arrives as two updates to rows that already
-// exist. Idempotent: it matches either the old name or the new one, so running
-// it twice changes nothing the second time.
+// exist. Idempotent: it matches any name the rows have held, so running it
+// twice changes nothing the second time.
+//
+// The sponsor is now the Solana Foundation, named as a hypothesis at the
+// founder's decision (8 Oct). It does not sponsor this programme. `is_simulated`
+// stays true, the kind becomes `foundation`, and every screen that renders the
+// name renders the disclaimer beside it — see `src/app/lib/sponsorship.ts`,
+// which is where that is enforced rather than remembered.
 //
 // `seed-demo-accounts.mts` and `seed-demo.mts` now carry the same names, so a
 // future full re-seed of a throwaway database produces this same state. This
@@ -27,20 +33,27 @@ const keyFile = process.env.PLATFORM_SERVICE_KEY_FILE;
 if (!keyFile) throw new Error("set PLATFORM_SERVICE_KEY_FILE to a file holding the service role key");
 const db = createClient(URL, readFileSync(keyFile, "utf8").trim(), { auth: { persistSession: false } });
 
-const SPONSOR_WAS = "Instituto Ponte de Impacto (demo)";
-const SPONSOR = { name: "NOVA", kind: "company" as const, is_simulated: true };
+// Every name this sponsor has had, so the script is idempotent in whichever
+// state it finds the database: the original seed, the NOVA rename, or this one.
+const SPONSOR_WAS = ["Instituto Ponte de Impacto (demo)", "NOVA"];
+const SPONSOR = { name: "Solana Foundation", kind: "foundation" as const, is_simulated: true };
 
-const PROGRAM_WAS = "Crescer Juntas 2026 (demo)";
+const PROGRAM_WAS = ["Crescer Juntas 2026 (demo)", "NOVA Women in Business Program"];
+// The programme keeps a name of its own rather than the sponsor's. "NOVA Women
+// in Business Program" was fine for an invented company; the same pattern with
+// a real foundation's name reads as an official named initiative, which is a
+// larger claim than the sponsor tile makes and one no disclaimer in a tile can
+// reach. A sponsor sponsors a programme; it does not become its title.
 const PROGRAM = {
-  name: "NOVA Women in Business Program",
+  name: "Women in Business Program",
   description: "Financial readiness and business growth program powered by EmpowerFI.",
   period_end: "2026-11-30",
 };
 
 const { data: sponsor, error: findSponsor } = await db
-  .from("sponsors").select("id, name").in("name", [SPONSOR_WAS, SPONSOR.name]).maybeSingle();
+  .from("sponsors").select("id, name").in("name", [...SPONSOR_WAS, SPONSOR.name]).maybeSingle();
 if (findSponsor) throw findSponsor;
-if (!sponsor) throw new Error(`no sponsor named "${SPONSOR_WAS}" or "${SPONSOR.name}" — nothing to rename`);
+if (!sponsor) throw new Error(`no sponsor named ${[...SPONSOR_WAS, SPONSOR.name].map((n) => `"${n}"`).join(" or ")} — nothing to rename`);
 
 const { error: updateSponsor } = await db.from("sponsors").update(SPONSOR).eq("id", sponsor.id);
 if (updateSponsor) throw updateSponsor;
@@ -48,9 +61,9 @@ console.log(`sponsor: "${sponsor.name}" → "${SPONSOR.name}" (${SPONSOR.kind})`
 
 const { data: program, error: findProgram } = await db
   .from("programs").select("id, name").eq("sponsor_id", sponsor.id)
-  .in("name", [PROGRAM_WAS, PROGRAM.name]).maybeSingle();
+  .in("name", [...PROGRAM_WAS, PROGRAM.name]).maybeSingle();
 if (findProgram) throw findProgram;
-if (!program) throw new Error(`no programme named "${PROGRAM_WAS}" under that sponsor — nothing to rename`);
+if (!program) throw new Error(`no programme named ${[...PROGRAM_WAS, PROGRAM.name].map((n) => `"${n}"`).join(" or ")} under that sponsor — nothing to rename`);
 
 const { error: updateProgram } = await db.from("programs").update(PROGRAM).eq("id", program.id);
 if (updateProgram) throw updateProgram;

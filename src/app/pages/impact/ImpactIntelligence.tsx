@@ -42,6 +42,9 @@ function downloadReport(data: Data) {
       outcomes: "observed association before and after each loan, not causal impact",
       verification: "each proof's commitment can be checked on Solana devnet against the EmpowerFI audit program",
       simulated: data.program.is_simulated || data.sponsor.is_simulated ? "demo program: sponsor, budget and businesses are simulated" : null,
+      // This file is downloaded and forwarded, so the disclosure travels in it
+      // rather than staying on the screen it was generated from.
+      sponsor_disclosure: sponsorshipFor(data.sponsor.name)?.disclosure ?? null,
     },
     ...data,
   };
@@ -56,17 +59,24 @@ function downloadReport(data: Data) {
 
 function Header({ data }: { data: Data }) {
   const e = data.evidence;
+  const dressing = sponsorshipFor(data.sponsor.name);
   return (
     <div className="panel grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4">
       <div className="space-y-1">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{tr({ en: "Sponsored by", pt: "Patrocinado por" })}</p>
         {/* The sponsor's own mark, at the size of a line of text: the cohort is
             EmpowerFI's and the page is EmpowerFI's, so a guest brand is named
-            rather than given the room a host would take. */}
-        {sponsorshipFor(data.sponsor.name)
+            rather than given the room a host would take. A real organisation
+            named as a hypothesis gets no drawn mark at all — inventing its logo
+            is a claim a reader cannot see through — and the hypothesis is
+            stated in this same tile, where the name is. */}
+        {dressing && !dressing.hypothetical
           ? <SponsorWordmark name={data.sponsor.name} className="h-5 w-auto text-foreground" />
           : <p className="font-semibold text-foreground">{data.sponsor.name}</p>}
         <p className="text-xs text-muted-foreground">{SPONSOR_KIND[data.sponsor.kind]()}</p>
+        {dressing?.hypothetical && (
+          <p className="text-[11px] font-medium text-caution">{dressing.hypothetical}</p>
+        )}
       </div>
       <div className="space-y-1">
         <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"><Users size={12} aria-hidden />{tr({ en: "Run by", pt: "Conduzido por" })}</p>

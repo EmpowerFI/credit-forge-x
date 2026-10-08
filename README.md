@@ -18,7 +18,7 @@ The app tells one loop in two stories: **1 Impact Intelligence** and **2 Investo
 
 | Account | Role | What to look at |
 |---|---|---|
-| `sponsor@demo.empowerfi.io` | Program sponsor | *Impact Intelligence*: NOVA's sponsored cohort, run by four communities, from funding deployed to outcomes; the funnel from sponsored to performing; segments with small groups hidden; the reach its sponsorship bought; evidence on Solana; drill into an opportunity and run the engine; an auditable report. |
+| `sponsor@demo.empowerfi.io` | Program sponsor | *Impact Intelligence*: a sponsored cohort, run by four communities, from funding deployed to outcomes; the funnel from sponsored to performing; segments with small groups hidden; the reach its sponsorship bought; evidence on Solana; drill into an opportunity and run the engine; an auditable report. |
 | `maria@demo.empowerfi.io` | Entrepreneur | *My business*: readiness, what is missing, the monthly check-in, and who sponsors the programme she is in. Her September check-in makes her ready; then she may ask, or not. |
 | `leader@demo.empowerfi.io` | Community leader | Grajaú: the funnel from members to funded P2P opportunities, qualified capital demand, funding gap, cost to serve. Jaqueline Pereira is ready and hasn't asked, and nothing moves her. |
 | `partner@demo.empowerfi.io` | EmpowerFI P2P desk | Funded opportunities to formalise at the allocation engine's rate, loans to disburse and service. |
