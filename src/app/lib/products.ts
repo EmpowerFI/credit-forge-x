@@ -20,9 +20,10 @@
 //   · **Nobody pays to be here.** No placement is for sale, no provider is told
 //     she looked, and a product that paid for its position would make her
 //     readiness into inventory — the months she reported were not given for
-//     that. One provider is pinned to the front (`featured`), at the founder's
-//     decision, because it is a real partnership being prospected and the demo
-//     is about showing it. That is not the same as selling the position, and
+//     that. The real partners are pinned to the front (`featured`), at the
+//     founder's decision, because they are partnerships being prospected and
+//     the demo is about showing them — all of them, so the pin is a category
+//     rather than a favour. That is not the same as selling the position, and
 //     the difference only holds while the screen says which it is: a featured
 //     card is marked as featured, and the page says the rest are ordered by
 //     fit. Pinning something silently is how the first one gets sold.
@@ -38,7 +39,7 @@
 // real one would — provider id, category, geography, integration status — so a
 // partner can be added without reshaping anything.
 //
-// From 8 Oct one of them is real: **Mutav**, named and marked with its
+// From 8 Oct some of them are real — **Mutav** and **Ash** — named with their
 // permission, which the founder obtained and which `real.authorised` records.
 // A real company in this list changes what the page may claim, so three things
 // are structural rather than remembered:
@@ -59,13 +60,15 @@ import { localized } from "../i18n";
 import type { ReadinessStatus } from "./readiness";
 import mutavLogo from "../../assets/provider-mutav.png";
 
-// v0.2.0: the catalogue gained a real company and a rule that reads her sector.
-export const MATCHING_MODEL_VERSION = "product-match-v0.2.0";
+// v0.3.0: a second real company, and a second rule that reads her sector rather
+// than her months. Both real providers work that way, which is the shape of the
+// truth: what opens them is what her business *is*.
+export const MATCHING_MODEL_VERSION = "product-match-v0.3.0";
 
 /** How well a product fits, worst to best. The order is the sort order. */
 export type Fit = "explore" | "potential" | "ready";
 
-export type ProductCategory = "working_capital" | "payments" | "cross_border" | "guarantee";
+export type ProductCategory = "working_capital" | "payments" | "cross_border" | "guarantee" | "wealth";
 
 /**
  * What exists between this platform and the provider. `none` is a real company
@@ -76,12 +79,19 @@ export type IntegrationStatus = "none" | "mock" | "sandbox" | "live";
 
 /** A real company, named here with its permission rather than invented. */
 export interface RealProvider {
-  /** Its own mark, bundled as an asset; see the note on the card's placeholder. */
-  logo: string;
+  /**
+   * Its own mark, bundled as an asset; absent when the company has not given
+   * one, and then the card draws the same placeholder an invented provider
+   * gets. Drawing a monogram instead would be inventing a mark for a real
+   * company, which is the thing this field exists to avoid.
+   */
+  logo?: string;
   /** Who allowed the name and the mark to be used here, and when. */
   authorised: string;
   /** Where every factual claim made about it came from. */
   source: string;
+  /** Its own site, for her to open if she wants to. Never opened for her. */
+  site: string;
 }
 
 export interface FinancialProduct {
@@ -100,7 +110,10 @@ export interface FinancialProduct {
   /**
    * Pinned to the front of the list, ahead of fit. Nothing buys this: it marks
    * a real partnership being prospected, and the card it produces says it is
-   * featured so the order stays readable. See the second rule in the header.
+   * featured so the order stays readable. Every real provider carries it and no
+   * invented one does, which is what keeps it from being a favour — a pin that
+   * some real partners got and others did not would be a ranking again, just an
+   * unexplained one. See the second rule in the header.
    */
   featured?: boolean;
   /** Where "explore this" goes, when the platform itself can answer it. */
@@ -162,7 +175,32 @@ export const PRODUCTS: FinancialProduct[] = localized([
     real: {
       logo: mutavLogo,
       authorised: "Named and marked with Mutav's permission, obtained by the founder (8 Oct 2026). No partnership is signed; the company is being prospected.",
-      source: "https://stoxs.club/startups/mutav",
+      source: "https://www.mutav.finance/imobiliaria",
+      site: "https://www.mutav.finance/imobiliaria",
+    },
+  },
+  {
+    id: "advisor-agents",
+    provider_id: "ash",
+    provider: "Ash",
+    name: { en: "AI agents for advisors", pt: "Agentes de IA para assessoria" },
+    category: "wealth",
+    // Ash sells to investment advisory firms, not to their clients, so this is
+    // written from the desk of whoever runs the office — the same choice the
+    // guarantee's copy makes, and for the same reason.
+    need: {
+      en: "Put a team of agents to research, plan, execute and hold risk inside limits you set, for the portfolios your office manages.",
+      pt: "Pôr uma equipe de agentes para pesquisar, planejar, executar e controlar risco dentro dos limites que você define, nas carteiras que o seu escritório administra.",
+    },
+    geography: ["BR"],
+    integration: "none",
+    featured: true,
+    real: {
+      // No mark: the company has not given one, so the card draws the
+      // placeholder rather than something invented for it.
+      authorised: "Named with Ash's permission, obtained by the founder (8 Oct 2026). No partnership is signed; the company is being prospected.",
+      source: "https://pitch3.ash-web.pages.dev/pt/pitch3/",
+      site: "https://pitch3.ash-web.pages.dev/pt/pitch3/",
     },
   },
   {
@@ -199,6 +237,8 @@ export interface MatchInput {
 }
 
 export type BecauseCode =
+  | "ADVISORY_IS_THE_CUSTOMER"
+  | "BUILT_FOR_ADVISORY_OFFICES"
   | "READY_AND_ASKED"
   | "READY_NOT_ASKED"
   | "MONTHS_BEING_RECORDED"
@@ -230,9 +270,15 @@ const RANK: Record<Fit, number> = { ready: 0, potential: 1, explore: 2 };
  * so this strips accents and looks for the words either language would use
  * rather than demanding an enum the database does not have.
  */
+const plain = (sector: string | null | undefined) =>
+  (sector ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 const LETTINGS = /(imobili|imovei|aluguel|locac|real.?estate|letting|rental|property)/;
-const letsProperty = (sector: string | null | undefined) =>
-  LETTINGS.test((sector ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase());
+const letsProperty = (sector: string | null | undefined) => LETTINGS.test(plain(sector));
+
+/** Whether her business advises other people on their money. */
+const ADVISORY = /(assessoria|consultoria.?financ|escritorio.?de.?investiment|investiment|investment.?advis|wealth|gestora|corretora|patrimoni)/;
+const advisesOnMoney = (sector: string | null | undefined) => ADVISORY.test(plain(sector));
 
 /** Consistent months, which is what a payments provider actually needs to see. */
 const REGULAR = 18;
@@ -251,10 +297,12 @@ const ORGANISED = 18;
  *   · cross-border needs a reason to cross a border, and a local business does
  *     not have one — so it stays something to look at, never a suggestion that
  *     she should;
- *   · a rental guarantee is sold through lettings agencies, so it asks what her
- *     business is rather than how her months went — the one rule here that
- *     reads no component at all, which is the honest shape for a product her
- *     readiness has nothing to say about.
+ *   · a rental guarantee is sold through lettings agencies, and advisor agents
+ *     are sold to investment offices, so both ask what her business *is* rather
+ *     than how her months went. They are the rules that read no component at
+ *     all, which is the honest shape for a product her readiness has nothing to
+ *     say about — and both of those products happen to be the real companies,
+ *     because a real company sells to whoever it sells to.
  */
 export function matchProducts(input: MatchInput): Match[] {
   const { status, components: c, missing } = input;
@@ -283,6 +331,13 @@ export function matchProducts(input: MatchInput): Match[] {
         return letsProperty(input.sector)
           ? { product, fit: "ready", because: "LETTINGS_IS_THE_CUSTOMER" }
           : { product, fit: "explore", because: "RUNS_THROUGH_AGENCIES" };
+      case "wealth":
+        // Nothing in her readiness answers this one either. Ash sells to
+        // investment advisory offices, so the question is the same shape as
+        // the guarantee's: is her business one of those?
+        return advisesOnMoney(input.sector)
+          ? { product, fit: "ready", because: "ADVISORY_IS_THE_CUSTOMER" }
+          : { product, fit: "explore", because: "BUILT_FOR_ADVISORY_OFFICES" };
       case "cross_border":
       default:
         return { product, fit: "explore", because: "SALES_ARE_LOCAL" };

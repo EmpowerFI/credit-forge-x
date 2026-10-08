@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { ArrowRight, Building2, CreditCard, Globe2, KeyRound, Lock, Star, Wallet } from "lucide-react";
+import { ArrowRight, Bot, Building2, CreditCard, ExternalLink, Globe2, KeyRound, Lock, Star, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,10 +29,11 @@ const CATEGORY: Record<ProductCategory, string> = localized({
   payments: { en: "Payment infrastructure", pt: "Infraestrutura de pagamentos" },
   cross_border: { en: "Cross-border · stablecoin", pt: "Transfronteiriço · stablecoin" },
   guarantee: { en: "Guarantees", pt: "Garantias" },
+  wealth: { en: "Investment management", pt: "Gestão de investimentos" },
 });
 
 const CATEGORY_ICON: Record<ProductCategory, typeof Wallet> = {
-  working_capital: Wallet, payments: CreditCard, cross_border: Globe2, guarantee: KeyRound,
+  working_capital: Wallet, payments: CreditCard, cross_border: Globe2, guarantee: KeyRound, wealth: Bot,
 };
 
 const BECAUSE: Record<BecauseCode, string> = localized({
@@ -68,6 +69,14 @@ const BECAUSE: Record<BecauseCode, string> = localized({
     en: "This reaches tenants through lettings agencies, so it fits if your business is one. Your months say nothing about it either way.",
     pt: "Isto chega aos inquilinos pelas imobiliárias, então serve se o seu negócio for uma. Seus meses não dizem nada sobre isso.",
   },
+  ADVISORY_IS_THE_CUSTOMER: {
+    en: "You advise other people on their money, which is exactly whose desk this was built for.",
+    pt: "Você assessora outras pessoas com o dinheiro delas, que é exatamente a mesa para a qual isto foi feito.",
+  },
+  BUILT_FOR_ADVISORY_OFFICES: {
+    en: "This is built for investment advisory offices, so it fits if your business is one. Your months say nothing about it either way.",
+    pt: "Isto foi feito para escritórios de investimento, então serve se o seu negócio for um. Seus meses não dizem nada sobre isso.",
+  },
 });
 
 const GAP: Record<GapCode, (n?: number) => string> = {
@@ -102,7 +111,7 @@ function ProductCard({ m }: { m: Match }) {
               for the invented ones, because a borrowed mark for a provider that
               does not exist would be the one thing on this page that lied. The
               mark is bundled, so showing it fetches nothing from anyone. */}
-          {m.product.real
+          {m.product.real?.logo
             ? <img src={m.product.real.logo} alt={m.product.provider}
                 className="h-10 w-10 shrink-0 rounded-xl object-cover" width={40} height={40} loading="lazy" />
             : (
@@ -148,7 +157,19 @@ function ProductCard({ m }: { m: Match }) {
               </Link>
             </Button>
           )
-          : <Button size="sm" variant="secondary" disabled>{tr({ en: "Not connected", pt: "Sem integração" })}</Button>}
+          : m.product.real
+            ? (
+              // `noreferrer` is the point, not boilerplate: without it the
+              // company would learn she arrived from here, which is the one
+              // thing this page promises does not happen. Opening it is hers
+              // to do, and it is still not an application for anything.
+              <Button asChild size="sm" variant="secondary" className="gap-2">
+                <a href={m.product.real.site} target="_blank" rel="noopener noreferrer">
+                  {tr({ en: "Open their site", pt: "Abrir o site" })} <ExternalLink size={14} />
+                </a>
+              </Button>
+            )
+            : <Button size="sm" variant="secondary" disabled>{tr({ en: "Not connected", pt: "Sem integração" })}</Button>}
       </div>
     </li>
   );
@@ -279,8 +300,8 @@ export default function FinancialOpportunities() {
             <Lock size={15} className="mt-0.5 shrink-0" aria-hidden />
             <span>
               {tr({
-                en: `Nothing on this page was sent anywhere. No provider is told you looked, none pays to be listed, and your business figures stay where they were. Matching model ${MATCHING_MODEL_VERSION}.`,
-                pt: `Nada desta página foi enviado a lugar nenhum. Nenhuma provedora é avisada de que você olhou, nenhuma paga para ser listada, e os números do seu negócio ficam onde estavam. Modelo de casamento ${MATCHING_MODEL_VERSION}.`,
+                en: `Nothing on this page was sent anywhere. No provider is told you looked, none pays to be listed, and your business figures stay where they were. Opening a provider's site takes you out of here without telling them where you came from. Matching model ${MATCHING_MODEL_VERSION}.`,
+                pt: `Nada desta página foi enviado a lugar nenhum. Nenhuma provedora é avisada de que você olhou, nenhuma paga para ser listada, e os números do seu negócio ficam onde estavam. Abrir o site de uma delas leva você para fora daqui sem dizer de onde veio. Modelo de casamento ${MATCHING_MODEL_VERSION}.`,
               })}
             </span>
           </p>

@@ -45,6 +45,24 @@ describe("matchProducts", () => {
       ["ready", "potential", "explore"].indexOf(a) - ["ready", "potential", "explore"].indexOf(b)));
   });
 
+  it("pins every real partner and no invented one, so the pin is a category and not a favour", () => {
+    // A pin some real partners got and others did not would be a ranking
+    // again, only an unexplained one.
+    for (const p of PRODUCTS) expect(Boolean(p.featured), p.id).toBe(Boolean(p.real));
+  });
+
+  it("keeps the pinned products in their own fit order, not in the order they were pinned", () => {
+    // Both real partners are explore to a baker and ready to nobody, so they
+    // hold catalogue order; to a lettings agency the guarantee rises and the
+    // pair reorders on fit rather than on who was added first.
+    const toAnAgency = matchProducts({ ...prepared, sector: "imobili\u00e1ria" });
+    const pinned = toAnAgency.filter((m) => m.featured);
+    expect(pinned.map((m) => [m.product.id, m.fit])).toEqual([
+      ["rental-guarantee", "ready"],
+      ["advisor-agents", "explore"],
+    ]);
+  });
+
   it("pins the position and not the verdict", () => {
     // The pin is placement. If it could lift a fit too, the page would be
     // telling her a featured product suits her better than it does — so the
@@ -58,6 +76,31 @@ describe("matchProducts", () => {
     const toAnAgency = of(matchProducts({ ...prepared, sector: "imobili\u00e1ria" }), "rental-guarantee");
     expect(toAnAgency.featured).toBe(true);
     expect(toAnAgency.fit).toBe("ready");
+  });
+
+  describe("advisor agents, which her readiness cannot answer either", () => {
+    it("fits a business that advises other people on their money", () => {
+      const m = of(matchProducts({ ...prepared, sector: "assessoria de investimentos" }), "advisor-agents");
+      expect(m.fit).toBe("ready");
+      expect(m.because).toBe("ADVISORY_IS_THE_CUSTOMER");
+    });
+
+    it("stays something to look at for every other business", () => {
+      for (const sector of ["food", "imobili\u00e1ria", "beauty", undefined, ""]) {
+        const m = of(matchProducts({ ...prepared, sector }), "advisor-agents");
+        expect(m.fit, String(sector)).toBe("explore");
+        expect(m.because).toBe("BUILT_FOR_ADVISORY_OFFICES");
+      }
+    });
+
+    it("does not confuse the two sectors: a lettings agency is not an advisory office", () => {
+      const lettings = matchProducts({ ...prepared, sector: "imobili\u00e1ria" });
+      expect(of(lettings, "rental-guarantee").fit).toBe("ready");
+      expect(of(lettings, "advisor-agents").fit).toBe("explore");
+      const advisory = matchProducts({ ...prepared, sector: "escrit\u00f3rio de investimentos" });
+      expect(of(advisory, "advisor-agents").fit).toBe("ready");
+      expect(of(advisory, "rental-guarantee").fit).toBe("explore");
+    });
   });
 
   it("leaves everything it did not pin exactly where the rules put it", () => {
@@ -137,14 +180,19 @@ describe("matchProducts", () => {
     expect(PRODUCTS.every((p) => p.integration === "none" || p.integration === "mock")).toBe(true);
   });
 
-  it("names a real company only with an authorisation and a source for what it says about it", () => {
-    for (const p of PRODUCTS.filter((x) => x.real)) {
+  it("names a real company only with an authorisation, a source and a site", () => {
+    const real = PRODUCTS.filter((x) => x.real);
+    expect(real.length).toBeGreaterThan(0);
+    for (const p of real) {
       expect(p.real!.authorised, p.id).toMatch(/permission/i);
       expect(p.real!.source, p.id).toMatch(/^https:\/\//);
-      expect(p.real!.logo, p.id).toBeTruthy();
+      expect(p.real!.site, p.id).toMatch(/^https:\/\//);
       // A real company is not sold as a partner it is not.
       expect(p.integration, p.id).toBe("none");
     }
+    // A mark only where the company gave one; the card draws a placeholder for
+    // the rest rather than inventing one.
+    expect(PRODUCTS.find((x) => x.provider_id === "ash")!.real!.logo).toBeUndefined();
   });
 
   it("invents no mark for an invented provider, and claims no permission it has none of", () => {
