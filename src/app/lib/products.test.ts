@@ -32,10 +32,43 @@ describe("matchProducts", () => {
     }
   });
 
-  it("sorts what fits above what does not", () => {
-    const fits = matchProducts(prepared).map((m) => m.fit);
+  it("puts a featured partner first, then sorts the rest by what fits", () => {
+    const all = matchProducts(prepared);
+    const pinned = all.filter((m) => m.featured);
+    // Everything pinned is at the front, and says so on the match rather than
+    // leaving the screen to guess why it is there.
+    expect(all.slice(0, pinned.length).every((m) => m.featured)).toBe(true);
+    expect(pinned.every((m) => m.product.featured)).toBe(true);
+
+    const fits = all.slice(pinned.length).map((m) => m.fit);
     expect(fits).toEqual([...fits].sort((a, b) =>
       ["ready", "potential", "explore"].indexOf(a) - ["ready", "potential", "explore"].indexOf(b)));
+  });
+
+  it("pins the position and not the verdict", () => {
+    // The pin is placement. If it could lift a fit too, the page would be
+    // telling her a featured product suits her better than it does — so the
+    // featured card is first and still says "explore" to a business it does
+    // not suit, and still says "ready" only to one it does.
+    const toABaker = of(matchProducts(prepared), "rental-guarantee");
+    expect(toABaker.featured).toBe(true);
+    expect(toABaker.fit).toBe("explore");
+    expect(toABaker.because).toBe("RUNS_THROUGH_AGENCIES");
+
+    const toAnAgency = of(matchProducts({ ...prepared, sector: "imobili\u00e1ria" }), "rental-guarantee");
+    expect(toAnAgency.featured).toBe(true);
+    expect(toAnAgency.fit).toBe("ready");
+  });
+
+  it("leaves everything it did not pin exactly where the rules put it", () => {
+    // Removing the pin must change the order and nothing else, so the three
+    // unpinned products carry the same verdicts they did before any of this.
+    const unpinned = matchProducts(prepared).filter((m) => !m.featured);
+    expect(unpinned.map((m) => [m.product.id, m.fit, m.because])).toEqual([
+      ["productive-microloan", "ready", "READY_NOT_ASKED"],
+      ["business-payments", "ready", "STEADY_AND_ORGANISED"],
+      ["cross-border-payments", "explore", "SALES_ARE_LOCAL"],
+    ]);
   });
 
   it("a credit-ready business is ready for a productive loan", () => {
