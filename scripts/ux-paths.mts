@@ -24,7 +24,7 @@
 //   UX_BASE=http://localhost:5173 npm run test:ux-paths
 import { chromium, type Page } from "@playwright/test";
 import { setCurrentLocale, type Locale } from "../src/app/i18n";
-import { areaOf, DEMO_PASSWORD } from "../src/app/lib/stories";
+import { AREAS, DEMO_PASSWORD } from "../src/app/lib/stories";
 import { toolPath, VIEWS, type View } from "../src/app/lib/views";
 
 const BASE = (process.env.UX_BASE ?? "http://localhost:5173").replace(/\/$/, "");
@@ -67,10 +67,13 @@ async function visit(page: Page, path: string): Promise<string | null> {
  * ?next= behind — the state in which choosing a different view used to strand
  * the visitor on a page that persona cannot open.
  *
- * A hidden view has no chip, so its door is the Oversight line, named after the
- * area rather than the view. Without this, the run silently entered as whoever
- * the chips defaulted to and reported that persona's refusals as the hidden
- * view's dead ends — nine of them, all saying the same thing twice removed.
+ * A hidden view has **no door of its own**, which is the decision rather than a
+ * gap: nothing in the interface becomes the P2P desk's persona any more. Its
+ * paths are still routed and still answer to oversight, so the run enters as
+ * admin — the way anyone reaches them now — and proves they render. Without
+ * this the run silently entered as whoever the chips defaulted to and reported
+ * that persona's refusals as the hidden view's dead ends: nine of them, every
+ * one saying the same thing twice removed.
  */
 async function enterAs(page: Page, view: View, from?: string): Promise<string> {
   await page.goto(`${BASE}${from ?? "/app/login"}`, { waitUntil: "networkidle" });
@@ -81,9 +84,9 @@ async function enterAs(page: Page, view: View, from?: string): Promise<string> {
     await page.waitForLoadState("networkidle");
   }
   if (view.hidden) {
-    const area = areaOf(view.home.to);
-    if (!area) throw new Error(`${view.id}: a hidden view's home belongs to no area, so it has no door`);
-    await page.getByRole("button", { name: area.label, exact: true }).first().click();
+    const admin = AREAS.find((a) => a.id === "admin");
+    if (!admin) throw new Error("no admin area: a hidden view has no account that can walk it");
+    await page.getByRole("button", { name: admin.label, exact: true }).first().click();
     await settle(page, 4000);
     return page.url().replace(BASE, "");
   }
@@ -122,7 +125,7 @@ for (const view of VIEWS) {
     const landed = await enterAs(page, view, from);
     const body = await page.locator("body").innerText().catch(() => "");
     if (DENIED.test(body)) {
-      findings.push({ view: view.id, path: `${from} → enter as ${view.persona.name}`, status: "DENIED" });
+      findings.push({ view: view.id, path: `${from} → enter as ${view.hidden ? "oversight" : view.persona.name}`, status: "DENIED" });
       console.log(`${view.id} · entry  DENIED after ${from} → ${landed}`);
     }
     await context.close();
@@ -132,7 +135,7 @@ for (const view of VIEWS) {
   const page = await context.newPage();
 
   const home = await enterAs(page, view);
-  console.log(`${view.id} · ${view.persona.name} → ${home}`);
+  console.log(`${view.id} · ${view.hidden ? "oversight" : view.persona.name} → ${home}`);
   // A leader's tools live inside the community she runs, which home just found.
   const community = home.match(/\/app\/community\/([0-9a-f-]{36})/)?.[1] ?? null;
 

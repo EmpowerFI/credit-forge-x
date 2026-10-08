@@ -15,7 +15,7 @@ import {
   type BecauseCode, type Fit, type GapCode, type Match, matchProducts, MATCHING_MODEL_VERSION,
   type ProductCategory,
 } from "../../lib/products";
-import { STATUS_LABEL, type ReadinessStatus } from "../../lib/readiness";
+import type { ReadinessStatus } from "../../lib/readiness";
 
 const FIT: Record<Fit, { label: string; tone: "positive" | "info" | "neutral" }> = localized({
   ready: { label: { en: "Ready", pt: "Pronta" }, tone: "positive" },
@@ -68,28 +68,6 @@ const GAP: Record<GapCode, (n?: number) => string> = {
   ONE_MORE_MONTH: () => tr({ en: "One more month reported.", pt: "Mais um mês informado." }),
   A_FEW_MORE_MONTHS: () => tr({ en: "A few more months in a row.", pt: "Mais alguns meses seguidos." }),
 };
-
-/** The four parts her readiness is made of, each out of 25, as the engine computes them. */
-const COMPONENT: { key: keyof Match["product"] extends never ? never : string; label: string }[] = localized([
-  { key: "preparation", label: { en: "Preparation", pt: "Preparação" } },
-  { key: "regularity", label: { en: "Regularity", pt: "Regularidade" } },
-  { key: "data_quality", label: { en: "Record quality", pt: "Qualidade dos registros" } },
-  { key: "business", label: { en: "Business", pt: "Negócio" } },
-]);
-
-function Bar({ label, value }: { label: string; value: number }) {
-  return (
-    <li className="space-y-1">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <span className="num text-sm font-semibold text-foreground">{value}<span className="text-muted-foreground">/25</span></span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full bg-secondary/60">
-        <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, (value / 25) * 100)}%` }} />
-      </div>
-    </li>
-  );
-}
 
 function ProductCard({ m }: { m: Match }) {
   const Icon = CATEGORY_ICON[m.product.category];
@@ -181,7 +159,7 @@ export default function FinancialOpportunities() {
   });
 
   const r = state.data?.readiness as
-    | { status: ReadinessStatus; score: number; components: Record<string, number>; missing_requirements: unknown[] }
+    | { status: ReadinessStatus; components: Record<string, number>; missing_requirements: unknown[] }
     | null
     | undefined;
 
@@ -212,14 +190,14 @@ export default function FinancialOpportunities() {
         about={tr({
           en: (
             <>
-              <p>Matched by rules you can read, against the readiness your own check-ins produced. It is not machine learning and there is no second score: the figures here are the ones the rest of your pages show.</p>
+              <p>Matched by rules you can read, against the readiness your own check-ins produced. It is not machine learning and there is no second score: it reads the same assessment your business page shows.</p>
               <p>Nothing here is an approval. Each provider decides with its own rules. No provider pays to appear, none is told you looked, and the order is by fit alone.</p>
               <p>The providers are invented for this prototype.</p>
             </>
           ),
           pt: (
             <>
-              <p>Casado por regras que você pode ler, contra a prontidão que os seus próprios check-ins produziram. Não é machine learning e não há um segundo score: os números aqui são os mesmos das suas outras páginas.</p>
+              <p>Casado por regras que você pode ler, contra a prontidão que os seus próprios check-ins produziram. Não é machine learning e não há um segundo score: ele lê a mesma avaliação que a sua página do negócio mostra.</p>
               <p>Nada aqui é aprovação. Cada provedora decide com as regras dela. Nenhuma paga para aparecer, nenhuma é avisada de que você olhou, e a ordem é só por adequação.</p>
               <p>As provedoras são inventadas para este protótipo.</p>
             </>
@@ -229,7 +207,10 @@ export default function FinancialOpportunities() {
 
       {!r ? (
         state.isLoading || me.isLoading
-          ? <div className="space-y-4"><Skeleton className="h-40 w-full rounded-xl" /><Skeleton className="h-64 w-full rounded-xl" /></div>
+          // Was two blocks, the first standing in for the readiness panel. One
+          // now, because a skeleton promising a panel that never arrives is the
+          // loading state telling a small lie about the page.
+          ? <Skeleton className="h-64 w-full rounded-xl" />
           : (
             <Panel title={tr({ en: "Not yet", pt: "Ainda não" })}>
               <p className="text-sm text-muted-foreground">
@@ -243,20 +224,13 @@ export default function FinancialOpportunities() {
           )
       ) : (
         <>
-          <Panel title={tr({ en: "What your readiness is made of", pt: "Do que a sua prontidão é feita" })}
-            actions={<StatusPill tone="info" dot={false}>{STATUS_LABEL[r.status].title}</StatusPill>}
-            description={tr({
-              en: "The same assessment your business page shows, in its four parts. It says whether the business is prepared for a credit conversation — it is not a credit score and not a decision.",
-              pt: "A mesma avaliação que a sua página do negócio mostra, nas suas quatro partes. Ela diz se o negócio está preparado para uma conversa sobre crédito — não é score de crédito nem decisão.",
-            })}>
-            <p className="num mb-4 font-heading text-3xl font-bold text-foreground">
-              {r.score}<span className="text-lg text-muted-foreground">/100</span>
-            </p>
-            <ul className="space-y-3">
-              {COMPONENT.map((c) => <Bar key={c.key} label={c.label} value={Number(r.components?.[c.key] ?? 0)} />)}
-            </ul>
-          </Panel>
-
+          {/* Her readiness had a panel here: the score out of 100 and the four
+              parts out of 25. It is gone, and the page is better for it — her
+              business page already shows that assessment, this screen is about
+              what the assessment opens, and repeating it made the reader grade
+              herself again before being told anything new. The engine still
+              reads every one of those numbers; it just no longer recites them
+              back. */}
           <section aria-labelledby="products" className="space-y-3">
             <h2 id="products" className="font-heading text-lg font-bold text-foreground">
               {tr({ en: "What this opens", pt: "O que isso abre" })}
