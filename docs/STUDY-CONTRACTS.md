@@ -4,7 +4,7 @@
 
 `programs/empowerfi-audit` is 1,455 lines of source and 1,646 of tests: 13 account types, 17 instructions, one state machine. It is good code. Nothing here is a rewrite argument.
 
-But the real deployment will be a different program, which makes this the cheapest moment there will ever be to decide what goes in it. Seven findings, ordered by whether they change a decision. The first two are the ones I would not ship without.
+But the real deployment will be a different program, which makes this the cheapest moment there will ever be to decide what goes in it. Seven findings, ordered by whether they change a decision. The first three are the ones I would not ship without — the third because it cannot be fixed afterwards.
 
 The hackathon program is frozen — its ID is fixed for the submission and nothing below should be changed now.
 
@@ -42,25 +42,36 @@ So if the authority key is lost or compromised, the operator key can never be ro
 
 A `set_authority` guarded by the current authority is about fifteen lines. Add it, and consider a two-step (`propose` / `accept`) so a typo in a pubkey does not lock the program out permanently — that is the usual failure, not theft.
 
-## 3. Rent is the running cost, and it only goes one way
+## 3. Rent is a deposit, not a fee — and today it is stuck
 
-There is no `close` instruction anywhere in the program. Every check-in, assessment, payment, consent and outcome creates a PDA that exists forever and holds its rent exemption forever.
+The number in the first version of this section was right and the label on it was wrong, which made it read as an operating cost that would sink the unit economics. It is not an operating cost. It matters for a different reason.
 
-Measured in this project: **1,031 anchors cost about 1.2 SOL**, so roughly **0.0012 SOL per account**. Project that onto a real cohort:
+**Two different things get paid on every anchor.**
 
-| | anchors/year | SOL/year | at US$120/SOL |
+| | per anchor | 5,000 women, 120,000 anchors/year | recoverable? |
 |---|---|---|---|
-| 100 women | ~2,400 | ~2.9 | ~US$350 |
-| 1,000 women | ~24,000 | ~29 | ~US$3,500 |
-| 5,000 women | ~120,000 | ~144 | ~US$17,000 |
+| transaction fee | 0.000005 SOL | **~0.6 SOL ≈ US$72/year** | no — it is spent |
+| rent exemption | ~0.0011 SOL | ~132 SOL ≈ US$16,000 | **yes, by closing the account** |
 
-Counting one check-in and one assessment per woman per month. It accumulates — year two costs year one again, plus the new accounts — and none of it is recoverable, because nothing can be closed.
+Measured, not estimated. The account layouts are small — `CheckinCommitment` is 86 bytes with the discriminator, `ReadinessAttestation` 90 — and `solana rent 86` gives **0.00108712 SOL**. Nothing in the repo sets a priority fee (`grep` for `ComputeBudget` returns nothing), and `anchor_checkin` has `payer = operator` with one signer, so the fee is the 5,000-lamport base.
 
-Three things follow:
+Which also reprices the project's own history: **1,031 anchors cost about 1.2 SOL, of which roughly 0.005 SOL — under a cent — was actually spent.** The rest is a deposit sitting inside 1,031 accounts.
 
-- **This is a design decision, not an operating expense.** It is affordable at pilot scale and it is the number that decides whether every check-in gets its own account at ten thousand women, or whether months get batched into a periodic Merkle root with the per-month proof served from the database. Decide it for the real contract, not after.
-- **It is an argument for the monthly record** that [STUDY-WHATSAPP.md §4.1](STUDY-WHATSAPP.md) already recommends on other grounds. Fortnightly *periods* would double this table.
-- **Decide a close policy now even if nothing uses it yet.** A `close_checkin` callable by the authority after N years, returning rent, is cheap to add at design time and impossible to add to accounts that already exist under a program without it.
+So the real finding is narrower and sharper than "rent is expensive":
+
+> **The rent is refundable and this program cannot refund it.** There is no `close` instruction anywhere, so every lamport of deposit is permanently locked by omission.
+
+At 5,000 women that is US$16,000 of working capital immobilised, growing every month, against a service priced at US$4 per entrepreneur per month — US$240,000 a year of revenue. As a cost it would be 7% of revenue and survivable; as locked capital it is a balance-sheet item that never comes back. And it is denominated in SOL, so a 3× rally triples it without anyone deciding anything.
+
+Three ways to fix it, and they compose:
+
+- **A `close` instruction, decided now.** `close_checkin` callable by the authority after N years, returning the deposit to the treasury. Cheap at design time and **impossible to add later** — accounts created under a program with no close can never be closed by a future version of that program's logic unless the upgrade keeps the same program ID. This is the one that turns US$16,000 of permanent loss into US$16,000 of float.
+- **Batch the high-volume records into a Merkle root.** One root account per community per month instead of one account per check-in: 5,000 women go from 60,000 check-in accounts a year to **12**, and the rent line disappears rather than shrinking. A record's proof becomes the commitment plus its sibling path, checked against the on-chain root — still verifiable by a stranger with no access to our database, because a wrong path does not reproduce the root.
+- **Keep a dedicated account only where the granularity is the point.** The records that gate a credit decision — the readiness attestation an eligibility relied on, a loan transition, an outcome — are low-volume and high-stakes, and an address of their own is worth its deposit. Check-ins are the opposite: high-volume, and only ever read as "she reported these months".
+
+The batching option has one cost worth naming: the sibling paths live in the database, so if EmpowerFI disappears, nobody can rebuild a proof from the chain alone. That is fixable for free — publish each month's leaf set, which is nothing but hashes and carries no personal data, somewhere outside our control. Then the chain holds the root, the world holds the leaves, and the database holds only the convenience.
+
+**Decide this for the real contract, not after the first real anchor.** The split above is also an argument for the monthly record that [STUDY-WHATSAPP.md §4.1](STUDY-WHATSAPP.md) recommends on other grounds; fortnightly *periods* would double the account count.
 
 ## 4. Append-only, except in the one place it matters most
 
@@ -130,10 +141,10 @@ Carry forward, in order:
 **Must change**
 1. `operator` and `treasurer` as separate keys, treasurer behind a multisig, with a destination allowlist and an amount cap.
 2. `set_authority`, two-step.
-3. A PDA per loan transition.
+3. A `close` instruction for the rent deposit, and the per-record-versus-batched decision taken before the first real anchor. Both are irreversible once accounts exist.
+4. A PDA per loan transition.
 
 **Should change**
-4. A close policy and a decision on per-record versus batched anchoring, taken against the rent table.
 5. Events on every anchoring instruction.
 6. `token_interface` instead of pinned SPL Token and a hand-read offset.
 7. Enforce `schema_version` or remove it.

@@ -186,7 +186,7 @@ What is left to do is small:
 
 - Keep program IDs and deploy scripts in version control so redeployment after a reset is a command, not an afternoon.
 - Decide now whether a reset triggers re-anchoring of the pilot's history or whether the old signatures simply stand as a record of a chain that no longer holds them. Either is defensible; discovering the question during a reset is not.
-- **Do not describe devnet anchors as durable proof to a third party** — a sponsor, a partner, a participant. For the pilot they prove the pipeline works end to end, which is what the pilot is for. Any claim of auditability to someone outside waits for mainnet, which was measured at about 2.62 SOL for the program plus roughly 1.2 SOL for a thousand anchors.
+- **Do not describe devnet anchors as durable proof to a third party** — a sponsor, a partner, a participant. For the pilot they prove the pipeline works end to end, which is what the pilot is for. Any claim of auditability to someone outside waits for mainnet, which was measured at about 2.62 SOL for the program plus roughly 1.2 SOL for a thousand anchors — almost all of it refundable rent deposit rather than spend, per [STUDY-CONTRACTS.md §3](STUDY-CONTRACTS.md).
 
 ---
 
