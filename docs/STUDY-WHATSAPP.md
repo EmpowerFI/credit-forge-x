@@ -115,7 +115,13 @@ You want fortnightly contact. There are two ways and they are not close in cost:
 - **Change the grain to a fortnight.** The schema, the engine's three regularity inputs and their thresholds, the staleness rule, every existing assessment, the migrations and the proofs. Weeks of work, a recalibration with no real data to calibrate against, and an invalidated history. 
 - **Keep the month as the unit of record and make the fortnight a collection cadence.** The first contact opens a draft for the month; the second closes it. The engine never knows. Two touchpoints, one record, no migration to the assessment path.
 
-**Take the second.** You get the engagement you are actually after — being in her week rather than her month — without paying for it in the one part of the product that is already proven and anchored. If after the pilot the half-month figures turn out to be worth keeping on their own, they are already stored and the grain can change later with real data to justify it.
+**Take the second.** You get the engagement you are actually after — being in her week rather than her month — without paying for it in the one part of the product that is already proven and anchored. If the half-month figures later turn out to be worth keeping on their own, they are already stored and the grain can change with real data to justify it.
+
+**How the two halves become one month.** A `checkin_parts` table — entrepreneur, period, half, the six figures, submitted_at — holds each fortnight as it arrives. When the second half lands, the month is consolidated and `submit_checkin` is called once with the sums: revenue, cogs, opex, household and active days add; `keeps_records` takes the later answer, since it is a statement about a habit now rather than a quantity. One monthly record, one assessment, **one commitment over the consolidated month**, which is the right unit to anchor — a fortnight is a collection artefact, not a fact about the business.
+
+**And a half month is never a month.** This is the trap in the design and it is worth naming before it is built. If only the first fortnight arrives and the month is recorded anyway, the engine sees roughly half the usual revenue — and it will not report missing data, it will report a business in decline. `revenue_trend_bps` turns negative, `DECLINING_REVENUE` appears in her eligibility reasons, and `revenue_cv_bps` rises enough to cost her points in `data_quality`. Every one of those is the engine working correctly on a number that is a reporting artefact.
+
+So an incomplete month is **not reported at all**. The half that did arrive is operational signal — the community leader can see she started and stopped, and follow up — and it is not engine input. The engine's existing staleness rule then does the right thing on its own: the month simply never counts, `consecutive_months` breaks, and that is true.
 
 ### 4.2 WhatsApp Flows, not conversational parsing
 
@@ -242,3 +248,58 @@ With no human in the loop by design, a silent failure is a woman who answered an
 Do not repeat it here. Every inbound message gets a row before anything else happens; a Flow submission that fails to reach `submit_checkin` leaves a failed row with its reason, not a gap; and someone sees a count of those each morning. The email queue in `supabase/functions/process-email-queue` already has the retry-and-record shape to copy.
 
 This is roughly three to five days of work, folded into the estimate in §7 rather than added to it.
+
+---
+
+## 9. What a financial product should tell the engines
+
+The proposal is that acquiring a financial product should feed the score, because it says something about the business's financial capacity. It does — but not in the engine it looks like, and not with the sign it looks like. Three distinctions make the idea work.
+
+### 9.1 Acquiring is not performing, and debt is not capacity
+
+Taking a loan does not increase capacity. It **consumes** it: a new instalment is a claim on the same monthly net the engine measures. A rule that added points for holding a product would have the sign backwards on the single most common case.
+
+What is evidence of capacity is **performance** — instalments paid, on time, over months. The platform already holds that for its own loans (`loans` and their instalments), and it is the strongest credit signal there is. It is also the only one of these that belongs anywhere near a score.
+
+### 9.2 Capacity is the eligibility engine's job, and it has a hole
+
+"Capacidade financeira do negócio" is not what readiness measures. Readiness asks whether the business is *prepared*; eligibility asks what it can *carry*. The product already draws that line and its headers defend it.
+
+And eligibility is where the real gap is. `EligibilityInput` today is:
+
+```
+readiness_status, readiness_band, requested_amount_cents, purpose,
+months_reported, records_kept_bps, inconsistencies,
+avg_revenue_cents, avg_net_business_cents, avg_household_cents,
+revenue_cv_bps, revenue_trend_bps, household_share_bps
+```
+
+**There is no field for what she already owes.** `max_instalment_cents` is derived from net business income and household draw, as if every applicant arrived with no obligations. A woman already paying R$300 a month elsewhere is sized as though that R$300 were free. On simulated data nobody notices; with real women and real products in front of them, it is the difference between an instalment she can carry and one she cannot.
+
+So the highest-value change is one input, not a new rule:
+
+```
+existing_obligations_cents   // known monthly instalments, from any source
+```
+
+subtracted before `maxInstalment` is computed, with a reason code — `OBLIGATIONS_REDUCE_CAPACITY` — so the arithmetic is visible rather than silent. That is her point implemented in the place where it is true, and it makes the engine more conservative rather than more generous, which is the correct direction for a first real cohort.
+
+### 9.3 A connected provider changes provenance, which is a different thing again
+
+The one honest readiness-side effect is not a bonus; it is **where the numbers come from**.
+
+Today every figure is self-reported, and `data_quality` and the engine's `Confidence` already exist to express doubt about that. If she connects a payments provider, her revenue stops being a number she typed and becomes one a third party observed. That is a genuine improvement in the evidence, and it belongs in confidence and data quality — not as points for having a product, but as a change in how much the same figure can be trusted.
+
+Note the asymmetry: a payments provider makes revenue verifiable. A rental guarantee says nothing about capacity at all. The rule has to key on what the product actually observes, not on the fact that one was acquired — which is also why `products.ts` carries a category per product rather than treating them as one kind of thing.
+
+### 9.4 The loop to design against
+
+EmpowerFI's own P2P loan is in that catalogue.
+
+If acquiring a product raised the score, the platform would be recommending a product, scoring her higher for taking it, and then recommending more on the strength of the score it granted her. Our own loan would be the most score-improving thing on the page. That is not a hypothetical to guard against later; it is the straight-line consequence of the rule as proposed, and it is the reason the three distinctions above are worth the extra care.
+
+The version that survives contact: **obligations reduce capacity, repayment proves it, and a connected provider improves the evidence.** Acquisition on its own changes nothing, and the page already says that nothing there is an approval.
+
+### 9.5 Cost
+
+Small, and separable from the WhatsApp work. The obligations input and its reason code are a day or two in `packages/eligibility-engine` plus its vectors and the pgTAP that covers them. Repayment history as an input is larger, because it needs a definition of "on time" that survives a real cohort, and it should wait until the first loans have run. Provenance is the biggest of the three and is gated on a real integration existing, which today none does.
