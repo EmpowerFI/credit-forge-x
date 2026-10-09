@@ -2,9 +2,11 @@
 
 **Written for:** the founder, and whoever builds this. Post-hackathon, October 2026.
 
-The problem this answers is not technical. Sign-up numbers are low because the product asks a woman running a bakery to open a browser, create an account, remember a password and fill a form — and she already has an app open all day where she talks to her customers. Moving the entry point to WhatsApp is the right instinct. This study says what it costs, what it changes, and the four decisions that get expensive if they are taken late.
+The problem this answers is not technical. The product asks a woman running a bakery to open a browser, create an account, remember a password and fill a form — and she already has an app open all day where she organises her business and her community.
 
-The headline: **the code is the small part.** Roughly six to eight weeks of build at the pace this repo already demonstrated, and the two things most likely to slip are Meta's business verification and template review, neither of which is engineering time. The decisions in §4 matter more than any of it.
+**The premise is settled, and this study does not re-open it.** Three months of the app at about 10% conversion is not a hypothesis about the channel; it is a measurement of it. And the founder is inside the entrepreneur groups where WhatsApp is already how the community organises itself — first-hand observation of the behaviour, which is the strongest evidence available for a question of this kind. The remaining question is not *whether* to move the entry point. It is what the move costs, what it changes, and which decisions get expensive if they are taken late.
+
+The headline: **the code is the small part.** Roughly six to nine weeks of build at the pace this repo already demonstrated, and the two things most likely to slip are Meta's business verification and template review, neither of which is engineering time. The decisions in §4 matter more than any of it, and §8 is what the build has to carry because there is no manual stage in front of it.
 
 ---
 
@@ -196,6 +198,8 @@ Estimated against **this repo's own measured pace**, which is a better anchor th
 | **5** | Pilot operations: retries, failure alerts, a human in the loop, LGPD artefacts, deletion flow | **1 week** |
 | | **Build total** | **6.5–9 weeks** |
 
+With no manual stage in front of the build, the correction window and the failure log in §8 are not optional, and they are what the top of that range is for. Read it as **8–9 weeks** unless something in §8.1 is deliberately deferred.
+
 **What actually slips, and it is not the code.** Two items run on Meta's clock, not yours, and both should start on day one of phase 1 so they run in parallel:
 
 - **Business verification** — Meta verifies the legal entity. Days to several weeks depending on documents.
@@ -207,10 +211,34 @@ Start both before writing the webhook.
 
 ---
 
-## 8. What I would do first
+## 8. What the build must carry, because there is no manual stage
 
-Before any of the above, one week that is not on the table: **run the fortnightly check-in by hand with five women.** A real phone, a human typing the six questions, a report written by hand from the engine's output.
+An earlier draft of this study proposed running the check-in by hand with five women first. That was advice for a team that does not know whether the channel works, and it was the wrong advice here: the conversion figure already answers that, and a manual stage would have delayed the thing the evidence says to build while teaching almost nothing new. It is dropped.
 
-It costs nothing, it needs no Meta verification, and it answers the questions that decide the design — whether she answers at all, whether the six numbers are the right six, whether she reads the report, whether "faturamento" and "custo" mean to her what they mean to the engine. Every one of those is cheaper to learn from five conversations than from six weeks of build.
+But it was buying something, and three of those things still have to be bought — inside the build rather than in front of it.
 
-If five women answer twice in a month, build it. If they do not, the channel was not the problem, and the six weeks would not have fixed it.
+### 8.1 A check-in is not final until it is anchored
+
+Without a manual stage, **the first real data is production data**, typed on a phone, by someone who may be serving a customer at the same time. She will type `2000` when she meant `20000`. The web form has the same exposure, but a form shows all six fields at once and she can look before sending; a message feels sent the moment it leaves.
+
+Anchoring a wrong figure is worse than not anchoring, because the product's whole claim is that the record is the evidence. So:
+
+- **A correction window.** The check-in is recorded and the assessment runs, but the commitment is not queued for some hours. "Errei um número" inside that window amends the record before anything is committed. After it, a correction becomes a new record that supersedes the old one, with both kept — which is the honest shape anyway.
+- **A plausibility check, not a validation.** Revenue ten times last month's, or costs above revenue, is not an error; it is a bakery that got a catering order, or a month she bought an oven. Do not reject it. Echo it back — *"Confirma: R$ 20.000 de vendas e R$ 3.000 de custos?"* — and let her say yes. One extra message inside the free window, and it catches the decimal point without calling her wrong.
+- **The engine already notices.** `inconsistencies` and `revenue_cv_bps` feed `MANUAL_REVIEW`, so an implausible history routes to a person instead of producing a verdict. That behaviour is right and should not be softened for volume.
+
+### 8.2 The wording is the experiment, and it is an afternoon
+
+The channel question is answered. The *wording* question is not, and it is the one that silently corrupts data: whether "custo das mercadorias vendidas" is a question a baker can answer, and whether what she subtracts is what the engine thinks she subtracted.
+
+That does not need a pilot. It needs the six questions posted in one of the groups the founder is already in, and an afternoon reading the replies. If three people ask what a term means, the term is wrong — and the fix is a label in the Flow JSON, which is a minute of work before launch and a migration-shaped problem after it.
+
+Do this during phase 2, while Meta's verification is running and there is nothing to code.
+
+### 8.3 Failures have to be visible
+
+With no human in the loop by design, a silent failure is a woman who answered and was never recorded. The product already has one of these — `operator_needs_usdc` is returned in an HTTP response and written nowhere, so a dry operator looks exactly like a queue still processing.
+
+Do not repeat it here. Every inbound message gets a row before anything else happens; a Flow submission that fails to reach `submit_checkin` leaves a failed row with its reason, not a gap; and someone sees a count of those each morning. The email queue in `supabase/functions/process-email-queue` already has the retry-and-record shape to copy.
+
+This is roughly three to five days of work, folded into the estimate in §7 rather than added to it.
