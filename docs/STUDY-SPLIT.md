@@ -106,7 +106,31 @@ One codebase will now serve two deployments: one that is a public showroom with 
 
 **A runtime check is not enough.** `if (isDemo)` is a line someone can get wrong, a flag someone can flip, and an env var someone can forget in a new environment. The demo entrances should be excluded at build time — a Vite define that compiles them out, so the production bundle does not contain the password, the persona switcher, or the one-click admin door at all. Then "is the demo door open in production?" is answerable by grepping the built asset, which is a test you can run, rather than by reasoning about state.
 
-The second control is the database, and it already exists: the demo personas should simply not be rows in the production instance. Two Supabase projects, not one with a flag.
+The second control is the database: the demo personas should simply not be rows in the production instance. **Two Supabase projects, not one with a flag** — and this is a pattern the repo already uses rather than a new one, since `.env.example` already carries `VITE_SUPABASE_URL` for the marketing site and `VITE_PLATFORM_SUPABASE_URL` for the platform. A third instance is the same move again.
+
+Same *schema*, though, not a new one: the same 115 migrations applied to a clean project. Which raises the thing to test first — **nobody has ever run those migrations from zero.** The demo database grew incrementally over twenty-five days, and a clean apply is a different code path: ordering, dependencies between objects, and timestamps that are future-dated and used as sequence numbers. A fresh-install bug is the most likely bug in the whole plan and it is free to look for.
+
+### 6.1 A new database does not separate them on the chain
+
+This is the part that does not follow from the database split, and it is worth catching before real commitments exist.
+
+The anchored readiness payload is:
+
+```
+assessment_id, entrepreneur_id, assessment_no, model_version,
+as_of_period, status, band, score, components,
+missing_requirements, reason_codes, features, assessed_at
+```
+
+**There is no `is_simulated`.** The flag exists on the row and never reaches the payload — deliberately, since the commitment is meant to be about the assessment rather than about our bookkeeping. The consequence is that two databases anchoring to the same `empowerfi_audit` program produce commitments that nobody can tell apart on chain, including us. A demo cohort's proofs and a real community's proofs become one undifferentiated set.
+
+Three ways out, and only one is cheap:
+
+- **Add `is_simulated` to every payload.** Changes the hash of every kind, so every domain tag goes to `:v2`, and every existing commitment stops reproducing. No.
+- **Separate domain tags for demo.** Same problem in a smaller shape, and it puts a bookkeeping concept into the thing a stranger verifies.
+- **A separate program deployment for production.** The program ID *is* the separation: one address holds showroom proofs, another holds the real community's. Nothing about the payload or the tags changes, the verifier works unmodified on both, and "which of these is real?" is answered by the address rather than by a field someone has to trust. On devnet it costs a deploy and no money.
+
+Take the third, and do it when the production database is created rather than after the first real anchor.
 
 ---
 
@@ -151,7 +175,7 @@ Roughly, and in dependency order rather than importance:
 1. **Publish the packages** — `audit-commitments`, `audit-client`, and the engine versions currently in production. Replace the vite aliases with real dependencies, and delete the duplicated engine under `_shared`. *(~3 days, and nothing else can start cleanly before it.)*
 2. **Create the private repo** and move `platform/` into it with history, using `git filter-repo` rather than copying files. A credit model's history is the record of how it evolved, and it is worth more than the hour it costs to keep. *(~1 day.)*
 3. **CI on both**, as §9. *(~2 days.)*
-4. **Compile the demo doors out**, and split the Supabase projects so the production instance has no demo personas. *(~3 days.)*
+4. **Compile the demo doors out**, create the production Supabase project from a clean migration run, and deploy a second `empowerfi_audit` for it so the showroom's proofs and the real ones are separable by program ID. *(~3 days, of which the clean migration run is the part that can surprise you.)*
 5. **Account approval and real auth** for the two organisational dashboards. *(~1 week.)*
 6. **The WhatsApp layer**, in the private repo, per the other study. *(8–9 weeks.)*
 
