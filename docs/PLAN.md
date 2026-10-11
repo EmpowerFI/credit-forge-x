@@ -64,7 +64,7 @@ Foundations. Nothing in phase 2 can start cleanly before these, and they are the
 | 1.2 | **The engine revision** — see below: the engine itself is written and pinned; the rest waits | freeze, 1.1 | ~2 weeks, **part done** |
 | 1.3 | **The private repo**, with `platform/` moved using `git filter-repo` rather than copied — a credit model's history is the record of how it evolved | 1.1 | ~1 day |
 | 1.4 | **pgTAP in CI** on the private repo, and the published-version check on both | 1.3 | ~2 days |
-| 1.5 | **Compile the demo doors out**, create the production Supabase project from a clean migration run, and deploy a second `empowerfi_audit` so showroom proofs and real ones are separable by program ID | 1.3 | ~3 days |
+| 1.5 | **Compile the demo doors out**, create the production Supabase project from a clean migration run, and deploy a second `empowerfi_audit` so showroom proofs and real ones are separable by program ID | 1.3 | ~3 days — **the migration risk is retired, see below** |
 
 ### 1.2, broken out — what is already done
 
@@ -84,7 +84,14 @@ The engine is written and under test **but wired into nothing**: `packages/readi
 
 The demonstration route's bar is set deliberately above the `RECORD_KEEPING` requirement it would otherwise overlap: the full six-month window unbroken, every sale recorded in every month of it, and no figure contradicting another. It stands in for a whole taught programme, so it should be hard.
 
-**1.2 is what a partner is waiting on**, and it is the long pole of the phase. **1.5 contains the only step that can surprise you**: nobody has ever run the 115 migrations from zero, and a fresh-install bug is the most likely bug in the whole plan.
+**1.2 is what a partner is waiting on**, and it is the long pole of the phase.
+
+**1.5's surprise has been looked for and is not there.** All **116 migrations apply from zero with no failures**, and the schema they produce is identical to the one that grew incrementally over twenty-five days — 1,382 objects against 1,381, the single difference being a function from a migration the local database has not applied yet. Two scripts, both re-runnable:
+
+- `scripts/platform/check-fresh-install.mts` — static, no database, safe anywhere: object ordering between files, and enum values used in the transaction that added them. Clean.
+- `scripts/platform/fresh-install-run.sh` — the real thing, into a throwaway database on the local cluster, destroying nothing. It builds a base that looks like a new Supabase project (the platform schemas present, `public` and `private` empty), applies all 116 in order one transaction each, then diffs every table, column, view, function, enum, policy and index against the live schema.
+
+Two things it does not prove, both worth knowing before the production project is created. **`pg_cron` is stubbed**, because Postgres installs it only into the database named in `cron.database_name` and a real Supabase project *is* that database — so the migrations' own `create extension if not exists pg_cron` works there and cannot in a scratch database. And **plpgsql bodies are not resolved at creation**, so a function calling something that does not exist still creates cleanly; what is proven is DDL ordering, not that every body resolves.
 
 1.1 and 1.2 can run in parallel by different hands; 1.2 only needs 1.1 for where the engine finally lives.
 
