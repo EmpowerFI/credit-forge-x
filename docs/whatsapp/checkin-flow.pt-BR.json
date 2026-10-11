@@ -1,0 +1,122 @@
+{
+  "version": "3.1",
+  "screens": [
+    {
+      "id": "VENDAS",
+      "title": "Sua quinzena",
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextSubheading",
+            "text": "Os números dos últimos 15 dias. Se não souber exato, o mais perto que você lembrar."
+          },
+          {
+            "type": "Form",
+            "name": "vendas",
+            "children": [
+              {
+                "type": "TextInput",
+                "name": "revenue_brl",
+                "label": "Quanto você vendeu?",
+                "helper-text": "Tudo que entrou com o negócio, em reais",
+                "input-type": "number",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "name": "active_days",
+                "label": "Em quantos dias você trabalhou?",
+                "helper-text": "De 0 a 15",
+                "input-type": "number",
+                "required": true
+              },
+              {
+                "type": "OptIn",
+                "name": "keeps_records",
+                "label": "Anotei todas as vendas desses dias"
+              },
+              {
+                "type": "Footer",
+                "label": "Continuar",
+                "on-click-action": {
+                  "name": "navigate",
+                  "next": { "type": "screen", "name": "CUSTOS" },
+                  "payload": {
+                    "revenue_brl": "${form.revenue_brl}",
+                    "active_days": "${form.active_days}",
+                    "keeps_records": "${form.keeps_records}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CUSTOS",
+      "title": "Sua quinzena",
+      "terminal": true,
+      "data": {
+        "revenue_brl": { "type": "string", "__example__": "0" },
+        "active_days": { "type": "string", "__example__": "0" },
+        "keeps_records": { "type": "boolean", "__example__": false }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextSubheading",
+            "text": "Agora o que saiu. Separar o negócio da casa é o que faz a conta ficar certa."
+          },
+          {
+            "type": "Form",
+            "name": "custos",
+            "children": [
+              {
+                "type": "TextInput",
+                "name": "cogs_brl",
+                "label": "Quanto gastou com mercadoria e material?",
+                "helper-text": "O que você comprou para poder vender",
+                "input-type": "number",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "name": "opex_brl",
+                "label": "Quanto gastou com os outros custos do negócio?",
+                "helper-text": "Aluguel, transporte, taxas, embalagem",
+                "input-type": "number",
+                "required": true
+              },
+              {
+                "type": "TextInput",
+                "name": "household_brl",
+                "label": "Quanto você tirou para a casa?",
+                "helper-text": "O que saiu do negócio para as suas despesas pessoais",
+                "input-type": "number",
+                "required": true
+              },
+              {
+                "type": "Footer",
+                "label": "Enviar",
+                "on-click-action": {
+                  "name": "complete",
+                  "payload": {
+                    "revenue_brl": "${data.revenue_brl}",
+                    "active_days": "${data.active_days}",
+                    "keeps_records": "${data.keeps_records}",
+                    "cogs_brl": "${form.cogs_brl}",
+                    "opex_brl": "${form.opex_brl}",
+                    "household_brl": "${form.household_brl}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

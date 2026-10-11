@@ -35,6 +35,8 @@ Not frozen: CI, docs, tests, scripts, contracts and commercial terms, and anythi
 | 0.2 | `anchor-reconcile`'s `HOLDER` map excluded `capital_route` deliberately but typed as total, so the file did not type-check | **done** — fixed; not deployed |
 | 0.3 | **The tier-2 clause** into the sponsorship template, from the seven points in [STUDY-ACCESS §8.2](STUDY-ACCESS.md#82-what-a-sponsor-actually-buys) | **not started** — an afternoon, plus a lawyer on the wording. Free today, a renegotiation after the first signature |
 | 0.4 | **Measure the organic base** — the share of records in no sponsored programme, derivable from `program_communities` and the programme dates with no schema change | **not started** — meaningless against simulated data, so it waits for real records, but the query can be written now |
+| 0.5 | **Meta onboarding** — business portfolio, verification, a dedicated number not already on WhatsApp | **not started** — days of someone else's queue, blocks the pilot and nothing in the build |
+| 0.6 | **The check-in Flow, the templates and the consent wording** | **done** — `docs/whatsapp/` |
 
 0.3 is the only item here with a deadline attached to someone else's calendar.
 
@@ -96,13 +98,21 @@ The product change the whole thing is for. [STUDY-WHATSAPP.md](STUDY-WHATSAPP.md
 |---|---|---|---|
 | 2.1 | **Community consent defaults and the WhatsApp consent channel** — a community narrows, never widens | 1.3 | ~3 days |
 | 2.2 | **Phone identity and the pull-a-link access flow**, with phone numbers added to the PII scan's search set *before* the first real one is stored | 1.3 | ~1.5 weeks |
-| 2.3 | **The WhatsApp layer** — sign-up, the fortnightly contact against the monthly record, the consolidation, the AI report | 1.3, 2.2 | 8–9 weeks |
+| 2.3 | **The WhatsApp layer** — sign-up, the fortnightly contact against the monthly record, the consolidation, the AI report | 1.3, 2.2, **1.5** | 7–8 weeks |
 | 2.4 | **Community-vouched recovery**, as a re-bind permission that never grants read access | 2.2 | ~1 week |
 | 2.5 | **The migration of the eighteen** — in-app invitation, history preserved, one fresh consent | 2.1, 2.2 | ~3 days |
 | 2.6 | **The bot** — retrieval tools only, answers but never offers | 2.3 | within 2.3 |
 | 2.7 | **Account approval and real auth** for the two organisational dashboards. The entrepreneur is not one of them: she stays on WhatsApp plus a signed link | 1.5 | ~1 week |
 
 2.1 is three days and it unblocks a commercial conversation, so it goes first even though it is the smallest thing here.
+
+### The two things that gate collecting a real figure
+
+**A place for the data has to exist before the data does.** Real revenue and household figures cannot land in the hackathon project — its password is published on purpose, one click switches a visitor to any persona, and `seed-demo.mts` opens with `reset_demo_data()`. So **2.3 depends on 1.5**, not only on the private repo, and that dependency is added above. The production project and its clean migration run are the gate on collection, and 1.5 is also the item most likely to surprise us, which argues for pulling it earlier rather than later.
+
+**Meta's queue is the other one, and it is not code.** Business verification reportedly takes days, and it needs a CNPJ and a dedicated number that is not already on WhatsApp. It can start today, in parallel with everything, and it blocks nothing in the build: getting started creates a test account and test number with no paperwork. Verification is what the pilot waits on — and even there the unverified cap of roughly 250 unique customers per rolling 24 hours in business-initiated conversations sits far above a first cohort.
+
+**And 2.3 came down by about a week.** The endpoint and encryption key pair the study budgeted are not needed: a Flow with no data endpoint generates its own routing and returns everything she typed in the completion webhook. The form is written — `docs/whatsapp/checkin-flow.pt-BR.json` — with the templates and the consent wording beside it in `docs/whatsapp/`.
 
 ---
 
