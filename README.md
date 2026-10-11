@@ -60,7 +60,7 @@ Program: [`4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR`](https://explorer.solan
 
 Read more: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/DEMO.md](docs/DEMO.md) (two numbered stories, the second in twenty steps) · [docs/I18N.md](docs/I18N.md) (English and Portuguese) · [platform/README.md](platform/README.md) (operations).
 
-After the hackathon, three studies on what changes for real use: [STUDY-WHATSAPP.md](docs/STUDY-WHATSAPP.md) (WhatsApp as the entry interface), [STUDY-SPLIT.md](docs/STUDY-SPLIT.md) (what stays public when real data arrives) and [STUDY-CONTRACTS.md](docs/STUDY-CONTRACTS.md) (the proof layer reviewed, and how much of it needs to be on a chain).
+After the hackathon, four studies on what changes for real use: [STUDY-WHATSAPP.md](docs/STUDY-WHATSAPP.md) (WhatsApp as the entry interface), [STUDY-SPLIT.md](docs/STUDY-SPLIT.md) (what stays public when real data arrives), [STUDY-CONTRACTS.md](docs/STUDY-CONTRACTS.md) (the proof layer reviewed, and how much of it needs to be on a chain) and [STUDY-ACCESS.md](docs/STUDY-ACCESS.md) (entry without a login, the community partner whose terms differ, and the API an aggregate rule does not survive).
 
 ## What it earns, and from whom
 
