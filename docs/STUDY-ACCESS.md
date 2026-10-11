@@ -4,11 +4,11 @@
 
 Six things to design: registration tied to a phone instead of a login, a one-time code for each visit to the report page, account recovery, a WhatsApp bot that answers questions, a monetised community partner whose terms are different, the entrepreneurs already registered in the app, and an API and MCP server for Web3 protocols.
 
-Most of it fits what exists better than expected. One of the six does not fit at all, and it is the one with a partner waiting on the other end — so it goes first.
+Most of it fits what exists better than expected. Two do not. One is an engine rule that silently refuses the partner who is waiting, so it goes first; the other is a conflict between the two revenue streams that has to be settled in the first sponsorship contract rather than at the first API customer.
 
 ---
 
-## 1. The partnership is blocked by a line in the readiness engine
+## 1. Revising the engine: preparation is a competency, not an attendance record
 
 The monetised community wants one thing from EmpowerFI: **connection to capital.** She will share her entrepreneurs' financial data to build their history. She will not use EmpowerFI's educational planning, because she has her own.
 
@@ -32,23 +32,53 @@ if (f.core_modules_completed < f.core_modules_total) {
 ),
 ```
 
-So it is a global count, it is greater than zero as soon as a core programme exists, and her members complete none of it. Follow it through:
+A global count, greater than zero as soon as a core programme exists, and her members complete none of it. Follow it through:
 
 > `CORE_EDUCATION_INCOMPLETE` → `NEEDS_PREPARATION`, permanently → never `CREDIT_READY` → `attest_eligibility` refuses on chain, because it requires a `CreditReady` attestation for the same borrower → no opportunity, no loan.
 
 **The one thing she is asking for is the one thing the product structurally refuses her**, and it refuses silently: nothing on any screen says "this community does not run our modules, so nobody in it can qualify". It reads as a readiness result about each woman.
 
-This is not an argument to drop the requirement. Preparation before credit is the product's position and it should stay. It is an argument that **the requirement is written against the wrong thing**: it asks whether she completed *EmpowerFI's* modules, when what it means to ask is whether she has been prepared.
+### 1.1 The small fix is not the right fix
 
-Three ways to fix it, in increasing order of what they cost:
+The obvious repair is to resolve `core_modules_total` per community instead of globally. `education_programs.community_id` already exists and the cooperative already uses it, so this is a change to one lookup.
 
-- **Per-community core programme.** Let a verified community declare its own programme as the core one for its members, so `core_modules_total` resolves per membership rather than globally. Her system stays hers; she reports completion through a small endpoint, or marks it in the partner console. This is the smallest change — the `education_programs.community_id` column already exists and is already used for the cooperative's own programme, so the data model is there and only the lookup is global.
-- **An equivalence, recorded.** A community whose programme EmpowerFI has reviewed is marked as teaching the core competencies, and its members' completion is attested by the community rather than by our module tracker. This is the honest version if her curriculum is genuinely different rather than a renamed equivalent, and the review is a real step, not a formality.
-- **A waiver with its own reason code.** Status `CREDIT_READY` with `PREPARATION_WAIVED_COMMUNITY` in the reasons, and the waiver anchored. Worst of the three: it hides a policy decision inside an assessment, and the first lender who reads the reason codes will ask what it means.
+It unblocks her, and it introduces a worse problem quietly. **If each community defines its own core programme, the score stops being comparable across communities** — three easy modules and twelve hard ones both read as "complete". The score drives the band, the band travels into eligibility as `risk_band` and `confidence`, and a lender comparing two `HIGH` attestations would be comparing two different measurements with the same name. That is a harder defect to find than the current one, because it produces plausible numbers.
 
-**Take the first, with the second as the gate for granting it.** A community declares its programme; EmpowerFI reviews it once before marking it core-equivalent; completion flows from her system. And whichever is chosen, the **model version changes**, because the meaning of a `CREDIT_READY` attestation changes — which is exactly what `model_version` on the attestation is for.
+So the per-community lookup is necessary and not sufficient. It needs something that holds the meaning steady.
 
-One thing to decide alongside it: a waived or substituted programme is not the same evidence as a completed EmpowerFI one, and a lender is entitled to know which it was. The feature set already travels in the attestation payload; add the provenance of the preparation to it rather than flattening both into one boolean.
+### 1.2 What the requirement is actually trying to measure
+
+`education_modules` carries `title`, `position` and `estimated_minutes`. **There is no competency model** — nothing records what a module teaches. So "completed twelve modules" is already a weak proxy, and the engine is gating credit on attendance while believing it gates on preparation.
+
+Meanwhile the engine already measures, from her own reporting, most of what the modules exist to install:
+
+| what preparation is meant to produce | what the engine already observes |
+|---|---|
+| she keeps records of her sales | `records_kept_bps` |
+| her numbers are coherent | `inconsistencies`, `MANUAL_REVIEW_INCONSISTENCIES` |
+| she sustains the discipline | `consecutive_months` |
+| she knows her own variance | `revenue_cv_bps` |
+| she separates the business from the household | `avg_household_cents`, `HIGH_HOUSEHOLD_DRAW` |
+
+Six months of consistent, internally coherent records is stronger evidence of preparation than a completion flag, because it is behaviour rather than attendance, and because it is the behaviour credit actually depends on.
+
+### 1.3 The revision
+
+Replace the attendance gate with an evidence gate:
+
+- `CORE_EDUCATION_INCOMPLETE` becomes **`PREPARATION_NOT_EVIDENCED`**, satisfied by any one of three sources:
+  1. EmpowerFI's core programme completed;
+  2. a community programme completed, where that programme has been **reviewed once by EmpowerFI and marked core-equivalent** — the review is what holds comparability, and it is a real step rather than a formality;
+  3. **demonstrated competency** from her own reporting: records kept above the threshold across a sustained run of consecutive months with no inconsistencies.
+- The attestation records **which source** satisfied it. The features already travel in the payload; preparation provenance joins them, so a lender can weight it rather than discover it.
+- The three sources score the same in v1. Differentiating them invites gaming and guesswork, and v1 is an informed prior anyway — what should change the weights is repayment data, not an opinion formed now.
+- `model_version` bumps, because the meaning of `CREDIT_READY` changes. Attestations made under the old version stay valid and stay checkable, which is what the field is for.
+
+Two things this buys beyond unblocking the partnership. It fixes a quieter exclusion — a competent woman who will not sit through modules is blocked today for a reason that has nothing to do with her business. And it is a **better answer to a lender**, because demonstrated behaviour is more defensible than a completion flag.
+
+One thing it costs, and it needs an explicit decision rather than a quiet slide: **this moves the product's position from "preparation before credit" to "evidence of preparation before credit".** The intent is unchanged and the second is arguably the honest version of the first — but it is a position change, it should be stated on the screens that explain readiness, and it is the founder's call, not an implementation detail.
+
+Route three is also the one to watch for gaming once there is real money behind it: it is satisfied by reporting cleanly for long enough, and reporting is self-declared. The protections that exist — `inconsistencies`, the coefficient of variation, `MANUAL_REVIEW` — were built against honest error rather than against someone optimising. Worth revisiting at the first sign that anyone is.
 
 ---
 
@@ -167,41 +197,118 @@ Eighteen people is small enough to do by hand and large enough to get the patter
 
 ---
 
-## 8. The API and the MCP server: suppression does not survive becoming a query
+## 8. What may be sold, by whom, and to whom
 
-This is the part of the plan with a real hazard in it, and it is not the obvious one. The obvious risk is leaking a row; the product already refuses that everywhere. The actual risk is that **the rule protecting the aggregates is not composable, and an API composes.**
+The API sells **normalised aggregates, never personal data**, it does not open before there is enough of it to be worth buying, and **a cohort a sponsor paid to monitor does not become an API product.** Those are the right three rules. The third has a conflict inside it that has to be resolved at the first sponsorship contract rather than at the first API customer, because by then it is a renegotiation with everyone.
 
-Today, `impact_intelligence()` hides any breakdown group under five, in SQL. That works because the dashboard offers a fixed set of cuts and a human reads them one at a time. Hand the same data to a query API with free filters and the protection evaporates:
+### 8.1 The conflict, stated plainly
 
-> Ask for *bakers in Grajaú, cohort A* — suppressed, n < 5. Ask for *cohort A* and *cohort A excluding bakers in Grajaú*, both comfortably above five, and subtract. The suppressed cell is recovered exactly, from two allowed answers.
+The business model is that sponsors pay about US$4 per business per month to monitor a cohort. If that succeeds, **most monitored businesses are in a sponsored cohort.** And if a sponsored cohort cannot become an API product, then stream 2 has almost no inputs — permanently, and more so the better stream 1 does.
 
-Nothing in the current rule prevents this, because the rule is evaluated per response and the attack lives between responses.
+It gets tighter: API access is also meant to come *with* sponsoring a cohort. If the sponsor's entitlement is access to the pool, and the pool excludes sponsored cohorts, the entitlement is access to nothing.
 
-**MCP makes it worse, not better.** An MCP server is a thin protocol over the same API, but its consumer is an agent, which will enumerate slices automatically, at machine speed, without intending anything. The informal protection the dashboard has — that nobody runs four hundred queries — is exactly what an agent removes. If one surface is built first, build the API with this solved, and let MCP be the wrapper it should be.
+This is not an argument against the rule. It is an argument that the rule is about the wrong noun.
 
-Four things that actually hold:
+### 8.2 What a sponsor actually buys
 
-- **Fixed cuts, not free composition.** Publish a defined set of aggregates and let callers choose among them, rather than accepting arbitrary filter combinations. Boring, effective, and it is how statistical agencies release microdata summaries.
-- **A minimum cell over the intersection**, not over each dimension, so the threshold is evaluated on what is actually being asked for.
-- **Per-consumer query logs and a budget.** Differencing requires a sequence of queries; a sequence is visible if it is recorded. This is also what lets you answer, later, what a given protocol saw.
-- **Not noise.** Differential privacy is the textbook answer and it is the wrong one *here*, because it breaks the thing that makes this data worth buying: an aggregate that can be recomputed from the commitments on chain. **Verifiability and perturbation pull against each other**, and verifiability is the product. Suppression and fixed cuts keep both.
+> **A sponsor buys exclusivity over the identification, not over the observation.**
 
-The positive half is cheap and is the differentiator: **each response carries the commitment set it was computed over**, so a protocol can re-derive the number from records it verified independently against Solana, instead of trusting the API. Nobody else selling this kind of indicator can offer that, and it costs an array of hashes in the payload.
+Three tiers, and the rule lands differently on each:
 
-Two more for the terms rather than the code: an MCP response lands inside a model's context and may be retained by whoever runs it, which should be written down before the first integration; and the consent scope that permits any of this is `impact` — so §6's exclusions apply here too, and the sample description travels with the data.
+| tier | what it is | who may have it |
+|---|---|---|
+| **1 · cohort intelligence** | "your 500 women in Grajaú: reach, readiness, repayment, outcomes" — identified to the programme | **the sponsor who paid, exclusively. Never an API product.** This is the rule as stated, and it is right. |
+| **2 · pooled indicators** | sector × region × period across all consenting businesses, no cohort or sponsor distinguishable | the market-intelligence product — **if the sponsorship contract said so when it was signed** |
+| **3 · opportunity discovery** | a specific business, matched to a capital provider | only with her `investors` consent. Already built, already gated. |
+
+The 500 women existing in a national figure as *"bakeries in the south-east, median revenue X, n = 1,400"* takes nothing from the sponsor, because what the sponsor paid for is knowing they are **theirs** — the attribution, the longitudinal story, the report with their name on it. What would take something is a buyer being able to reconstruct that cohort from the pool, which is §8.4.
+
+So the contract decides one thing, up front: **does this cohort contribute to tier 2?** A sponsor who wants it to not contribute is buying exclusivity, and that is a priced option, not a default. A sponsor who does not care gets a lower price. Either way it is written before the first check-in exists.
+
+### 8.3 Provenance is already derivable — no new column
+
+Pleasant surprise in the schema. The link is `programs` → `program_communities` → `communities` → members, and `programs` carries `period_start` and `period_end`:
+
+```sql
+create table public.program_communities (
+  program_id uuid not null references public.programs (id) on delete cascade,
+  community_id uuid not null references public.communities (id) on delete cascade,
+  primary key (program_id, community_id)
+);
+```
+
+So a check-in is **sponsored** when its period falls inside a programme whose communities include hers, and **organic** otherwise. The primary key allows a community in several programmes at once, so a record may have zero, one or several funders, and that is computable rather than something to record by hand.
+
+Two consequences that fall out for free:
+
+- **The exclusivity window is the contract's own dates.** A sponsor who funded January to June has no claim on the September check-in. Nothing has to expire anything; the period already does it.
+- **There is an organic base**, and its size is the thing to watch, because it is the part of tier 2 that no contract can take away. Measure it before promising anything to a protocol.
+
+What does need recording is the one thing that is not derivable: the tier-2 permission from §8.2. One boolean on `programs`, decided at signature, and a view that resolves each record to *may contribute / may not*.
+
+### 8.4 The dominance rule: a pool that reconstructs a cohort is still the cohort
+
+This is the failure that would actually breach a sponsor contract, and the cell-count rule does not catch it.
+
+> If one sponsor funds the only programme in a region, then *"bakeries in Grajaú, n = 60"* **is** that sponsor's cohort, whatever the cell count says. A buyer who knows who funds what — and a protocol buying market intelligence does know — reads the pool and gets tier 1 for the tier 2 price.
+
+The same thing happens to a *business*: a cell of forty bakeries where one has most of the revenue publishes that one bakery's revenue inside a total.
+
+Statistical agencies have solved this for business microdata and the rules have names. Adopt both:
+
+- **A dominance rule for provenance:** suppress a cell when any single programme accounts for more than a set share of it. This is the one that protects the sponsor contract.
+- **The p% rule for values:** suppress a reported total when one or two businesses dominate it closely enough that the rest of the cell could estimate them. This is the one that protects her.
+
+Both are evaluated on the **intersection** being asked for, not on each dimension separately — which is also the fix for the differencing attack below.
+
+### 8.5 Suppression does not survive becoming a query
+
+Today `impact_intelligence()` hides any breakdown group under five, in SQL. That works because the dashboard offers fixed cuts and a human reads them one at a time. A query API with free filters dissolves it:
+
+> Ask for *bakers in Grajaú, cohort A* — suppressed, n < 5. Ask for *cohort A* and *cohort A excluding bakers in Grajaú*, both comfortably above five, and subtract. The suppressed cell comes back exact, from two allowed answers.
+
+The rule is evaluated per response; the attack lives between responses.
+
+**MCP amplifies this rather than inheriting it.** An MCP server is a thin protocol over the same API, but its consumer is an agent, which enumerates slices automatically, at machine speed, without intending anything by it. The informal protection the dashboard has is that nobody runs four hundred queries. That is exactly what an agent removes. Build the API with this solved and let MCP be the wrapper it should be.
+
+Four things that hold:
+
+- **Fixed cuts, not free composition.** Publish a defined set of aggregates and let callers choose among them. Boring, effective, and how statistical agencies release summaries.
+- **Minimum cell, dominance and p% all evaluated on the intersection** actually requested.
+- **Per-consumer query logs and a budget.** Differencing needs a sequence, and a sequence is visible if it is recorded. It is also how you answer, later, what a given protocol saw.
+- **Not noise.** Differential privacy is the textbook answer and the wrong one *here*: it breaks recomputation of the aggregate from the commitments on chain, which is the thing that makes this data worth more than someone else's. **Verifiability and perturbation pull against each other**, and verifiability is the product.
+
+### 8.6 Critical mass is a property of each cut, and the commercial floor is the higher one
+
+Not opening without critical mass is right, and the useful version of it is that **critical mass is per published indicator, not per product.** The API can go live with three cuts that qualify and grow as others do; a cut that stops qualifying stops being served. That is a rule the code can enforce, rather than a launch decision somebody has to remember.
+
+The reassuring part: **the commercial floor is above the privacy floor.** An indicator computed over thirty businesses is not market intelligence, it is an anecdote, and no protocol should pay for it. So by the time a cut is worth selling it is well past the point where disclosure control binds — which means the thing that protects her and the thing that makes the product credible are the same thing, and the API's honest constraint is "is this worth buying", not "is this safe to publish".
+
+Set the numbers with the first buyer rather than now. What matters at this stage is that there are four of them and they are checked together: minimum cell count, programme dominance, business dominance, and the sample description in §8.7.
+
+### 8.7 What travels with every response
+
+Two things, neither expensive:
+
+- **The commitment set the figure was computed over**, so a protocol can re-derive the number from records it verified independently against Solana instead of trusting the API. Nobody else selling this kind of indicator can offer it, and it costs an array of hashes.
+- **The sample's shape.** [§6](#6-the-monetised-community-the-consent-ladder-already-has-the-shape) excludes communities that withhold the `impact` scope, and §8.2 excludes cohorts whose sponsor bought exclusivity. Both exclusions are systematic rather than random — a community that charges its members selects for a different entrepreneur — so an indicator sold as *"women-led micro-businesses in Brazil"* has a known bias in it and the buyer is entitled to the description. Publishing what the aggregate is drawn from is also what stops a buyer discovering it later and concluding the rest was oversold.
+
+And one for the terms rather than the code: an MCP response lands inside a model's context and may be retained by whoever runs it. Write that down before the first integration, not after.
 
 ---
 
 ## 9. Sequence
 
-In dependency order. The first is not the biggest; it is the one with a partner waiting.
+In dependency order. The first two are not the biggest; they are the ones that get more expensive the longer they wait.
 
-1. **The education gate** (§1) — per-community core programme, a review step before a programme counts as core, and a new `model_version`. *Nothing involving that community can start before this.* (~1 week)
-2. **Phone identity and the pull-a-link access flow** (§2, §3), including phone numbers in the PII scan's search set. (~1.5 weeks)
-3. **Community-vouched recovery** (§4), as a ceiling-not-grant permission on the leader's console. (~1 week)
-4. **Community consent defaults and the WhatsApp consent channel** (§6). Small, and it unblocks talking to the partner about terms. (~3 days)
-5. **The migration of the eighteen** (§7) — in-app invitation, history preserved, one fresh consent. (~3 days, mostly copy)
+0. **Decide the tier-2 clause and put it in the sponsorship template** ([§8.2](#82-what-a-sponsor-actually-buys)). Costs nothing today and is a renegotiation with every sponsor once contracts exist. **Do this before the next one is signed**, not when the API is built. *(an afternoon)*
+1. **The engine revision** ([§1.3](#13-the-revision)) — `PREPARATION_NOT_EVIDENCED` with three admissible sources, provenance in the attestation payload, the community-programme review step, and a new `model_version`. Nothing involving that community can start before it, and the position change needs stating on the screens that explain readiness. *(~2 weeks, including the vectors, the SQL mirror and the copy)*
+2. **Phone identity and the pull-a-link access flow** (§2, §3), with phone numbers added to the PII scan's search set before the first real one is stored. *(~1.5 weeks)*
+3. **Community consent defaults and the WhatsApp consent channel** (§6). Small, and it unblocks talking to the partner about terms. *(~3 days)*
+4. **Community-vouched recovery** (§4), as a ceiling-not-grant permission on the leader's console. *(~1 week)*
+5. **The migration of the eighteen** (§7) — in-app invitation, history preserved, one fresh consent. *(~3 days, mostly copy)*
 6. **The bot** (§5), on top of the WhatsApp layer from the other study rather than before it.
-7. **The API, then MCP as its wrapper** (§8). Last, because what it can safely publish depends on §6 being settled.
+7. **Measure the organic base** ([§8.3](#83-provenance-is-already-derivable--no-new-column)) and the provenance view, which is what says whether tier 2 has inputs at all. Cheap, and it should happen early enough to change the answer if it is small.
+8. **The API, then MCP as its wrapper** (§8.4–8.7). Last, because what it may publish depends on 0, 3 and 7 being settled.
 
-Items 1 and 4 are the two that a partner conversation is waiting on, and together they are under two weeks.
+Items 0, 1 and 3 are what a partner conversation is waiting on. Item 0 is the one that is free now and costly later.
