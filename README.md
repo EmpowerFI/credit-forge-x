@@ -1,10 +1,14 @@
 # EmpowerFI
 
-**Productive-credit and impact intelligence infrastructure: turn impact programs into investable businesses, with every step proven on Solana.**
+**An intelligence layer for underserved real-world economies: everyday business activity turned into verifiable intelligence, with every step proven on Solana.**
 
 > Prototype of a future regulated P2P productive-credit architecture. Hackathon investments, returns, FX and Pix settlement are simulated; blockchain transactions use test assets on Devnet.
 
-Sponsors of ESG, impact and entrepreneurship programs pay for cohorts and struggle to prove what changed in the businesses they reached. Small loans fail on unit economics: preparing, originating and serving a R$3,000 loan costs nearly as much as a large one, so lenders don't make them. EmpowerFI takes on the part lenders can't afford. Communities prepare their members, members report their months, and a readiness engine tells each of them what is missing, in words she can act on. When a participant who is ready *chooses* to ask for capital, EmpowerFI qualifies the request and a Capital Allocation Engine chooses which pool of P2P capital funds it: Brazilian investors in reais, or international investors in USDC on Solana. She receives and repays in reais, by Pix, either way. EmpowerFI's P2P desk formalises and services the loan. Every fact along the way is recorded in a database and committed to Solana: auditable by anyone, with no personal data on chain. The same longitudinal evidence goes back to the sponsor as Impact Intelligence: what the program did, down to repayment and productive outcomes.
+Capital is becoming programmable and small businesses remain invisible to it. In Brazil, **2.6% of women-owned micro and small enterprises reach a formal loan against 4.6% of men-owned ones**, across roughly **ten million** women-led businesses and an estimated **US$15.8 billion** financing gap (IFC and Sicredi 2025; MEMP 2026 — [sources, with their caveats](https://www.empowerfi.io/sources)). Not for want of economic activity: she has sales, clients and cash flow, and all of it is informal, while capital asks for history, revenue and collateral.
+
+So the missing piece is not another lender. It is the data a lender, a sponsor or a protocol would need before any of them can act, and for these businesses that data does not exist anywhere to be fetched. **EmpowerFI collects it at the source and makes it verifiable** — normalised, aggregated into privacy-preserving indicators, and committed to Solana so a stranger can check it without asking us. Two markets pay for that layer: **ESG sponsors** for impact intelligence about the cohorts they fund, and **Web3 protocols and financial networks** for market intelligence about businesses no existing dataset covers. Financial infrastructure — product matching, regulated lending — is an extension of the layer rather than a prerequisite for either stream, and waits on regulatory structure.
+
+This repository demonstrates the layer by running the whole credit loop on it, end to end. Sponsors of ESG, impact and entrepreneurship programs pay for cohorts and struggle to prove what changed in the businesses they reached. Small loans fail on unit economics: preparing, originating and serving a R$3,000 loan costs nearly as much as a large one, so lenders don't make them. EmpowerFI takes on the part lenders can't afford. Communities prepare their members, members report their months, and a readiness engine tells each of them what is missing, in words she can act on. When a participant who is ready *chooses* to ask for capital, EmpowerFI qualifies the request and a Capital Allocation Engine chooses which pool of P2P capital funds it: Brazilian investors in reais, or international investors in USDC on Solana. She receives and repays in reais, by Pix, either way. EmpowerFI's P2P desk formalises and services the loan. Every fact along the way is recorded in a database and committed to Solana: auditable by anyone, with no personal data on chain. The same longitudinal evidence goes back to the sponsor as Impact Intelligence: what the program did, down to repayment and productive outcomes.
 
 Being ready and not asking is a complete outcome. Nothing in the product pushes anyone into debt.
 
@@ -55,6 +59,39 @@ Program: [`4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR`](https://explorer.solan
 - **A Capital Allocation Engine** with two routes only: Domestic P2P (a simulated BRL pool, Pix) and Global P2P (test USDC on Solana, a simulated regulated off-ramp, Pix). Feasibility first — liquidity, risk appetite, ticket, mandate — then her all-in cost; deterministic reason codes, the pool persisted on each opportunity, and the same engine re-run in the browser. Global capital earns its place by the availability, mandate or economics it adds, not by being on a blockchain.
 
 Read more: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/DEMO.md](docs/DEMO.md) (two numbered stories, the second in twenty steps) · [docs/I18N.md](docs/I18N.md) (English and Portuguese) · [platform/README.md](platform/README.md) (operations).
+
+After the hackathon, three studies on what changes for real use: [STUDY-WHATSAPP.md](docs/STUDY-WHATSAPP.md) (WhatsApp as the entry interface), [STUDY-SPLIT.md](docs/STUDY-SPLIT.md) (what stays public when real data arrives) and [STUDY-CONTRACTS.md](docs/STUDY-CONTRACTS.md) (the proof layer reviewed, and how much of it needs to be on a chain).
+
+## What it earns, and from whom
+
+One layer, two paying markets. Both are hypotheses with a price attached rather than contracted revenue, and the README says so because the product's own screens do.
+
+| | Who pays | What they get | How |
+|---|---|---|---|
+| **Impact intelligence** · core | ESG sponsors, foundations, institutions | monitored cohorts, impact measurement, longitudinal evidence | recurring sponsored programs, target **~US$4 per business per month** — pricing to be validated |
+| **Market intelligence** · core | Web3 protocols, financial networks, capital providers | aggregated indicators, opportunity discovery, verifiable intelligence, integrations | subscriptions, APIs, protocol-sponsored programs |
+| **Financial infrastructure** · optional, later | product providers, regulated lenders | product matching, distribution, regulated lending integrations | an extension, not a prerequisite for viability — subject to regulatory structure |
+
+**No personal data is sold.** Aggregates go out through controlled APIs with groups under five suppressed, and anything specific to one business requires her consent, which is itself a record proven on Solana.
+
+The first market is the one the repo demonstrates in full: *Impact Intelligence* is a working dashboard over real engine output, not a mock of a future product.
+
+## Traction
+
+- **200+ app installs** on Android and iOS, and **18 women entrepreneurs registered** on the marketplace app that is live on Google Play. The low conversion between those two numbers is the reason the entry interface is being moved to WhatsApp after the hackathon — the analysis is in [docs/STUDY-WHATSAPP.md](docs/STUDY-WHATSAPP.md).
+- **Zero PII on chain, measured rather than asserted.** Last run on 22 Sep 2026: 10,486 accounts across all thirteen types and 21 position mints, searched against 341 names, e-mails and places and 1,067 amounts from the database — no findings. `npx tsx scripts/platform/scan-chain-pii.mts` runs it again.
+- **Next:** first paid pilots, one ESG sponsor and one Web3 protocol.
+
+## Who built it
+
+| | | |
+|---|---|---|
+| **Daniele Santos** | Founder & CEO | Computer engineer, 20+ years |
+| **Roberta Stock** | Advisor | Community and financial education |
+| **Fernando Blanco** | Advisor | Banking and credit |
+| **Daniel Branco** | Business partner | Payments infrastructure |
+
+EmpowerFI is a Unicamp *empresa-filha*.
 
 ## Run it locally
 
