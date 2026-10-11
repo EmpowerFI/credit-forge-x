@@ -62,6 +62,33 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      # LiteSVM runs the program in-process: no Anchor CLI, no validator, no
-      # cluster. 28 tests, about a second once the dependencies are cached.
+
+      # The tests load the compiled program with
+      #   include_bytes!("../../../target/deploy/empowerfi_audit.so")
+      # so the SBF binary has to exist before `cargo test` compiles them. It is
+      # a build artefact and gitignored, which is why a clean checkout cannot
+      # skip this step -- the first version of this job did, and failed.
+      #
+      # cargo-build-sbf ships with the Solana CLI and is enough on its own: the
+      # Anchor CLI is only needed for the IDL and for deploying, and neither is
+      # wanted here. Pinned to the version the program is built with locally.
+      - name: Cache the Solana toolchain
+        id: solana-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/solana/install
+          key: solana-3.1.13-${{ runner.os }}
+      - name: Install the Solana toolchain
+        if: steps.solana-cache.outputs.cache-hit != 'true'
+        run: sh -c "$(curl -sSfL https://release.anza.xyz/v3.1.13/install)"
+      - run: echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+
+      # --sbf-out-dir is given explicitly rather than relying on the default,
+      # because the path the test hardcodes is the thing that has to match.
+      # It also writes a throwaway keypair there, which nothing uses: the
+      # program ID the tests run under comes from declare_id! in the source.
+      - run: cargo-build-sbf --manifest-path programs/empowerfi-audit/Cargo.toml --sbf-out-dir target/deploy
+
+      # LiteSVM runs the program in-process: no validator and no cluster.
+      # 28 tests, about a second once the dependencies are cached.
       - run: cargo test -p empowerfi-audit

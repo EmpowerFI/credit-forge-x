@@ -40,7 +40,9 @@ Not frozen: CI, docs, tests, scripts, contracts and commercial terms, and anythi
 
 ### What CI covers, and what it does not
 
-Three jobs, all green locally before the workflow was committed: `tsc --noEmit` clean, ESLint 0 errors, 304 unit tests in 26 files, 19/19 Edge Functions type-check, 28 LiteSVM tests.
+Three jobs: `tsc --noEmit` clean, ESLint 0 errors, 304 unit tests in 26 files, 19/19 Edge Functions type-check, 28 LiteSVM tests, production build.
+
+One of them failed on its first run, and the reason is worth keeping. The program tests load the compiled program with `include_bytes!("../../../target/deploy/empowerfi_audit.so")`. That file is a build artefact and gitignored, so it exists on a machine that has run `anchor build` and never on a clean checkout. Running the command locally proved nothing, because the local machine already had the artefact — **the check that mattered was running it from a state CI would actually be in**, which is what the fixed job does: install the pinned Solana toolchain, `cargo-build-sbf` into the path the test hardcodes, then test.
 
 Deliberately not in it yet, each for a reason rather than an oversight:
 
