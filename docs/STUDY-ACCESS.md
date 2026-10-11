@@ -6,6 +6,14 @@ Six things to design: registration tied to a phone instead of a login, a one-tim
 
 Most of it fits what exists better than expected. Two do not. One is an engine rule that silently refuses the partner who is waiting, so it goes first; the other is a conflict between the two revenue streams that has to be settled in the first sponsorship contract rather than at the first API customer.
 
+### Decided, 11 October 2026
+
+Two of the questions below are no longer open. Recorded here so a later reader sees the decision rather than re-reading the argument for it.
+
+- **Preparation becomes evidence-based.** `CORE_EDUCATION_INCOMPLETE` is replaced by `PREPARATION_NOT_EVIDENCED` with three admissible sources, per [§1.3](#13-the-revision). The product's position moves from *preparation before credit* to **evidence of preparation before credit**, deliberately, and the screens that explain readiness have to say so. Post-hackathon work: it bumps `model_version`, so it does not land while the submission's attestations are live.
+- **A sponsor buys the identification, not the observation.** The three tiers in [§8.2](#82-what-a-sponsor-actually-buys) are adopted. **No sponsorship contract has been signed yet**, which is why this costs nothing today — it is a clause in a template rather than a renegotiation. It also sets the deadline: the decision has to be in the template before the first one is signed.
+
+
 ---
 
 ## 1. Revising the engine: preparation is a competency, not an attendance record
@@ -76,7 +84,7 @@ Replace the attendance gate with an evidence gate:
 
 Two things this buys beyond unblocking the partnership. It fixes a quieter exclusion — a competent woman who will not sit through modules is blocked today for a reason that has nothing to do with her business. And it is a **better answer to a lender**, because demonstrated behaviour is more defensible than a completion flag.
 
-One thing it costs, and it needs an explicit decision rather than a quiet slide: **this moves the product's position from "preparation before credit" to "evidence of preparation before credit".** The intent is unchanged and the second is arguably the honest version of the first — but it is a position change, it should be stated on the screens that explain readiness, and it is the founder's call, not an implementation detail.
+One thing it costs, and it was decided rather than slid past: **this moves the product's position from "preparation before credit" to "evidence of preparation before credit".** The intent is unchanged and the second is the honest version of the first. Taken deliberately on 11 October 2026, which means the screens that explain readiness have to say it in those words — a reader who was told the first and later finds the second is entitled to feel the product moved quietly.
 
 Route three is also the one to watch for gaming once there is real money behind it: it is satisfied by reporting cleanly for long enough, and reporting is self-declared. The protections that exist — `inconsistencies`, the coefficient of variation, `MANUAL_REVIEW` — were built against honest error rather than against someone optimising. Worth revisiting at the first sign that anyone is.
 
@@ -225,6 +233,20 @@ The 500 women existing in a national figure as *"bakeries in the south-east, med
 
 So the contract decides one thing, up front: **does this cohort contribute to tier 2?** A sponsor who wants it to not contribute is buying exclusivity, and that is a priced option, not a default. A sponsor who does not care gets a lower price. Either way it is written before the first check-in exists.
 
+#### What the clause has to say
+
+Substance, not drafting — the wording is for a lawyer, and this is the list of things the wording has to settle so that nothing is left to be worked out later by whoever reads the data.
+
+1. **What the sponsor receives exclusively**, named as tier 1: cohort-identified reach, readiness, repayment and outcomes for the communities and period in the agreement. Theirs, and not an input to any product sold to anyone else.
+2. **Whether the cohort's records may contribute to pooled indicators**, named as tier 2, stated as a yes or a no rather than left silent. Silence is the thing that becomes a dispute.
+3. **That tier 2 carries no attribution**: no sponsor, programme or cohort is identified or distinguishable in a pooled figure, with the dominance rule in [§8.4](#84-the-dominance-rule-a-pool-that-reconstructs-a-cohort-is-still-the-cohort) named as the mechanism rather than promised as an intention.
+4. **The period is the window.** Records from months outside `period_start`–`period_end` are not covered by the agreement, in either direction. The dates already in `programs` are the contract's own, so nothing new has to be tracked.
+5. **That the entrepreneur's consent governs both tiers and can be withdrawn**, and that a withdrawal removes her from future figures. The sponsor is buying an arrangement with EmpowerFI, not a claim on her data — and a contract that implies otherwise is one a sponsor could later be embarrassed by.
+6. **What the sponsor's own API access covers** — their tier 1 cohort, plus tier 2 on the same terms as any other consumer. Worth separating explicitly, because "API access included" reads as access to everything.
+7. **A price difference between the two answers to (2)**, even a small one, because an exclusivity that costs nothing is one every sponsor takes by default and the pool never fills.
+
+Item 7 is the one with a business consequence rather than a legal one. If exclusivity is free, tier 2 stays empty no matter what the rest of the clause says.
+
 ### 8.3 Provenance is already derivable — no new column
 
 Pleasant surprise in the schema. The link is `programs` → `program_communities` → `communities` → members, and `programs` carries `period_start` and `period_end`:
@@ -301,7 +323,7 @@ And one for the terms rather than the code: an MCP response lands inside a model
 
 In dependency order. The first two are not the biggest; they are the ones that get more expensive the longer they wait.
 
-0. **Decide the tier-2 clause and put it in the sponsorship template** ([§8.2](#82-what-a-sponsor-actually-buys)). Costs nothing today and is a renegotiation with every sponsor once contracts exist. **Do this before the next one is signed**, not when the API is built. *(an afternoon)*
+0. **Write the tier-2 clause into the sponsorship template** ([§8.2](#82-what-a-sponsor-actually-buys)), from the seven points it has to settle. Decided 11 October 2026 and free to apply, because no contract exists yet; it becomes a renegotiation with every sponsor the moment one does. **Before the next one is signed**, not when the API is built. *(an afternoon, plus a lawyer on the wording)*
 1. **The engine revision** ([§1.3](#13-the-revision)) — `PREPARATION_NOT_EVIDENCED` with three admissible sources, provenance in the attestation payload, the community-programme review step, and a new `model_version`. Nothing involving that community can start before it, and the position change needs stating on the screens that explain readiness. *(~2 weeks, including the vectors, the SQL mirror and the copy)*
 2. **Phone identity and the pull-a-link access flow** (§2, §3), with phone numbers added to the PII scan's search set before the first real one is stored. *(~1.5 weeks)*
 3. **Community consent defaults and the WhatsApp consent channel** (§6). Small, and it unblocks talking to the partner about terms. *(~3 days)*
