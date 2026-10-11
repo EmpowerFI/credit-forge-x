@@ -36,6 +36,12 @@ jobs:
       # drifting away from packages/ — a drift that would let the browser
       # explain a score the server did not compute.
       - run: npm test
+      # Ordering between migration files, enum values used in the transaction
+      # that added them, and names the mobile app already owns in the database
+      # the two products now share. Static, no database. The function case is
+      # the one that needs a gate: create or replace with a matching signature
+      # replaces the other product's function and says nothing.
+      - run: npx tsx scripts/platform/check-fresh-install.mts
       - run: npm run build
 
   functions:
