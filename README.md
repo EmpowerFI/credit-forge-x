@@ -60,7 +60,7 @@ Program: [`4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR`](https://explorer.solan
 
 Read more: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/DEMO.md](docs/DEMO.md) (two numbered stories, the second in twenty steps) · [docs/I18N.md](docs/I18N.md) (English and Portuguese) · [platform/README.md](platform/README.md) (operations).
 
-After the hackathon, four studies on what changes for real use: [STUDY-WHATSAPP.md](docs/STUDY-WHATSAPP.md) (WhatsApp as the entry interface), [STUDY-SPLIT.md](docs/STUDY-SPLIT.md) (what stays public when real data arrives), [STUDY-CONTRACTS.md](docs/STUDY-CONTRACTS.md) (the proof layer reviewed, and how much of it needs to be on a chain) and [STUDY-ACCESS.md](docs/STUDY-ACCESS.md) (entry without a login, the community partner whose terms differ, and the API an aggregate rule does not survive).
+The work plan that sequences all of it is [PLAN.md](docs/PLAN.md). Behind it, four studies on what changes for real use: [STUDY-WHATSAPP.md](docs/STUDY-WHATSAPP.md) (WhatsApp as the entry interface), [STUDY-SPLIT.md](docs/STUDY-SPLIT.md) (what stays public when real data arrives), [STUDY-CONTRACTS.md](docs/STUDY-CONTRACTS.md) (the proof layer reviewed, and how much of it needs to be on a chain) and [STUDY-ACCESS.md](docs/STUDY-ACCESS.md) (entry without a login, the community partner whose terms differ, and the API an aggregate rule does not survive).
 
 ## What it earns, and from whom
 
@@ -123,6 +123,8 @@ npm run audit-client:generate                       # after changing the program
 | `UX_BASE=http://localhost:5173 npm run test:ux-paths` | in a browser, as each of the five demo personas: entering from a deep link, every tool its view lists, and every `/app` link it is shown — nothing refuses them, bounces them, or scrolls to an anchor that is not there. Needs `npm run dev` and a seeded database |
 | `npx tsx scripts/verify-<name>.mts` | one screen each, in a browser, in both languages: what it says, whether every fold opens from the keyboard, whether anything overflows at 1440 / 1280 / 1024 / 768 / 390, and whether the console stayed quiet. Each reports `ok` or `MISS` per claim. `verify-crossing` asks NEAR Intents for all four directions before it reads a screen, because that claim is a fact about their network rather than about this code |
 | `npx tsx scripts/platform/scan-chain-pii.mts` | every account on devnet: reviewed types only, none of the database's personal data |
+
+CI runs the first, the Deno gate and the program's LiteSVM tests on every push and pull request ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)). The pgTAP suite and the browser checks are not in it: they need a database and a dev server, and they move to the private repo's gate with `platform/`. Nothing in CI deploys anything.
 
 ## Repository
 

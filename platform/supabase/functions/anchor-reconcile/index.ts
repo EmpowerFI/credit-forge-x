@@ -83,8 +83,22 @@ function secretMatches(given: string | null, expected: string): boolean {
   return diff === 0;
 }
 
+interface Holder { type: EmpowerfiAuditAccount; read: (data: Uint8Array) => Uint8Array }
+
+// Kinds whose proof has no account on chain. The enum value exists so the
+// payload, its readers and its domain tag are settled and reviewable, but the
+// program has no instruction to accept one and nothing queues it -- see
+// 20261005000000_capital_route_anchor_kind.sql, which says so in full.
+//
+// Excluded deliberately rather than left out: Exclude<> keeps the map total
+// over every kind that *is* anchored, so adding a real one still fails the
+// build. That protection is why this file is type-checked at all -- on 19 Sep
+// settlement_route reached devnet missing from this map and four route proofs
+// read `mismatch` while the drawer said VERIFIED.
+type UnanchoredKind = "capital_route";
+
 // The account type each proof lives in, and the commitment field it fills.
-const HOLDER: Record<AnchorKind, { type: EmpowerfiAuditAccount; read: (data: Uint8Array) => Uint8Array }> = {
+const HOLDER: Record<Exclude<AnchorKind, UnanchoredKind>, Holder> = {
   community: { type: EmpowerfiAuditAccount.CommunityAudit, read: (d) => new Uint8Array(getCommunityAuditDecoder().decode(d).commitment) },
   community_verification: {
     type: EmpowerfiAuditAccount.CommunityAudit,
@@ -129,7 +143,10 @@ async function check(row: Row, account: { owner: string; data: Uint8Array } | nu
   if (!account) return out("missing", `no account at ${row.account_address}`);
   if (account.owner !== EMPOWERFI_AUDIT_PROGRAM_ADDRESS) return out("missing", `account ${row.account_address} is not the program's`);
 
-  const holder = HOLDER[row.kind];
+  // Unreachable while nothing queues an unanchored kind, and said out loud
+  // rather than left to throw on `holder.type` if that ever changes.
+  const holder: Holder | undefined = HOLDER[row.kind as keyof typeof HOLDER];
+  if (!holder) return out("mismatch", `no account kind on chain for a ${row.kind} proof`);
   let type: EmpowerfiAuditAccount;
   try {
     type = identifyEmpowerfiAuditAccount(account.data);

@@ -1,0 +1,67 @@
+# The first gate this repository has had. STUDY-SPLIT.md §9 argues for three;
+# this is the first of them, and it is the one that has to exist before the
+# package boundary in that study can be trusted.
+#
+# Deliberately not here yet:
+#   - pgTAP (needs a database; it is the private repo's gate once platform/ moves)
+#   - the browser checks (verify-*, ux-paths: need a dev server and a seeded database)
+name: CI
+
+on:
+  push:
+    branches: [main, hackathon]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Typecheck, lint, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # The documented minimum. If it passes here it passes above.
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      # Includes the golden vectors and vendored.test.ts, which is what stops
+      # the engine copies under platform/supabase/functions/_shared/ from
+      # drifting away from packages/ — a drift that would let the browser
+      # explain a score the server did not compute.
+      - run: npm test
+      - run: npm run build
+
+  functions:
+    name: Edge Functions type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      # deno test covers _shared/ only; deno-check covers the functions
+      # themselves, which is where a half-added anchor kind hides. The checker
+      # is plain Node with no dependencies, so it needs no install.
+      - run: deno test --allow-read platform/supabase/functions/_shared/
+      - run: node scripts/deno-check.mjs
+
+  program:
+    name: Anchor program, in LiteSVM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # LiteSVM runs the program in-process: no Anchor CLI, no validator, no
+      # cluster. 28 tests, about a second once the dependencies are cached.
+      - run: cargo test -p empowerfi-audit
