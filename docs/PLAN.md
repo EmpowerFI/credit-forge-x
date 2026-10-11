@@ -59,10 +59,28 @@ Foundations. Nothing in phase 2 can start cleanly before these, and they are the
 | | what | depends on | size |
 |---|---|---|---|
 | 1.1 | **Publish the packages** — `audit-commitments`, `audit-client`, the engine versions in production. Replace the vite aliases with real dependencies and delete the duplicated engine under `_shared/` | freeze | ~3 days |
-| 1.2 | **The engine revision** — `PREPARATION_NOT_EVIDENCED` with three admissible sources, provenance in the attestation payload, the community-programme review step, new `model_version`, the SQL mirror, the vectors, and the wording change on the screens that explain readiness | freeze, 1.1 | ~2 weeks |
+| 1.2 | **The engine revision** — see below: the engine itself is written and pinned; the rest waits | freeze, 1.1 | ~2 weeks, **part done** |
 | 1.3 | **The private repo**, with `platform/` moved using `git filter-repo` rather than copied — a credit model's history is the record of how it evolved | 1.1 | ~1 day |
 | 1.4 | **pgTAP in CI** on the private repo, and the published-version check on both | 1.3 | ~2 days |
 | 1.5 | **Compile the demo doors out**, create the production Supabase project from a clean migration run, and deploy a second `empowerfi_audit` so showroom proofs and real ones are separable by program ID | 1.3 | ~3 days |
+
+### 1.2, broken out — what is already done
+
+The engine is written and under test **but wired into nothing**: `packages/readiness-engine/src/v2.ts`, imported only by its own vectors. `index.ts` is untouched, byte-for-byte, which is what keeps the copy under `_shared/` in sync and the live attestations meaning what they meant. Written during the freeze because CI exists now, and CI is what makes it safe to work inside that package at all.
+
+| | | |
+|---|---|---|
+| ✅ | the three routes — core, reviewed community programme, demonstrated competency | `v2.ts` |
+| ✅ | `PREPARATION_NOT_EVIDENCED` replacing `CORE_EDUCATION_INCOMPLETE` | |
+| ✅ | `preparation_evidence` in the result, naming the strongest route held | |
+| ✅ | 18 vectors, including one that holds v2 identical to v1 wherever preparation is not the question | `v2.test.ts` |
+| ⬜ | the database supplying `equivalent_modules_total/completed` to the engine | a migration |
+| ⬜ | marking a community programme core-equivalent: the column, and the review before it is set | schema + admin |
+| ⬜ | wiring — the Edge Function, the alias, the audit screen's re-run, the Models page | bumps `model_version` |
+| ⬜ | the vendored Deno copy of v2 | `platform:sync-shared` |
+| ⬜ | the wording on every screen that explains readiness | *preparation* → *evidence of preparation* |
+
+The demonstration route's bar is set deliberately above the `RECORD_KEEPING` requirement it would otherwise overlap: the full six-month window unbroken, every sale recorded in every month of it, and no figure contradicting another. It stands in for a whole taught programme, so it should be hard.
 
 **1.2 is what a partner is waiting on**, and it is the long pole of the phase. **1.5 contains the only step that can surprise you**: nobody has ever run the 115 migrations from zero, and a fresh-install bug is the most likely bug in the whole plan.
 
