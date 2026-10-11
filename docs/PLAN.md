@@ -101,9 +101,11 @@ The plan said *create* a production Supabase project. It should not. The mobile 
 |---|---|
 | the app's tables | 29, across 91 migrations |
 | the credit platform's | 58 |
-| **name collisions between them** | **none** |
+| collisions — tables, functions, enum types | **none, in any of the three** |
+| **the 116 credit migrations applied onto a copy of the app's schema** | **0 failed, 29 tables → 87** |
+| **app objects altered by them** | **none** — every column, policy and function definition identical afterwards |
 
-So the two schemas can share one `public` without renaming anything. And the join is free, because both key a person to the same place:
+So the two schemas share one `public` without renaming anything, and it is proven rather than argued: `scripts/platform/merge-check.sh` copies the app's schema into a scratch database on its own cluster, applies all 116, and diffs every column, policy and function definition from before. It changes nothing but the scratch database and reads the source only. And the join is free, because both key a person to the same place:
 
 ```
 app:       users.id     → auth.users(id)
