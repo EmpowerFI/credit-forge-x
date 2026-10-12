@@ -47,7 +47,8 @@ const MAX_CENTS = 10_000_000_000;
  */
 export function brlToCents(raw: unknown): number {
   if (typeof raw !== "string") throw new Error(`not a written amount: ${JSON.stringify(raw)}`);
-  const s = raw.replace(/\s| /g, "").replace(/^R\$?/i, "");
+  // \s already covers the non-breaking space a phone keyboard can produce.
+  const s = raw.replace(/\s/g, "").replace(/^R\$?/i, "");
   if (s === "") throw new Error("empty amount");
 
   let intPart: string;
