@@ -16,7 +16,7 @@ import { useOpenArea } from "./auth/useOpenArea";
 import { ROLE_LABEL } from "./lib/platform";
 import { prototypeNotice } from "./lib/capital";
 import { COMMUNITY_TABS } from "./lib/community";
-import { type Area, areaOf, canOpen, type NavItem, OPERATIONS, STORIES, SUBNAV } from "./lib/stories";
+import { type Area, areaOf, canOpen, type NavItem, OPERATIONS, SHOWROOM, STORIES, SUBNAV } from "./lib/stories";
 import { opensView, roleOpensPath, viewById, viewOf, VIEWS } from "./lib/views";
 import { useLedCommunity } from "./pages/community/queries";
 import { tr } from "./i18n";
@@ -53,7 +53,11 @@ function Footnote() {
   return (
     <div className="space-y-4 border-t border-border pt-4">
       <DataLegend compact withEvidence />
-      <p className="text-xs leading-relaxed text-muted-foreground">{prototypeNotice()}</p>
+      {/* Both notices are about the showroom: that this is a prototype and
+          that the figures are invented. In the corporate build the figures
+          are a woman's actual revenue, and saying otherwise would be the
+          worst kind of wrong label. */}
+      {SHOWROOM && <p className="text-xs leading-relaxed text-muted-foreground">{prototypeNotice()}</p>}
       <Link to="/" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
         empowerfi.io <ArrowUpRight size={12} aria-hidden />
       </Link>
@@ -279,9 +283,11 @@ export default function AppLayout() {
             )}
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <span className="hidden rounded-full border border-caution/35 px-2.5 py-1 text-xs font-medium text-caution md:inline">
-              {tr({ en: "Simulated data", pt: "Dados simulados" })}
-            </span>
+            {SHOWROOM && (
+              <span className="hidden rounded-full border border-caution/35 px-2.5 py-1 text-xs font-medium text-caution md:inline">
+                {tr({ en: "Simulated data", pt: "Dados simulados" })}
+              </span>
+            )}
             <NetworkBadge />
             <WalletChip />
             {/* On smaller screens the switch sits in the navigation sheet, where the header has no room. */}

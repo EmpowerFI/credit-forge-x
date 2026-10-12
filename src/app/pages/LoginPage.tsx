@@ -6,15 +6,29 @@ import DataLegend from "../components/product/DataLegend";
 import NetworkBadge from "../components/product/NetworkBadge";
 import { useAuth } from "../auth/useAuth";
 import { platformConfigured } from "../lib/platform";
-import { areaOf, DEMO_PASSWORD, OPERATIONS } from "../lib/stories";
+import { areaOf, DEMO_PASSWORD, OPERATIONS, SHOWROOM } from "../lib/stories";
 import { offeredView, roleOpensPath, type Tool, toolPath, type View, VIEWS } from "../lib/views";
 import RoleLanding, { ViewChoice } from "../components/views/RoleLanding";
 import { useWalletEntry } from "../wallet/WalletSignIn";
 import { prototypeNotice } from "../lib/capital";
 import { tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
+import CorporateSignIn from "./CorporateSignIn";
 
+/**
+ * The showroom's front door: persona cards, one-click entry, and a badge
+ * saying the data is simulated. All three are correct for a project built to
+ * be walked through and wrong for one holding real figures, so off the
+ * showroom this page is not rendered at all -- the corporate build gets a
+ * credentials form instead, and this component's demo password folded to an
+ * empty string at build time.
+ */
 export default function LoginPage() {
+  if (!SHOWROOM) return <CorporateSignIn />;
+  return <ShowroomDoor />;
+}
+
+function ShowroomDoor() {
   const { session, signIn } = useAuth();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();

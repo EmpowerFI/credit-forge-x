@@ -19,7 +19,9 @@
 #   DB_URL='postgresql://…' bash scripts/platform/apply-credit-migrations.sh
 set -euo pipefail
 
-MIGRATIONS=platform/supabase/migrations
+# Overridable so the script itself can be exercised end to end against a
+# scratch database before it is pointed at a real one.
+MIGRATIONS=${MIGRATIONS:-platform/supabase/migrations}
 DRY=false
 [ "${1:-}" = "--dry-run" ] && DRY=true
 
@@ -82,13 +84,15 @@ for f in "${pending[@]}"; do
   sum=$(md5sum "$f" | cut -d' ' -f1)
   # The migration and its own record, in one transaction: a file that fails
   # leaves no trace, and a file that succeeds cannot go unrecorded.
-  {
-    echo "begin;"
-    cat "$f"
-    printf "\ninsert into credit_migrations.schema_migrations (version, name, checksum) values ('%s', '%s', '%s');\n" \
-      "$version" "$base" "$sum"
-    echo "commit;"
-  } | psql "$DB_URL" -v ON_ERROR_STOP=1 -q || { echo "  FAILED  $base"; exit 1; }
+  #
+  # -f and -c rather than concatenating the file with the insert, because a
+  # migration need not end in a semicolon -- 20260930000100 ends in $function$
+  # and nothing else -- and gluing text after it is a syntax error. psql runs
+  # -f and -c in the order given, and -1 wraps both in one transaction.
+  psql "$DB_URL" -v ON_ERROR_STOP=1 -q -1 \
+    -f "$f" \
+    -c "insert into credit_migrations.schema_migrations (version, name, checksum) values ('$version', '$base', '$sum')" \
+    || { echo "  FAILED  $base"; exit 1; }
   echo "  applied  $base"
 done
 

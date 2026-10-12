@@ -9,14 +9,49 @@ import type { Role } from "./platform";
 // Everything else is operations: the entrepreneur's own journey, community
 // operations, the P2P desk, admin and the audit console.
 
+// The showroom is one named Supabase project, and the demo doors belong to it
+// alone. Everywhere else -- the corporate build against the production
+// database, a staging copy, a fork -- there is no door, because the condition
+// is the database the build points at rather than a flag someone sets.
+//
+// A flag defaulting to "doors open" is one forgotten environment variable away
+// from one-click entry into real women's figures; a flag defaulting to "doors
+// shut" is one forgotten variable away from a dead demo during a freeze. This
+// is neither: an unrecognised project gets no doors, and nothing has to be
+// remembered for that to hold.
+const SHOWROOM_REFS = ["yuxrujoghizcfdmbkqfg"];
+
+/** Exported for its test: the predicate, apart from the build's own URL. */
+export const isShowroom = (platformUrl: string | null | undefined): boolean =>
+  SHOWROOM_REFS.some((ref) => (platformUrl ?? "").includes(ref));
+
+/**
+ * Whether this build is the showroom.
+ *
+ * Decided at start-up, not at build time: the bundler replaces the env read
+ * with a literal but does not evaluate the call, so the demo password and the
+ * persona addresses are still strings inside a corporate bundle. They are
+ * unreachable there rather than absent, and that is acceptable for exactly
+ * one reason -- the showroom password is published on purpose and opens
+ * nothing but a project of simulated data. What keeps it from opening
+ * anything here is that those accounts do not exist in the production
+ * database, that this build refuses the address anyway (CorporateSignIn), and
+ * that row-level security answers to the session rather than to the bundle.
+ */
+export const SHOWROOM = isShowroom(import.meta.env.VITE_PLATFORM_SUPABASE_URL as string | undefined);
+
 // Judges have no inbox for magic links, so the demo runs on fixed-password
-// accounts (PLAN_HACKATHON.md §G.2). The password is public on purpose: this
-// is a demo project with simulated data only.
-export const DEMO_PASSWORD = "EmpowerFI-demo-2026";
+// accounts (PLAN_HACKATHON.md §G.2). The password is public on purpose: that
+// is a demo project with simulated data only, and it is why it may not travel.
+export const DEMO_PASSWORD = SHOWROOM ? "EmpowerFI-demo-2026" : "";
 const DEMO_DOMAIN = "@demo.empowerfi.io";
 
+/** An address belonging to the showroom, wherever it is typed. */
+export const isDemoDomain = (email: string | null | undefined) =>
+  Boolean(email?.trim().toLowerCase().endsWith(DEMO_DOMAIN));
+
 /** A demo account moves between the stories in one click, as each story's demo persona. */
-export const isDemoAccount = (email: string | null | undefined) => Boolean(email?.toLowerCase().endsWith(DEMO_DOMAIN));
+export const isDemoAccount = (email: string | null | undefined) => SHOWROOM && isDemoDomain(email);
 
 export type AreaId = "impact" | "engine" | "investor" | "business" | "community" | "desk" | "admin" | "audit";
 
