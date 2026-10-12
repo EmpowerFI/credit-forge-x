@@ -443,3 +443,10 @@ verify_jwt = false
 # does not know about. Nobody signs in to mint a position: the queue does it.
 [functions.position-mint]
 verify_jwt = false
+
+# Meta calls this, and Meta does not sign in. The gateway would refuse the
+# delivery for having no Authorization header, so the check moves into the
+# function: X-Hub-Signature-256 over the raw body, HMAC with the app secret.
+# Without that check the URL is a public write to a woman's revenue.
+[functions.whatsapp-webhook]
+verify_jwt = false
