@@ -1,5 +1,5 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
-import { activeDays, brlToCents, flowReplies, optIn, parseFlowReply, signatureMatches } from "./whatsapp.ts";
+import { activeDays, brlToCents, canonicalPhone, flowReplies, optIn, parseFlowReply, signatureMatches } from "./whatsapp.ts";
 
 Deno.test("reais as a woman writes them", () => {
   assertEquals(brlToCents("1234"), 123_400);
@@ -136,3 +136,52 @@ Deno.test("the signature is over the bytes Meta sent", async () => {
   assertEquals(await signatureMatches(BODY, "sha256=deadbeef", SECRET), false);
 });
 
+
+Deno.test("the same woman is one number, however it arrives", () => {
+  const HERS = "+5511987654321";
+  // What Meta's wa_id can say for a Brazilian mobile: no ninth digit.
+  assertEquals(canonicalPhone("551187654321"), HERS);
+  // What she has, what she types, what an operator copies from a contact list.
+  assertEquals(canonicalPhone("5511987654321"), HERS);
+  assertEquals(canonicalPhone("+55 (11) 98765-4321"), HERS);
+  assertEquals(canonicalPhone("11987654321"), HERS);
+  assertEquals(canonicalPhone("(11) 98765-4321"), HERS);
+  assertEquals(canonicalPhone(" +55 11 9 8765 4321 "), HERS);
+});
+
+Deno.test("a landline keeps its eight digits", () => {
+  // 2 to 5 opens a fixed line; restoring a ninth digit there invents a number.
+  assertEquals(canonicalPhone("551132654321"), "+551132654321");
+  assertEquals(canonicalPhone("1132654321"), "+551132654321");
+  assertEquals(canonicalPhone("+55 (11) 3265-4321"), "+551132654321");
+});
+
+Deno.test("every area code, not just the ones with nine digits already", () => {
+  assertEquals(canonicalPhone("5585988887777"), "+5585988887777"); // Fortaleza
+  assertEquals(canonicalPhone("558588887777"), "+5585988887777");  // the same, as wa_id
+  assertEquals(canonicalPhone("5591988887777"), "+5591988887777"); // Belém
+  assertEquals(canonicalPhone("559188887777"), "+5591988887777");
+});
+
+Deno.test("another country's numbering plan is not ours to guess", () => {
+  assertEquals(canonicalPhone("+1 415 555 0132"), "+14155550132");
+  assertEquals(canonicalPhone("351912345678"), "+351912345678");
+  assertEquals(canonicalPhone("+44 20 7946 0958"), "+442079460958");
+});
+
+Deno.test("what is not a number at all", () => {
+  assertThrows(() => canonicalPhone("1234567"));       // too short
+  assertThrows(() => canonicalPhone("1".repeat(16)));  // too long
+  assertThrows(() => canonicalPhone(""));
+  assertThrows(() => canonicalPhone("nao tenho"));
+  assertThrows(() => canonicalPhone(5511987654321));
+  assertThrows(() => canonicalPhone(null));
+});
+
+Deno.test("canonicalising twice changes nothing", () => {
+  // The index is built from this string; if it were not stable, a second
+  // pass over the same number would create a second woman.
+  for (const n of ["551187654321", "+55 (11) 98765-4321", "1132654321", "+1 415 555 0132"]) {
+    assertEquals(canonicalPhone(canonicalPhone(n)), canonicalPhone(n));
+  }
+});
