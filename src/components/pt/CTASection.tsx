@@ -45,14 +45,10 @@ const CTASection = () => {
       });
       if (error) throw error;
 
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "contact-question-confirmation",
-          recipientEmail: parsed.data.email,
-          idempotencyKey: `contact-confirm-${id}`,
-          templateData: { name: parsed.data.name },
-        },
-      });
+      // No confirmation e-mail. It would go to whatever address was typed,
+      // which is not necessarily the address of whoever typed it, and sending
+      // it made this endpoint able to deliver a message from empowerfi.io to
+      // anybody. The founder is notified above; that is what the form is for.
 
       toast({ title: "Mensagem enviada!", description: "Respondemos em breve." });
       setForm({ name: "", email: "", message: "" });

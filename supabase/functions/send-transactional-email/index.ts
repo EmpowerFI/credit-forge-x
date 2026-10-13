@@ -18,6 +18,15 @@ const corsHeaders = {
     'authorization, x-client-info, apikey, content-type',
 }
 
+// Constant-time enough for a shared secret, and never short-circuiting on the
+// first differing character.
+function secretMatches(given: string, expected: string): boolean {
+  if (given.length === 0 || given.length !== expected.length) return false
+  let diff = 0
+  for (let i = 0; i < expected.length; i++) diff |= given.charCodeAt(i) ^ expected.charCodeAt(i)
+  return diff === 0
+}
+
 // Generate a cryptographically random 32-byte hex token
 function generateToken(): string {
   const bytes = new Uint8Array(32)
@@ -27,9 +36,24 @@ function generateToken(): string {
     .join('')
 }
 
-// Auth note: this function uses verify_jwt = true in config.toml, so Supabase's
-// gateway validates the caller's JWT (anon or service_role) before the request
-// reaches this code. No in-function auth check is needed.
+// Auth note: verify_jwt = true in config.toml makes the gateway validate the
+// caller's JWT before the request reaches this code -- and the anon key IS a
+// valid JWT, published in the site's own bundle because it has to be. So the
+// gate admits everyone, and an earlier version of this comment concluded from
+// that that no in-function check was needed.
+//
+// What it left open: any caller, from any origin, choosing any template and
+// any recipientEmail. Three of the five templates have no fixed `to`, and the
+// body of one renders a name the caller supplies -- so a stranger could send
+// an e-mail from this domain, carrying their own words, to an address of
+// their choosing. Invalid addresses bounced, and Supabase warned about the
+// project's sending reputation on 13 October 2026; the bounces were the
+// symptom and this was the cause.
+//
+// So a caller-supplied recipient is now a privilege, held by the service role
+// alone. Everyone else may send only templates whose recipient is fixed in
+// the registry -- which is every template the public site actually needs,
+// because those are the ones that write to the founder.
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -97,6 +121,27 @@ Deno.serve(async (req) => {
       }),
       {
         status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    )
+  }
+
+  // A caller-supplied recipient is a privilege of the service role. The
+  // comparison is constant-time because the alternative leaks the key one
+  // character at a time to anyone willing to measure.
+  const bearer = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '').trim()
+  const privileged = secretMatches(bearer, supabaseServiceKey)
+
+  if (!template.to && !privileged) {
+    console.warn('refused a caller-supplied recipient', { templateName })
+    return new Response(
+      JSON.stringify({
+        error:
+          `Template '${templateName}' sends to an address the caller chooses, which this ` +
+          `endpoint does not do for unprivileged callers.`,
+      }),
+      {
+        status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     )

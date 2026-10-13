@@ -42,12 +42,10 @@ function ContactForm({ lang, interest, setInterest }: { lang: Lang; interest: In
         body: { templateName: "contact-question-for-founder", idempotencyKey: `contact-question-${id}`, templateData: { ...parsed.data, message } },
       });
       if (error) throw error;
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "contact-question-confirmation", recipientEmail: parsed.data.email,
-          idempotencyKey: `contact-confirm-${id}`, templateData: { name: parsed.data.name },
-        },
-      });
+      // No confirmation e-mail. It would go to whatever address was typed,
+      // which is not necessarily the address of whoever typed it, and sending
+      // it made this endpoint able to deliver a message from empowerfi.io to
+      // anybody. The founder is notified above; that is what the form is for.
       toast({ title: t.sent.title, description: t.sent.desc });
       setForm({ name: "", email: "", message: "" });
     } catch (err) {
