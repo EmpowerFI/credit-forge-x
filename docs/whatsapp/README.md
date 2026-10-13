@@ -8,7 +8,7 @@
 
 **Business verification is not required to start, and a test number needs no paperwork at all.** Getting started creates a test WhatsApp Business account and a test phone number with relaxed limits and no payment method, so the whole build can be exercised today. Verification is what the *pilot* waits on, not the build: unverified, a business is capped at about 250 unique customers in a rolling 24 hours for business-initiated conversations, and the display name needs verification to be approved. 250 is far above a first cohort, so even the pilot is not blocked by it — the cap binds on the fortnightly reminder, which is business-initiated, and not on the report link, which [STUDY-ACCESS §3](../STUDY-ACCESS.md) already makes something she asks for.
 
-## What is built, as of 12 October 2026
+## What is built, as of 13 October 2026
 
 The receiving half. Nothing sends yet, and nothing needs Meta to be exercised.
 
@@ -26,7 +26,13 @@ The receiving half. Nothing sends yet, and nothing needs Meta to be exercised.
 
 **No phone number is stored.** Identity travels in the flow token, which is 32 random bytes and says nothing about her to anyone who intercepts it. [PLAN.md](../PLAN.md) 2.2 puts phone numbers into the PII scan's search set before the first real one is kept, and that has not happened.
 
-Still to build: issuing the fortnightly invitation (business-initiated, billed, waits on Meta's queue), sign-up, the consent channel, and the report link.
+**The entry conversation, as a pure state machine.** `platform/supabase/functions/_shared/conversation.ts` decides every reply from the stored row alone -- no clock, no database, no network -- so AC-02, *resumes exactly at the last valid question*, is a property of the data rather than a hope about a session. The rule that produces it: **an answer that is not understood never advances the step**, so a reply three days later lands on the same question by construction. `SAIR` and `AJUDA` work at every point and are never read as answers; a withdrawn consent is not reinstated by saying hello, she starts again from the wording.
+
+She becomes an entrepreneur on the last answer, **in one transaction with her consent record** -- a woman who exists without a consent record is worse than one who does not exist, because the record is what says she was asked. The scopes are **assessment only**: the wording promises a reading of her own month and says nobody sees her figures without her say-so, so partner, investor and impact are false. Widening is a new consent, never a default.
+
+Three things the tests pin that are easy to get wrong: *"não sei"* is an answer and stores null months, while an answer nobody could read is refused and asks again -- merging the two would record "she does not know" for something nobody read; a retried delivery is recognised **before** the machine sees it, because run twice an answer advances two questions and the sector lands under the wrong one; and `+1 415 555 0132` is eleven digits, exactly like a Brazilian mobile written locally.
+
+Still to build: issuing the fortnightly invitation (business-initiated, billed, waits on Meta's queue), the baseline, the AI report and the report link.
 
 ## `checkin-flow.pt-BR.json`
 
