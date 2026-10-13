@@ -1,5 +1,8 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
-import { activeDays, brlToCents, canonicalPhone, flowReplies, optIn, parseFlowReply, signatureMatches } from "./whatsapp.ts";
+import {
+  activeDays, brlToCents, canonicalPhone, flowReplies, optIn, parseFlowReply,
+  sendTextRequest, signatureMatches, textMessages,
+} from "./whatsapp.ts";
 
 Deno.test("reais as a woman writes them", () => {
   assertEquals(brlToCents("1234"), 123_400);
@@ -184,4 +187,46 @@ Deno.test("canonicalising twice changes nothing", () => {
   for (const n of ["551187654321", "+55 (11) 98765-4321", "1132654321", "+1 415 555 0132"]) {
     assertEquals(canonicalPhone(canonicalPhone(n)), canonicalPhone(n));
   }
+});
+
+Deno.test("a text message and a form answer are different things", () => {
+  const body = {
+    entry: [{
+      changes: [{
+        value: {
+          messages: [
+            { id: "wamid.t1", from: "551187654321", type: "text", text: { body: "oi" } },
+            { id: "wamid.f1", type: "interactive", interactive: { type: "nfm_reply", nfm_reply: { response_json: COMPLETE } } },
+            { id: "wamid.t2", from: "5511987654321", type: "text", text: { body: "  sim  " } },
+            { id: "wamid.x", from: "55119", type: "image", image: { id: "i" } },
+          ],
+        },
+      }],
+    }],
+  };
+  assertEquals(textMessages(body).map((m) => m.messageId), ["wamid.t1", "wamid.t2"]);
+  assertEquals(flowReplies(body).map((r) => r.messageId), ["wamid.f1"]);
+  assertEquals(textMessages(body)[0].from, "551187654321");
+  assertEquals(textMessages(body)[1].text, "  sim  ");
+});
+
+Deno.test("a delivery with nothing of ours in it", () => {
+  assertEquals(textMessages({}), []);
+  assertEquals(textMessages({ entry: [{ changes: [{ value: { statuses: [{ id: "x" }] } }] }] }), []);
+  assertEquals(textMessages({ entry: [{ changes: [{ value: { messages: [{ type: "text" }] } }] }] }), []);
+});
+
+Deno.test("the send request, without a token and without Meta", () => {
+  const { url, init } = sendTextRequest("123456", "+5511987654321", "Oi!");
+  assertEquals(url, "https://graph.facebook.com/v21.0/123456/messages");
+  assertEquals(init.method, "POST");
+  assertEquals(JSON.parse(String(init.body)), {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: "+5511987654321",
+    type: "text",
+    // Off, because a link preview turns her own words into a card and
+    // sometimes fetches the link from our servers.
+    text: { preview_url: false, body: "Oi!" },
+  });
 });
