@@ -267,19 +267,10 @@ const InvestorWaitlistForm = ({ lang }: InvestorWaitlistFormProps) => {
           })
           .catch((err) => console.error("Waitlist founder notification failed", err));
 
-        void supabase.functions
-          .invoke("send-transactional-email", {
-            body: {
-              templateName:
-                lang === "pt"
-                  ? "investor-waitlist-confirmation-pt"
-                  : "investor-waitlist-confirmation",
-              recipientEmail: email,
-              idempotencyKey: `investor-waitlist-confirm-${id}`,
-              templateData: {},
-            },
-          })
-          .catch((err) => console.error("Waitlist confirmation failed", err));
+        // No confirmation e-mail. It would go to whatever address was typed,
+        // which is not necessarily the address of whoever typed it, and
+        // sending it made this endpoint able to deliver a message from
+        // empowerfi.io to anybody. The founder is notified above.
       }
 
       setJoined(true);
