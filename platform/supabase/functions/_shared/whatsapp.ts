@@ -248,3 +248,66 @@ export function canonicalPhone(raw: unknown): string {
   if (subscriber.length === 8 && /^[6-9]/.test(subscriber)) return `+55${area}9${subscriber}`;
   return `+55${area}${subscriber}`;
 }
+
+// ----------------------------------------------------------------- messages
+
+/** A plain text message, which is how the entry conversation arrives. */
+export interface TextMessage {
+  messageId: string;
+  /** Meta's wa_id for the sender: the phone number, in whatever shape it sends. */
+  from: string;
+  text: string;
+}
+
+/**
+ * Every plain text message in a delivery.
+ *
+ * Separate from flowReplies because they go to different places -- a form
+ * answer is a fortnight, a text is a turn of the conversation -- and because
+ * one delivery can carry both.
+ */
+export function textMessages(body: unknown): TextMessage[] {
+  const out: TextMessage[] = [];
+  const entries = (body as { entry?: unknown })?.entry;
+  if (!Array.isArray(entries)) return out;
+  for (const entry of entries) {
+    const changes = (entry as { changes?: unknown })?.changes;
+    if (!Array.isArray(changes)) continue;
+    for (const change of changes) {
+      const messages = (change as { value?: { messages?: unknown } })?.value?.messages;
+      if (!Array.isArray(messages)) continue;
+      for (const message of messages) {
+        const m = message as { id?: unknown; from?: unknown; type?: unknown; text?: { body?: unknown } };
+        if (m?.type !== "text") continue;
+        if (typeof m.id !== "string" || typeof m.from !== "string" || typeof m.text?.body !== "string") continue;
+        out.push({ messageId: m.id, from: m.from, text: m.text.body });
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * The Graph API call that sends her a message.
+ *
+ * Built rather than sent, so the shape can be tested without a token and
+ * without reaching Meta. Free-form text is only deliverable inside the
+ * twenty-four hours after she last wrote, which is exactly when the entry
+ * conversation happens -- so none of this is billed.
+ */
+export function sendTextRequest(phoneNumberId: string, to: string, body: string): { url: string; init: RequestInit } {
+  return {
+    url: `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+    init: {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to,
+        type: "text",
+        text: { preview_url: false, body },
+      }),
+    },
+  };
+}

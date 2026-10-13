@@ -28,7 +28,10 @@
 // SUPABASE_SERVICE_ROLE_KEY from the runtime.
 
 import { createClient } from "@supabase/supabase-js";
-import { flowReplies, parseFlowReply, signatureMatches } from "../_shared/whatsapp.ts";
+import {
+  canonicalPhone, flowReplies, parseFlowReply, sendTextRequest, signatureMatches, textMessages,
+} from "../_shared/whatsapp.ts";
+import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/conversation.ts";
 
 const env = (name: string): string => {
   const value = Deno.env.get(name);
@@ -40,6 +43,30 @@ const db = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+
+/**
+ * Sends her a message, if this deployment can.
+ *
+ * Optional on purpose: the receiving half has to keep working before Meta is
+ * wired up, so a missing token is a line in the log and a recorded outcome
+ * rather than a webhook that starts refusing deliveries.
+ */
+async function sendText(to: string, body: string): Promise<boolean> {
+  const token = Deno.env.get("WHATSAPP_TOKEN");
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+  if (!token || !phoneNumberId) {
+    console.warn("not sending: WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID are not set");
+    return false;
+  }
+  const { url, init } = sendTextRequest(phoneNumberId, to, body);
+  const headers = { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` };
+  const response = await fetch(url, { ...init, headers });
+  if (!response.ok) {
+    console.error("send failed", response.status, await response.text());
+    return false;
+  }
+  return true;
+}
 
 /** Meta's one-time handshake: echo the challenge, in plain text, only for our own verify token. */
 function verification(url: URL): Response {
@@ -78,7 +105,79 @@ Deno.serve(async (req) => {
   }
 
   const replies = flowReplies(body);
+  const texts = textMessages(body);
   const outcomes: Outcome[] = [];
+
+  // The entry conversation. One question at a time, and the row it reads is
+  // the only thing that remembers where she was -- which is why a retried
+  // delivery has to be recognised before the machine sees it: run twice, an
+  // answer advances two questions and lands under the wrong one.
+  for (const message of texts) {
+    const { data: isNew, error: seenError } = await db.rpc("whatsapp_message_is_new", {
+      p_message_id: message.messageId,
+    });
+    if (seenError) {
+      console.error("dedupe failed", message.messageId, seenError.message);
+      outcomes.push({ message_id: message.messageId, status: "refused", detail: seenError.message });
+      continue;
+    }
+    if (!isNew) {
+      outcomes.push({ message_id: message.messageId, status: "duplicate" });
+      continue;
+    }
+
+    let phone: string;
+    try {
+      phone = canonicalPhone(message.from);
+    } catch (error) {
+      console.error("unreadable sender", message.messageId, String(error));
+      outcomes.push({ message_id: message.messageId, status: "unreadable", detail: String(error) });
+      continue;
+    }
+
+    const { data: row, error: readError } = await db.rpc("whatsapp_conversation_for", { p_e164: phone });
+    if (readError) {
+      console.error("conversation unavailable", message.messageId, readError.message);
+      outcomes.push({ message_id: message.messageId, status: "refused", detail: readError.message });
+      continue;
+    }
+
+    const conversation = row as Conversation;
+    const turn = advance(conversation, message.text);
+
+    // Enrolling first: if it fails she must not be left recorded as ACTIVE
+    // with no account behind it, answering a check-in that belongs to nobody.
+    if (turn.completed) {
+      const { error: enrolError } = await db.rpc("whatsapp_enrol", {
+        p_e164: phone,
+        p_draft: turn.next.draft,
+        p_text_version: CONSENT_TEXT_VERSION,
+      });
+      if (enrolError) {
+        console.error("could not enrol", message.messageId, enrolError.message);
+        outcomes.push({ message_id: message.messageId, status: "refused", detail: enrolError.message });
+        continue;
+      }
+    }
+
+    const { error: saveError } = await db.rpc("whatsapp_conversation_save", {
+      p_e164: phone,
+      p_state: turn.next.state,
+      p_step: turn.next.step,
+      p_draft: turn.next.draft,
+    });
+    if (saveError) {
+      console.error("could not save the conversation", message.messageId, saveError.message);
+      outcomes.push({ message_id: message.messageId, status: "refused", detail: saveError.message });
+      continue;
+    }
+
+    for (const text of turn.say) await sendText(phone, text);
+    outcomes.push({
+      message_id: message.messageId,
+      status: turn.completed ? "enrolled" : `conversation:${turn.next.state}`,
+    });
+  }
 
   for (const reply of replies) {
     let half;
