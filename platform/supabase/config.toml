@@ -450,3 +450,9 @@ verify_jwt = false
 # Without that check the URL is a public write to a woman's revenue.
 [functions.whatsapp-webhook]
 verify_jwt = false
+
+# Called by whatsapp-webhook with the service role key, which is not a JWT
+# the gateway can check. The function compares it itself, in constant time:
+# every new month it is asked about costs a model call.
+[functions.checkin-report]
+verify_jwt = false
