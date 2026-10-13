@@ -79,6 +79,43 @@ function verification(url: URL): Response {
   return new Response(challenge, { status: 200, headers: { "Content-Type": "text/plain" } });
 }
 
+/**
+ * Keeps a promise alive after the response is sent. Supabase's edge runtime,
+ * which is where this runs, provides waitUntil for exactly that. Anywhere
+ * without it the promise is started but may be cut off when the response
+ * ends -- so outside Supabase a reading can be lost, never doubled.
+ */
+function background(work: Promise<unknown>): void {
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } }).EdgeRuntime;
+  if (runtime) runtime.waitUntil(work);
+  else void work;
+}
+
+/**
+ * Asks checkin-report for the month's reading and sends it to her. A month
+ * already read returns the same reading without a second model call, so a
+ * retried delivery cannot cost twice -- but it would message her twice, so a
+ * repeat is not sent.
+ */
+async function sendReading(checkinId: string, from: string): Promise<void> {
+  try {
+    const response = await fetch(`${env("SUPABASE_URL")}/functions/v1/checkin-report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${env("SUPABASE_SERVICE_ROLE_KEY")}` },
+      body: JSON.stringify({ checkin_id: checkinId }),
+    });
+    const body = await response.json().catch(() => null) as { text?: string; repeated?: boolean } | null;
+    if (!response.ok || !body?.text) {
+      console.error("no reading for", checkinId, response.status);
+      return;
+    }
+    if (body.repeated) return;
+    await sendText(canonicalPhone(from), body.text);
+  } catch (e) {
+    console.error("reading not delivered", checkinId, String(e));
+  }
+}
+
 interface Outcome {
   message_id: string;
   status: string;
@@ -207,7 +244,14 @@ Deno.serve(async (req) => {
       outcomes.push({ message_id: reply.messageId, status: "refused", detail: error.message });
       continue;
     }
-    outcomes.push({ message_id: reply.messageId, status: String((data as { status?: unknown })?.status ?? "recorded") });
+    const recorded = data as { status?: unknown; checkin_id?: unknown };
+    outcomes.push({ message_id: reply.messageId, status: String(recorded?.status ?? "recorded") });
+
+    // The month just closed: she gets its reading. In the background, so Meta
+    // has its 200 now -- the model takes seconds and Meta does not wait.
+    if (recorded?.status === "month_assembled" && typeof recorded.checkin_id === "string" && reply.from) {
+      background(sendReading(recorded.checkin_id, reply.from));
+    }
   }
 
   return json({ handled: outcomes.length, outcomes });

@@ -30,6 +30,8 @@ export interface CheckinHalf {
 export interface FlowReply {
   messageId: string;
   responseJson: string;
+  /** Meta's wa_id for whoever answered -- where the month's reading goes back to. */
+  from: string | null;
 }
 
 /** The same ceiling the checkins table carries: a hundred million reais is not a figure, it is a bug. */
@@ -156,11 +158,15 @@ export function flowReplies(body: unknown): FlowReply[] {
       const messages = (change as { value?: { messages?: unknown } })?.value?.messages;
       if (!Array.isArray(messages)) continue;
       for (const message of messages) {
-        const m = message as { id?: unknown; interactive?: { type?: unknown; nfm_reply?: { response_json?: unknown } } };
+        const m = message as {
+          id?: unknown;
+          from?: unknown;
+          interactive?: { type?: unknown; nfm_reply?: { response_json?: unknown } };
+        };
         if (m?.interactive?.type !== "nfm_reply") continue;
         const responseJson = m.interactive.nfm_reply?.response_json;
         if (typeof m.id !== "string" || typeof responseJson !== "string") continue;
-        out.push({ messageId: m.id, responseJson });
+        out.push({ messageId: m.id, responseJson, from: typeof m.from === "string" ? m.from : null });
       }
     }
   }

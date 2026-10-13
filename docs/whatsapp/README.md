@@ -32,7 +32,11 @@ She becomes an entrepreneur on the last answer, **in one transaction with her co
 
 Three things the tests pin that are easy to get wrong: *"não sei"* is an answer and stores null months, while an answer nobody could read is refused and asks again -- merging the two would record "she does not know" for something nobody read; a retried delivery is recognised **before** the machine sees it, because run twice an answer advances two questions and the sector lands under the wrong one; and `+1 415 555 0132` is eleven digits, exactly like a Brazilian mobile written locally.
 
-Still to build: issuing the fortnightly invitation (business-initiated, billed, waits on Meta's queue), the baseline, the AI report and the report link.
+**The monthly reading.** When a month is assembled she receives a short reading of it. The figures come from `packages/checkin-insights` -- pure, versioned, integer-only, computed before any model is involved; a cost she did not know leaves the result *absent*, never zero. The prose is written by Claude Haiku over those figures and accepted only if it passes every check in `_shared/report.ts`: **no number that was not handed over**, in the form it was handed over; never *lucro*, *crédito*, *empréstimo*, *financiamento*, *score* or *inadimplência*; at most two observations, one action. A refused answer is replaced, not repaired, by a reading built from fixed sentences -- and the tests prove that fallback passes the same checks in every kind of month. The model never sees her name, phone or city; her first name is added to the message by code afterwards.
+
+`ai_analyses` holds one reading per month: a retried delivery returns the stored reading without calling the model (AC-03), a model failure becomes the fallback and the month is never sent to the model again (AC-09), and retries stop after three. Prompt version, model, formula version, tokens, cost and -- when the model was refused -- the reasons, which are the sample a human reviews.
+
+Still to build: issuing the fortnightly invitation (business-initiated, billed, waits on Meta's queue), the baseline, the report link, and storing an unknown cost in `checkins` (the columns are `NOT NULL` today, so *"não sei"* cannot yet reach the reading).
 
 ## `checkin-flow.pt-BR.json`
 
