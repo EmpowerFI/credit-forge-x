@@ -78,17 +78,17 @@
                 "type": "TextInput",
                 "name": "cogs_brl",
                 "label": "Quanto gastou com mercadoria e material?",
-                "helper-text": "O que você comprou para poder vender",
+                "helper-text": "O que comprou para vender. Se não sabe, deixe em branco",
                 "input-type": "number",
-                "required": true
+                "required": false
               },
               {
                 "type": "TextInput",
                 "name": "opex_brl",
                 "label": "Quanto gastou com os outros custos do negócio?",
-                "helper-text": "Aluguel, transporte, taxas, embalagem",
+                "helper-text": "Aluguel, transporte, taxas. Se não sabe, deixe em branco",
                 "input-type": "number",
-                "required": true
+                "required": false
               },
               {
                 "type": "TextInput",

@@ -1,6 +1,6 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import {
-  activeDays, brlToCents, canonicalPhone, flowReplies, optIn, parseFlowReply,
+  activeDays, brlToCents, canonicalPhone, flowReplies, optIn, optionalBrlToCents, parseFlowReply,
   sendTextRequest, signatureMatches, textMessages,
 } from "./whatsapp.ts";
 
@@ -80,6 +80,33 @@ Deno.test("the completion payload, field by field", () => {
     keepsRecords: true,
     activeDays: 11,
   });
+});
+
+Deno.test("a blank cost is \"não sei\", never zero", () => {
+  assertEquals(optionalBrlToCents(""), null);
+  assertEquals(optionalBrlToCents("   "), null);
+  assertEquals(optionalBrlToCents(undefined), null);
+  assertEquals(optionalBrlToCents(null), null);
+  assertEquals(optionalBrlToCents("0"), 0); // she typed zero: that is a figure
+  assertEquals(optionalBrlToCents("1.200,50"), 120_050);
+  assertThrows(() => optionalBrlToCents("1,234.56"), Error, "not a BRL amount"); // written is read strictly
+  assertThrows(() => optionalBrlToCents(1234), Error, "not a written amount");
+
+  const blank = JSON.parse(COMPLETE);
+  blank.cogs_brl = "";
+  delete blank.opex_brl;
+  const half = parseFlowReply(JSON.stringify(blank));
+  assertEquals(half.cogsCents, null);
+  assertEquals(half.opexCents, null);
+  assertEquals(half.revenueCents, 345_000); // what she did know is kept
+});
+
+Deno.test("sales and household are still required", () => {
+  for (const field of ["revenue_brl", "household_brl"]) {
+    const missing = JSON.parse(COMPLETE);
+    missing[field] = "";
+    assertThrows(() => parseFlowReply(JSON.stringify(missing)), Error, "empty amount");
+  }
 });
 
 Deno.test("no token, no check-in", () => {

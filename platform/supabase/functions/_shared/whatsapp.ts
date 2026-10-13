@@ -19,8 +19,9 @@
 export interface CheckinHalf {
   flowToken: string;
   revenueCents: number;
-  cogsCents: number;
-  opexCents: number;
+  /** null is "não sei": she left it blank. Never zero -- zero is a figure she would have typed. */
+  cogsCents: number | null;
+  opexCents: number | null;
   householdCents: number;
   keepsRecords: boolean;
   activeDays: number;
@@ -82,6 +83,18 @@ export function brlToCents(raw: unknown): number {
 }
 
 /**
+ * A cost she may not know. Blank, or absent from the payload, is "não sei"
+ * and comes back as null; anything written is read exactly as brlToCents
+ * reads it, and refused the same way. A blank is never turned into 0: a zero
+ * cost invents a better month than she had.
+ */
+export function optionalBrlToCents(raw: unknown): number | null {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw === "string" && raw.trim() === "") return null;
+  return brlToCents(raw);
+}
+
+/**
  * Days worked in a fortnight: 0 to 15.
  *
  * The checkins table validates 0 to 31 because it holds a month, and a month
@@ -130,8 +143,8 @@ export function parseFlowReply(responseJson: string): CheckinHalf {
   return {
     flowToken: flowToken.trim(),
     revenueCents: brlToCents(body.revenue_brl),
-    cogsCents: brlToCents(body.cogs_brl),
-    opexCents: brlToCents(body.opex_brl),
+    cogsCents: optionalBrlToCents(body.cogs_brl),
+    opexCents: optionalBrlToCents(body.opex_brl),
     householdCents: brlToCents(body.household_brl),
     keepsRecords: optIn(body.keeps_records),
     activeDays: activeDays(body.active_days),
