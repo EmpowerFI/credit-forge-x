@@ -98,6 +98,24 @@ for (const e of await all("entrepreneurs", (a, b) => db.from("entrepreneurs").se
   addText((e as { business_name: string | null }).business_name);
 }
 for (const p of await all("profiles", (a, b) => db.from("profiles").select("display_name").range(a, b))) addText((p as { display_name: string }).display_name);
+// Phone numbers, decrypted for this one purpose. They reach the platform
+// through WhatsApp and never through the chain -- which is a claim, and this
+// is where the claim is checked. Searched in several shapes because what
+// would leak is whatever string some code happened to hold: the canonical
+// +5511987654321, the digits alone, and the national form without the
+// country code.
+{
+  const { data, error } = await db.rpc("whatsapp_phones_for_pii_scan");
+  if (error) throw new Error(`whatsapp phones: ${JSON.stringify(error)}`);
+  for (const row of (data ?? []) as string[]) {
+    const e164 = typeof row === "string" ? row : String((row as { whatsapp_phones_for_pii_scan?: string })?.whatsapp_phones_for_pii_scan ?? "");
+    if (!e164) continue;
+    const digits = e164.replace(/\D/g, "");
+    addText(e164);
+    addText(digits);
+    if (digits.startsWith("55")) addText(digits.slice(2));
+  }
+}
 for (const c of await all("communities", (a, b) => db.from("communities").select("name, city").range(a, b))) {
   addText((c as { name: string }).name);
   addText((c as { city: string }).city);

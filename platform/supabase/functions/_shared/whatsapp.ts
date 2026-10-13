@@ -196,3 +196,55 @@ export async function signatureMatches(rawBody: string, header: string | null, a
   for (let i = 0; i < expected.length; i++) diff |= given.charCodeAt(i) ^ expected.charCodeAt(i);
   return diff === 0;
 }
+
+// ------------------------------------------------------------------ numbers
+
+/**
+ * A phone number as one canonical string, because the same woman must not
+ * become two rows.
+ *
+ * Brazil has a trap in it. Mobile numbers gained a ninth digit, and Meta's
+ * `wa_id` for a Brazilian mobile often arrives WITHOUT it -- 5511987654321 is
+ * the number she has, 551187654321 is what the webhook can say -- while the
+ * display number, anything she types, and anything an operator copies from a
+ * contact list carry the nine. Indexed as they arrive, those are two
+ * different people: her check-ins land under one and her report under the
+ * other, and nothing ever says they disagreed.
+ *
+ * So the ninth digit is restored. A Brazilian subscriber number of eight
+ * digits beginning 6 to 9 is a mobile missing it; one beginning 2 to 5 is a
+ * landline and is left alone.
+ *
+ * Numbers outside Brazil are kept as they came, with only the formatting
+ * removed: guessing at another country's numbering plan is how this kind of
+ * function starts corrupting data it was supposed to tidy.
+ */
+export function canonicalPhone(raw: unknown): string {
+  if (typeof raw !== "string") throw new Error(`not a phone number: ${JSON.stringify(raw)}`);
+  // A leading + says the number already carries its country code, and it is
+  // then never reinterpreted: +1 415 555 0132 is eleven digits, exactly like
+  // a Brazilian mobile written locally, and reading it as one would move a
+  // woman in San Francisco to São Paulo.
+  const international = raw.trim().startsWith("+");
+  const digits = raw.replace(/[^\d]/g, "");
+  if (digits.length < 8 || digits.length > 15) throw new Error(`not a phone number: ${JSON.stringify(raw)}`);
+
+  // Brazil, with or without the country code. Ten and eleven digits and no
+  // country code are the local forms: area code plus eight or nine. A bare
+  // ten or eleven digits is read as Brazilian because that is who this
+  // product is for; written with a +, it is not.
+  let national: string | null = null;
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) national = digits.slice(2);
+  else if (!international && !digits.startsWith("55") && (digits.length === 10 || digits.length === 11)) national = digits;
+
+  if (national === null) return `+${digits}`;
+
+  const area = national.slice(0, 2);
+  const subscriber = national.slice(2);
+  // Brazilian area codes run 11 to 99; anything else is not one, and the
+  // number is better left as it came than reshaped on a wrong assumption.
+  if (Number(area) < 11) return `+${digits}`;
+
+  if (subscriber.length === 8 && /^[6-9]/.test(subscriber)) return `+55${area}9${subscriber}`;
+  return `+55${area}${subscriber}`;
+}
