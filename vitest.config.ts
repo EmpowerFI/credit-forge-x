@@ -16,6 +16,7 @@ export default defineConfig({
       "@empowerfi/audit-commitments": path.resolve(__dirname, "./packages/audit-commitments/src/index.ts"),
       "@empowerfi/audit-client": path.resolve(__dirname, "./packages/audit-client/src/generated/index.ts"),
       "@empowerfi/readiness-engine": path.resolve(__dirname, "./packages/readiness-engine/src/index.ts"),
+      "@empowerfi/checkin-insights": path.resolve(__dirname, "./packages/checkin-insights/src/index.ts"),
       "@empowerfi/eligibility-engine": path.resolve(__dirname, "./packages/eligibility-engine/src/index.ts"),
       "@empowerfi/capital-allocation": path.resolve(__dirname, "./packages/capital-allocation/src/index.ts"),
       "@empowerfi/settlement-route": path.resolve(__dirname, "./packages/settlement-route/src/index.ts"),
