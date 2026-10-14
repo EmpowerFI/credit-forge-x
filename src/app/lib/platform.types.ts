@@ -500,6 +500,7 @@ export type Database = {
           opex_cents: number | null
           period: string
           revenue_cents: number
+          source: string
           submitted_by: string | null
         }
         Insert: {
@@ -515,6 +516,7 @@ export type Database = {
           opex_cents?: number | null
           period: string
           revenue_cents: number
+          source?: string
           submitted_by?: string | null
         }
         Update: {
@@ -530,6 +532,7 @@ export type Database = {
           opex_cents?: number | null
           period?: string
           revenue_cents?: number
+          source?: string
           submitted_by?: string | null
         }
         Relationships: [
