@@ -38,6 +38,8 @@ Three things the tests pin that are easy to get wrong: *"não sei"* is an answer
 
 Still to build: issuing the fortnightly invitation (business-initiated, billed, waits on Meta's queue), the baseline, and the report link.
 
+**The daily journal replaces the fortnight** (specification: [`diario.pt-BR.md`](diario.pt-BR.md)). Its foundation is in the database: `journal_entries` (one line per sale or expense, with payment method, à vista or a prazo, and a classification that maps to a simple income statement), `journal_days` (a day is kept when it has a line or she said nothing happened), `journal_dre` for any range of days, `journal_month_status` (a month counts when no calendar week in it misses more than one day), and a daily job that assembles each finished, well-kept month into `checkins` for the readiness engine, unchanged. Still to build on it: the WhatsApp form that writes the lines, streaks and rewards, and the weekly reading. The fortnight tables stay until that form replaces theirs.
+
 An unknown cost is an answer. In the Flow both cost fields may be left blank, and blank arrives as null -- never as zero, which would invent a better month than she had. A month is assembled with an unknown cost if either fortnight did not know it, the reading says the result cannot be calculated, and the readiness engine does not receive that month at all: it does not count as a complete month for credit. Sales and household stay required.
 
 ## `checkin-flow.pt-BR.json`
