@@ -36,7 +36,9 @@ Three things the tests pin that are easy to get wrong: *"não sei"* is an answer
 
 `ai_analyses` holds one reading per month: a retried delivery returns the stored reading without calling the model (AC-03), a model failure becomes the fallback and the month is never sent to the model again (AC-09), and retries stop after three. Prompt version, model, formula version, tokens, cost and -- when the model was refused -- the reasons, which are the sample a human reviews.
 
-Still to build: issuing the fortnightly invitation (business-initiated, billed, waits on Meta's queue), the baseline, the report link, and storing an unknown cost in `checkins` (the columns are `NOT NULL` today, so *"não sei"* cannot yet reach the reading).
+Still to build: issuing the fortnightly invitation (business-initiated, billed, waits on Meta's queue), the baseline, and the report link.
+
+An unknown cost is an answer. In the Flow both cost fields may be left blank, and blank arrives as null -- never as zero, which would invent a better month than she had. A month is assembled with an unknown cost if either fortnight did not know it, the reading says the result cannot be calculated, and the readiness engine does not receive that month at all: it does not count as a complete month for credit. Sales and household stay required.
 
 ## `checkin-flow.pt-BR.json`
 

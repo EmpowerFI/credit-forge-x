@@ -716,11 +716,11 @@ export default function MePage() {
                 <div className="space-y-1">
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
                     <span><span className="text-xs text-muted-foreground">{tr({ en: "Sales", pt: "Vendas" })}</span><br />{money(m.revenue_cents)}</span>
-                    <span><span className="text-xs text-muted-foreground">{tr({ en: "Costs", pt: "Custos" })}</span><br />{money((m.cogs_cents ?? 0) + (m.opex_cents ?? 0))}</span>
+                    <span><span className="text-xs text-muted-foreground">{tr({ en: "Costs", pt: "Custos" })}</span><br />{money(m.cogs_cents === null || m.opex_cents === null ? null : m.cogs_cents + m.opex_cents)}</span>
                     <span><span className="text-xs text-muted-foreground">{tr({ en: "Household", pt: "Despesas da casa" })}</span><br />{money(m.household_cents)}</span>
                     <span>
                       <span className="text-xs text-muted-foreground">{tr({ en: "Business result", pt: "Resultado do negócio" })}</span><br />
-                      <span className={(m.net_business_cents ?? 0) > 0 ? "text-positive" : "text-alert"}>{money(m.net_business_cents)}</span>
+                      <span className={m.net_business_cents === null ? "text-muted-foreground" : m.net_business_cents > 0 ? "text-positive" : "text-alert"}>{money(m.net_business_cents)}</span>
                     </span>
                   </div>
                   <ProofStatus loading={anchors.isPending} label={tr({ en: "Month anchored", pt: "Mês registrado na blockchain" })} anchor={anchorOf(m.checkin_id!)} />

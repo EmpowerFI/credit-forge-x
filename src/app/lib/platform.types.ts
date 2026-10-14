@@ -489,7 +489,7 @@ export type Database = {
       checkins: {
         Row: {
           active_days: number
-          cogs_cents: number
+          cogs_cents: number | null
           created_at: string
           entrepreneur_id: string
           household_cents: number
@@ -497,14 +497,14 @@ export type Database = {
           is_simulated: boolean
           keeps_records: boolean
           note: string | null
-          opex_cents: number
+          opex_cents: number | null
           period: string
           revenue_cents: number
           submitted_by: string | null
         }
         Insert: {
           active_days: number
-          cogs_cents: number
+          cogs_cents?: number | null
           created_at?: string
           entrepreneur_id: string
           household_cents: number
@@ -512,14 +512,14 @@ export type Database = {
           is_simulated?: boolean
           keeps_records: boolean
           note?: string | null
-          opex_cents: number
+          opex_cents?: number | null
           period: string
           revenue_cents: number
           submitted_by?: string | null
         }
         Update: {
           active_days?: number
-          cogs_cents?: number
+          cogs_cents?: number | null
           created_at?: string
           entrepreneur_id?: string
           household_cents?: number
@@ -527,7 +527,7 @@ export type Database = {
           is_simulated?: boolean
           keeps_records?: boolean
           note?: string | null
-          opex_cents?: number
+          opex_cents?: number | null
           period?: string
           revenue_cents?: number
           submitted_by?: string | null
