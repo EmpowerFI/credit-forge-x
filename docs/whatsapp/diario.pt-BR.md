@@ -92,7 +92,7 @@ Há um botão **"hoje não teve movimento"**. Ele conta como dia preenchido. Sem
 | semana 4 completa | perk EmpowerFI, de valor maior |
 | 60 dias | benefício financeiro do parceiro: inicialmente, um **cartão de crédito** |
 
-A lógica é criar a rotina primeiro e só depois falar de dinheiro. Os perks das duas primeiras semanas reforçam o hábito no momento em que ele é mais frágil. O benefício financeiro vem quando o hábito já se mantém sozinho. A pesquisa mais citada sobre formação de hábito (Lally et al., 2009) encontrou uma mediana de **66 dias** até um comportamento ficar automático, com grande variação entre pessoas. Os 60 dias estão nesse ponto.
+A lógica é criar a rotina primeiro e só depois falar de dinheiro. Os perks das duas primeiras semanas reforçam o hábito no momento em que ele é mais frágil. O benefício financeiro vem quando o hábito já se mantém sozinho. A pesquisa mais citada sobre formação de hábito (Lally et al., 2010) encontrou uma mediana de **66 dias** até um comportamento ficar automático, com grande variação entre pessoas. Os 60 dias estão nesse ponto.
 
 **Nenhum crédito antes de 60 dias de diário.** O cartão é oferta do parceiro: quem aprova, e com qual limite, é o parceiro. A EmpowerFI entrega o histórico dela, com o consentimento de compartilhamento, e nunca promete aprovação.
 
