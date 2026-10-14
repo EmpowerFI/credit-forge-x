@@ -81,7 +81,20 @@ Há um botão **"hoje não teve movimento"**. Ele conta como dia preenchido. Sem
 
 - Um dia está **preenchido** quando tem pelo menos um lançamento ou foi marcado "sem movimento".
 - Ela tem **1 dia de tolerância por semana**: faltar um dia não zera a sequência, faltar dois zera.
-- Os marcos (7 dias, 30 dias, 60, 90…) e as recompensas são **configuráveis pelo dashboard**, sem mexer em código.
+- Os marcos e as recompensas são **configuráveis pelo dashboard**, sem mexer em código.
+
+**O programa inicial (decisão da fundadora, 14/10/2026):**
+
+| marco | recompensa |
+|---|---|
+| semana 1 completa | perk EmpowerFI |
+| semana 2 completa | perk EmpowerFI, de valor maior |
+| semana 4 completa | perk EmpowerFI, de valor maior |
+| 60 dias | benefício financeiro do parceiro: inicialmente, um **cartão de crédito** |
+
+A lógica é criar a rotina primeiro e só depois falar de dinheiro. Os perks das duas primeiras semanas reforçam o hábito no momento em que ele é mais frágil. O benefício financeiro vem quando o hábito já se mantém sozinho. A pesquisa mais citada sobre formação de hábito (Lally et al., 2009) encontrou uma mediana de **66 dias** até um comportamento ficar automático, com grande variação entre pessoas. Os 60 dias estão nesse ponto.
+
+**Nenhum crédito antes de 60 dias de diário.** O cartão é oferta do parceiro: quem aprova, e com qual limite, é o parceiro. A EmpowerFI entrega o histórico dela, com o consentimento de compartilhamento, e nunca promete aprovação.
 
 **As recompensas** são brindes e perks de marketing da EmpowerFI, ou benefícios de parceiros. Quando o benefício é do parceiro, um cartão de crédito por exemplo, **quem oferece e quem decide é o parceiro**. A EmpowerFI não concede crédito e não promete aprovação. A mensagem diz que o benefício é oferecido pelo parceiro. Antes de qualquer dado dela ir para um parceiro, ela precisa ter dado o **consentimento de compartilhamento**, que já existe no cadastro.
 
@@ -123,6 +136,8 @@ O dashboard trabalha com dois bancos, e este desenho segue o padrão que ele já
 Respondidas em 14/10/2026: a lista de classificações fica como está e evolui se for preciso; registrar **ontem** basta; a taxa da maquininha é declarada por ela e checada por nós (seção 3).
 
 Ainda em aberto:
+
+0. **60 dias e o motor de prontidão.** Hoje o motor de prontidão da EmpowerFI exige **3 meses** de histórico. Aos 60 dias ela tem 2. Proposta: o cartão aos 60 dias é decisão do parceiro, a partir do histórico compartilhado, e a avaliação de prontidão da EmpowerFI continua exigindo 3 meses. A alternativa seria baixar o motor para 2 meses.
 
 1. **Os 30 dias.** Um mês civil tem de 28 a 31 dias, e a tolerância permite faltar 1 dia por semana. Qual regra vale?
    - **(a)** o mês vale se não tiver falha além da tolerância: em fevereiro, por exemplo, 24 de 28 dias já bastam; ou
