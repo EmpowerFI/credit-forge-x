@@ -44,7 +44,7 @@ Um mesmo dia pode ter vários lançamentos. Também vale mandar o **total do dia
 
 O equipamento fica fora do resultado de propósito. Se uma máquina de R$ 1.500 entrasse como despesa, o mês da compra pareceria um prejuízo. O mesmo vale para a parcela de um empréstimo: o valor pago é dívida, não custo do negócio.
 
-> **Para a conselheira:** esta lista e os grupos estão corretos para o público? Falta alguma classificação comum?
+*Validado com a conselheira em 14/10/2026: a lista começa assim e evolui se for preciso.*
 
 ## 3. O DRE que sai do diário
 
@@ -67,7 +67,11 @@ Nas mensagens para ela, a palavra é **"resultado"**, nunca "lucro". A regra já
 
 **Para o motor de crédito, nada muda.** Ele continua recebendo um mês montado, só que agora montado a partir dos lançamentos e não de uma lembrança. O mês só conta para crédito se tiver **dias preenchidos suficientes**.
 
-> **Para a conselheira:** quantos dias preenchidos fazem um mês valer? A proposta é **20 dias**, contando os dias marcados "sem movimento".
+*Decisão (14/10/2026): o mínimo é **30 dias preenchidos**, contando os dias marcados "sem movimento". Falta definir como isso se aplica a meses mais curtos e à tolerância semanal (veja a seção 10).*
+
+### A taxa da maquininha
+
+**Ela declara a taxa como gasto.** Nós não calculamos por ela. O código faz uma **checagem de coerência**: se ela vendeu no cartão no período, a taxa declarada deve ficar dentro de uma faixa plausível sobre essas vendas. Se ficar fora da faixa, ou se não houver taxa nenhuma, nada é corrigido e ninguém é punido. A divergência entra como **inconsistência**, o mesmo sinal que o motor de prontidão já usa e que pesa na **confiança** mostrada para a análise e para os parceiros. A faixa é um parâmetro configurável, não um número fixo no código.
 
 ## 4. O dia sem movimento
 
@@ -116,7 +120,10 @@ O dashboard trabalha com dois bancos, e este desenho segue o padrão que ele já
 
 ## 10. Perguntas abertas para a conselheira
 
-1. A lista de classificações (seção 2) está completa e os grupos estão certos?
-2. Quantos dias preenchidos fazem um mês valer para crédito (proposta: 20)?
-3. Registrar **ontem** basta, ou ela precisa poder corrigir dias mais antigos?
-4. A taxa da maquininha deve ser lançada por ela ou calculada por nós a partir das vendas no cartão?
+Respondidas em 14/10/2026: a lista de classificações fica como está e evolui se for preciso; registrar **ontem** basta; a taxa da maquininha é declarada por ela e checada por nós (seção 3).
+
+Ainda em aberto:
+
+1. **Os 30 dias.** Um mês civil tem de 28 a 31 dias, e a tolerância permite faltar 1 dia por semana. Qual regra vale?
+   - **(a)** o mês vale se não tiver falha além da tolerância: em fevereiro, por exemplo, 24 de 28 dias já bastam; ou
+   - **(b)** a empreendedora precisa de **30 dias seguidos** de diário, contando a tolerância, antes que o primeiro mês conte para crédito. Daí em diante, cada mês vale pela regra (a).
