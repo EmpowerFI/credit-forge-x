@@ -107,7 +107,7 @@ A lógica é criar a rotina primeiro e só depois falar de dinheiro. Os perks da
 | a cada lançamento | confirmação, uma frase de incentivo e o status: *"faltam 2 dias para a recompensa da semana"* | **texto fixo, sem IA**: chega na hora, não custa nada e nunca erra a conta |
 | ao atingir um marco | a recompensa e como resgatar | texto fixo |
 | fim de cada semana | a leitura da semana: resumo, até duas observações, uma ação prática | **IA**, com as mesmas travas da leitura mensal |
-| todo dia, no horário escolhido por ela | lembrete, se ela ainda não preencheu | template aprovado pela Meta |
+| todo dia às **9h** | lembrete para registrar **o dia anterior**, se ela ainda não registrou. De manhã, porque à noite ela está cansada (decisão da fundadora, 15/10/2026) | template aprovado pela Meta |
 
 As travas da leitura com IA continuam as mesmas: a IA não inventa números, não fala de crédito nem de empréstimo, não vê nome nem telefone, e existe sempre uma leitura de reserva escrita sem IA.
 

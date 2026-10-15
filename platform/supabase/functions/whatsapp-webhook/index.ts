@@ -24,14 +24,20 @@
 // numbers into the PII scan's search set before the first real one is kept,
 // and that has not happened yet.
 //
-// Secrets: WHATSAPP_VERIFY_TOKEN, WHATSAPP_APP_SECRET; SUPABASE_URL and
-// SUPABASE_SERVICE_ROLE_KEY from the runtime.
+// Secrets: WHATSAPP_VERIFY_TOKEN, WHATSAPP_APP_SECRET; to answer her,
+// WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID, and WHATSAPP_JOURNAL_FLOW_ID
+// for the daily form; SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY from the
+// runtime.
 
 import { createClient } from "@supabase/supabase-js";
 import {
   canonicalPhone, flowReplies, parseFlowReply, sendTextRequest, signatureMatches, textMessages,
 } from "../_shared/whatsapp.ts";
 import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/conversation.ts";
+import {
+  addDays, buttonReplies, confirmationText, type DaySummary, EMPTY_FORM_TEXT, isJournalReply, isQuietText,
+  type JournalLine, parseJournalReply, QUIET_YESTERDAY, refusedText, sendFlowRequest, sentAtOf, spDate,
+} from "../_shared/journal.ts";
 
 const env = (name: string): string => {
   const value = Deno.env.get(name);
@@ -66,6 +72,86 @@ async function sendText(to: string, body: string): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+/**
+ * Opens the daily form for her, if this deployment knows the form's id.
+ * Like sendText, a missing setting is a line in the log, not a refusal.
+ */
+async function sendJournalForm(to: string): Promise<boolean> {
+  const token = Deno.env.get("WHATSAPP_TOKEN");
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+  const flowId = Deno.env.get("WHATSAPP_JOURNAL_FLOW_ID");
+  if (!token || !phoneNumberId || !flowId) {
+    console.warn("not sending the form: WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_JOURNAL_FLOW_ID not set");
+    return false;
+  }
+  const { url, init } = sendFlowRequest(phoneNumberId, to, flowId, "Registro do dia 📒");
+  const headers = { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` };
+  const response = await fetch(url, { ...init, headers });
+  if (!response.ok) {
+    console.error("form send failed", response.status, await response.text());
+    return false;
+  }
+  return true;
+}
+
+/** The database's refusals, in words she can act on. */
+function inHerWords(message: string): string {
+  if (message.includes("on the day or the day after")) return "só dá para registrar o dia de hoje ou o de ontem";
+  if (message.includes("already has lines")) return "esse dia já tem vendas ou gastos registrados";
+  return "algum valor do formulário não está certo";
+}
+
+/**
+ * Writes one message's worth of a day and tells her what is now recorded.
+ * Returns the outcome for the delivery log.
+ */
+async function recordDay(
+  from: string,
+  messageId: string,
+  day: string,
+  sentAt: Date,
+  lines: JournalLine[] | "quiet",
+): Promise<Outcome> {
+  let phone: string;
+  try {
+    phone = canonicalPhone(from);
+  } catch (error) {
+    return { message_id: messageId, status: "unreadable", detail: String(error) };
+  }
+  const { data: entrepreneurId, error: whoError } = await db.rpc("whatsapp_entrepreneur_for", { p_e164: phone });
+  if (whoError) return { message_id: messageId, status: "refused", detail: whoError.message };
+  if (!entrepreneurId) {
+    await sendText(phone, "Ainda não encontrei o seu cadastro. Escreva OI para começar. 💜");
+    return { message_id: messageId, status: "unknown_sender" };
+  }
+
+  const { data, error } = await db.rpc("journal_record", {
+    p_entrepreneur_id: entrepreneurId,
+    p_message_id: messageId,
+    p_day: day,
+    p_entries: lines === "quiet" ? [] : lines,
+    p_no_activity: lines === "quiet",
+  });
+  if (error) {
+    console.error("journal refused", messageId, error.message);
+    await sendText(phone, refusedText(inHerWords(error.message)));
+    return { message_id: messageId, status: "refused", detail: error.message };
+  }
+  const status = String((data as { status?: unknown })?.status ?? "recorded");
+  if (status === "duplicate") return { message_id: messageId, status };
+
+  const { data: summary, error: sumError } = await db.rpc("journal_day_summary", {
+    p_entrepreneur_id: entrepreneurId,
+    p_day: day,
+  });
+  if (sumError) {
+    console.error("no summary", messageId, sumError.message);
+  } else {
+    await sendText(phone, confirmationText(day, sentAt, summary as DaySummary));
+  }
+  return { message_id: messageId, status: `journal:${status}` };
 }
 
 /** Meta's one-time handshake: echo the challenge, in plain text, only for our own verify token. */
@@ -143,6 +229,7 @@ Deno.serve(async (req) => {
 
   const replies = flowReplies(body);
   const texts = textMessages(body);
+  const buttons = buttonReplies(body);
   const outcomes: Outcome[] = [];
 
   // The entry conversation. One question at a time, and the row it reads is
@@ -180,6 +267,16 @@ Deno.serve(async (req) => {
     }
 
     const conversation = row as Conversation;
+
+    // Enrolled, and telling us yesterday was quiet in words rather than with
+    // the button. Its own id: this message is already marked as seen above,
+    // and journal_record recognises retries by id too.
+    if (conversation.state === "ACTIVE" && isQuietText(message.text)) {
+      const now = new Date();
+      outcomes.push(await recordDay(message.from, `${message.messageId}:quiet`, addDays(spDate(now), -1), now, "quiet"));
+      continue;
+    }
+
     const turn = advance(conversation, message.text);
 
     // Enrolling first: if it fails she must not be left recorded as ACTIVE
@@ -210,13 +307,56 @@ Deno.serve(async (req) => {
     }
 
     for (const text of turn.say) await sendText(phone, text);
+    if (turn.offerJournal) await sendJournalForm(phone);
     outcomes.push({
       message_id: message.messageId,
       status: turn.completed ? "enrolled" : `conversation:${turn.next.state}`,
     });
   }
 
+  // "Ontem não teve movimento", tapped on the nine o'clock reminder.
+  for (const button of buttons) {
+    if (button.payload !== QUIET_YESTERDAY) {
+      outcomes.push({ message_id: button.messageId, status: "ignored", detail: button.payload });
+      continue;
+    }
+    try {
+      outcomes.push(await recordDay(button.from, button.messageId, addDays(spDate(button.sentAt), -1), button.sentAt, "quiet"));
+    } catch (error) {
+      outcomes.push({ message_id: button.messageId, status: "unreadable", detail: String(error) });
+    }
+  }
+
   for (const reply of replies) {
+    // The daily form. The fortnight form below stays until it is retired.
+    if (isJournalReply(reply.responseJson)) {
+      if (!reply.from) {
+        outcomes.push({ message_id: reply.messageId, status: "unreadable", detail: "no sender" });
+        continue;
+      }
+      const sentAt = sentAtOf(reply.timestamp);
+      let parsed;
+      try {
+        parsed = parseJournalReply(reply.responseJson, sentAt);
+      } catch (error) {
+        // The parser's reasons are written in Portuguese, for her.
+        console.error("unreadable daily form", reply.messageId, String(error));
+        const reason = error instanceof Error ? error.message : String(error);
+        const { data: isNew } = await db.rpc("whatsapp_message_is_new", { p_message_id: reply.messageId });
+        if (isNew) await sendText(canonicalPhone(reply.from), refusedText(reason));
+        outcomes.push({ message_id: reply.messageId, status: "unreadable", detail: reason });
+        continue;
+      }
+      if (parsed.lines.length === 0) {
+        const { data: isNew } = await db.rpc("whatsapp_message_is_new", { p_message_id: reply.messageId });
+        if (isNew) await sendText(canonicalPhone(reply.from), EMPTY_FORM_TEXT);
+        outcomes.push({ message_id: reply.messageId, status: "empty_form" });
+        continue;
+      }
+      outcomes.push(await recordDay(reply.from, reply.messageId, parsed.day, sentAt, parsed.lines));
+      continue;
+    }
+
     let half;
     try {
       half = parseFlowReply(reply.responseJson);

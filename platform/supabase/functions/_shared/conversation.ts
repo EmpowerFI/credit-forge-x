@@ -47,6 +47,8 @@ export interface Turn {
   completed?: boolean;
   /** Set on the turn where she consents, so the caller can record it. */
   consented?: boolean;
+  /** Set when the daily form should follow the text: she is enrolled and can use it. */
+  offerJournal?: boolean;
 }
 
 export const CONSENT_TEXT_VERSION = "whatsapp-2026-10";
@@ -77,10 +79,10 @@ const SAY = {
   askSectorAgain: "Me conta em poucas palavras o que você vende ou faz.",
   askSince: "Há quanto tempo você trabalha com isso? Pode responder 3 anos, 8 meses, ou NÃO SEI.",
   askSinceAgain: "Pode ser 3 anos, 8 meses, ou NÃO SEI.",
-  done: "Pronto! 🎉 Já está tudo certo.\n\nDaqui a pouco eu te mando a primeira pergunta sobre a sua quinzena. Leva menos de dois minutos.",
+  done: "Pronto! 🎉 Já está tudo certo.\n\nTodo dia às 9h eu te lembro de registrar as vendas e os gastos do dia anterior. Leva um minuto.\n\nQuer começar agora? É só tocar no botão.",
   help: "Eu sou o acompanhamento da EmpowerFI.\n\nEscreva AJUDA para ver isto de novo, ou SAIR para parar de receber mensagens.\n\nSe estiver no meio de uma pergunta, é só responder que a gente continua de onde parou.",
   left: "Pronto, parei por aqui. Você não vai receber mais mensagens. Para voltar, é só escrever. 💜",
-  alreadyActive: "Você já está cadastrada 💜 Escreva AJUDA se precisar de alguma coisa.",
+  alreadyActive: "Para registrar o dia, toque no botão. Se não teve movimento, escreva SEM MOVIMENTO. 💜",
 } as const;
 
 // ------------------------------------------------------------------ parsing
@@ -210,6 +212,7 @@ export function advance(conv: Conversation, incoming: string): Turn {
             next: { state: "ACTIVE", step: null, draft: { ...conv.draft, months_operating: months } },
             say: [SAY.done],
             completed: true,
+            offerJournal: true,
           };
         }
         default:
@@ -220,6 +223,6 @@ export function advance(conv: Conversation, incoming: string): Turn {
     }
 
     case "ACTIVE":
-      return keep([SAY.alreadyActive]);
+      return { next: conv, say: [SAY.alreadyActive], offerJournal: true };
   }
 }

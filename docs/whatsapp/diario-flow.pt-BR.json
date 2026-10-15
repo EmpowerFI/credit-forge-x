@@ -1,0 +1,808 @@
+{
+  "version": "6.0",
+  "screens": [
+    {
+      "id": "VENDAS",
+      "title": "Registro do dia",
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "RadioButtonsGroup",
+            "name": "day",
+            "label": "De que dia é este registro?",
+            "required": true,
+            "init-value": "yesterday",
+            "data-source": [
+              {
+                "id": "yesterday",
+                "title": "Ontem"
+              },
+              {
+                "id": "today",
+                "title": "Hoje"
+              }
+            ]
+          },
+          {
+            "type": "TextBody",
+            "text": "Quanto você vendeu em cada forma de pagamento? Deixe em branco o que não teve."
+          },
+          {
+            "type": "TextInput",
+            "name": "sale_pix",
+            "label": "Pix",
+            "input-type": "number",
+            "required": false
+          },
+          {
+            "type": "TextInput",
+            "name": "sale_cash",
+            "label": "Dinheiro",
+            "input-type": "number",
+            "required": false
+          },
+          {
+            "type": "TextInput",
+            "name": "sale_debit",
+            "label": "Cartão de débito",
+            "input-type": "number",
+            "required": false
+          },
+          {
+            "type": "TextInput",
+            "name": "sale_credit",
+            "label": "Cartão de crédito",
+            "input-type": "number",
+            "required": false
+          },
+          {
+            "type": "If",
+            "condition": "${form.sale_credit} != ''",
+            "then": [
+              {
+                "type": "DatePicker",
+                "name": "sale_credit_due",
+                "label": "Quando vai receber do cartão?",
+                "required": true
+              }
+            ]
+          },
+          {
+            "type": "TextInput",
+            "name": "sale_fiado",
+            "label": "Fiado",
+            "input-type": "number",
+            "required": false
+          },
+          {
+            "type": "If",
+            "condition": "${form.sale_fiado} != ''",
+            "then": [
+              {
+                "type": "DatePicker",
+                "name": "sale_fiado_due",
+                "label": "Quando vai receber do fiado?",
+                "required": true
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Continuar",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "GASTO_1"
+              },
+              "payload": {
+                "day": "${form.day}",
+                "sale_pix": "${form.sale_pix}",
+                "sale_cash": "${form.sale_cash}",
+                "sale_debit": "${form.sale_debit}",
+                "sale_credit": "${form.sale_credit}",
+                "sale_credit_due": "${form.sale_credit_due}",
+                "sale_fiado": "${form.sale_fiado}",
+                "sale_fiado_due": "${form.sale_fiado_due}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "GASTO_1",
+      "title": "Gastos do dia",
+      "terminal": true,
+      "data": {
+        "day": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_pix": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_cash": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_debit": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_credit": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_credit_due": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_fiado": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_fiado_due": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "Teve algum gasto? Se não teve, é só tocar em Enviar."
+          },
+          {
+            "type": "Dropdown",
+            "name": "exp1_category",
+            "label": "Tipo de gasto",
+            "required": false,
+            "data-source": [
+              {
+                "id": "stock",
+                "title": "Mercadoria ou matéria-prima"
+              },
+              {
+                "id": "packaging",
+                "title": "Embalagem"
+              },
+              {
+                "id": "fees",
+                "title": "Taxas (maquininha, app)"
+              },
+              {
+                "id": "transport",
+                "title": "Transporte e entrega"
+              },
+              {
+                "id": "rent_utilities",
+                "title": "Aluguel, água, luz, internet"
+              },
+              {
+                "id": "marketing",
+                "title": "Divulgação"
+              },
+              {
+                "id": "staff",
+                "title": "Ajudante ou funcionário"
+              },
+              {
+                "id": "withdrawal",
+                "title": "Retirada para casa"
+              },
+              {
+                "id": "equipment",
+                "title": "Equipamento"
+              },
+              {
+                "id": "debt",
+                "title": "Parcela de empréstimo"
+              },
+              {
+                "id": "other",
+                "title": "Outro gasto do negócio"
+              }
+            ]
+          },
+          {
+            "type": "TextInput",
+            "name": "exp1_amount",
+            "label": "Valor",
+            "input-type": "number",
+            "required": false
+          },
+          {
+            "type": "Dropdown",
+            "name": "exp1_method",
+            "label": "Como pagou",
+            "required": false,
+            "data-source": [
+              {
+                "id": "pix",
+                "title": "Pix"
+              },
+              {
+                "id": "cash",
+                "title": "Dinheiro"
+              },
+              {
+                "id": "debit_card",
+                "title": "Cartão de débito"
+              },
+              {
+                "id": "credit_card",
+                "title": "Cartão de crédito"
+              },
+              {
+                "id": "fiado",
+                "title": "Fiado"
+              }
+            ]
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "exp1_paid_now",
+            "label": "Pagou à vista?",
+            "required": false,
+            "init-value": "yes",
+            "data-source": [
+              {
+                "id": "yes",
+                "title": "Sim"
+              },
+              {
+                "id": "no",
+                "title": "Não, vou pagar depois"
+              }
+            ]
+          },
+          {
+            "type": "If",
+            "condition": "${form.exp1_paid_now} == 'no'",
+            "then": [
+              {
+                "type": "DatePicker",
+                "name": "exp1_due",
+                "label": "Quando vai pagar?",
+                "required": true
+              }
+            ]
+          },
+          {
+            "type": "EmbeddedLink",
+            "text": "Adicionar outro gasto",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "GASTO_2"
+              },
+              "payload": {
+                "day": "${data.day}",
+                "sale_pix": "${data.sale_pix}",
+                "sale_cash": "${data.sale_cash}",
+                "sale_debit": "${data.sale_debit}",
+                "sale_credit": "${data.sale_credit}",
+                "sale_credit_due": "${data.sale_credit_due}",
+                "sale_fiado": "${data.sale_fiado}",
+                "sale_fiado_due": "${data.sale_fiado_due}",
+                "exp1_category": "${form.exp1_category}",
+                "exp1_amount": "${form.exp1_amount}",
+                "exp1_method": "${form.exp1_method}",
+                "exp1_paid_now": "${form.exp1_paid_now}",
+                "exp1_due": "${form.exp1_due}"
+              }
+            }
+          },
+          {
+            "type": "Footer",
+            "label": "Enviar",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "form": "diario",
+                "day": "${data.day}",
+                "sale_pix": "${data.sale_pix}",
+                "sale_cash": "${data.sale_cash}",
+                "sale_debit": "${data.sale_debit}",
+                "sale_credit": "${data.sale_credit}",
+                "sale_credit_due": "${data.sale_credit_due}",
+                "sale_fiado": "${data.sale_fiado}",
+                "sale_fiado_due": "${data.sale_fiado_due}",
+                "exp1_category": "${form.exp1_category}",
+                "exp1_amount": "${form.exp1_amount}",
+                "exp1_method": "${form.exp1_method}",
+                "exp1_paid_now": "${form.exp1_paid_now}",
+                "exp1_due": "${form.exp1_due}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "GASTO_2",
+      "title": "Gasto 2",
+      "terminal": true,
+      "data": {
+        "day": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_pix": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_cash": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_debit": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_credit": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_credit_due": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_fiado": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_fiado_due": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_category": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_amount": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_method": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_paid_now": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_due": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "Mais um gasto:"
+          },
+          {
+            "type": "Dropdown",
+            "name": "exp2_category",
+            "label": "Tipo de gasto",
+            "required": false,
+            "data-source": [
+              {
+                "id": "stock",
+                "title": "Mercadoria ou matéria-prima"
+              },
+              {
+                "id": "packaging",
+                "title": "Embalagem"
+              },
+              {
+                "id": "fees",
+                "title": "Taxas (maquininha, app)"
+              },
+              {
+                "id": "transport",
+                "title": "Transporte e entrega"
+              },
+              {
+                "id": "rent_utilities",
+                "title": "Aluguel, água, luz, internet"
+              },
+              {
+                "id": "marketing",
+                "title": "Divulgação"
+              },
+              {
+                "id": "staff",
+                "title": "Ajudante ou funcionário"
+              },
+              {
+                "id": "withdrawal",
+                "title": "Retirada para casa"
+              },
+              {
+                "id": "equipment",
+                "title": "Equipamento"
+              },
+              {
+                "id": "debt",
+                "title": "Parcela de empréstimo"
+              },
+              {
+                "id": "other",
+                "title": "Outro gasto do negócio"
+              }
+            ]
+          },
+          {
+            "type": "TextInput",
+            "name": "exp2_amount",
+            "label": "Valor",
+            "input-type": "number",
+            "required": false
+          },
+          {
+            "type": "Dropdown",
+            "name": "exp2_method",
+            "label": "Como pagou",
+            "required": false,
+            "data-source": [
+              {
+                "id": "pix",
+                "title": "Pix"
+              },
+              {
+                "id": "cash",
+                "title": "Dinheiro"
+              },
+              {
+                "id": "debit_card",
+                "title": "Cartão de débito"
+              },
+              {
+                "id": "credit_card",
+                "title": "Cartão de crédito"
+              },
+              {
+                "id": "fiado",
+                "title": "Fiado"
+              }
+            ]
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "exp2_paid_now",
+            "label": "Pagou à vista?",
+            "required": false,
+            "init-value": "yes",
+            "data-source": [
+              {
+                "id": "yes",
+                "title": "Sim"
+              },
+              {
+                "id": "no",
+                "title": "Não, vou pagar depois"
+              }
+            ]
+          },
+          {
+            "type": "If",
+            "condition": "${form.exp2_paid_now} == 'no'",
+            "then": [
+              {
+                "type": "DatePicker",
+                "name": "exp2_due",
+                "label": "Quando vai pagar?",
+                "required": true
+              }
+            ]
+          },
+          {
+            "type": "EmbeddedLink",
+            "text": "Adicionar outro gasto",
+            "on-click-action": {
+              "name": "navigate",
+              "next": {
+                "type": "screen",
+                "name": "GASTO_3"
+              },
+              "payload": {
+                "day": "${data.day}",
+                "sale_pix": "${data.sale_pix}",
+                "sale_cash": "${data.sale_cash}",
+                "sale_debit": "${data.sale_debit}",
+                "sale_credit": "${data.sale_credit}",
+                "sale_credit_due": "${data.sale_credit_due}",
+                "sale_fiado": "${data.sale_fiado}",
+                "sale_fiado_due": "${data.sale_fiado_due}",
+                "exp1_category": "${data.exp1_category}",
+                "exp1_amount": "${data.exp1_amount}",
+                "exp1_method": "${data.exp1_method}",
+                "exp1_paid_now": "${data.exp1_paid_now}",
+                "exp1_due": "${data.exp1_due}",
+                "exp2_category": "${form.exp2_category}",
+                "exp2_amount": "${form.exp2_amount}",
+                "exp2_method": "${form.exp2_method}",
+                "exp2_paid_now": "${form.exp2_paid_now}",
+                "exp2_due": "${form.exp2_due}"
+              }
+            }
+          },
+          {
+            "type": "Footer",
+            "label": "Enviar",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "form": "diario",
+                "day": "${data.day}",
+                "sale_pix": "${data.sale_pix}",
+                "sale_cash": "${data.sale_cash}",
+                "sale_debit": "${data.sale_debit}",
+                "sale_credit": "${data.sale_credit}",
+                "sale_credit_due": "${data.sale_credit_due}",
+                "sale_fiado": "${data.sale_fiado}",
+                "sale_fiado_due": "${data.sale_fiado_due}",
+                "exp1_category": "${data.exp1_category}",
+                "exp1_amount": "${data.exp1_amount}",
+                "exp1_method": "${data.exp1_method}",
+                "exp1_paid_now": "${data.exp1_paid_now}",
+                "exp1_due": "${data.exp1_due}",
+                "exp2_category": "${form.exp2_category}",
+                "exp2_amount": "${form.exp2_amount}",
+                "exp2_method": "${form.exp2_method}",
+                "exp2_paid_now": "${form.exp2_paid_now}",
+                "exp2_due": "${form.exp2_due}"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "GASTO_3",
+      "title": "Gasto 3",
+      "terminal": true,
+      "data": {
+        "day": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_pix": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_cash": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_debit": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_credit": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_credit_due": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_fiado": {
+          "type": "string",
+          "__example__": ""
+        },
+        "sale_fiado_due": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_category": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_amount": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_method": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_paid_now": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_due": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp2_category": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp2_amount": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp2_method": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp2_paid_now": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp2_due": {
+          "type": "string",
+          "__example__": ""
+        }
+      },
+      "layout": {
+        "type": "SingleColumnLayout",
+        "children": [
+          {
+            "type": "TextBody",
+            "text": "Mais um gasto:"
+          },
+          {
+            "type": "Dropdown",
+            "name": "exp3_category",
+            "label": "Tipo de gasto",
+            "required": false,
+            "data-source": [
+              {
+                "id": "stock",
+                "title": "Mercadoria ou matéria-prima"
+              },
+              {
+                "id": "packaging",
+                "title": "Embalagem"
+              },
+              {
+                "id": "fees",
+                "title": "Taxas (maquininha, app)"
+              },
+              {
+                "id": "transport",
+                "title": "Transporte e entrega"
+              },
+              {
+                "id": "rent_utilities",
+                "title": "Aluguel, água, luz, internet"
+              },
+              {
+                "id": "marketing",
+                "title": "Divulgação"
+              },
+              {
+                "id": "staff",
+                "title": "Ajudante ou funcionário"
+              },
+              {
+                "id": "withdrawal",
+                "title": "Retirada para casa"
+              },
+              {
+                "id": "equipment",
+                "title": "Equipamento"
+              },
+              {
+                "id": "debt",
+                "title": "Parcela de empréstimo"
+              },
+              {
+                "id": "other",
+                "title": "Outro gasto do negócio"
+              }
+            ]
+          },
+          {
+            "type": "TextInput",
+            "name": "exp3_amount",
+            "label": "Valor",
+            "input-type": "number",
+            "required": false
+          },
+          {
+            "type": "Dropdown",
+            "name": "exp3_method",
+            "label": "Como pagou",
+            "required": false,
+            "data-source": [
+              {
+                "id": "pix",
+                "title": "Pix"
+              },
+              {
+                "id": "cash",
+                "title": "Dinheiro"
+              },
+              {
+                "id": "debit_card",
+                "title": "Cartão de débito"
+              },
+              {
+                "id": "credit_card",
+                "title": "Cartão de crédito"
+              },
+              {
+                "id": "fiado",
+                "title": "Fiado"
+              }
+            ]
+          },
+          {
+            "type": "RadioButtonsGroup",
+            "name": "exp3_paid_now",
+            "label": "Pagou à vista?",
+            "required": false,
+            "init-value": "yes",
+            "data-source": [
+              {
+                "id": "yes",
+                "title": "Sim"
+              },
+              {
+                "id": "no",
+                "title": "Não, vou pagar depois"
+              }
+            ]
+          },
+          {
+            "type": "If",
+            "condition": "${form.exp3_paid_now} == 'no'",
+            "then": [
+              {
+                "type": "DatePicker",
+                "name": "exp3_due",
+                "label": "Quando vai pagar?",
+                "required": true
+              }
+            ]
+          },
+          {
+            "type": "Footer",
+            "label": "Enviar",
+            "on-click-action": {
+              "name": "complete",
+              "payload": {
+                "form": "diario",
+                "day": "${data.day}",
+                "sale_pix": "${data.sale_pix}",
+                "sale_cash": "${data.sale_cash}",
+                "sale_debit": "${data.sale_debit}",
+                "sale_credit": "${data.sale_credit}",
+                "sale_credit_due": "${data.sale_credit_due}",
+                "sale_fiado": "${data.sale_fiado}",
+                "sale_fiado_due": "${data.sale_fiado_due}",
+                "exp1_category": "${data.exp1_category}",
+                "exp1_amount": "${data.exp1_amount}",
+                "exp1_method": "${data.exp1_method}",
+                "exp1_paid_now": "${data.exp1_paid_now}",
+                "exp1_due": "${data.exp1_due}",
+                "exp2_category": "${data.exp2_category}",
+                "exp2_amount": "${data.exp2_amount}",
+                "exp2_method": "${data.exp2_method}",
+                "exp2_paid_now": "${data.exp2_paid_now}",
+                "exp2_due": "${data.exp2_due}",
+                "exp3_category": "${form.exp3_category}",
+                "exp3_amount": "${form.exp3_amount}",
+                "exp3_method": "${form.exp3_method}",
+                "exp3_paid_now": "${form.exp3_paid_now}",
+                "exp3_due": "${form.exp3_due}"
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

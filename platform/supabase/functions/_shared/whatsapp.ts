@@ -33,6 +33,8 @@ export interface FlowReply {
   responseJson: string;
   /** Meta's wa_id for whoever answered -- where the month's reading goes back to. */
   from: string | null;
+  /** Meta's "timestamp": when she pressed send, in unix seconds, as Meta wrote it. */
+  timestamp: string | null;
 }
 
 /** The same ceiling the checkins table carries: a hundred million reais is not a figure, it is a bug. */
@@ -174,12 +176,18 @@ export function flowReplies(body: unknown): FlowReply[] {
         const m = message as {
           id?: unknown;
           from?: unknown;
+          timestamp?: unknown;
           interactive?: { type?: unknown; nfm_reply?: { response_json?: unknown } };
         };
         if (m?.interactive?.type !== "nfm_reply") continue;
         const responseJson = m.interactive.nfm_reply?.response_json;
         if (typeof m.id !== "string" || typeof responseJson !== "string") continue;
-        out.push({ messageId: m.id, responseJson, from: typeof m.from === "string" ? m.from : null });
+        out.push({
+          messageId: m.id,
+          responseJson,
+          from: typeof m.from === "string" ? m.from : null,
+          timestamp: typeof m.timestamp === "string" ? m.timestamp : null,
+        });
       }
     }
   }
