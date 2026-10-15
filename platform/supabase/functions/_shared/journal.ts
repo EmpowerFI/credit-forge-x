@@ -270,19 +270,86 @@ export interface DaySummary {
   week_days: number;
 }
 
+/** A milestone, as journal_progress and whatsapp_partner_consent return it. */
+export interface Milestone {
+  code: string;
+  kind: "perk" | "partner_benefit";
+  title: string;
+  how_to_redeem: string | null;
+  partner_name: string | null;
+  threshold_days: number;
+  status?: "granted" | "awaiting_consent";
+}
+
+export interface Progress {
+  streak_days: number;
+  streak_started_on: string | null;
+  earned: Milestone[];
+  next: { code: string; title: string; kind: string; threshold_days: number; days_left: number } | null;
+}
+
+/** Seven days is "1 semana", twenty-eight is "4 semanas", sixty is "60 dias". */
+export function span(days: number): string {
+  if (days % 7 === 0 && days <= 56) return days === 7 ? "1 semana" : `${days / 7} semanas`;
+  return days === 1 ? "1 dia" : `${days} dias`;
+}
+
 /**
  * What she reads the moment the form is in. Fixed text, not a model: it
  * arrives at once, costs nothing, and its sums are the database's.
  */
-export function confirmationText(day: string, sentAt: Date, s: DaySummary): string {
+export function confirmationText(day: string, sentAt: Date, s: DaySummary, p?: Progress | null): string {
   const which = day === spDate(sentAt) ? "Hoje" : "Ontem";
   const head = s.quiet
     ? `Anotado ✅ ${which} não teve movimento.`
     : `Registrado ✅ ${which}: R$ ${formatBRL(s.sales_cents)} em vendas e R$ ${formatBRL(s.expenses_cents)} em gastos.`;
-  const week = s.week_kept === s.week_days
-    ? `Você registrou todos os ${s.week_days === 1 ? "dias" : `${s.week_days} dias`} desta semana até agora. 💜`
-    : `Nesta semana você registrou ${s.week_kept} de ${s.week_days} dias.`;
-  return `${head}\n${week}\n\nTeve mais algum gasto? É só mandar o formulário de novo, que soma.`;
+  let progress: string;
+  if (p && p.streak_days > 0) {
+    progress = `🔥 ${p.streak_days === 1 ? "1 dia" : `${p.streak_days} dias`} seguidos registrando.`;
+    // The milestone just earned is announced in its own message; "next" is
+    // already the one after it.
+    if (p.next && p.next.days_left > 0) {
+      progress += `\nFaltam ${p.next.days_left === 1 ? "1 dia" : `${p.next.days_left} dias`} para: ${p.next.title}.`;
+    }
+  } else {
+    progress = s.week_kept === s.week_days
+      ? `Você registrou todos os ${s.week_days === 1 ? "dias" : `${s.week_days} dias`} desta semana até agora. 💜`
+      : `Nesta semana você registrou ${s.week_kept} de ${s.week_days} dias.`;
+  }
+  return `${head}\n${progress}\n\nTeve mais algum gasto? É só mandar o formulário de novo, que soma.`;
+}
+
+/** The message for a milestone she has just reached. */
+export function earnedText(m: Milestone): string {
+  if (m.kind === "perk") {
+    return [`🎁 Você completou ${span(m.threshold_days)} registrando o seu negócio!`, `Ganhou: *${m.title}*.`, m.how_to_redeem]
+      .filter(Boolean).join("\n");
+  }
+  // A partner's benefit is the partner's: whose offer, and who decides, is
+  // said every time, and nothing is promised.
+  const partner = m.partner_name ?? "o parceiro";
+  const lines = [
+    `🎉 ${span(m.threshold_days)} registrando! Você liberou: *${m.title}*, uma oferta de ${partner}.`,
+    `Quem analisa e decide a oferta é ${partner}, não a EmpowerFI.`,
+  ];
+  if (m.status === "awaiting_consent") {
+    lines.push(
+      "",
+      `Para analisar, ${partner} precisa ver o seu histórico de registros: vendas, gastos e a regularidade com que você registrou.`,
+      "Se você autoriza esse compartilhamento, responda *AUTORIZO*.",
+    );
+  } else if (m.how_to_redeem) {
+    lines.push(m.how_to_redeem);
+  }
+  return lines.join("\n");
+}
+
+/** The version of the words she said yes to when she answers AUTORIZO. */
+export const PARTNER_CONSENT_TEXT_VERSION = "whatsapp-partner-2026-10";
+
+export function isAuthorise(text: string): boolean {
+  const s = text.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[.!]+$/, "");
+  return ["autorizo", "eu autorizo", "sim autorizo", "sim, autorizo"].includes(s);
 }
 
 export const EMPTY_FORM_TEXT =
