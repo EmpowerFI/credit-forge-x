@@ -80,7 +80,7 @@ const SAY = {
   askSince: "Há quanto tempo você trabalha com isso? Pode responder 3 anos, 8 meses, ou NÃO SEI.",
   askSinceAgain: "Pode ser 3 anos, 8 meses, ou NÃO SEI.",
   done: "Pronto! 🎉 Já está tudo certo.\n\nTodo dia às 9h eu te lembro de registrar as vendas e os gastos do dia anterior. Leva um minuto.\n\nQuer começar agora? É só tocar no botão.",
-  help: "Eu sou o acompanhamento da EmpowerFI.\n\nEscreva VER para conferir ou corrigir os registros de ontem e de hoje.\n\nEscreva AJUDA para ver isto de novo, ou SAIR para parar de receber mensagens.\n\nSe estiver no meio de uma pergunta, é só responder que a gente continua de onde parou.",
+  help: "Eu sou o acompanhamento da EmpowerFI.\n\nEscreva VER para conferir ou corrigir os registros de ontem e de hoje.\n\nEscreva AUTORIZAÇÕES para ver com quem você compartilha os seus números.\n\nEscreva AJUDA para ver isto de novo, ou SAIR para parar de receber mensagens.\n\nSe estiver no meio de uma pergunta, é só responder que a gente continua de onde parou.",
   left: "Pronto, parei por aqui. Você não vai receber mais mensagens. Para voltar, é só escrever. 💜",
   alreadyActive: "Para registrar o dia, toque no botão. Se não teve movimento, escreva SEM MOVIMENTO. Para conferir ou corrigir os registros de ontem e de hoje, escreva VER. 💜",
 } as const;

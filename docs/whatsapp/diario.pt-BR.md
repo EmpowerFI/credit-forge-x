@@ -96,7 +96,7 @@ A lógica é criar a rotina primeiro e só depois falar de dinheiro. Os perks da
 
 **Nenhum crédito antes de 60 dias de diário.** O cartão é oferta do parceiro: quem aprova, e com qual limite, é o parceiro. A EmpowerFI entrega o histórico dela, com o consentimento de compartilhamento, e nunca promete aprovação.
 
-**As recompensas** são brindes e perks de marketing da EmpowerFI, ou benefícios de parceiros. Quando o benefício é do parceiro, um cartão de crédito por exemplo, **quem oferece e quem decide é o parceiro**. A EmpowerFI não concede crédito e não promete aprovação. A mensagem diz que o benefício é oferecido pelo parceiro. Antes de qualquer dado dela ir para um parceiro, ela precisa ter dado o **consentimento de compartilhamento**, que já existe no cadastro.
+**As recompensas** são brindes e perks de marketing da EmpowerFI, ou benefícios de parceiros. Quando o benefício é do parceiro, um cartão de crédito por exemplo, **quem oferece e quem decide é o parceiro**. A EmpowerFI não concede crédito e não promete aprovação. A mensagem diz que o benefício é oferecido pelo parceiro. Antes de qualquer dado dela ir para um parceiro, ela recebe **exatamente o que vai**: para quem, para quê, os números de cada mês e por quantos dias. Só então responde **AUTORIZO** ou **NÃO**. Cada autorização vale para um parceiro e um prazo, e ela pode encerrar quando quiser escrevendo **AUTORIZAÇÕES** (veja `docs/PASSPORT.md`, passo 3).
 
 **O que protege os números da recompensa:** a recompensa vale pela **regularidade** (ter preenchido), nunca pelos **valores** (ter vendido muito). Uma variação brusca nos números é sinalizada para revisão humana. Ela nunca é punida automaticamente.
 
