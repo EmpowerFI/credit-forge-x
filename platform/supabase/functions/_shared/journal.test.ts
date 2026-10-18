@@ -1,6 +1,7 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import {
-  addDays, buttonReplies, CATEGORIES, confirmationText, EXPENSE_SCREENS, isJournalReply, isQuietText,
+  addDays, buttonReplies, CATEGORIES, confirmationText, earnedText, EXPENSE_SCREENS, isAuthorise, isJournalReply,
+  isQuietText, type Milestone, span,
   journalFlow, JOURNAL_FORM, parseJournalReply, pickedDate, QUIET_YESTERDAY, sendFlowRequest, spDate,
 } from "./journal.ts";
 
@@ -138,6 +139,64 @@ Deno.test("what she reads back", () => {
   const gap = confirmationText("2026-10-15", MORNING, { quiet: true, sales_cents: 0, expenses_cents: 0, week_kept: 3, week_days: 4 });
   assertEquals(gap.startsWith("Anotado ✅ Hoje não teve movimento."), true);
   assertEquals(gap.includes("3 de 4 dias"), true);
+});
+
+Deno.test("the streak, and what is next", () => {
+  const summary = { quiet: false, sales_cents: 15_000, expenses_cents: 0, week_kept: 2, week_days: 3 };
+  const text = confirmationText("2026-10-14", MORNING, summary, {
+    streak_days: 5, streak_started_on: "2026-10-10", earned: [],
+    next: { code: "week1", title: "Presente da semana 1", kind: "perk", threshold_days: 7, days_left: 2 },
+  });
+  assertEquals(text.includes("🔥 5 dias seguidos registrando."), true);
+  assertEquals(text.includes("Faltam 2 dias para: Presente da semana 1."), true);
+  // The week count is the fallback when there is no progress to report.
+  assertEquals(confirmationText("2026-10-14", MORNING, summary, null).includes("2 de 3 dias"), true);
+  // Everything earned: no "faltam".
+  const done = confirmationText("2026-10-14", MORNING, summary, { streak_days: 90, streak_started_on: "2026-07-01", earned: [], next: null });
+  assertEquals(done.includes("Faltam"), false);
+});
+
+Deno.test("spans read the way she would say them", () => {
+  assertEquals(span(7), "1 semana");
+  assertEquals(span(14), "2 semanas");
+  assertEquals(span(28), "4 semanas");
+  assertEquals(span(60), "60 dias");
+  assertEquals(span(1), "1 dia");
+});
+
+const perk: Milestone = {
+  code: "week1", kind: "perk", title: "Presente da semana 1", how_to_redeem: "A equipe vai falar com você.",
+  partner_name: null, threshold_days: 7, status: "granted",
+};
+const card: Milestone = {
+  code: "day60", kind: "partner_benefit", title: "Oferta de cartão de crédito", how_to_redeem: "O parceiro vai entrar em contato.",
+  partner_name: "Banco Exemplo", threshold_days: 60, status: "awaiting_consent",
+};
+
+Deno.test("a perk is announced with how to get it", () => {
+  const t = earnedText(perk);
+  assertEquals(t.startsWith("🎁 Você completou 1 semana registrando o seu negócio!"), true);
+  assertEquals(t.includes("*Presente da semana 1*"), true);
+  assertEquals(t.includes("A equipe vai falar com você."), true);
+});
+
+Deno.test("a partner's benefit says whose it is, who decides, and asks before sharing", () => {
+  const waiting = earnedText(card);
+  assertEquals(waiting.includes("uma oferta de Banco Exemplo"), true);
+  assertEquals(waiting.includes("Quem analisa e decide a oferta é Banco Exemplo, não a EmpowerFI."), true);
+  assertEquals(waiting.includes("AUTORIZO"), true);
+  assertEquals(waiting.includes("vai entrar em contato"), false); // nothing happens until she says yes
+  for (const promise of ["aprovad", "garant", "limite de"]) assertEquals(waiting.toLowerCase().includes(promise), false, promise);
+
+  const released = earnedText({ ...card, status: "granted" });
+  assertEquals(released.includes("AUTORIZO"), false);
+  assertEquals(released.includes("O parceiro vai entrar em contato."), true);
+  assertEquals(released.includes("não a EmpowerFI"), true);
+});
+
+Deno.test("AUTORIZO, and only that", () => {
+  for (const t of ["AUTORIZO", "autorizo.", "Eu autorizo", "sim, autorizo!"]) assertEquals(isAuthorise(t), true, t);
+  for (const t of ["não autorizo", "autorizo depois", "sim"]) assertEquals(isAuthorise(t), false, t);
 });
 
 Deno.test("the form is opened with our token and its first screen", () => {

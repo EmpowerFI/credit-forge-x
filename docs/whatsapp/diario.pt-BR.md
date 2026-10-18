@@ -123,7 +123,7 @@ O dashboard trabalha com dois bancos, e este desenho segue o padrão que ele já
 
 1. **O programa de recompensas é editado no banco de backoffice** (`xifczvaiedmokdpjevsf`): marcos, recompensas, parceiro e texto da mensagem. Esse banco é a fonte de registro.
 2. **Ao publicar**, uma função restrita a admin no banco de produção (`efylyaroluqatqmtuuml`) copia uma **versão congelada** do programa.
-3. **O WhatsApp lê só a versão publicada em produção.** Uma mudança no rascunho não afeta ninguém até ser publicada. Cada recompensa concedida registra qual versão do programa valia naquele dia.
+3. **O WhatsApp lê só a versão publicada em produção.** A publicação usa a função `reward_programme_publish`, que só aceita admin da plataforma ou dono (owner) do dashboard. A versão 1 já vem com o programa da seção 5 e títulos provisórios, para o diário ter metas desde o primeiro dia. Uma mudança no rascunho não afeta ninguém até ser publicada. Cada recompensa concedida registra qual versão do programa valia naquele dia.
 
 ## 9. O que se aproveita do que já foi construído
 

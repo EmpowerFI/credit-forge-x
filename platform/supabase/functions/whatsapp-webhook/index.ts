@@ -35,8 +35,9 @@ import {
 } from "../_shared/whatsapp.ts";
 import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/conversation.ts";
 import {
-  addDays, buttonReplies, confirmationText, type DaySummary, EMPTY_FORM_TEXT, isJournalReply, isQuietText,
-  type JournalLine, parseJournalReply, QUIET_YESTERDAY, refusedText, sendFlowRequest, sentAtOf, spDate,
+  addDays, buttonReplies, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise,
+  isJournalReply, isQuietText, type JournalLine, type Milestone, parseJournalReply, PARTNER_CONSENT_TEXT_VERSION,
+  type Progress, QUIET_YESTERDAY, refusedText, sendFlowRequest, sentAtOf, spDate,
 } from "../_shared/journal.ts";
 
 const env = (name: string): string => {
@@ -146,11 +147,21 @@ async function recordDay(
     p_entrepreneur_id: entrepreneurId,
     p_day: day,
   });
+  // The streak, and whatever it has just earned. A failure here costs her the
+  // progress line, never the day she recorded: that is already written.
+  const { data: progress, error: progError } = await db.rpc("journal_progress", {
+    p_entrepreneur_id: entrepreneurId,
+    p_day: day,
+  });
+  if (progError) console.error("no progress", messageId, progError.message);
+  const p = progError ? null : progress as Progress;
+
   if (sumError) {
     console.error("no summary", messageId, sumError.message);
   } else {
-    await sendText(phone, confirmationText(day, sentAt, summary as DaySummary));
+    await sendText(phone, confirmationText(day, sentAt, summary as DaySummary, p));
   }
+  for (const m of p?.earned ?? []) await sendText(phone, earnedText(m));
   return { message_id: messageId, status: `journal:${status}` };
 }
 
@@ -275,6 +286,30 @@ Deno.serve(async (req) => {
       const now = new Date();
       outcomes.push(await recordDay(message.from, `${message.messageId}:quiet`, addDays(spDate(now), -1), now, "quiet"));
       continue;
+    }
+
+    // AUTORIZO, answering a partner benefit that is waiting on it. Anything
+    // else -- including AUTORIZO with nothing waiting -- goes to the machine.
+    if (conversation.state === "ACTIVE" && isAuthorise(message.text)) {
+      const { data: who } = await db.rpc("whatsapp_entrepreneur_for", { p_e164: phone });
+      const { data: waiting } = who
+        ? await db.rpc("reward_awaiting_consent", { p_entrepreneur_id: who })
+        : { data: false };
+      if (who && waiting) {
+        const { data: consent, error: consentError } = await db.rpc("whatsapp_partner_consent", {
+          p_entrepreneur_id: who,
+          p_text_version: PARTNER_CONSENT_TEXT_VERSION,
+        });
+        if (consentError) {
+          console.error("partner consent failed", message.messageId, consentError.message);
+          outcomes.push({ message_id: message.messageId, status: "refused", detail: consentError.message });
+          continue;
+        }
+        await sendText(phone, "Autorização registrada ✅ Obrigada pela confiança. 💜");
+        for (const m of (consent as { released: Milestone[] }).released) await sendText(phone, earnedText(m));
+        outcomes.push({ message_id: message.messageId, status: "partner_consent" });
+        continue;
+      }
     }
 
     const turn = advance(conversation, message.text);
