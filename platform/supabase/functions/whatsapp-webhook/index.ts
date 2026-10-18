@@ -35,10 +35,11 @@ import {
 } from "../_shared/whatsapp.ts";
 import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/conversation.ts";
 import {
-  addDays, buttonReplies, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise,
-  isJournalReply, isListText, type JournalLine, listText, type ListedLine, type Milestone, parseJournalReply,
-  PARTNER_CONSENT_TEXT_VERSION, type Progress, quietButton, type QuietReason, quietTextReason, refusedText,
-  sendFlowRequest, sentAtOf, spDate, voidedText, voidNumber, voidRefusedText, weekToRead,
+  addDays, buttonReplies, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise, isDecline,
+  isJournalReply, isListText, isSharesText, type JournalLine, listText, type ListedLine, type ListedShare,
+  type Milestone, parseJournalReply, type Progress, quietButton, type QuietReason, quietTextReason, refusedText,
+  revokeNumber, sendFlowRequest, sentAtOf, SHARE_CONSENT_TEXT_VERSION, shareAnswerText, shareRevokedText,
+  sharesText, spDate, voidedText, voidNumber, voidRefusedText, weekToRead,
 } from "../_shared/journal.ts";
 
 const env = (name: string): string => {
@@ -165,6 +166,7 @@ async function recordDay(
     await sendText(phone, confirmationText(day, sentAt, summary as DaySummary, p));
   }
   for (const m of p?.earned ?? []) await sendText(phone, earnedText(m));
+  await deliverShare(phone, String(entrepreneurId));
 
   // The week this day may close: read it, after the confirmation, if it is
   // due -- ended, kept at least three days, and not read yet.
@@ -177,6 +179,24 @@ async function recordDay(
   else if (due) background(sendReading({ entrepreneur_id: String(entrepreneurId), week_start: week }, from));
 
   return { message_id: messageId, status: `journal:${status}` };
+}
+
+/**
+ * A share proposed to her and not yet sent -- by the benefit she has just
+ * earned, or by staff -- goes now, inside the window she just opened. Her
+ * seven days to answer start only once it has actually been sent.
+ */
+async function deliverShare(phone: string, entrepreneurId: string): Promise<void> {
+  const { data, error } = await db.rpc("share_to_deliver", { p_entrepreneur_id: entrepreneurId });
+  if (error) {
+    console.error("could not read the share to deliver", error.message);
+    return;
+  }
+  const share = data as { id: string; text: string } | null;
+  if (!share) return;
+  if (!(await sendText(phone, share.text))) return;
+  const { error: markError } = await db.rpc("share_delivered", { p_share_id: share.id });
+  if (markError) console.error("share sent but not marked", share.id, markError.message);
 }
 
 /** Meta's one-time handshake: echo the challenge, in plain text, only for our own verify token. */
@@ -340,28 +360,64 @@ Deno.serve(async (req) => {
       continue;
     }
 
-    // AUTORIZO, answering a partner benefit that is waiting on it. Anything
-    // else -- including AUTORIZO with nothing waiting -- goes to the machine.
-    if (conversation.state === "ACTIVE" && isAuthorise(message.text)) {
+    // AUTORIZO or NÃO, answering the share she was shown. Anything else --
+    // including either word with nothing waiting -- goes to the machine.
+    if (conversation.state === "ACTIVE" && (isAuthorise(message.text) || isDecline(message.text))) {
       const { data: who } = await db.rpc("whatsapp_entrepreneur_for", { p_e164: phone });
-      const { data: waiting } = who
-        ? await db.rpc("reward_awaiting_consent", { p_entrepreneur_id: who })
-        : { data: false };
-      if (who && waiting) {
-        const { data: consent, error: consentError } = await db.rpc("whatsapp_partner_consent", {
+      const { data: open } = who ? await db.rpc("share_open", { p_entrepreneur_id: who }) : { data: false };
+      if (who && open) {
+        const { data: answered, error: answerError } = await db.rpc("whatsapp_share_answer", {
           p_entrepreneur_id: who,
-          p_text_version: PARTNER_CONSENT_TEXT_VERSION,
+          p_authorise: isAuthorise(message.text),
+          p_message_id: message.messageId,
+          p_text_version: SHARE_CONSENT_TEXT_VERSION,
         });
-        if (consentError) {
-          console.error("partner consent failed", message.messageId, consentError.message);
-          outcomes.push({ message_id: message.messageId, status: "refused", detail: consentError.message });
+        if (answerError) {
+          console.error("share answer failed", message.messageId, answerError.message);
+          outcomes.push({ message_id: message.messageId, status: "refused", detail: answerError.message });
           continue;
         }
-        await sendText(phone, "Autorização registrada ✅ Obrigada pela confiança. 💜");
-        for (const m of (consent as { released: Milestone[] }).released) await sendText(phone, earnedText(m));
-        outcomes.push({ message_id: message.messageId, status: "partner_consent" });
+        const a = answered as { status: string; recipient?: string; expires_on?: string; released?: Milestone[] };
+        await sendText(phone, shareAnswerText(a));
+        for (const m of a.released ?? []) await sendText(phone, earnedText(m));
+        outcomes.push({ message_id: message.messageId, status: `share:${a.status}` });
         continue;
       }
+    }
+
+    // AUTORIZAÇÕES: who sees her figures now. ENCERRAR n: end one of them.
+    const toRevoke = conversation.state === "ACTIVE" ? revokeNumber(message.text) : null;
+    if (conversation.state === "ACTIVE" && (isSharesText(message.text) || toRevoke !== null)) {
+      const { data: who, error: whoError } = await db.rpc("whatsapp_entrepreneur_for", { p_e164: phone });
+      if (whoError || !who) {
+        outcomes.push({ message_id: message.messageId, status: "refused", detail: whoError?.message ?? "not enrolled" });
+        continue;
+      }
+      if (toRevoke === null) {
+        const { data: shares, error: listError } = await db.rpc("whatsapp_share_list", { p_entrepreneur_id: who });
+        if (listError) {
+          console.error("could not list shares", message.messageId, listError.message);
+          outcomes.push({ message_id: message.messageId, status: "refused", detail: listError.message });
+          continue;
+        }
+        await sendText(phone, sharesText(shares as ListedShare[]));
+        outcomes.push({ message_id: message.messageId, status: "share:listed" });
+      } else {
+        const { data: revoked, error: revokeError } = await db.rpc("whatsapp_share_revoke", {
+          p_entrepreneur_id: who,
+          p_n: toRevoke,
+          p_message_id: message.messageId,
+        });
+        if (revokeError) {
+          console.error("could not revoke", message.messageId, revokeError.message);
+          outcomes.push({ message_id: message.messageId, status: "refused", detail: revokeError.message });
+          continue;
+        }
+        const r = revoked as { status: string; recipient?: string };
+        await sendText(phone, shareRevokedText(r));
+        outcomes.push({ message_id: message.messageId, status: `share:${r.status}` });
+      }
+      continue;
     }
 
     const turn = advance(conversation, message.text);

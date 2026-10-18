@@ -1,5 +1,8 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import {
+  isDecline, isSharesText, monthsText, revokeNumber, shareAnswerText, shareRevokedText, sharesText,
+} from "./journal.ts";
+import {
   CLOSED_YESTERDAY, isListText, listText, NO_SALES_YESTERDAY, quietButton, quietTextReason, voidedText, voidNumber,
   voidRefusedText,
 } from "./journal.ts";
@@ -188,7 +191,9 @@ Deno.test("a partner's benefit says whose it is, who decides, and asks before sh
   const waiting = earnedText(card);
   assertEquals(waiting.includes("uma oferta de Banco Exemplo"), true);
   assertEquals(waiting.includes("Quem analisa e decide a oferta é Banco Exemplo, não a EmpowerFI."), true);
-  assertEquals(waiting.includes("AUTORIZO"), true);
+  // The share itself, with its figures and AUTORIZO, is its own message.
+  assertEquals(waiting.includes("Nada vai sem você ver antes exatamente o que vai e autorizar."), true);
+  assertEquals(waiting.includes("AUTORIZO"), false);
   assertEquals(waiting.includes("vai entrar em contato"), false); // nothing happens until she says yes
   for (const promise of ["aprovad", "garant", "limite de"]) assertEquals(waiting.toLowerCase().includes(promise), false, promise);
 
@@ -201,6 +206,47 @@ Deno.test("a partner's benefit says whose it is, who decides, and asks before sh
 Deno.test("AUTORIZO, and only that", () => {
   for (const t of ["AUTORIZO", "autorizo.", "Eu autorizo", "sim, autorizo!"]) assertEquals(isAuthorise(t), true, t);
   for (const t of ["não autorizo", "autorizo depois", "sim"]) assertEquals(isAuthorise(t), false, t);
+});
+
+Deno.test("NÃO declines a share; leaving is still SAIR's", () => {
+  for (const t of ["NÃO", "nao", "Não autorizo.", "não quero compartilhar"]) assertEquals(isDecline(t), true, t);
+  for (const t of ["não quero mais", "sair", "não sei", "nao vendi"]) assertEquals(isDecline(t), false, t);
+});
+
+Deno.test("AUTORIZAÇÕES lists, ENCERRAR n ends one, CANCELAR alone is not it", () => {
+  for (const t of ["AUTORIZAÇÕES", "autorizacoes", "Minhas autorizações", "compartilhamentos"]) {
+    assertEquals(isSharesText(t), true, t);
+  }
+  assertEquals(revokeNumber("ENCERRAR 1"), 1);
+  assertEquals(revokeNumber("cancelar 2"), 2);
+  assertEquals(revokeNumber("revogar 10"), 10);
+  for (const t of ["cancelar", "encerrar", "encerrar tudo", "apagar 1"]) assertEquals(revokeNumber(t), null, t);
+});
+
+Deno.test("months read as she would say them", () => {
+  assertEquals(monthsText(["2026-11"]), "novembro de 2026");
+  assertEquals(monthsText(["2026-09", "2026-10", "2026-11"]), "setembro, outubro e novembro de 2026");
+  assertEquals(monthsText(["2026-12", "2027-01"]), "dezembro de 2026 e janeiro de 2027");
+});
+
+Deno.test("her shares, listed with who, why, which months and until when", () => {
+  const t = sharesText([{
+    n: 1, recipient: "Banco Aurora", purpose: "analisar e decidir uma oferta de crédito para você",
+    periods: ["2026-10", "2026-11"], expires_on: "2026-12-17",
+  }]);
+  assertEquals(t.includes("1. *Banco Aurora*, para analisar e decidir uma oferta de crédito para você."), true);
+  assertEquals(t.includes("Meses: outubro e novembro de 2026. Até 17/12/2026."), true);
+  assertEquals(t.includes("ENCERRAR 1"), true);
+  assertEquals(sharesText([]), "Você não está compartilhando os seus números com ninguém agora. 💜");
+});
+
+Deno.test("each answer to a share is said plainly", () => {
+  const yes = shareAnswerText({ status: "authorised", recipient: "Banco Aurora", expires_on: "2026-12-17" });
+  assertEquals(yes.includes("Banco Aurora pode consultar o que você viu até 17/12/2026."), true);
+  assertEquals(shareAnswerText({ status: "declined", recipient: "Banco Aurora" }), "Tudo bem. Nada foi compartilhado com Banco Aurora. 💜");
+  assertEquals(shareAnswerText({ status: "lapsed" }).includes("nada foi compartilhado"), true);
+  assertEquals(shareRevokedText({ status: "revoked", recipient: "Banco Aurora" }), "Pronto ✅ Banco Aurora não pode mais consultar os seus números.");
+  assertEquals(shareRevokedText({ status: "no_such_share" }).includes("AUTORIZAÇÕES"), true);
 });
 
 Deno.test("the form is opened with our token and its first screen", () => {

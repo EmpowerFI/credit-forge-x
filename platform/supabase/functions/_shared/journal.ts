@@ -341,7 +341,7 @@ export interface DaySummary {
   week_days: number;
 }
 
-/** A milestone, as journal_progress and whatsapp_partner_consent return it. */
+/** A milestone, as journal_progress and whatsapp_share_answer return it. */
 export interface Milestone {
   code: string;
   kind: "perk" | "partner_benefit";
@@ -408,10 +408,11 @@ export function earnedText(m: Milestone): string {
     `Quem analisa e decide a oferta é ${partner}, não a EmpowerFI.`,
   ];
   if (m.status === "awaiting_consent") {
+    // The share itself -- who, what for, which figures, for how long -- comes
+    // in its own message, written by the database, and asks for AUTORIZO.
     lines.push(
       "",
-      `Para analisar, ${partner} precisa ver o seu histórico de registros: vendas, gastos e a regularidade com que você registrou.`,
-      "Se você autoriza esse compartilhamento, responda *AUTORIZO*.",
+      `Para analisar, ${partner} precisa ver números do seu diário. Nada vai sem você ver antes exatamente o que vai e autorizar.`,
     );
   } else if (m.how_to_redeem) {
     lines.push(m.how_to_redeem);
@@ -419,12 +420,88 @@ export function earnedText(m: Milestone): string {
   return lines.join("\n");
 }
 
-/** The version of the words she said yes to when she answers AUTORIZO. */
-export const PARTNER_CONSENT_TEXT_VERSION = "whatsapp-partner-2026-10";
+// ---------------------------------------------------------------- sharing
+
+/**
+ * The version recorded in consents when AUTORIZO answers a share: the words
+ * she read are the share's own preview, stored with it.
+ */
+export const SHARE_CONSENT_TEXT_VERSION = "whatsapp-share-2026-10";
 
 export function isAuthorise(text: string): boolean {
-  const s = text.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[.!]+$/, "");
-  return ["autorizo", "eu autorizo", "sim autorizo", "sim, autorizo"].includes(s);
+  return ["autorizo", "eu autorizo", "sim autorizo", "sim, autorizo"].includes(plain(text));
+}
+
+/** NÃO, answering a share she was shown. "Não quero mais" is SAIR's, not this. */
+export function isDecline(text: string): boolean {
+  return ["nao", "nao autorizo", "eu nao autorizo", "nao, nao autorizo", "nao compartilhar", "nao quero compartilhar"]
+    .includes(plain(text));
+}
+
+/** AUTORIZAÇÕES: the shares she has in force. */
+export function isSharesText(text: string): boolean {
+  return ["autorizacoes", "autorizacao", "minhas autorizacoes", "compartilhamentos", "compartilhamento"].includes(plain(text));
+}
+
+/** "ENCERRAR 1" -> 1; anything else -> null. "CANCELAR" alone stays SAIR's. */
+export function revokeNumber(text: string): number | null {
+  const m = plain(text).match(/^(?:encerrar|encerra|revogar|cancelar)\s+(\d{1,2})$/);
+  return m ? Number(m[1]) : null;
+}
+
+/** One share as whatsapp_share_list returns it. */
+export interface ListedShare {
+  n: number;
+  recipient: string;
+  purpose: string;
+  periods: string[];
+  expires_on: string;
+}
+
+const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro",
+  "outubro", "novembro", "dezembro"];
+const ddmmyyyy = (day: string) => `${day.slice(8, 10)}/${day.slice(5, 7)}/${day.slice(0, 4)}`;
+
+/** ["2026-10", "2026-11"] -> "outubro e novembro de 2026"; across years, each with its own. */
+export function monthsText(periods: string[]): string {
+  const named = periods.map((p) => ({ year: p.slice(0, 4), month: MONTHS[Number(p.slice(5, 7)) - 1] }));
+  const years = [...new Set(named.map((m) => m.year))];
+  const list = (xs: string[]) => xs.length === 1 ? xs[0] : `${xs.slice(0, -1).join(", ")} e ${xs[xs.length - 1]}`;
+  if (years.length === 1) return `${list(named.map((m) => m.month))} de ${years[0]}`;
+  return list(named.map((m) => `${m.month} de ${m.year}`));
+}
+
+/** What AUTORIZAÇÕES answers. */
+export function sharesText(shares: ListedShare[]): string {
+  if (shares.length === 0) return "Você não está compartilhando os seus números com ninguém agora. 💜";
+  return [
+    "Com quem você compartilha os seus números agora:",
+    shares.map((s) => `${s.n}. *${s.recipient}*, para ${s.purpose}. Meses: ${monthsText(s.periods)}. Até ${ddmmyyyy(s.expires_on)}.`)
+      .join("\n"),
+    "Para encerrar um deles agora, responda ENCERRAR e o número. Exemplo: ENCERRAR 1.",
+  ].join("\n\n");
+}
+
+/** whatsapp_share_answer's outcome, in her words. */
+export function shareAnswerText(r: { status: string; recipient?: string; expires_on?: string }): string {
+  switch (r.status) {
+    case "authorised":
+      return `Autorização registrada ✅ ${r.recipient} pode consultar o que você viu até ${ddmmyyyy(r.expires_on ?? "")}.\n` +
+        "Para encerrar antes, escreva AUTORIZAÇÕES. Obrigada pela confiança. 💜";
+    case "declined":
+      return `Tudo bem. Nada foi compartilhado com ${r.recipient}. 💜`;
+    case "lapsed":
+      return "Esse pedido passou dos 7 dias e expirou, então nada foi compartilhado. Se quiser, fale com a equipe da EmpowerFI. 💜";
+    default:
+      return "Não há nenhum pedido de autorização esperando a sua resposta agora.";
+  }
+}
+
+/** whatsapp_share_revoke's outcome, in her words. */
+export function shareRevokedText(r: { status: string; recipient?: string }): string {
+  return r.status === "revoked"
+    ? `Pronto ✅ ${r.recipient} não pode mais consultar os seus números.`
+    : "Não achei esse número. Escreva AUTORIZAÇÕES para ver a lista.";
 }
 
 // ------------------------------------------------------------- correcting
