@@ -2,7 +2,7 @@ import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import { computeInsights, type MonthFigures } from "./checkin-insights/index.ts";
 import {
   anthropicRequest, costMicroUsd, DEFAULT_MODEL, factsFor, fallbackReport, formatBRL, formatPercent,
-  monthName, numbersIn, parseAnthropicResponse, promptFor, renderMessage, validateReport,
+  monthName, numbersIn, parseAnthropicResponse, promptFor, renderMessage, validateReport, weekName,
 } from "./report.ts";
 
 const month = (over: Partial<MonthFigures> = {}): MonthFigures => ({
@@ -186,4 +186,72 @@ Deno.test("cost only when prices are known", () => {
   assertEquals(costMicroUsd(1000, 200), null);
   assertEquals(costMicroUsd(1_000_000, 0, 1, 5), 1_000_000); // a million tokens at $1/MTok is one dollar
   assertEquals(costMicroUsd(800, 200, 1, 5), 1800);
+});
+
+// ---------------------------------------------------------------- the week
+
+const weekOf = (over: Partial<MonthFigures> = {}, previous?: Partial<MonthFigures>) =>
+  computeInsights({
+    current: month({ period: "2026-10-12", revenue_cents: 90_000, cogs_cents: 30_000, opex_cents: 5_000, household_cents: 20_000, active_days: 6, ...over }),
+    previous: previous ? month({ period: "2026-10-05", revenue_cents: 60_000, cogs_cents: 20_000, opex_cents: 5_000, household_cents: 20_000, active_days: 5, ...previous }) : null,
+  });
+
+Deno.test("a week is named the way she would say it", () => {
+  assertEquals(weekName("2026-10-12"), "semana de 12 a 18 de outubro de 2026");
+  assertEquals(weekName("2026-09-28"), "semana de 28 de setembro a 4 de outubro de 2026");
+  assertEquals(weekName("2025-12-29"), "semana de 29 de dezembro de 2025 a 4 de janeiro de 2026");
+});
+
+Deno.test("the week's facts let the reading repeat the week's dates, and nothing else new", () => {
+  const { lines, allowedNumbers } = factsFor(weekOf());
+  assertEquals(lines[0], "Período: semana de 12 a 18 de outubro de 2026");
+  for (const n of ["12", "18", "2026", "900", "550"]) assertEquals(allowedNumbers.has(n), true, n);
+  assertEquals(lines.some((l) => l.startsWith("Dias com venda: 6")), true);
+  const ok = validateReport({
+    summary: "Na semana de 12 a 18 de outubro você vendeu R$ 900,00 e o resultado foi de R$ 550,00.",
+    observations: [],
+    action: "Nos próximos dias, anote cada venda.",
+    limits: "Os números vêm das suas anotações.",
+  }, allowedNumbers);
+  assertEquals(ok.ok, true);
+  const bad = validateReport({
+    summary: "Na semana de 12 a 19 de outubro você vendeu R$ 900,00.", // 19 is not the week's
+    observations: [], action: "Anote.", limits: "Ok.",
+  }, allowedNumbers);
+  assertEquals(bad.ok, false);
+});
+
+Deno.test("the model is told it is a week, and compares only with last week", () => {
+  const { system, user } = promptFor(weekOf({}, {}), "doces");
+  assertEquals(system.includes("leitura semanal"), true);
+  assertEquals(system.includes("nesta semana que começa"), true);
+  assertEquals(user.includes("Fatos da semana:"), true);
+  assertEquals(user.includes("Vendas na semana anterior: R$ 600,00"), true);
+});
+
+Deno.test("the weekly fallback passes every check, in every kind of week", () => {
+  const cases = [
+    weekOf(),
+    weekOf({ revenue_cents: 0, cogs_cents: 0, opex_cents: 0, household_cents: 0, active_days: 0 }),
+    weekOf({ revenue_cents: 30_000, cogs_cents: 40_000 }), // negative
+    weekOf({ household_cents: 120_000 }),
+    weekOf({ active_days: 1 }),
+    weekOf({}, {}), // up: 900 vs 600
+    weekOf({ revenue_cents: 30_000 }, { revenue_cents: 90_000 }), // down
+  ];
+  for (const i of cases) {
+    const r = fallbackReport(i);
+    const v = validateReport(r, factsFor(i).allowedNumbers);
+    assertEquals(v.ok, true, `${JSON.stringify(i.flags)}: ${v.ok ? "" : v.reasons.join("; ")}`);
+    assertEquals(r.summary.startsWith("Na semana de 12 a 18 de outubro de 2026"), true);
+    assertEquals(JSON.stringify(r).includes("mês"), false, JSON.stringify(r));
+  }
+});
+
+Deno.test("the weekly message says week, not month", () => {
+  const text = renderMessage(fallbackReport(weekOf()), "Maria", "week");
+  assertEquals(text.startsWith("Oi, Maria! Aqui está a leitura da sua semana 💜"), true);
+  assertEquals(text.includes("*Para esta semana:*"), true);
+  // The monthly message is unchanged.
+  assertEquals(renderMessage(fallbackReport(insights()), "Maria").includes("*Para as próximas duas semanas:*"), true);
 });

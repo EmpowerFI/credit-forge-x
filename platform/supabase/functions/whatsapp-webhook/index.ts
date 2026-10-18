@@ -37,7 +37,7 @@ import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/con
 import {
   addDays, buttonReplies, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise,
   isJournalReply, isQuietText, type JournalLine, type Milestone, parseJournalReply, PARTNER_CONSENT_TEXT_VERSION,
-  type Progress, QUIET_YESTERDAY, refusedText, sendFlowRequest, sentAtOf, spDate,
+  type Progress, QUIET_YESTERDAY, refusedText, sendFlowRequest, sentAtOf, spDate, weekToRead,
 } from "../_shared/journal.ts";
 
 const env = (name: string): string => {
@@ -162,6 +162,17 @@ async function recordDay(
     await sendText(phone, confirmationText(day, sentAt, summary as DaySummary, p));
   }
   for (const m of p?.earned ?? []) await sendText(phone, earnedText(m));
+
+  // The week this day may close: read it, after the confirmation, if it is
+  // due -- ended, kept at least three days, and not read yet.
+  const week = weekToRead(day);
+  const { data: due, error: dueError } = await db.rpc("journal_reading_due", {
+    p_entrepreneur_id: entrepreneurId,
+    p_week_start: week,
+  });
+  if (dueError) console.error("could not check the week", messageId, dueError.message);
+  else if (due) background(sendReading({ entrepreneur_id: String(entrepreneurId), week_start: week }, from));
+
   return { message_id: messageId, status: `journal:${status}` };
 }
 
@@ -189,27 +200,29 @@ function background(work: Promise<unknown>): void {
 }
 
 /**
- * Asks checkin-report for the month's reading and sends it to her. A month
- * already read returns the same reading without a second model call, so a
- * retried delivery cannot cost twice -- but it would message her twice, so a
- * repeat is not sent.
+ * Asks checkin-report for a reading -- a month's, { checkin_id }, or a week's,
+ * { entrepreneur_id, week_start } -- and sends it to her. A period already
+ * read returns the same reading without a second model call, so a retried
+ * delivery cannot cost twice -- but it would message her twice, so a repeat
+ * is not sent.
  */
-async function sendReading(checkinId: string, from: string): Promise<void> {
+async function sendReading(period: Record<string, string>, from: string): Promise<void> {
+  const label = Object.values(period).join(" ");
   try {
     const response = await fetch(`${env("SUPABASE_URL")}/functions/v1/checkin-report`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${env("SUPABASE_SERVICE_ROLE_KEY")}` },
-      body: JSON.stringify({ checkin_id: checkinId }),
+      body: JSON.stringify(period),
     });
     const body = await response.json().catch(() => null) as { text?: string; repeated?: boolean } | null;
     if (!response.ok || !body?.text) {
-      console.error("no reading for", checkinId, response.status);
+      console.error("no reading for", label, response.status);
       return;
     }
     if (body.repeated) return;
     await sendText(canonicalPhone(from), body.text);
   } catch (e) {
-    console.error("reading not delivered", checkinId, String(e));
+    console.error("reading not delivered", label, String(e));
   }
 }
 
@@ -425,7 +438,7 @@ Deno.serve(async (req) => {
     // The month just closed: she gets its reading. In the background, so Meta
     // has its 200 now -- the model takes seconds and Meta does not wait.
     if (recorded?.status === "month_assembled" && typeof recorded.checkin_id === "string" && reply.from) {
-      background(sendReading(recorded.checkin_id, reply.from));
+      background(sendReading({ checkin_id: recorded.checkin_id }, reply.from));
     }
   }
 
