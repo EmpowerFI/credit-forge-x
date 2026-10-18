@@ -36,8 +36,9 @@ import {
 import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/conversation.ts";
 import {
   addDays, buttonReplies, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise,
-  isJournalReply, isQuietText, type JournalLine, type Milestone, parseJournalReply, PARTNER_CONSENT_TEXT_VERSION,
-  type Progress, QUIET_YESTERDAY, refusedText, sendFlowRequest, sentAtOf, spDate, weekToRead,
+  isJournalReply, isListText, type JournalLine, listText, type ListedLine, type Milestone, parseJournalReply,
+  PARTNER_CONSENT_TEXT_VERSION, type Progress, quietButton, type QuietReason, quietTextReason, refusedText,
+  sendFlowRequest, sentAtOf, spDate, voidedText, voidNumber, voidRefusedText, weekToRead,
 } from "../_shared/journal.ts";
 
 const env = (name: string): string => {
@@ -114,6 +115,7 @@ async function recordDay(
   day: string,
   sentAt: Date,
   lines: JournalLine[] | "quiet",
+  quietReason: QuietReason = null,
 ): Promise<Outcome> {
   let phone: string;
   try {
@@ -134,6 +136,7 @@ async function recordDay(
     p_day: day,
     p_entries: lines === "quiet" ? [] : lines,
     p_no_activity: lines === "quiet",
+    p_quiet_reason: lines === "quiet" ? quietReason : null,
   });
   if (error) {
     console.error("journal refused", messageId, error.message);
@@ -295,9 +298,45 @@ Deno.serve(async (req) => {
     // Enrolled, and telling us yesterday was quiet in words rather than with
     // the button. Its own id: this message is already marked as seen above,
     // and journal_record recognises retries by id too.
-    if (conversation.state === "ACTIVE" && isQuietText(message.text)) {
+    const quiet = conversation.state === "ACTIVE" ? quietTextReason(message.text) : undefined;
+    if (quiet !== undefined) {
       const now = new Date();
-      outcomes.push(await recordDay(message.from, `${message.messageId}:quiet`, addDays(spDate(now), -1), now, "quiet"));
+      outcomes.push(await recordDay(message.from, `${message.messageId}:quiet`, addDays(spDate(now), -1), now, "quiet", quiet));
+      continue;
+    }
+
+    // VER: today's and yesterday's lines, numbered. APAGAR n: void one of them.
+    const toVoid = conversation.state === "ACTIVE" ? voidNumber(message.text) : null;
+    if (conversation.state === "ACTIVE" && (isListText(message.text) || toVoid !== null)) {
+      const { data: who, error: whoError } = await db.rpc("whatsapp_entrepreneur_for", { p_e164: phone });
+      if (whoError || !who) {
+        outcomes.push({ message_id: message.messageId, status: "refused", detail: whoError?.message ?? "not enrolled" });
+        continue;
+      }
+      if (toVoid === null) {
+        const { data: lines, error: listError } = await db.rpc("journal_list", { p_entrepreneur_id: who });
+        if (listError) {
+          console.error("could not list", message.messageId, listError.message);
+          outcomes.push({ message_id: message.messageId, status: "refused", detail: listError.message });
+          continue;
+        }
+        await sendText(phone, listText(lines as ListedLine[], spDate(new Date())));
+        outcomes.push({ message_id: message.messageId, status: "journal:listed" });
+      } else {
+        const { data: voided, error: voidError } = await db.rpc("journal_void", {
+          p_entrepreneur_id: who,
+          p_n: toVoid,
+          p_message_id: message.messageId,
+        });
+        if (voidError) {
+          await sendText(phone, voidRefusedText(voidError.message));
+          outcomes.push({ message_id: message.messageId, status: "refused", detail: voidError.message });
+          continue;
+        }
+        const v = voided as ListedLine & { status: string };
+        await sendText(phone, v.status === "already_voided" ? "Esse registro já estava apagado. 💜" : voidedText(v));
+        outcomes.push({ message_id: message.messageId, status: `journal:${v.status}` });
+      }
       continue;
     }
 
@@ -362,14 +401,17 @@ Deno.serve(async (req) => {
     });
   }
 
-  // "Ontem não teve movimento", tapped on the nine o'clock reminder.
+  // "Não abri ontem" / "Abri e não vendi", tapped on the nine o'clock reminder.
   for (const button of buttons) {
-    if (button.payload !== QUIET_YESTERDAY) {
+    const reason = quietButton(button.payload);
+    if (reason === undefined) {
       outcomes.push({ message_id: button.messageId, status: "ignored", detail: button.payload });
       continue;
     }
     try {
-      outcomes.push(await recordDay(button.from, button.messageId, addDays(spDate(button.sentAt), -1), button.sentAt, "quiet"));
+      outcomes.push(
+        await recordDay(button.from, button.messageId, addDays(spDate(button.sentAt), -1), button.sentAt, "quiet", reason),
+      );
     } catch (error) {
       outcomes.push({ message_id: button.messageId, status: "unreadable", detail: String(error) });
     }

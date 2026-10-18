@@ -417,13 +417,23 @@ export function fallbackReport(i: Insights): Report {
 // ------------------------------------------------------------------ message
 
 /** The WhatsApp text. Her name enters here, from the database, never from the model. */
-export function renderMessage(report: Report, firstName?: string | null, span: Span = "month"): string {
+/** How closely she kept the journal, said by code: "Você registrou em 24 dos últimos 30 dias." */
+export function coverageLine(c: { kept: number; days: number } | null | undefined): string | null {
+  if (!c || !Number.isInteger(c.kept) || !Number.isInteger(c.days) || c.days < 7) return null;
+  const kept = Math.min(c.kept, c.days);
+  return c.days >= 30
+    ? `📅 Você registrou em ${kept} dos últimos 30 dias.`
+    : `📅 Você registrou em ${kept} dos ${c.days} dias desde que começou.`;
+}
+
+export function renderMessage(report: Report, firstName?: string | null, span: Span = "month", footer?: string | null): string {
   const whose = span === "week" ? "da sua semana" : "do seu mês";
   const greeting = firstName ? `Oi, ${firstName.split(" ")[0]}! Aqui está a leitura ${whose} 💜` : `Aqui está a leitura ${whose} 💜`;
   const parts = [greeting, report.summary];
   if (report.observations.length) parts.push(report.observations.map((o) => `• ${o}`).join("\n"));
   parts.push(`*${WORDS[span].nextTitle}:* ${report.action}`);
   parts.push(`_${report.limits}_`);
+  if (footer) parts.push(footer);
   return parts.join("\n\n");
 }
 

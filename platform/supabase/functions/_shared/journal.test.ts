@@ -1,5 +1,9 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import {
+  CLOSED_YESTERDAY, isListText, listText, NO_SALES_YESTERDAY, quietButton, quietTextReason, voidedText, voidNumber,
+  voidRefusedText,
+} from "./journal.ts";
+import {
   addDays, buttonReplies, CATEGORIES, confirmationText, earnedText, EXPENSE_SCREENS, isAuthorise, isJournalReply,
   isQuietText, type Milestone, span,
   journalFlow, JOURNAL_FORM, mondayOf, parseJournalReply, weekToRead, pickedDate, QUIET_YESTERDAY, sendFlowRequest, spDate,
@@ -251,4 +255,54 @@ Deno.test("which week a recorded day closes", () => {
   // Any other day: the week before, in case Sunday never came.
   assertEquals(weekToRead("2026-10-19"), "2026-10-12");
   assertEquals(weekToRead("2026-10-21"), "2026-10-12");
+});
+
+Deno.test("why a day was quiet, tapped or written", () => {
+  assertEquals(quietButton(CLOSED_YESTERDAY), "closed");
+  assertEquals(quietButton(NO_SALES_YESTERDAY), "no_sales");
+  assertEquals(quietButton(QUIET_YESTERDAY), null); // quiet, reason unsaid
+  assertEquals(quietButton("something_else"), undefined);
+  assertEquals(quietTextReason("Não abri ontem"), "closed");
+  assertEquals(quietTextReason("ontem não trabalhei."), "closed");
+  assertEquals(quietTextReason("Não vendi nada"), "no_sales");
+  assertEquals(quietTextReason("SEM MOVIMENTO"), null);
+  assertEquals(quietTextReason("não vendi nada ontem mas hoje vendi 50"), undefined);
+});
+
+Deno.test("the confirmation says which kind of quiet", () => {
+  const base = { sales_cents: 0, expenses_cents: 0, week_kept: 1, week_days: 1 };
+  assertEquals(confirmationText("2026-10-14", MORNING, { ...base, quiet: true, quiet_reason: "closed" }).startsWith("Anotado ✅ Ontem o negócio não abriu."), true);
+  assertEquals(confirmationText("2026-10-14", MORNING, { ...base, quiet: true, quiet_reason: "no_sales" }).startsWith("Anotado ✅ Ontem o negócio abriu e não teve vendas."), true);
+  assertEquals(confirmationText("2026-10-14", MORNING, { ...base, quiet: true, quiet_reason: null }).startsWith("Anotado ✅ Ontem não teve movimento."), true);
+});
+
+Deno.test("VER and APAGAR n", () => {
+  for (const t of ["VER", "ver.", "Corrigir", "meus registros"]) assertEquals(isListText(t), true, t);
+  assertEquals(isListText("ver depois"), false);
+  assertEquals(voidNumber("APAGAR 2"), 2);
+  assertEquals(voidNumber("apaga 12!"), 12);
+  assertEquals(voidNumber("apagar"), null);
+  assertEquals(voidNumber("apagar dois"), null);
+  assertEquals(voidNumber("apagar 2 e 3"), null); // one at a time: no guessing which she meant
+});
+
+Deno.test("the list she corrects from", () => {
+  const text = listText([
+    { n: 1, day: "2026-10-14", kind: "sale", amount_cents: 23_000, payment_method: "pix", category: null, due_on: null },
+    { n: 2, day: "2026-10-14", kind: "expense", amount_cents: 8_000, payment_method: "fiado", category: "stock", due_on: "2026-11-10" },
+    { n: 3, day: "2026-10-15", kind: "sale", amount_cents: 6_000, payment_method: "credit_card", category: null, due_on: "2026-11-14" },
+  ], "2026-10-15");
+  assertEquals(text.includes("*Ontem (14/10)*\n1. Venda · Pix · R$ 230,00\n2. Gasto · Mercadoria ou matéria-prima · R$ 80,00 (paga em 10/11)"), true);
+  assertEquals(text.includes("*Hoje (15/10)*\n3. Venda · Cartão de crédito · R$ 60,00 (recebe em 14/11)"), true);
+  assertEquals(text.includes("APAGAR 2"), true);
+  assertEquals(listText([], "2026-10-15").startsWith("Você não tem registros"), true);
+});
+
+Deno.test("a void says what was struck, and refusals say what to do", () => {
+  const t = voidedText({ n: 2, day: "2026-10-14", kind: "expense", amount_cents: 8_000, payment_method: "cash", category: "stock" });
+  assertEquals(t.startsWith("Apagado ✅ 2. Gasto · Mercadoria ou matéria-prima · R$ 80,00"), true);
+  assertEquals(t.includes("fica guardado como apagado"), true);
+  assertEquals(voidRefusedText("no_recent_list").includes("VER"), true);
+  assertEquals(voidRefusedText("month_closed").includes("fechado"), true);
+  assertEquals(voidRefusedText("too_old_to_correct").includes("hoje e de ontem"), true);
 });
