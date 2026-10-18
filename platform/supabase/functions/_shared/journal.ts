@@ -22,8 +22,22 @@ import { formatBRL } from "./report.ts";
 /** Marks a completed Flow as the daily journal rather than the old fortnight form. */
 export const JOURNAL_FORM = "diario";
 
-/** What a quick-reply button sends when she taps "Ontem não teve movimento". */
+/** What a quick-reply button sends when she taps "Ontem não teve movimento" (reason unsaid). */
 export const QUIET_YESTERDAY = "journal_quiet_yesterday";
+/** "Não abri ontem": the business did not open. */
+export const CLOSED_YESTERDAY = "journal_closed_yesterday";
+/** "Abri e não vendi": open, no sales. */
+export const NO_SALES_YESTERDAY = "journal_no_sales_yesterday";
+
+export type QuietReason = "closed" | "no_sales" | null;
+
+/** The reason each quiet-day button carries; undefined for any other payload. */
+export function quietButton(payload: string): QuietReason | undefined {
+  if (payload === QUIET_YESTERDAY) return null;
+  if (payload === CLOSED_YESTERDAY) return "closed";
+  if (payload === NO_SALES_YESTERDAY) return "no_sales";
+  return undefined;
+}
 
 export const SALE_METHODS = [
   { id: "pix", field: "sale_pix", title: "Pix" },
@@ -270,15 +284,55 @@ export function buttonReplies(body: unknown): ButtonReply[] {
  * who writes "sem movimento ontem, mas hoje vendi" is not saying her day was
  * quiet, and she is better answered by the form than by a guess.
  */
+const plain = (text: string) =>
+  text.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[.!]+$/, "");
+
+const QUIET_WORDS: Record<string, QuietReason> = {
+  "sem movimento": null,
+  "nao teve movimento": null,
+  "ontem nao teve movimento": null,
+  "ontem sem movimento": null,
+  "fechado": "closed",
+  "fechei": "closed",
+  "nao abri": "closed",
+  "nao abri ontem": "closed",
+  "ontem nao abri": "closed",
+  "nao trabalhei": "closed",
+  "ontem nao trabalhei": "closed",
+  "sem vendas": "no_sales",
+  "nao vendi": "no_sales",
+  "nao vendi nada": "no_sales",
+  "ontem nao vendi": "no_sales",
+  "ontem nao vendi nada": "no_sales",
+  "abri e nao vendi": "no_sales",
+};
+
+/** The reason, if the whole message says yesterday was quiet; undefined if it does not. */
+export function quietTextReason(text: string): QuietReason | undefined {
+  const s = plain(text);
+  return s in QUIET_WORDS ? QUIET_WORDS[s] : undefined;
+}
+
 export function isQuietText(text: string): boolean {
-  const s = text.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[.!]+$/, "");
-  return ["sem movimento", "nao teve movimento", "ontem nao teve movimento", "ontem sem movimento"].includes(s);
+  return quietTextReason(text) !== undefined;
+}
+
+/** VER, CONSULTAR, CORRIGIR: she wants to see today's and yesterday's lines. */
+export function isListText(text: string): boolean {
+  return ["ver", "ver registros", "meus registros", "consultar", "corrigir", "conferir", "registros"].includes(plain(text));
+}
+
+/** "APAGAR 2" -> 2; anything else -> null. */
+export function voidNumber(text: string): number | null {
+  const m = plain(text).match(/^(?:apagar|apaga|excluir|exclui|remover)\s+(\d{1,2})$/);
+  return m ? Number(m[1]) : null;
 }
 
 // ---------------------------------------------------------------- replying
 
 export interface DaySummary {
   quiet: boolean;
+  quiet_reason?: "closed" | "no_sales" | null;
   sales_cents: number;
   expenses_cents: number;
   /** Days kept so far in the calendar week of the day, including it. */
@@ -318,7 +372,11 @@ export function span(days: number): string {
 export function confirmationText(day: string, sentAt: Date, s: DaySummary, p?: Progress | null): string {
   const which = day === spDate(sentAt) ? "Hoje" : "Ontem";
   const head = s.quiet
-    ? `Anotado ✅ ${which} não teve movimento.`
+    ? s.quiet_reason === "closed"
+      ? `Anotado ✅ ${which} o negócio não abriu.`
+      : s.quiet_reason === "no_sales"
+        ? `Anotado ✅ ${which} o negócio abriu e não teve vendas.`
+        : `Anotado ✅ ${which} não teve movimento.`
     : `Registrado ✅ ${which}: R$ ${formatBRL(s.sales_cents)} em vendas e R$ ${formatBRL(s.expenses_cents)} em gastos.`;
   let progress: string;
   if (p && p.streak_days > 0) {
@@ -367,6 +425,61 @@ export const PARTNER_CONSENT_TEXT_VERSION = "whatsapp-partner-2026-10";
 export function isAuthorise(text: string): boolean {
   const s = text.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[.!]+$/, "");
   return ["autorizo", "eu autorizo", "sim autorizo", "sim, autorizo"].includes(s);
+}
+
+// ------------------------------------------------------------- correcting
+
+/** One line as journal_list returns it. */
+export interface ListedLine {
+  n: number;
+  day: string;
+  kind: "sale" | "expense";
+  amount_cents: number;
+  payment_method: string;
+  category: string | null;
+  due_on: string | null;
+}
+
+const METHOD_TITLE = Object.fromEntries(PAYMENT_METHODS.map((m) => [m.id, m.title])) as Record<string, string>;
+const CATEGORY_TITLE = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.title])) as Record<string, string>;
+const ddmm = (day: string) => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
+
+export function lineText(l: Omit<ListedLine, "due_on"> & { due_on?: string | null }): string {
+  const what = l.kind === "sale" ? `Venda · ${METHOD_TITLE[l.payment_method] ?? l.payment_method}` : `Gasto · ${CATEGORY_TITLE[l.category ?? ""] ?? l.category}`;
+  const later = l.due_on ? (l.kind === "sale" ? ` (recebe em ${ddmm(l.due_on)})` : ` (paga em ${ddmm(l.due_on)})`) : "";
+  return `${l.n}. ${what} · R$ ${formatBRL(l.amount_cents)}${later}`;
+}
+
+/** What VER answers: the lines that still count, by day, numbered for APAGAR. */
+export function listText(lines: ListedLine[], today: string): string {
+  if (lines.length === 0) return "Você não tem registros de ontem nem de hoje. Para registrar, é só mandar o formulário. 💜";
+  const parts = ["Seus registros de ontem e de hoje:"];
+  for (const day of [addDays(today, -1), today]) {
+    const mine = lines.filter((l) => l.day === day);
+    if (mine.length === 0) continue;
+    parts.push(`*${day === today ? "Hoje" : "Ontem"} (${ddmm(day)})*\n${mine.map(lineText).join("\n")}`);
+  }
+  parts.push("Para apagar um registro errado, responda APAGAR e o número. Exemplo: APAGAR 2.\nDepois, mande o formulário com o valor certo.");
+  return parts.join("\n\n");
+}
+
+export function voidedText(v: Omit<ListedLine, "due_on">): string {
+  return [
+    `Apagado ✅ ${lineText(v)}`,
+    "Ele fica guardado como apagado e não entra mais nas contas.",
+    "Para lançar o valor certo, é só mandar o formulário.",
+  ].join("\n");
+}
+
+/** The database's refusals to void, in words she can act on. */
+export function voidRefusedText(message: string): string {
+  if (message.includes("no_recent_list")) return "Primeiro escreva VER para ver a lista com os números. 💜";
+  if (message.includes("no_such_line")) return "Não achei esse número na lista. Escreva VER para ver de novo.";
+  if (message.includes("too_old_to_correct")) return "Só dá para corrigir os registros de hoje e de ontem.";
+  if (message.includes("month_closed")) {
+    return "Esse mês já foi fechado e não dá mais para mudar por aqui. Fale com a equipe da EmpowerFI. 💜";
+  }
+  return "Não consegui apagar agora. Pode tentar de novo daqui a pouco?";
 }
 
 export const EMPTY_FORM_TEXT =

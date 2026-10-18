@@ -31,7 +31,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { computeInsights, INSIGHTS_FORMULA_VERSION, type MonthFigures } from "../_shared/checkin-insights/index.ts";
 import {
-  anthropicRequest, costMicroUsd, DEFAULT_MODEL, fallbackReport, parseAnthropicResponse,
+  anthropicRequest, costMicroUsd, coverageLine, DEFAULT_MODEL, fallbackReport, parseAnthropicResponse,
   PROMPT_VERSION, renderMessage, type Report, validateReport,
 } from "../_shared/report.ts";
 
@@ -100,6 +100,8 @@ interface Inputs {
   sector: string | null;
   current: MonthFigures;
   previous: MonthFigures | null;
+  /** Weeks only: days kept in the last thirty, said by code under the reading. */
+  coverage?: { kept: number; days: number } | null;
 }
 
 Deno.serve(async (req) => {
@@ -132,7 +134,7 @@ Deno.serve(async (req) => {
   // Already read: the stored reading, nothing called, nothing billed.
   if (action === "done") {
     const stored = (claim as { report: Report; source: string });
-    return json({ source: stored.source, repeated: true, text: renderMessage(stored.report, inputs.first_name, target.span) });
+    return json({ source: stored.source, repeated: true, text: renderMessage(stored.report, inputs.first_name, target.span, coverageLine(inputs.coverage)) });
   }
 
   try {
@@ -199,7 +201,7 @@ Deno.serve(async (req) => {
     });
     if (completeError) throw new Error(completeError.message);
 
-    return json({ source, refused: refusalReasons.length > 0, text: renderMessage(report, inputs.first_name, target.span) });
+    return json({ source, refused: refusalReasons.length > 0, text: renderMessage(report, inputs.first_name, target.span, coverageLine(inputs.coverage)) });
   } catch (e) {
     await db.rpc(target.rpc.fail, { ...target.key, p_error: String(e) });
     return json({ error: String(e) }, 500);

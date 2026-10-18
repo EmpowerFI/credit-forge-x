@@ -2,7 +2,7 @@ import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import { computeInsights, type MonthFigures } from "./checkin-insights/index.ts";
 import {
   anthropicRequest, costMicroUsd, DEFAULT_MODEL, factsFor, fallbackReport, formatBRL, formatPercent,
-  monthName, numbersIn, parseAnthropicResponse, promptFor, renderMessage, validateReport, weekName,
+  coverageLine, monthName, numbersIn, parseAnthropicResponse, promptFor, renderMessage, validateReport, weekName,
 } from "./report.ts";
 
 const month = (over: Partial<MonthFigures> = {}): MonthFigures => ({
@@ -254,4 +254,13 @@ Deno.test("the weekly message says week, not month", () => {
   assertEquals(text.includes("*Para esta semana:*"), true);
   // The monthly message is unchanged.
   assertEquals(renderMessage(fallbackReport(insights()), "Maria").includes("*Para as próximas duas semanas:*"), true);
+});
+
+Deno.test("coverage is said by code, under the reading", () => {
+  assertEquals(coverageLine({ kept: 24, days: 30 }), "📅 Você registrou em 24 dos últimos 30 dias.");
+  assertEquals(coverageLine({ kept: 9, days: 10 }), "📅 Você registrou em 9 dos 10 dias desde que começou.");
+  assertEquals(coverageLine({ kept: 3, days: 5 }), null); // too early to say anything
+  assertEquals(coverageLine(null), null);
+  const text = renderMessage(fallbackReport(weekOf()), "Maria", "week", coverageLine({ kept: 24, days: 30 }));
+  assertEquals(text.endsWith("📅 Você registrou em 24 dos últimos 30 dias."), true);
 });
