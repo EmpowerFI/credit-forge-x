@@ -2,7 +2,7 @@ import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import {
   addDays, buttonReplies, CATEGORIES, confirmationText, earnedText, EXPENSE_SCREENS, isAuthorise, isJournalReply,
   isQuietText, type Milestone, span,
-  journalFlow, JOURNAL_FORM, parseJournalReply, pickedDate, QUIET_YESTERDAY, sendFlowRequest, spDate,
+  journalFlow, JOURNAL_FORM, mondayOf, parseJournalReply, weekToRead, pickedDate, QUIET_YESTERDAY, sendFlowRequest, spDate,
 } from "./journal.ts";
 
 // 15 Oct 2026, 09:10 in São Paulo (UTC-3): the reminder has just gone out.
@@ -240,4 +240,15 @@ Deno.test("every field the reader needs reaches the final payload, from every sc
   // The dropdown offers exactly the categories the database accepts.
   const dropdown = walk(flow.screens[1]).find((x) => x.name === "exp1_category") as { "data-source": { id: string }[] };
   assertEquals(dropdown["data-source"].map((d) => d.id), CATEGORIES.map((c) => c.id));
+});
+
+Deno.test("which week a recorded day closes", () => {
+  assertEquals(mondayOf("2026-10-18"), "2026-10-12"); // Sunday
+  assertEquals(mondayOf("2026-10-12"), "2026-10-12"); // Monday
+  assertEquals(mondayOf("2026-11-01"), "2026-10-26"); // across months
+  // Sunday, recorded on Monday morning: its own week.
+  assertEquals(weekToRead("2026-10-18"), "2026-10-12");
+  // Any other day: the week before, in case Sunday never came.
+  assertEquals(weekToRead("2026-10-19"), "2026-10-12");
+  assertEquals(weekToRead("2026-10-21"), "2026-10-12");
 });

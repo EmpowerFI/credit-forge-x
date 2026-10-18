@@ -24,14 +24,36 @@
 //     prose either; the field reports a fact, the wording stays kind.
 //
 // What this is not: a readiness score, an eligibility decision, or advice. It
-// is one fortnight-pair of a business, turned into the handful of figures a
-// useful, honest paragraph can be built on.
+// is one month or one week of a business, turned into the handful of figures
+// a useful, honest paragraph can be built on.
+//
+// v0.2.0 adds the week: the daily journal is read every week, and a week is
+// named by its Monday, "YYYY-MM-DD". Months are computed exactly as in v0.1.0;
+// only the version moved, because the formula now answers a second question.
 
-export const INSIGHTS_FORMULA_VERSION = "insights-v0.1.0";
+export const INSIGHTS_FORMULA_VERSION = "insights-v0.2.0";
 
-/** One assembled month, as it rests in public.checkins. Costs may be unknown. */
+/** A month is "YYYY-MM"; a week is its Monday, "YYYY-MM-DD". */
+export type Span = "month" | "week";
+
+const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
+const DAY = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+/** Which kind of period this is, or an error if it is neither. */
+export function spanOf(period: string): Span {
+  if (MONTH.test(period)) return "month";
+  if (DAY.test(period)) {
+    const d = new Date(`${period}T12:00:00Z`);
+    if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== period) throw new Error(`not a date: ${period}`);
+    if (d.getUTCDay() !== 1) throw new Error(`a week is named by its Monday: ${period}`);
+    return "week";
+  }
+  throw new Error(`not a period: ${period}`);
+}
+
+/** One assembled month, as it rests in public.checkins, or one week of the journal. Costs may be unknown. */
 export interface MonthFigures {
-  /** "YYYY-MM". */
+  /** "YYYY-MM" for a month; the Monday, "YYYY-MM-DD", for a week. */
   period: string;
   revenue_cents: number;
   /** Materials and stock. Null when she answered "não sei". */
@@ -42,7 +64,7 @@ export interface MonthFigures {
   household_cents: number;
   /** Whether she recorded every sale that month. */
   keeps_records: boolean;
-  /** Days the business operated that month, 0–31. */
+  /** Days the business operated in the period: 0–31 for a month, 0–7 for a week. */
   active_days: number;
 }
 
@@ -109,8 +131,10 @@ export interface Insights {
 }
 
 export const RULES = {
-  /** A fortnight has fifteen days; a month running under five is barely open. */
+  /** A month running under five days is barely open. */
   FEW_ACTIVE_DAYS: 5,
+  /** A week selling on fewer than two days is barely open. */
+  FEW_ACTIVE_DAYS_WEEK: 2,
   /** Below this, a revenue change is noise, not a trend. 15%. */
   MATERIAL_CHANGE_BPS: 1500,
   /** A sanity ceiling shared with the checkins table: a hundred million reais. */
@@ -128,8 +152,12 @@ function bps(numerator: number, denominator: number): number {
   return Math.round((numerator * 10_000) / denominator);
 }
 
-/** Are these two months adjacent, current directly after previous? */
+/** Are these two periods adjacent, current directly after previous? */
 function isImmediatelyBefore(previous: string, current: string): boolean {
+  if (DAY.test(previous) && DAY.test(current)) {
+    const days = (Date.parse(`${current}T12:00:00Z`) - Date.parse(`${previous}T12:00:00Z`)) / 86_400_000;
+    return days === 7;
+  }
   const p = previous.match(/^(\d{4})-(\d{2})$/);
   const c = current.match(/^(\d{4})-(\d{2})$/);
   if (!p || !c) return false;
@@ -145,14 +173,12 @@ function isImmediatelyBefore(previous: string, current: string): boolean {
  */
 export function computeInsights(input: InsightsInput): Insights {
   const m = input.current;
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(m.period)) {
-    throw new Error(`not a period: ${m.period}`);
-  }
+  const span = spanOf(m.period);
   assertCents("revenue", m.revenue_cents);
   assertCents("household", m.household_cents);
   if (m.cogs_cents !== null) assertCents("cogs", m.cogs_cents);
   if (m.opex_cents !== null) assertCents("opex", m.opex_cents);
-  if (!Number.isInteger(m.active_days) || m.active_days < 0 || m.active_days > 31) {
+  if (!Number.isInteger(m.active_days) || m.active_days < 0 || m.active_days > (span === "week" ? 7 : 31)) {
     throw new Error(`active_days out of range: ${m.active_days}`);
   }
 
@@ -189,7 +215,7 @@ export function computeInsights(input: InsightsInput): Insights {
   // of business and household money moving as one, which is the thing the
   // product most wants to help her separate.
   if (m.revenue_cents > 0 && m.household_cents > m.revenue_cents) flags.push("HOUSEHOLD_OVER_REVENUE");
-  if (m.active_days < RULES.FEW_ACTIVE_DAYS) flags.push("FEW_ACTIVE_DAYS");
+  if (m.active_days < (span === "week" ? RULES.FEW_ACTIVE_DAYS_WEEK : RULES.FEW_ACTIVE_DAYS)) flags.push("FEW_ACTIVE_DAYS");
   if (revenue_change_bps !== null && revenue_change_bps >= RULES.MATERIAL_CHANGE_BPS) flags.push("REVENUE_UP");
   if (revenue_change_bps !== null && revenue_change_bps <= -RULES.MATERIAL_CHANGE_BPS) flags.push("REVENUE_DOWN");
 

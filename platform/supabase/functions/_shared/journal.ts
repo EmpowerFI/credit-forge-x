@@ -92,6 +92,23 @@ export function addDays(day: string, n: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** The Monday of a day's calendar week. */
+export function mondayOf(day: string): string {
+  const dow = new Date(`${day}T12:00:00Z`).getUTCDay(); // 0 = Sunday
+  return addDays(day, dow === 0 ? -6 : 1 - dow);
+}
+
+/**
+ * The week a newly recorded day may close. Sunday closes its own week -- the
+ * usual case, recorded on Monday morning. Any other day closes the week
+ * before, in case Sunday never came; the database decides whether that week
+ * is actually due.
+ */
+export function weekToRead(day: string): string {
+  const monday = mondayOf(day);
+  return new Date(`${day}T12:00:00Z`).getUTCDay() === 0 ? monday : addDays(monday, -7);
+}
+
 /**
  * A DatePicker answer. Newer Flow versions send "YYYY-MM-DD"; older ones send
  * milliseconds since the epoch. Both are accepted; anything else is refused.

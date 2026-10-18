@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeInsights, INSIGHTS_FORMULA_VERSION, type MonthFigures } from "./index";
+import { computeInsights, INSIGHTS_FORMULA_VERSION, spanOf, type MonthFigures } from "./index";
 
 const month = (over: Partial<MonthFigures> = {}): MonthFigures => ({
   period: "2026-10",
@@ -134,5 +134,39 @@ describe("refuses inputs that are not figures", () => {
     expect(() => computeInsights({ current: month({ revenue_cents: -1 }) })).toThrow();
     expect(() => computeInsights({ current: month({ active_days: 40 }) })).toThrow();
     expect(() => computeInsights({ current: month({ revenue_cents: 1.5 }) })).toThrow();
+  });
+});
+
+describe("a week of the journal", () => {
+  const week = (over: Partial<MonthFigures> = {}): MonthFigures =>
+    month({ period: "2026-10-12", revenue_cents: 90_000, cogs_cents: 30_000, opex_cents: 5_000, household_cents: 20_000, active_days: 6, ...over });
+
+  it("is named by its Monday and computed like a month", () => {
+    expect(spanOf("2026-10-12")).toBe("week");
+    expect(spanOf("2026-10")).toBe("month");
+    const r = computeInsights({ current: week() });
+    expect(r.result_cents).toBe(55_000);
+    expect(r.flags).toEqual([]);
+  });
+
+  it("compares only with the week right before it", () => {
+    const up = computeInsights({ current: week(), previous: week({ period: "2026-10-05", revenue_cents: 60_000 }) });
+    expect(up.previous_period).toBe("2026-10-05");
+    expect(up.flags).toContain("REVENUE_UP");
+    const gap = computeInsights({ current: week(), previous: week({ period: "2026-09-28", revenue_cents: 60_000 }) });
+    expect(gap.previous_period).toBeNull();
+    // A month is never "the period before" a week.
+    expect(computeInsights({ current: week(), previous: month({ period: "2026-09" }) }).previous_period).toBeNull();
+  });
+
+  it("few days means few days in a week, not in a month", () => {
+    expect(computeInsights({ current: week({ active_days: 1 }) }).flags).toContain("FEW_ACTIVE_DAYS");
+    expect(computeInsights({ current: week({ active_days: 2 }) }).flags).not.toContain("FEW_ACTIVE_DAYS");
+  });
+
+  it("refuses a week that is not a week", () => {
+    expect(() => computeInsights({ current: week({ period: "2026-10-13" }) })).toThrow(/Monday/); // a Tuesday
+    expect(() => computeInsights({ current: week({ period: "2026-02-30" }) })).toThrow();
+    expect(() => computeInsights({ current: week({ active_days: 8 }) })).toThrow();
   });
 });
