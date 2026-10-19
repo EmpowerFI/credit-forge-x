@@ -20,6 +20,7 @@ export default defineConfig({
       "@empowerfi/eligibility-engine": path.resolve(__dirname, "./packages/eligibility-engine/src/index.ts"),
       "@empowerfi/capital-allocation": path.resolve(__dirname, "./packages/capital-allocation/src/index.ts"),
       "@empowerfi/settlement-route": path.resolve(__dirname, "./packages/settlement-route/src/index.ts"),
+      "@empowerfi/passport": path.resolve(__dirname, "./packages/passport/src/index.ts"),
     },
   },
 });

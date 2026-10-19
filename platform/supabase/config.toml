@@ -456,3 +456,8 @@ verify_jwt = false
 # every new month it is asked about costs a model call.
 [functions.checkin-report]
 verify_jwt = false
+
+# A partner opens a link, a verifier fetches keys and the revocation list:
+# nobody signs in. The link's token is checked inside, against its hash.
+[functions.passport]
+verify_jwt = false

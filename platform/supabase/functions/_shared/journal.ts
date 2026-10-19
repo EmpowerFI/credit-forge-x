@@ -456,6 +456,9 @@ export interface ListedShare {
   purpose: string;
   periods: string[];
   expires_on: string;
+  /** How many times the recipient opened it, and the last day it did. */
+  opened?: number;
+  last_opened_on?: string | null;
 }
 
 const MONTHS = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro",
@@ -476,8 +479,12 @@ export function sharesText(shares: ListedShare[]): string {
   if (shares.length === 0) return "Você não está compartilhando os seus números com ninguém agora. 💜";
   return [
     "Com quem você compartilha os seus números agora:",
-    shares.map((s) => `${s.n}. *${s.recipient}*, para ${s.purpose}. Meses: ${monthsText(s.periods)}. Até ${ddmmyyyy(s.expires_on)}.`)
-      .join("\n"),
+    shares.map((s) =>
+      `${s.n}. *${s.recipient}*, para ${s.purpose}. Meses: ${monthsText(s.periods)}. Até ${ddmmyyyy(s.expires_on)}. ` +
+      (s.opened && s.last_opened_on
+        ? `${s.recipient} consultou ${s.opened === 1 ? "1 vez" : `${s.opened} vezes`}, a última em ${ddmmyyyy(s.last_opened_on)}.`
+        : `${s.recipient} ainda não consultou.`)
+    ).join("\n"),
     "Para encerrar um deles agora, responda ENCERRAR e o número. Exemplo: ENCERRAR 1.",
   ].join("\n\n");
 }

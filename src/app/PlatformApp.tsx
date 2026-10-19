@@ -37,6 +37,7 @@ const AuditZcashTransaction = lazy(() => import("./pages/audit/ZcashTransaction"
 const AuditReports = lazy(() => import("./pages/audit/Reports"));
 // A shared audit report opens without an account.
 const ReportPage = lazy(() => import("./pages/ReportPage"));
+const PassportPage = lazy(() => import("./pages/PassportPage"));
 const ConsentPage = lazy(() => import("./pages/ConsentPage"));
 const EvidencePage = lazy(() => import("./pages/EvidencePage"));
 // The investor console: wallet, Solana client and charts, loaded when opened.
@@ -124,6 +125,7 @@ function Pages() {
     <Routes key={locale}>
       <Route path="login" element={<LoginPage />} />
       <Route path="report/:token" element={<Suspense fallback={null}><ReportPage /></Suspense>} />
+      <Route path="passport/:token" element={<Suspense fallback={null}><PassportPage /></Suspense>} />
       <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
         <Route index element={<HomeRedirect />} />
         <Route path="start" element={<Suspense fallback={loading}><StartPage /></Suspense>} />

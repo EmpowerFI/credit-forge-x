@@ -236,6 +236,12 @@ Deno.test("her shares, listed with who, why, which months and until when", () =>
   }]);
   assertEquals(t.includes("1. *Banco Aurora*, para analisar e decidir uma oferta de crédito para você."), true);
   assertEquals(t.includes("Meses: outubro e novembro de 2026. Até 17/12/2026."), true);
+  assertEquals(t.includes("Banco Aurora ainda não consultou."), true);
+  const seen = sharesText([{
+    n: 1, recipient: "Banco Aurora", purpose: "analisar", periods: ["2026-11"], expires_on: "2026-12-17",
+    opened: 3, last_opened_on: "2026-11-20",
+  }]);
+  assertEquals(seen.includes("Banco Aurora consultou 3 vezes, a última em 20/11/2026."), true);
   assertEquals(t.includes("ENCERRAR 1"), true);
   assertEquals(sharesText([]), "Você não está compartilhando os seus números com ninguém agora. 💜");
 });
