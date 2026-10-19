@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, Download, Loader2, Printer, XCircle } from
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import LoadError from "../components/LoadError";
+import ExplorerLink from "../components/product/ExplorerLink";
 import Panel from "../components/product/Panel";
 import { formatDateTime, tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
@@ -82,6 +83,21 @@ function Month({ m }: { m: CheckedMonth }) {
           </Check>
           <Check ok={m.time === "current"}>
             {m.time === "current" ? tr({ en: "Within its validity", pt: "Dentro da validade" }) : tr({ en: "Outside its validity", pt: "Fora da validade" })}
+          </Check>
+          <Check ok={m.anchor.status === "anchored" ? true : m.anchor.status === "invalid" ? false : null}>
+            {m.anchor.status === "anchored"
+              ? tr({
+                en: `Registered on Solana devnet${m.anchor.at ? ` on ${day(m.anchor.at)}` : ""}, batch ${m.anchor.batch}: it existed unchanged by then`,
+                pt: `Registrado na Solana devnet${m.anchor.at ? ` em ${day(m.anchor.at)}` : ""}, lote ${m.anchor.batch}: existia sem alteração desde então`,
+              })
+              : m.anchor.status === "pending"
+                ? tr({ en: "Not registered on Solana yet: batches go out once a day", pt: "Ainda não registrado na Solana: os lotes saem uma vez por dia" })
+                : m.anchor.status === "unchecked"
+                  ? tr({ en: "Solana could not be asked just now", pt: "Não foi possível consultar a Solana agora" })
+                  : tr({ en: `The Solana registration does not match: ${m.anchor.error ?? ""}`, pt: `O registro na Solana não confere: ${m.anchor.error ?? ""}` })}
+            {m.anchor.signature && m.anchor.status !== "pending" && (
+              <span className="block text-xs"><ExplorerLink tx={m.anchor.signature} /></span>
+            )}
           </Check>
           <Check ok={null}>
             {tr({
@@ -201,6 +217,13 @@ export default function PassportPage() {
             <p className="break-all font-mono text-xs">{tr({ en: "Issuer", pt: "Emissor" })}: {passportIssuer}</p>
             <p className="break-all font-mono text-xs">{tr({ en: "Public keys", pt: "Chaves públicas" })}: {passportIssuer}/jwks</p>
             <p className="break-all font-mono text-xs">{tr({ en: "Revocation list", pt: "Lista de revogação" })}: {passportIssuer}/status/1</p>
+            <p>
+              {tr({
+                en: "Each credential is also a leaf of a daily batch (RFC 9162 Merkle tree) whose root is written to Solana devnet in a Memo signed by EmpowerFI's anchoring key. Nothing on chain names her or carries a figure.",
+                pt: "Cada credencial também é uma folha de um lote diário (árvore Merkle RFC 9162) cuja raiz é gravada na Solana devnet num Memo assinado pela chave de ancoragem da EmpowerFI. Nada na blockchain identifica a empreendedora ou traz um número.",
+              })}
+            </p>
+            <p className="break-all font-mono text-xs">{tr({ en: "Anchoring", pt: "Ancoragem" })}: {passportIssuer}/anchoring</p>
           </div>
         </Panel>
       </main>

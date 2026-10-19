@@ -3,13 +3,19 @@
 // the SD-JWT digests and the status list are read by the code below, written
 // from the specifications, not imported from packages/passport.
 //
-//   npx tsx scripts/passport/verify.mts 'https://<ref>.supabase.co/functions/v1/passport/link/<token>'
+//   npx tsx scripts/passport/verify.mts 'https://<ref>.supabase.co/functions/v1/passport/link/<token>' [solana rpc url]
+//
+// Each month's anchor, when it has one, is checked too: the credential's leaf
+// up the RFC 9162 path to the batch root, and that root in a Memo, signed by
+// the anchoring authority, in the transaction the proof names -- read from
+// Solana directly (default: public devnet).
 //
 // Opening the link is recorded as an access, as any opening is.
 import { createHash, createPublicKey, verify } from "node:crypto";
 import { gunzipSync } from "node:zlib";
 
 const url = process.argv[2];
+const solanaRpc = process.argv[3] ?? "https://api.devnet.solana.com";
 if (!url) {
   console.error("usage: npx tsx scripts/passport/verify.mts <link url>");
   process.exit(2);
@@ -42,6 +48,47 @@ if (link.status !== "live") {
   process.exit(1);
 }
 const { keys } = await (await get(link.jwks)).json();
+const anchoring = await (await get(link.anchoring)).json();
+
+const sha = (...parts: (Buffer | number[])[]) => createHash("sha256").update(Buffer.concat(parts.map((p) => Buffer.from(p)))).digest();
+
+// RFC 9162 §2.1.3.2, written out again here.
+function included(leaf: Buffer, index: number, size: number, path: Buffer[], root: Buffer): boolean {
+  if (index >= size) return false;
+  let fn = index, sn = size - 1, r = leaf;
+  for (const p of path) {
+    if (sn === 0) return false;
+    if (fn % 2 === 1 || fn === sn) {
+      r = sha([1], p, r);
+      if (fn % 2 === 0) while (fn % 2 === 0 && fn !== 0) { fn >>= 1; sn >>= 1; }
+    } else {
+      r = sha([1], r, p);
+    }
+    fn >>= 1;
+    sn >>= 1;
+  }
+  return sn === 0 && r.equals(root);
+}
+
+async function anchored(jwt: string, a: Record<string, any>): Promise<string> {
+  const commitment = sha(Buffer.from("EMPOWERFI:PASSPORT_CREDENTIAL:v1"), [0], Buffer.from(jwt));
+  if (!included(sha([0], commitment), a.index, a.size, a.proof.map((h: string) => Buffer.from(h, "hex")), Buffer.from(a.root, "hex"))) {
+    throw new Error("not in the batch its proof names");
+  }
+  const res = await fetch(solanaRpc, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [a.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" }] }),
+  });
+  const tx = (await res.json()).result;
+  if (!tx || tx.meta?.err) throw new Error("batch transaction not found on chain, or failed");
+  const memo = `EMPOWERFI:PASSPORT_BATCH:v1:${a.batch_no}:${a.size}:${a.root}`;
+  const ix = tx.transaction.message.instructions.find((i: any) => i.programId === anchoring.memo_program);
+  if (!ix || ix.parsed !== memo) throw new Error("the transaction's memo is not this batch");
+  const signed = tx.transaction.message.accountKeys.some((k: any) => k.pubkey === anchoring.authority && k.signer);
+  if (!signed) throw new Error("not signed by the anchoring authority");
+  return `anchored in batch ${a.batch_no} at ${tx.blockTime ? new Date(tx.blockTime * 1000).toISOString() : `slot ${tx.slot}`}`;
+}
 const lists = new Map<string, Buffer>();
 
 console.log(`issuer:    ${link.issuer}`);
@@ -80,6 +127,7 @@ for (const m of link.months) {
 
     console.log(`${subject.period} v${subject.snapshotVersion}: signature valid, ${revoked ? "REVOKED" : "active"}, ${current ? "current" : "EXPIRED"}, ${subject.evidenceLevel}`);
     console.log(`  ${JSON.stringify(shown)}`);
+    console.log(`  ${m.anchor ? await anchored(jwt, m.anchor) : "not anchored yet (the next daily batch)"}`);
     if (revoked || !current) failures++;
   } catch (e) {
     failures++;

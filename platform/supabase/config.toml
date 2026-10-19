@@ -461,3 +461,8 @@ verify_jwt = false
 # nobody signs in. The link's token is checked inside, against its hash.
 [functions.passport]
 verify_jwt = false
+
+# Called every hour by pg_cron with its own shared secret
+# (x-passport-anchor-secret), which the gateway does not know about.
+[functions.passport-anchor]
+verify_jwt = false

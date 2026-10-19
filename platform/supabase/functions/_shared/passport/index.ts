@@ -374,3 +374,170 @@ export async function checkMonth(
   const time = t < Date.parse(month.validFrom) ? "not_yet_valid" : t >= Date.parse(month.validUntil) ? "expired" : "current";
   return { signature: "valid", status, time, month };
 }
+
+// ------------------------------------------------------------- commitments
+//
+// Step 5: what is anchored on Solana. Nothing that names her, and nothing a
+// guess could be checked against: a snapshot's commitment includes its random
+// salt; a credential's is over its issuer-signed JWT, whose indicator claims
+// are salted digests already.
+//
+//   commitment = SHA-256( utf8(domain) ‖ 0x00 ‖ utf8(body) )
+//
+// body is the canonical JSON of the snapshot (keys sorted, no whitespace,
+// integers only), or the credential's issuer-signed JWT as issued.
+
+export const PASSPORT_DOMAINS = {
+  SNAPSHOT: "EMPOWERFI:PASSPORT_SNAPSHOT:v1",
+  CREDENTIAL: "EMPOWERFI:PASSPORT_CREDENTIAL:v1",
+} as const;
+
+export type Canonical = null | boolean | number | string | Canonical[] | { [key: string]: Canonical };
+
+/** Canonical JSON, the same strict subset of RFC 8785 the audit commitments use. */
+export function canonicalJson(value: Canonical): string {
+  if (value === null) return "null";
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number") {
+    if (!Number.isSafeInteger(value)) throw new Error(`${value} is not a safe integer`);
+    return String(value);
+  }
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (typeof value === "object" && Object.getPrototypeOf(value) === Object.prototype) {
+    return `{${Object.keys(value).sort().map((k) => {
+      if (value[k] === undefined) throw new Error(`${k} is undefined`);
+      return `${JSON.stringify(k)}:${canonicalJson(value[k])}`;
+    }).join(",")}}`;
+  }
+  throw new Error("not a JSON value");
+}
+
+async function domainHash(domain: string, body: string): Promise<Uint8Array> {
+  const tag = te.encode(domain);
+  const rest = te.encode(body);
+  const message = new Uint8Array(tag.length + 1 + rest.length);
+  message.set(tag, 0);
+  message.set(rest, tag.length + 1);
+  return sha256(message);
+}
+
+/** A snapshot as passport_snapshot_payload builds it, salt included. */
+export async function snapshotCommitment(payload: Canonical): Promise<Uint8Array> {
+  return domainHash(PASSPORT_DOMAINS.SNAPSHOT, canonicalJson(payload));
+}
+
+/** A credential: its issuer-signed JWT, the part before the first "~". */
+export async function credentialCommitment(sdJwtOrJwt: string): Promise<Uint8Array> {
+  return domainHash(PASSPORT_DOMAINS.CREDENTIAL, sdJwtOrJwt.split("~")[0]);
+}
+
+export const hex = (bytes: Uint8Array) => Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+export function unhex(text: string): Uint8Array {
+  if (!/^([0-9a-f]{2})*$/.test(text)) throw new Error("not lowercase hex");
+  return Uint8Array.from(text.match(/../g) ?? [], (h) => parseInt(h, 16));
+}
+
+// ------------------------------------------------------------- Merkle tree
+//
+// RFC 9162 (Certificate Transparency v2), section 2.1: leaves are hashed with
+// a 0x00 prefix and nodes with 0x01, so no leaf can pass for a node; a tree
+// of n leaves splits at the largest power of two below n. Inclusion proofs
+// verify with the RFC's own algorithm.
+
+async function concatHash(prefix: number, ...parts: Uint8Array[]): Promise<Uint8Array> {
+  const out = new Uint8Array(1 + parts.reduce((n, p) => n + p.length, 0));
+  out[0] = prefix;
+  let at = 1;
+  for (const p of parts) {
+    out.set(p, at);
+    at += p.length;
+  }
+  return sha256(out);
+}
+
+export const leafHash = (commitment: Uint8Array) => concatHash(0x00, commitment);
+const nodeHash = (left: Uint8Array, right: Uint8Array) => concatHash(0x01, left, right);
+const split = (n: number) => {
+  let k = 1;
+  while (k * 2 < n) k *= 2;
+  return k;
+};
+
+/** MTH over already-hashed leaves. */
+export async function merkleRoot(leaves: Uint8Array[]): Promise<Uint8Array> {
+  if (leaves.length === 0) throw new Error("an empty batch has no root");
+  if (leaves.length === 1) return leaves[0];
+  const k = split(leaves.length);
+  return nodeHash(await merkleRoot(leaves.slice(0, k)), await merkleRoot(leaves.slice(k)));
+}
+
+/** PATH(m, D[n]): the sibling hashes from the leaf up, as RFC 9162 orders them. */
+export async function inclusionProof(leaves: Uint8Array[], index: number): Promise<Uint8Array[]> {
+  if (index < 0 || index >= leaves.length) throw new Error("index outside the tree");
+  if (leaves.length === 1) return [];
+  const k = split(leaves.length);
+  return index < k
+    ? [...await inclusionProof(leaves.slice(0, k), index), await merkleRoot(leaves.slice(k))]
+    : [...await inclusionProof(leaves.slice(k), index - k), await merkleRoot(leaves.slice(0, k))];
+}
+
+/** RFC 9162 §2.1.3.2: whether a leaf at index sits in a tree of size with this root. */
+export async function verifyInclusion(
+  leaf: Uint8Array,
+  index: number,
+  size: number,
+  proof: Uint8Array[],
+  root: Uint8Array,
+): Promise<boolean> {
+  if (index < 0 || index >= size) return false;
+  let fn = index;
+  let sn = size - 1;
+  let r = leaf;
+  for (const p of proof) {
+    if (sn === 0) return false;
+    if (fn % 2 === 1 || fn === sn) {
+      r = await nodeHash(p, r);
+      if (fn % 2 === 0) {
+        while (fn % 2 === 0 && fn !== 0) {
+          fn >>= 1;
+          sn >>= 1;
+        }
+      }
+    } else {
+      r = await nodeHash(r, p);
+    }
+    fn >>= 1;
+    sn >>= 1;
+  }
+  return sn === 0 && hex(r) === hex(root);
+}
+
+/** What the Memo says: no person, no figure, only the batch and its root. */
+export function batchMemo(batchNo: number, size: number, rootHex: string): string {
+  return `EMPOWERFI:PASSPORT_BATCH:v1:${batchNo}:${size}:${rootHex}`;
+}
+
+export function readBatchMemo(memo: string): { batchNo: number; size: number; root: string } | null {
+  const m = memo.match(/^EMPOWERFI:PASSPORT_BATCH:v1:(\d+):(\d+):([0-9a-f]{64})$/);
+  return m ? { batchNo: Number(m[1]), size: Number(m[2]), root: m[3] } : null;
+}
+
+export interface AnchorProof {
+  batch_no: number;
+  size: number;
+  index: number;
+  root: string;
+  proof: string[];
+  signature: string;
+  slot: number;
+  block_time: string | null;
+  cluster: string;
+  authority: string;
+}
+
+/** The Merkle half of an anchor check: this credential is the leaf the proof says, under the root the memo will be checked for. */
+export async function credentialInBatch(presentation: string, a: AnchorProof): Promise<boolean> {
+  const leaf = await leafHash(await credentialCommitment(presentation));
+  return verifyInclusion(leaf, a.index, a.size, a.proof.map(unhex), unhex(a.root));
+}

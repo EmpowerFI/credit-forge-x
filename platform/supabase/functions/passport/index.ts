@@ -4,6 +4,7 @@
 //   GET …/passport/jwks          the issuer's public keys (current and retired)
 //   GET …/passport/status/1      the revocation list, a signed Bitstring Status List
 //   GET …/passport/link/<token>  what a recipient's link opens
+//   GET …/passport/anchoring     who signs the Solana batches, and where
 //
 // The link is the recipient's: a token staff created for a share she
 // authorised (share_link_create). Opening it records the opening, signs any
@@ -19,7 +20,9 @@
 // Secrets: PASSPORT_SIGNING_KEY (private ES256 JWK, from
 // scripts/passport/generate-key.mts); optional PASSPORT_RETIRED_KEYS (JSON
 // array of retired public JWKs, still published so older credentials verify);
-// optional PASSPORT_ISSUER (defaults to this function's URL); SUPABASE_URL and
+// optional PASSPORT_ISSUER (defaults to this function's URL);
+// PASSPORT_ANCHOR_AUTHORITY (the public address that signs the batches, never
+// its key); SUPABASE_URL and
 // SUPABASE_SERVICE_ROLE_KEY from the runtime.
 
 import { createClient } from "@supabase/supabase-js";
@@ -121,7 +124,14 @@ async function link(token: string): Promise<Response> {
   const opened = data as {
     status: string;
     share?: Record<string, unknown> & { indicators: string[] };
-    months?: { snapshot_id: string; period: string; version: number; superseded: boolean; sd_jwt: string | null }[];
+    months?: {
+      snapshot_id: string;
+      period: string;
+      version: number;
+      superseded: boolean;
+      sd_jwt: string | null;
+      anchor: Record<string, unknown> | null;
+    }[];
   };
   if (opened.status !== "live") return json({ status: opened.status }, opened.status === "not_found" ? 404 : 410);
 
@@ -135,6 +145,9 @@ async function link(token: string): Promise<Response> {
       superseded: m.superseded,
       // The same signed credential, showing only what she authorised.
       presentation: present(sdJwt, share.indicators),
+      // The confirmed batch its credential is in, with the path to the root;
+      // null until the next daily batch confirms.
+      anchor: m.anchor,
     });
   }
   return json({
@@ -142,6 +155,7 @@ async function link(token: string): Promise<Response> {
     passport_version: PASSPORT_VERSION,
     issuer: ISSUER,
     jwks: `${ISSUER}/jwks`,
+    anchoring: `${ISSUER}/anchoring`,
     share,
     months,
   });
@@ -178,6 +192,16 @@ Deno.serve(async (req) => {
   const [what, arg] = parts.slice(at + 1);
   try {
     if (what === "jwks") return json({ keys: publishedKeys() }, 200, "public, max-age=300");
+    if (what === "anchoring") {
+      return json({
+        authority: Deno.env.get("PASSPORT_ANCHOR_AUTHORITY") ?? null,
+        cluster: "devnet",
+        memo_program: "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
+        memo: "EMPOWERFI:PASSPORT_BATCH:v1:<batch>:<size>:<root hex>",
+        tree: "RFC 9162",
+        leaf: "SHA-256(\"EMPOWERFI:PASSPORT_CREDENTIAL:v1\" 0x00 issuer-signed JWT)",
+      }, 200, "public, max-age=300");
+    }
     if (what === "status" && arg === "1") return await statusList();
     if (what === "link" && arg) return await link(arg);
     return json({ status: "not_found" }, 404);
