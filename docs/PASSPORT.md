@@ -22,8 +22,8 @@ This is the plan agreed on 2026-10-18 after a critical review of the founder's s
 | 1 | Close the daily journal: correction without losing history, closed vs no-sales days, coverage | **built** (#87) |
 | 2 | Immutable, versioned monthly snapshots | **built** (#88) |
 | 3 | Sharing authorisation: purpose, scope, recipient, expiry, preview before she agrees | **built** (#89) |
-| 4 | Business Passport: signed SD-JWT credential, status list, verification link | **built** (below) |
-| 5 | Merkle batch anchoring of snapshots and credentials on Solana devnet | |
+| 4 | Business Passport: signed SD-JWT credential, status list, verification link | **built** (#90) |
+| 5 | Merkle batch anchoring of snapshots and credentials on Solana devnet | **built** (below) |
 | 6 | Minimal API for the first partner | |
 
 ## Step 2 — monthly snapshots
@@ -71,4 +71,26 @@ npx supabase secrets set --env-file ~/.config/empowerfi/passport-prod.env --proj
 The script writes the private key to that file only (mode 600, refusing paths inside the repository and existing files) and prints the public key and its `kid`.
 
 **Rotating the key.** Generate a new file, add the old key's *public* JWK (printed when it was made, and served at `…/passport/jwks`) to `PASSPORT_RETIRED_KEYS` as a JSON array, then set the new `PASSPORT_SIGNING_KEY`. Credentials signed by the old key keep verifying. If a key is compromised, do not retire it: drop it, and re-issue is a follow-up (revoke every credential it signed).
+
+## Step 5 — anchoring on Solana, in batches
+
+`passport_anchor_batches`, `passport_anchor_leaves` (migration `20261120000000_a_proof_in_the_open_that_names_no_one.sql`), the `passport-anchor` Edge Function, the `passport-anchor` cron (hourly, at :17).
+
+- **What is committed.** Every snapshot: `SHA-256("EMPOWERFI:PASSPORT_SNAPSHOT:v1" ‖ 0x00 ‖ canonical JSON of private.passport_snapshot_payload)`, which includes the snapshot's random salt, written once into `metric_snapshots.commitment`. Every signed credential: `SHA-256("EMPOWERFI:PASSPORT_CREDENTIAL:v1" ‖ 0x00 ‖ issuer-signed JWT)`, whose indicator claims are salted digests already. Nothing anchored can be tested against a guess of her figures.
+- **One batch a day.** Committed snapshots and signed credentials not yet anchored become the leaves of an RFC 9162 Merkle tree (0x00 leaf / 0x01 node prefixes). The root goes to Solana devnet in a Memo: `EMPOWERFI:PASSPORT_BATCH:v1:<batch>:<size>:<root>`, signed by the anchoring authority. No account per woman, no pseudonym, no figure on chain; the cadence the chain shows is EmpowerFI's, not hers. The database writes the memo from the batch number it assigns.
+- **Resilient.** Hourly runs finish the batch in flight and open a new one at most once a day. The signature is recorded before sending: a run that dies in between is recovered by the next, and a transaction that failed or expired unseen is signed again. One batch in flight at a time. If Solana is down, the journal, snapshots, credentials and their signatures all keep working; the batch waits.
+- **Proofs travel with the credential.** The link returns, for each month, the batch, the leaf's index, the path and the transaction. The page and `scripts/passport/verify.mts` check the path up to the root and read the transaction from Solana: the memo must name that root and size, and the anchoring authority (served at `…/passport/anchoring`) must have signed it.
+- **Erasure.** Her leaves stop pointing at her rows; the commitments and batches stay, and reveal nothing.
+- **The existing `empowerfi_audit` program** keeps the credit lifecycle unchanged.
+
+### The anchoring key
+
+Separate from the credit program's operator key, one per environment:
+
+```
+npx tsx scripts/passport/generate-anchor-key.mts ~/.config/empowerfi/passport-anchor-prod.env <project-ref>
+npx supabase secrets set --env-file ~/.config/empowerfi/passport-anchor-prod.env --project-ref <project-ref> --workdir platform
+```
+
+The script writes `PASSPORT_ANCHOR_KEYPAIR`, `PASSPORT_ANCHOR_AUTHORITY` and `PASSPORT_ANCHOR_SECRET` to the `.env` file and the two Vault secrets the cron reads to `…-vault.sql` (run once in that project's SQL Editor, then delete), and prints the authority's public address. Fund it with devnet SOL (faucet.solana.com); a batch costs 5,000 lamports.
 
