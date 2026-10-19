@@ -82,8 +82,13 @@ export interface JournalLine {
   amount_cents: number;
   payment_method: PaymentMethod;
   due_on?: string;
+  /** An expense paid later in instalments: how many, the first due on due_on. */
+  installments?: number;
   category?: Category;
 }
+
+/** At most twelve instalments, as card machines in Brazil commonly offer. */
+export const MAX_INSTALLMENTS = 12;
 
 export interface JournalDay {
   /** YYYY-MM-DD, in São Paulo. */
@@ -228,6 +233,15 @@ export function parseJournalReply(responseJson: string, sentAt: Date): JournalDa
       if (blank(due)) throw new Error(`gasto ${n}: falta quando vai pagar`);
       line.due_on = dateOf(due, `gasto ${n}`);
       if (line.due_on <= day) throw new Error(`gasto ${n}: a data de pagar tem de ser depois do dia do gasto`);
+      const times = body[`exp${n}_installments`];
+      if (!blank(times)) {
+        const k = Number(times);
+        if (!Number.isInteger(k) || k < 1 || k > MAX_INSTALLMENTS) throw new Error(`gasto ${n}: número de parcelas inválido`);
+        if (k > 1) {
+          if (line.amount_cents < k) throw new Error(`gasto ${n}: valor pequeno demais para ${k} parcelas`);
+          line.installments = k;
+        }
+      }
     }
     lines.push(line);
   }
@@ -522,6 +536,7 @@ export interface ListedLine {
   payment_method: string;
   category: string | null;
   due_on: string | null;
+  installments?: number;
 }
 
 const METHOD_TITLE = Object.fromEntries(PAYMENT_METHODS.map((m) => [m.id, m.title])) as Record<string, string>;
@@ -530,7 +545,10 @@ const ddmm = (day: string) => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
 
 export function lineText(l: Omit<ListedLine, "due_on"> & { due_on?: string | null }): string {
   const what = l.kind === "sale" ? `Venda · ${METHOD_TITLE[l.payment_method] ?? l.payment_method}` : `Gasto · ${CATEGORY_TITLE[l.category ?? ""] ?? l.category}`;
-  const later = l.due_on ? (l.kind === "sale" ? ` (recebe em ${ddmm(l.due_on)})` : ` (paga em ${ddmm(l.due_on)})`) : "";
+  const later = !l.due_on ? ""
+    : l.kind === "sale" ? ` (recebe em ${ddmm(l.due_on)})`
+    : (l.installments ?? 1) > 1 ? ` (em ${l.installments}x, a 1ª em ${ddmm(l.due_on)})`
+    : ` (paga em ${ddmm(l.due_on)})`;
   return `${l.n}. ${what} · R$ ${formatBRL(l.amount_cents)}${later}`;
 }
 
@@ -623,7 +641,7 @@ export function journalFlow(): unknown {
   const saleFields = SALE_METHODS.flatMap((m) => ("due" in m ? [m.field, m.due] : [m.field]));
   const carried = ["day", ...saleFields];
   const expenseFields = (n: number) => [
-    `exp${n}_category`, `exp${n}_amount`, `exp${n}_method`, `exp${n}_paid_now`, `exp${n}_due`,
+    `exp${n}_category`, `exp${n}_amount`, `exp${n}_method`, `exp${n}_paid_now`, `exp${n}_installments`, `exp${n}_due`,
   ];
   const ref = (scope: "form" | "data", f: string) => `\${${scope}.${f}}`;
   const pass = (fields: string[], scope: "form" | "data") => Object.fromEntries(fields.map((f) => [f, ref(scope, f)]));
@@ -696,7 +714,16 @@ export function journalFlow(): unknown {
           {
             type: "If",
             condition: `${ref("form", `exp${n}_paid_now`)} == 'no'`,
-            then: [{ type: "DatePicker", name: `exp${n}_due`, label: "Quando vai pagar?", required: true }],
+            then: [
+              {
+                type: "Dropdown", name: `exp${n}_installments`, label: "Em quantas vezes?", required: false,
+                "init-value": "1",
+                "data-source": Array.from({ length: MAX_INSTALLMENTS }, (_, k) => ({
+                  id: String(k + 1), title: k === 0 ? "De uma vez" : `${k + 1}x`,
+                })),
+              },
+              { type: "DatePicker", name: `exp${n}_due`, label: "Quando vence? Se for parcelado, a 1ª parcela", required: true },
+            ],
           },
           ...(n < EXPENSE_SCREENS
             ? [{
