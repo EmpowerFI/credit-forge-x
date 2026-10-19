@@ -6,6 +6,14 @@
 //   GET …/passport/link/<token>  what a recipient's link opens
 //   GET …/passport/anchoring     who signs the Solana batches, and where
 //
+// and, for a recipient's own systems, with its key (Authorization: Bearer efp_…):
+//
+//   GET …/passport/api/v1/shares              the shares in force for it
+//   GET …/passport/api/v1/shares/<id>         one share, as its link shows it
+//   GET …/passport/api/v1/shares/<id>/status  live, expired or ended
+//
+// docs/PASSPORT-API.md is the partner's reference.
+//
 // The link is the recipient's: a token staff created for a share she
 // authorised (share_link_create). Opening it records the opening, signs any
 // month of the share not yet signed, and returns each month presented with
@@ -111,30 +119,21 @@ async function credentialOf(snapshotId: string, key: EcJwk): Promise<string> {
   return String(stored);
 }
 
-async function link(token: string): Promise<Response> {
-  if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) return json({ status: "not_found" }, 404);
-  const key = signingKey();
-  if (!key) return json({ status: "not_configured" }, 503);
+interface Opened {
+  status: string;
+  share?: Record<string, unknown> & { indicators: string[] };
+  months?: {
+    snapshot_id: string;
+    period: string;
+    version: number;
+    superseded: boolean;
+    sd_jwt: string | null;
+    anchor: Record<string, unknown> | null;
+  }[];
+}
 
-  const { data, error } = await db.rpc("passport_link_open", { p_token: token });
-  if (error) {
-    console.error("link open failed", error.message);
-    return json({ status: "error" }, 500);
-  }
-  const opened = data as {
-    status: string;
-    share?: Record<string, unknown> & { indicators: string[] };
-    months?: {
-      snapshot_id: string;
-      period: string;
-      version: number;
-      superseded: boolean;
-      sd_jwt: string | null;
-      anchor: Record<string, unknown> | null;
-    }[];
-  };
-  if (opened.status !== "live") return json({ status: opened.status }, opened.status === "not_found" ? 404 : 410);
-
+/** What a live share shows its recipient, by link or by API: each month signed, presented, with its anchor. */
+async function shareBody(opened: Opened, key: EcJwk): Promise<Record<string, unknown>> {
   const share = opened.share!;
   const months = [];
   for (const m of opened.months ?? []) {
@@ -150,7 +149,7 @@ async function link(token: string): Promise<Response> {
       anchor: m.anchor,
     });
   }
-  return json({
+  return {
     status: "live",
     passport_version: PASSPORT_VERSION,
     issuer: ISSUER,
@@ -158,7 +157,66 @@ async function link(token: string): Promise<Response> {
     anchoring: `${ISSUER}/anchoring`,
     share,
     months,
-  });
+  };
+}
+
+const NOT_LIVE: Record<string, number> = { not_found: 404, unauthorised: 401, expired: 410, ended: 410 };
+
+async function rpcOpened(fn: string, args: Record<string, unknown>): Promise<Opened | Response> {
+  const { data, error } = await db.rpc(fn, args);
+  if (error) {
+    console.error(`${fn} failed`, error.message);
+    return json({ status: "error" }, 500);
+  }
+  return data as Opened;
+}
+
+async function link(token: string): Promise<Response> {
+  if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) return json({ status: "not_found" }, 404);
+  const key = signingKey();
+  if (!key) return json({ status: "not_configured" }, 503);
+  const opened = await rpcOpened("passport_link_open", { p_token: token });
+  if (opened instanceof Response) return opened;
+  if (opened.status !== "live") return json({ status: opened.status }, NOT_LIVE[opened.status] ?? 500);
+  return json(await shareBody(opened, key));
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** The partner API: a recipient's key in the Authorization header, its own shares only. */
+async function api(req: Request, path: string[]): Promise<Response> {
+  const apiKey = (req.headers.get("authorization") ?? "").match(/^Bearer\s+(efp_[A-Za-z0-9_-]{20,80})$/)?.[1];
+  if (!apiKey) return json({ status: "unauthorised" }, 401);
+  const [version, resource, id, sub] = path;
+  if (version !== "v1" || resource !== "shares" || (id && !UUID.test(id)) || (sub && sub !== "status")) {
+    return json({ status: "not_found" }, 404);
+  }
+
+  if (!id) {
+    const { data, error } = await db.rpc("passport_api_shares", { p_key: apiKey });
+    if (error) {
+      console.error("api shares failed", error.message);
+      return json({ status: "error" }, 500);
+    }
+    const r = data as { status: string };
+    return json(r, r.status === "ok" ? 200 : NOT_LIVE[r.status] ?? 500);
+  }
+  if (sub === "status") {
+    const { data, error } = await db.rpc("passport_api_share_status", { p_key: apiKey, p_share_id: id });
+    if (error) {
+      console.error("api status failed", error.message);
+      return json({ status: "error" }, 500);
+    }
+    const r = data as { status: string };
+    return json(r, r.status === "unauthorised" ? 401 : r.status === "not_found" ? 404 : 200);
+  }
+
+  const key = signingKey();
+  if (!key) return json({ status: "not_configured" }, 503);
+  const opened = await rpcOpened("passport_api_share", { p_key: apiKey, p_share_id: id });
+  if (opened instanceof Response) return opened;
+  if (opened.status !== "live") return json({ status: opened.status }, NOT_LIVE[opened.status] ?? 500);
+  return json(await shareBody(opened, key));
 }
 
 async function statusList(): Promise<Response> {
@@ -204,6 +262,7 @@ Deno.serve(async (req) => {
     }
     if (what === "status" && arg === "1") return await statusList();
     if (what === "link" && arg) return await link(arg);
+    if (what === "api") return await api(req, parts.slice(at + 2));
     return json({ status: "not_found" }, 404);
   } catch (error) {
     console.error("passport failed", String(error));

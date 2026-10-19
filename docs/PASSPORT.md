@@ -23,8 +23,8 @@ This is the plan agreed on 2026-10-18 after a critical review of the founder's s
 | 2 | Immutable, versioned monthly snapshots | **built** (#88) |
 | 3 | Sharing authorisation: purpose, scope, recipient, expiry, preview before she agrees | **built** (#89) |
 | 4 | Business Passport: signed SD-JWT credential, status list, verification link | **built** (#90) |
-| 5 | Merkle batch anchoring of snapshots and credentials on Solana devnet | **built** (below) |
-| 6 | Minimal API for the first partner | |
+| 5 | Merkle batch anchoring of snapshots and credentials on Solana devnet | **built** (#91) |
+| 6 | Minimal API for the first partner | **built** (below) |
 
 ## Step 2 — monthly snapshots
 
@@ -93,4 +93,13 @@ npx supabase secrets set --env-file ~/.config/empowerfi/passport-anchor-prod.env
 ```
 
 The script writes `PASSPORT_ANCHOR_KEYPAIR`, `PASSPORT_ANCHOR_AUTHORITY` and `PASSPORT_ANCHOR_SECRET` to the `.env` file and the two Vault secrets the cron reads to `…-vault.sql` (run once in that project's SQL Editor, then delete), and prints the authority's public address. Fund it with devnet SOL (faucet.solana.com); a batch costs 5,000 lamports.
+
+## Step 6 — the partner's API and the staff screen
+
+Migration `20261121000000_the_partner_asks_with_its_own_key.sql`, routes under `…/passport/api/v1`, the partner's reference in [PASSPORT-API.md](PASSPORT-API.md), and the dashboard's Passport page (EmpowerFI/empowerfi-dashboard).
+
+- **Keys per recipient** (`passport_recipient_keys`). Staff create one (`passport_recipient_key_create`); it is shown once, `efp_…`, and only its SHA-256 and a ten-character prefix are kept. Revoked keys, and keys of an inactive recipient, read nothing.
+- **Three reads.** The shares in force for the key's recipient; one share, exactly as its link shows it (each month signed, presented with only her authorised indicators, with its anchor); a share's status. A key never reaches another recipient's share, and a share that is not live shows only whether it expired or she ended it.
+- **Every read of a share is an access** (`share_accesses.via = 'api'`), counted with link openings in what AUTORIZAÇÕES tells her. The status check reads no figure and is not counted.
+- **For staff:** `share_overview` (every share, its status, reads, whether it has a link) and `share_candidates` (women with a partner benefit waiting and no share proposed or in force), alongside the recipients, keys, proposals and links of steps 3 and 4.
 
