@@ -21,8 +21,8 @@ This is the plan agreed on 2026-10-18 after a critical review of the founder's s
 |---|---|---|
 | 1 | Close the daily journal: correction without losing history, closed vs no-sales days, coverage | **built** (#87) |
 | 2 | Immutable, versioned monthly snapshots | **built** (#88) |
-| 3 | Sharing authorisation: purpose, scope, recipient, expiry, preview before she agrees | **built** (below) |
-| 4 | Business Passport: signed SD-JWT credential, status list, verification link | |
+| 3 | Sharing authorisation: purpose, scope, recipient, expiry, preview before she agrees | **built** (#89) |
+| 4 | Business Passport: signed SD-JWT credential, status list, verification link | **built** (below) |
 | 5 | Merkle batch anchoring of snapshots and credentials on Solana devnet | |
 | 6 | Minimal API for the first partner | |
 
@@ -46,4 +46,29 @@ This is the plan agreed on 2026-10-18 after a critical review of the founder's s
 - **AUTORIZO** authorises it for its days, releases the benefit that was waiting, and, if her consent record did not yet include the partner scope, adds a record that does (assessment is never turned on by a share). **NÃO** declines it, and nothing goes. **AUTORIZAÇÕES** lists the shares in force; **ENCERRAR n** ends one at once.
 - **Nothing is rewritten.** A trigger keeps every column she was shown fixed and lets the status only move forward: proposed to authorised, declined or lapsed; authorised to revoked. A month corrected after she agreed does not change what she agreed to share; a new share does.
 - **What it opens.** `private.share_is_live` -- authorised, within its days, not ended, recipient still active -- is the gate step 4 checks before a credential or a link shows anything. `share_history` gives staff every share with its exact text.
+
+## Step 4 — the signed credential and the link
+
+`passport_credentials`, `share_links`, `share_accesses` (migration `20261119000000_a_month_signed_and_shown_only_as_she_allowed.sql`), the `passport` Edge Function, `packages/passport`, and the page `/app/passport/<token>`.
+
+- **One credential per snapshot version.** A W3C Verifiable Credential (Data Model 2.0, base context only), secured with SD-JWT as VC-JOSE-COSE describes it: header `typ: vc+sd-jwt`, `alg: ES256`, `kid` the key's RFC 7638 thumbprint. Type `BusinessActivityCredential`. Always visible: the pseudonymous subject (`urn:empowerfi:subject:B-…`), the month, days in the month, currency, snapshot version, methodology, `evidenceLevel: SELF_DECLARED`, data origin. Disclosable one by one: the nine indicators of the share vocabulary. Valid for a year from issuance.
+- **Signed when first needed.** The first time a link opens a month, the function signs it and the database keeps the result. A month nobody is ever shown is never signed. The stored credential is written once.
+- **A share shows only what she authorised.** The link serves each month as a presentation of the same signed credential with only her authorised disclosures. No holder key binding: she has no wallet, and EmpowerFI presents on her behalf only under a live share.
+- **Revocation: a Bitstring Status List** (W3C v1.0, 131,072 positions, served signed as `typ: vc+jwt` at `…/passport/status/1`). Each credential takes a random position that is never reused. A credential is revoked when its month is corrected (a new snapshot version supersedes it) or when she is erased: her rows go, the positions they held stay revoked as tombstones.
+- **The link.** Staff create it for a live share (`share_link_create`, which returns the token once and keeps only its SHA-256; a new link closes the previous one). It stops opening the moment the share ends, by expiry or by ENCERRAR. Every opening is recorded, and AUTORIZAÇÕES tells her how many times the recipient opened it and when last. An unknown, expired or ended link says only which of the three it is.
+- **The page** `/app/passport/<token>` shows the share, each month's disclosed figures, and checks each month in the visitor's browser: signature, revocation, validity, and the evidence level said in words. The issuer it trusts is pinned by the deployment (`VITE_PASSPORT_ISSUER`), never read from the link.
+- **Independent verification.** `npx tsx scripts/passport/verify.mts <link url>` checks a link with none of our code: the signature through Node's OpenSSL, the disclosure digests and the status list from the specifications. Tampering with a single figure fails it.
+
+### The signing key
+
+It lives only in the `passport` function's secrets, one per environment, never in the database or the repository.
+
+```
+npx tsx scripts/passport/generate-key.mts ~/.config/empowerfi/passport-prod.env
+npx supabase secrets set --env-file ~/.config/empowerfi/passport-prod.env --project-ref <ref>
+```
+
+The script writes the private key to that file only (mode 600, refusing paths inside the repository and existing files) and prints the public key and its `kid`.
+
+**Rotating the key.** Generate a new file, add the old key's *public* JWK (printed when it was made, and served at `…/passport/jwks`) to `PASSPORT_RETIRED_KEYS` as a JSON array, then set the new `PASSPORT_SIGNING_KEY`. Credentials signed by the old key keep verifying. If a key is compromised, do not retire it: drop it, and re-issue is a follow-up (revoke every credential it signed).
 

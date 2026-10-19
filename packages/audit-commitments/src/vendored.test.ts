@@ -11,6 +11,7 @@ const pairs: [string, string][] = [
   ["packages/audit-client/src/generated", "platform/supabase/functions/_shared/audit-client"],
   ["packages/readiness-engine/src/index.ts", "platform/supabase/functions/_shared/readiness-engine/index.ts"],
   ["packages/eligibility-engine/src/index.ts", "platform/supabase/functions/_shared/eligibility-engine/index.ts"],
+  ["packages/passport/src/index.ts", "platform/supabase/functions/_shared/passport/index.ts"],
 ];
 
 const files = (path: string): string[] =>

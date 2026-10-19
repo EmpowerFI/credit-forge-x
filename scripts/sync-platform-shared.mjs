@@ -12,6 +12,7 @@ const targets = [
   ["packages/readiness-engine/src/index.ts", "platform/supabase/functions/_shared/readiness-engine/index.ts"],
   ["packages/checkin-insights/src/index.ts", "platform/supabase/functions/_shared/checkin-insights/index.ts"],
   ["packages/eligibility-engine/src/index.ts", "platform/supabase/functions/_shared/eligibility-engine/index.ts"],
+  ["packages/passport/src/index.ts", "platform/supabase/functions/_shared/passport/index.ts"],
 ];
 
 for (const [from, to] of targets) {

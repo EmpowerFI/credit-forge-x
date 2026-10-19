@@ -38,6 +38,9 @@
       "@empowerfi/capital-allocation": [
         "./packages/capital-allocation/src/index.ts"
       ],
+      "@empowerfi/passport": [
+        "./packages/passport/src/index.ts"
+      ],
       "@empowerfi/settlement-route": [
         "./packages/settlement-route/src/index.ts"
       ]
