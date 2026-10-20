@@ -1,7 +1,6 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import {
-  activeDays, brlToCents, canonicalPhone, flowReplies, optIn, optionalBrlToCents, parseFlowReply,
-  sendTextRequest, signatureMatches, textMessages,
+  brlToCents, canonicalPhone, flowReplies, sendTextRequest, signatureMatches, textMessages,
 } from "./whatsapp.ts";
 
 Deno.test("reais as a woman writes them", () => {
@@ -39,81 +38,7 @@ Deno.test("what it refuses rather than interprets", () => {
   assertThrows(() => brlToCents("100000000,01"), Error, "above the ceiling");
 });
 
-Deno.test("a fortnight has fifteen days", () => {
-  assertEquals(activeDays("0"), 0);
-  assertEquals(activeDays("12"), 12);
-  assertEquals(activeDays("15"), 15);
-  assertEquals(activeDays(15), 15);
-  assertThrows(() => activeDays("16"), Error, "fifteen days");
-  assertThrows(() => activeDays("31"), Error, "fifteen days"); // a month filled into a half
-  assertThrows(() => activeDays("-1"));
-  assertThrows(() => activeDays("7,5"));
-  assertThrows(() => activeDays(""));
-});
-
-Deno.test("an unchecked box is a no, not a missing answer", () => {
-  assertEquals(optIn(undefined), false);
-  assertEquals(optIn(""), false);
-  assertEquals(optIn("false"), false);
-  assertEquals(optIn("true"), true);
-  assertEquals(optIn(true), true);
-  assertThrows(() => optIn("sim"));
-});
-
-const COMPLETE = JSON.stringify({
-  flow_token: "tok_abc",
-  revenue_brl: "3.450,00",
-  active_days: "11",
-  keeps_records: "true",
-  cogs_brl: "1.200,50",
-  opex_brl: "180",
-  household_brl: "900,00",
-});
-
-Deno.test("the completion payload, field by field", () => {
-  assertEquals(parseFlowReply(COMPLETE), {
-    flowToken: "tok_abc",
-    revenueCents: 345_000,
-    cogsCents: 120_050,
-    opexCents: 18_000,
-    householdCents: 90_000,
-    keepsRecords: true,
-    activeDays: 11,
-  });
-});
-
-Deno.test("a blank cost is \"não sei\", never zero", () => {
-  assertEquals(optionalBrlToCents(""), null);
-  assertEquals(optionalBrlToCents("   "), null);
-  assertEquals(optionalBrlToCents(undefined), null);
-  assertEquals(optionalBrlToCents(null), null);
-  assertEquals(optionalBrlToCents("0"), 0); // she typed zero: that is a figure
-  assertEquals(optionalBrlToCents("1.200,50"), 120_050);
-  assertThrows(() => optionalBrlToCents("1,234.56"), Error, "not a BRL amount"); // written is read strictly
-  assertThrows(() => optionalBrlToCents(1234), Error, "not a written amount");
-
-  const blank = JSON.parse(COMPLETE);
-  blank.cogs_brl = "";
-  delete blank.opex_brl;
-  const half = parseFlowReply(JSON.stringify(blank));
-  assertEquals(half.cogsCents, null);
-  assertEquals(half.opexCents, null);
-  assertEquals(half.revenueCents, 345_000); // what she did know is kept
-});
-
-Deno.test("sales and household are still required", () => {
-  for (const field of ["revenue_brl", "household_brl"]) {
-    const missing = JSON.parse(COMPLETE);
-    missing[field] = "";
-    assertThrows(() => parseFlowReply(JSON.stringify(missing)), Error, "empty amount");
-  }
-});
-
-Deno.test("no token, no check-in", () => {
-  assertThrows(() => parseFlowReply(JSON.stringify({ revenue_brl: "100" })), Error, "no flow token");
-  assertThrows(() => parseFlowReply(JSON.stringify({ flow_token: "  ", revenue_brl: "100" })), Error, "no flow token");
-  assertThrows(() => parseFlowReply("not json"), Error, "not JSON");
-});
+const COMPLETE = JSON.stringify({ flow_token: "journal", day: "today" });
 
 Deno.test("one delivery can carry several, and most of it is not ours", () => {
   const body = {

@@ -19,7 +19,7 @@
 import { brlToCents } from "./whatsapp.ts";
 import { formatBRL } from "./report.ts";
 
-/** Marks a completed Flow as the daily journal rather than the old fortnight form. */
+/** Marks a completed Flow as the daily journal. */
 export const JOURNAL_FORM = "diario";
 
 /** What a quick-reply button sends when she taps "Ontem não teve movimento" (reason unsaid). */

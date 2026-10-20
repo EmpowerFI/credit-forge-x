@@ -1,17 +1,14 @@
-// whatsapp-webhook — where a fortnight she typed on her phone becomes a row.
+// whatsapp-webhook — where what she writes on her phone becomes a row.
 //
-// Meta delivers a completed Flow here. Two things arrive and nothing else is
-// acted on: the verification handshake Meta does once when the URL is
-// registered, and a POST carrying one or more completed check-in Flows.
+// Meta delivers here: the verification handshake it does once when the URL
+// is registered, and POSTs carrying her text messages, her button answers and
+// the daily form (the journal) when she completes it.
 //
-// Three refusals, in this order, before anything is written:
+// Before anything is written:
 //
 //   1. The signature. X-Hub-Signature-256 over the raw bytes, HMAC with the
 //      app secret. Without it the URL is a public write to a woman's revenue.
-//   2. The flow token. Single-use, expiring, and the only thing that says
-//      which woman, which month and which half -- a Flow with no data
-//      endpoint has nowhere else to carry it.
-//   3. The figures. "1.234,56" is pt-BR; "1,234.56" is refused rather than
+//   2. The figures. "1.234,56" is pt-BR; "1,234.56" is refused rather than
 //      interpreted, because a comma read as a decimal point anchors a
 //      commitment to a number she never said.
 //
@@ -31,7 +28,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import {
-  canonicalPhone, flowReplies, parseFlowReply, sendTextRequest, signatureMatches, textMessages,
+  canonicalPhone, flowReplies, sendTextRequest, signatureMatches, textMessages,
 } from "../_shared/whatsapp.ts";
 import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/conversation.ts";
 import {
@@ -474,70 +471,35 @@ Deno.serve(async (req) => {
   }
 
   for (const reply of replies) {
-    // The daily form. The fortnight form below stays until it is retired.
-    if (isJournalReply(reply.responseJson)) {
-      if (!reply.from) {
-        outcomes.push({ message_id: reply.messageId, status: "unreadable", detail: "no sender" });
-        continue;
-      }
-      const sentAt = sentAtOf(reply.timestamp);
-      let parsed;
-      try {
-        parsed = parseJournalReply(reply.responseJson, sentAt);
-      } catch (error) {
-        // The parser's reasons are written in Portuguese, for her.
-        console.error("unreadable daily form", reply.messageId, String(error));
-        const reason = error instanceof Error ? error.message : String(error);
-        const { data: isNew } = await db.rpc("whatsapp_message_is_new", { p_message_id: reply.messageId });
-        if (isNew) await sendText(canonicalPhone(reply.from), refusedText(reason));
-        outcomes.push({ message_id: reply.messageId, status: "unreadable", detail: reason });
-        continue;
-      }
-      if (parsed.lines.length === 0) {
-        const { data: isNew } = await db.rpc("whatsapp_message_is_new", { p_message_id: reply.messageId });
-        if (isNew) await sendText(canonicalPhone(reply.from), EMPTY_FORM_TEXT);
-        outcomes.push({ message_id: reply.messageId, status: "empty_form" });
-        continue;
-      }
-      outcomes.push(await recordDay(reply.from, reply.messageId, parsed.day, sentAt, parsed.lines));
+    // The daily form is the only Flow there is; another one is not read.
+    if (!isJournalReply(reply.responseJson)) {
+      outcomes.push({ message_id: reply.messageId, status: "unreadable", detail: "not the daily form" });
       continue;
     }
-
-    let half;
+    if (!reply.from) {
+      outcomes.push({ message_id: reply.messageId, status: "unreadable", detail: "no sender" });
+      continue;
+    }
+    const sentAt = sentAtOf(reply.timestamp);
+    let parsed;
     try {
-      half = parseFlowReply(reply.responseJson);
+      parsed = parseJournalReply(reply.responseJson, sentAt);
     } catch (error) {
-      // She filled it in; something between her keyboard and here is wrong.
-      // Recorded, not retried, and never guessed at.
-      console.error("unreadable flow reply", reply.messageId, String(error));
-      outcomes.push({ message_id: reply.messageId, status: "unreadable", detail: String(error) });
+      // The parser's reasons are written in Portuguese, for her.
+      console.error("unreadable daily form", reply.messageId, String(error));
+      const reason = error instanceof Error ? error.message : String(error);
+      const { data: isNew } = await db.rpc("whatsapp_message_is_new", { p_message_id: reply.messageId });
+      if (isNew) await sendText(canonicalPhone(reply.from), refusedText(reason));
+      outcomes.push({ message_id: reply.messageId, status: "unreadable", detail: reason });
       continue;
     }
-
-    const { data, error } = await db.rpc("whatsapp_record_half", {
-      p_message_id: reply.messageId,
-      p_token: half.flowToken,
-      p_revenue_cents: half.revenueCents,
-      p_cogs_cents: half.cogsCents,
-      p_opex_cents: half.opexCents,
-      p_household_cents: half.householdCents,
-      p_keeps_records: half.keepsRecords,
-      p_active_days: half.activeDays,
-    });
-
-    if (error) {
-      console.error("refused", reply.messageId, error.message);
-      outcomes.push({ message_id: reply.messageId, status: "refused", detail: error.message });
+    if (parsed.lines.length === 0) {
+      const { data: isNew } = await db.rpc("whatsapp_message_is_new", { p_message_id: reply.messageId });
+      if (isNew) await sendText(canonicalPhone(reply.from), EMPTY_FORM_TEXT);
+      outcomes.push({ message_id: reply.messageId, status: "empty_form" });
       continue;
     }
-    const recorded = data as { status?: unknown; checkin_id?: unknown };
-    outcomes.push({ message_id: reply.messageId, status: String(recorded?.status ?? "recorded") });
-
-    // The month just closed: she gets its reading. In the background, so Meta
-    // has its 200 now -- the model takes seconds and Meta does not wait.
-    if (recorded?.status === "month_assembled" && typeof recorded.checkin_id === "string" && reply.from) {
-      background(sendReading({ checkin_id: recorded.checkin_id }, reply.from));
-    }
+    outcomes.push(await recordDay(reply.from, reply.messageId, parsed.day, sentAt, parsed.lines));
   }
 
   return json({ handled: outcomes.length, outcomes });

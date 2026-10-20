@@ -1,9 +1,8 @@
 // whatsapp — reading what she typed into a Flow, and refusing to guess.
 //
-// A check-in Flow with no data endpoint returns everything she filled in as
-// one JSON string inside the completion webhook: interactive.nfm_reply
-// .response_json. That string is the only thing the platform gets, and the
-// conversion from what it says to what the engine stores is the most
+// A Flow with no data endpoint returns everything she filled in as one JSON
+// string inside the completion webhook: interactive.nfm_reply.response_json.
+// That string is the only thing the platform gets, and the conversion from what it says to what the engine stores is the most
 // dangerous line in the whole WhatsApp layer -- a comma read as a decimal
 // point anchors a commitment to a number she never said.
 //
@@ -14,18 +13,6 @@
 // Pure on purpose: no network, no database, no Deno APIs except WebCrypto for
 // the signature. It is the part of the layer that can be tested without Meta,
 // without a number, and without a row in any table.
-
-/** The six answers one fortnight of one business, as the database wants them. */
-export interface CheckinHalf {
-  flowToken: string;
-  revenueCents: number;
-  /** null is "não sei": she left it blank. Never zero -- zero is a figure she would have typed. */
-  cogsCents: number | null;
-  opexCents: number | null;
-  householdCents: number;
-  keepsRecords: boolean;
-  activeDays: number;
-}
 
 /** One completed Flow, as it arrived. The id is Meta's, and it is how a retry is recognised. */
 export interface FlowReply {
@@ -82,75 +69,6 @@ export function brlToCents(raw: unknown): number {
   const cents = BigInt(intPart) * 100n + BigInt(fracPart.padEnd(2, "0") || "0");
   if (cents > BigInt(MAX_CENTS)) throw new Error(`amount above the ceiling: ${JSON.stringify(raw)}`);
   return Number(cents);
-}
-
-/**
- * A cost she may not know. Blank, or absent from the payload, is "não sei"
- * and comes back as null; anything written is read exactly as brlToCents
- * reads it, and refused the same way. A blank is never turned into 0: a zero
- * cost invents a better month than she had.
- */
-export function optionalBrlToCents(raw: unknown): number | null {
-  if (raw === undefined || raw === null) return null;
-  if (typeof raw === "string" && raw.trim() === "") return null;
-  return brlToCents(raw);
-}
-
-/**
- * Days worked in a fortnight: 0 to 15.
- *
- * The checkins table validates 0 to 31 because it holds a month, and a month
- * is two of these added together. A half that claims 31 is a half filled in
- * as though it were a month, and the sum would be a lie about a whole year of
- * consistency, so it is refused here rather than corrected.
- */
-export function activeDays(raw: unknown): number {
-  const s = typeof raw === "number" ? String(raw) : raw;
-  if (typeof s !== "string" || !/^\d{1,2}$/.test(s.trim())) {
-    throw new Error(`not a count of days: ${JSON.stringify(raw)}`);
-  }
-  const n = Number(s.trim());
-  if (n > 15) throw new Error(`a fortnight has fifteen days, not ${n}`);
-  return n;
-}
-
-/** An unchecked OptIn is absent from the payload, which is a no rather than a missing answer. */
-export function optIn(raw: unknown): boolean {
-  if (raw === undefined || raw === null || raw === "") return false;
-  if (typeof raw === "boolean") return raw;
-  if (raw === "true") return true;
-  if (raw === "false") return false;
-  throw new Error(`not a yes or a no: ${JSON.stringify(raw)}`);
-}
-
-/**
- * The completion payload, checked field by field.
- *
- * The flow token is what says which woman, which month and which half -- in a
- * Flow with no endpoint nothing else can carry it -- so an absent or empty one
- * is refused before any figure is read.
- */
-export function parseFlowReply(responseJson: string): CheckinHalf {
-  let body: Record<string, unknown>;
-  try {
-    body = JSON.parse(responseJson) as Record<string, unknown>;
-  } catch {
-    throw new Error("response_json is not JSON");
-  }
-  if (body === null || typeof body !== "object") throw new Error("response_json is not an object");
-
-  const flowToken = body.flow_token;
-  if (typeof flowToken !== "string" || flowToken.trim() === "") throw new Error("no flow token in the reply");
-
-  return {
-    flowToken: flowToken.trim(),
-    revenueCents: brlToCents(body.revenue_brl),
-    cogsCents: optionalBrlToCents(body.cogs_brl),
-    opexCents: optionalBrlToCents(body.opex_brl),
-    householdCents: brlToCents(body.household_brl),
-    keepsRecords: optIn(body.keeps_records),
-    activeDays: activeDays(body.active_days),
-  };
 }
 
 /**
@@ -290,8 +208,8 @@ export interface TextMessage {
  * Every plain text message in a delivery.
  *
  * Separate from flowReplies because they go to different places -- a form
- * answer is a fortnight, a text is a turn of the conversation -- and because
- * one delivery can carry both.
+ * answer is a day of the journal, a text is a turn of the conversation --
+ * and because one delivery can carry both.
  */
 export function textMessages(body: unknown): TextMessage[] {
   const out: TextMessage[] = [];
