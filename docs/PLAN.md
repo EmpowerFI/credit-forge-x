@@ -150,7 +150,7 @@ The product change the whole thing is for. [STUDY-WHATSAPP.md](STUDY-WHATSAPP.md
 
 **Meta's queue is the other one, and it is not code.** Business verification reportedly takes days, and it needs a CNPJ and a dedicated number that is not already on WhatsApp. It can start today, in parallel with everything, and it blocks nothing in the build: getting started creates a test account and test number with no paperwork. Verification is what the pilot waits on — and even there the unverified cap of roughly 250 unique customers per rolling 24 hours in business-initiated conversations sits far above a first cohort.
 
-**And 2.3 came down by about a week.** The endpoint and encryption key pair the study budgeted are not needed: a Flow with no data endpoint generates its own routing and returns everything she typed in the completion webhook. The form is written — `docs/whatsapp/checkin-flow.pt-BR.json` — with the templates and the consent wording beside it in `docs/whatsapp/`.
+**And 2.3 came down by about a week.** The endpoint and encryption key pair the study budgeted are not needed: a Flow with no data endpoint generates its own routing and returns everything she typed in the completion webhook. The form was written — `docs/whatsapp/checkin-flow.pt-BR.json`, since replaced by the daily journal's `diario-flow.pt-BR.json` and retired — with the templates and the consent wording beside it in `docs/whatsapp/`.
 
 ---
 
