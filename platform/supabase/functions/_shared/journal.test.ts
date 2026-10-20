@@ -3,7 +3,7 @@ import {
   isDecline, isSharesText, monthsText, revokeNumber, shareAnswerText, shareRevokedText, sharesText,
 } from "./journal.ts";
 import {
-  CLOSED_YESTERDAY, isListText, listText, NO_SALES_YESTERDAY, quietButton, quietTextReason, voidedText, voidNumber,
+  CLOSED_YESTERDAY, isListText, lineText, listText, NO_SALES_YESTERDAY, quietButton, quietTextReason, voidedText, voidNumber,
   voidRefusedText,
 } from "./journal.ts";
 import {
@@ -285,7 +285,9 @@ Deno.test("every field the reader needs reaches the final payload, from every sc
   assertEquals(flow.screens.length, 1 + EXPENSE_SCREENS);
   const needed = (n: number) => [
     "day", "sale_pix", "sale_cash", "sale_debit", "sale_credit", "sale_credit_due", "sale_fiado", "sale_fiado_due",
-    ...Array.from({ length: n }, (_, i) => [`exp${i + 1}_category`, `exp${i + 1}_amount`, `exp${i + 1}_method`, `exp${i + 1}_paid_now`, `exp${i + 1}_due`]).flat(),
+    ...Array.from({ length: n }, (_, i) => [
+      `exp${i + 1}_category`, `exp${i + 1}_amount`, `exp${i + 1}_method`, `exp${i + 1}_paid_now`, `exp${i + 1}_installments`, `exp${i + 1}_due`,
+    ]).flat(),
   ];
   for (let n = 1; n <= EXPENSE_SCREENS; n++) {
     const screen = flow.screens[n];
@@ -357,4 +359,41 @@ Deno.test("a void says what was struck, and refusals say what to do", () => {
   assertEquals(voidRefusedText("no_recent_list").includes("VER"), true);
   assertEquals(voidRefusedText("month_closed").includes("fechado"), true);
   assertEquals(voidRefusedText("too_old_to_correct").includes("hoje e de ontem"), true);
+});
+
+Deno.test("a purchase in instalments is one line, with how many and when the first falls due", () => {
+  const { lines } = parseJournalReply(
+    form({ exp1_category: "stock", exp1_amount: "600", exp1_method: "credit_card", exp1_paid_now: "no", exp1_installments: "3", exp1_due: "2026-11-10" }),
+    MORNING,
+  );
+  assertEquals(lines, [{ kind: "expense", amount_cents: 60_000, payment_method: "credit_card", category: "stock", due_on: "2026-11-10", installments: 3 }]);
+  // "De uma vez" is a single payment, as before.
+  const once = parseJournalReply(
+    form({ exp1_category: "stock", exp1_amount: "600", exp1_method: "credit_card", exp1_paid_now: "no", exp1_installments: "1", exp1_due: "2026-11-10" }),
+    MORNING,
+  );
+  assertEquals(once.lines[0].installments, undefined);
+  // Paid at once, the number of instalments is ignored like the date is.
+  const now = parseJournalReply(
+    form({ exp1_category: "stock", exp1_amount: "600", exp1_method: "pix", exp1_paid_now: "yes", exp1_installments: "3" }),
+    MORNING,
+  );
+  assertEquals(now.lines[0].installments, undefined);
+  for (const [times, why] of [["13", "parcelas inválido"], ["0", "parcelas inválido"], ["2,5", "parcelas inválido"]]) {
+    assertThrows(() => parseJournalReply(
+      form({ exp1_category: "stock", exp1_amount: "600", exp1_method: "credit_card", exp1_paid_now: "no", exp1_installments: times, exp1_due: "2026-11-10" }),
+      MORNING,
+    ), Error, why);
+  }
+  assertThrows(() => parseJournalReply(
+    form({ exp1_category: "stock", exp1_amount: "0,05", exp1_method: "credit_card", exp1_paid_now: "no", exp1_installments: "12", exp1_due: "2026-11-10" }),
+    MORNING,
+  ), Error, "pequeno demais");
+});
+
+Deno.test("VER says a purchase is in instalments", () => {
+  assertEquals(
+    lineText({ n: 2, day: "2026-10-14", kind: "expense", amount_cents: 60_000, payment_method: "credit_card", category: "stock", due_on: "2026-11-10", installments: 3 }),
+    "2. Gasto · Mercadoria ou matéria-prima · R$ 600,00 (em 3x, a 1ª em 10/11)",
+  );
 });

@@ -265,9 +265,66 @@
             "condition": "${form.exp1_paid_now} == 'no'",
             "then": [
               {
+                "type": "Dropdown",
+                "name": "exp1_installments",
+                "label": "Em quantas vezes?",
+                "required": false,
+                "init-value": "1",
+                "data-source": [
+                  {
+                    "id": "1",
+                    "title": "De uma vez"
+                  },
+                  {
+                    "id": "2",
+                    "title": "2x"
+                  },
+                  {
+                    "id": "3",
+                    "title": "3x"
+                  },
+                  {
+                    "id": "4",
+                    "title": "4x"
+                  },
+                  {
+                    "id": "5",
+                    "title": "5x"
+                  },
+                  {
+                    "id": "6",
+                    "title": "6x"
+                  },
+                  {
+                    "id": "7",
+                    "title": "7x"
+                  },
+                  {
+                    "id": "8",
+                    "title": "8x"
+                  },
+                  {
+                    "id": "9",
+                    "title": "9x"
+                  },
+                  {
+                    "id": "10",
+                    "title": "10x"
+                  },
+                  {
+                    "id": "11",
+                    "title": "11x"
+                  },
+                  {
+                    "id": "12",
+                    "title": "12x"
+                  }
+                ]
+              },
+              {
                 "type": "DatePicker",
                 "name": "exp1_due",
-                "label": "Quando vai pagar?",
+                "label": "Quando vence? Se for parcelado, a 1ª parcela",
                 "required": true
               }
             ]
@@ -294,6 +351,7 @@
                 "exp1_amount": "${form.exp1_amount}",
                 "exp1_method": "${form.exp1_method}",
                 "exp1_paid_now": "${form.exp1_paid_now}",
+                "exp1_installments": "${form.exp1_installments}",
                 "exp1_due": "${form.exp1_due}"
               }
             }
@@ -317,6 +375,7 @@
                 "exp1_amount": "${form.exp1_amount}",
                 "exp1_method": "${form.exp1_method}",
                 "exp1_paid_now": "${form.exp1_paid_now}",
+                "exp1_installments": "${form.exp1_installments}",
                 "exp1_due": "${form.exp1_due}"
               }
             }
@@ -374,6 +433,10 @@
           "__example__": ""
         },
         "exp1_paid_now": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp1_installments": {
           "type": "string",
           "__example__": ""
         },
@@ -498,9 +561,66 @@
             "condition": "${form.exp2_paid_now} == 'no'",
             "then": [
               {
+                "type": "Dropdown",
+                "name": "exp2_installments",
+                "label": "Em quantas vezes?",
+                "required": false,
+                "init-value": "1",
+                "data-source": [
+                  {
+                    "id": "1",
+                    "title": "De uma vez"
+                  },
+                  {
+                    "id": "2",
+                    "title": "2x"
+                  },
+                  {
+                    "id": "3",
+                    "title": "3x"
+                  },
+                  {
+                    "id": "4",
+                    "title": "4x"
+                  },
+                  {
+                    "id": "5",
+                    "title": "5x"
+                  },
+                  {
+                    "id": "6",
+                    "title": "6x"
+                  },
+                  {
+                    "id": "7",
+                    "title": "7x"
+                  },
+                  {
+                    "id": "8",
+                    "title": "8x"
+                  },
+                  {
+                    "id": "9",
+                    "title": "9x"
+                  },
+                  {
+                    "id": "10",
+                    "title": "10x"
+                  },
+                  {
+                    "id": "11",
+                    "title": "11x"
+                  },
+                  {
+                    "id": "12",
+                    "title": "12x"
+                  }
+                ]
+              },
+              {
                 "type": "DatePicker",
                 "name": "exp2_due",
-                "label": "Quando vai pagar?",
+                "label": "Quando vence? Se for parcelado, a 1ª parcela",
                 "required": true
               }
             ]
@@ -527,11 +647,13 @@
                 "exp1_amount": "${data.exp1_amount}",
                 "exp1_method": "${data.exp1_method}",
                 "exp1_paid_now": "${data.exp1_paid_now}",
+                "exp1_installments": "${data.exp1_installments}",
                 "exp1_due": "${data.exp1_due}",
                 "exp2_category": "${form.exp2_category}",
                 "exp2_amount": "${form.exp2_amount}",
                 "exp2_method": "${form.exp2_method}",
                 "exp2_paid_now": "${form.exp2_paid_now}",
+                "exp2_installments": "${form.exp2_installments}",
                 "exp2_due": "${form.exp2_due}"
               }
             }
@@ -555,11 +677,13 @@
                 "exp1_amount": "${data.exp1_amount}",
                 "exp1_method": "${data.exp1_method}",
                 "exp1_paid_now": "${data.exp1_paid_now}",
+                "exp1_installments": "${data.exp1_installments}",
                 "exp1_due": "${data.exp1_due}",
                 "exp2_category": "${form.exp2_category}",
                 "exp2_amount": "${form.exp2_amount}",
                 "exp2_method": "${form.exp2_method}",
                 "exp2_paid_now": "${form.exp2_paid_now}",
+                "exp2_installments": "${form.exp2_installments}",
                 "exp2_due": "${form.exp2_due}"
               }
             }
@@ -620,6 +744,10 @@
           "type": "string",
           "__example__": ""
         },
+        "exp1_installments": {
+          "type": "string",
+          "__example__": ""
+        },
         "exp1_due": {
           "type": "string",
           "__example__": ""
@@ -637,6 +765,10 @@
           "__example__": ""
         },
         "exp2_paid_now": {
+          "type": "string",
+          "__example__": ""
+        },
+        "exp2_installments": {
           "type": "string",
           "__example__": ""
         },
@@ -761,9 +893,66 @@
             "condition": "${form.exp3_paid_now} == 'no'",
             "then": [
               {
+                "type": "Dropdown",
+                "name": "exp3_installments",
+                "label": "Em quantas vezes?",
+                "required": false,
+                "init-value": "1",
+                "data-source": [
+                  {
+                    "id": "1",
+                    "title": "De uma vez"
+                  },
+                  {
+                    "id": "2",
+                    "title": "2x"
+                  },
+                  {
+                    "id": "3",
+                    "title": "3x"
+                  },
+                  {
+                    "id": "4",
+                    "title": "4x"
+                  },
+                  {
+                    "id": "5",
+                    "title": "5x"
+                  },
+                  {
+                    "id": "6",
+                    "title": "6x"
+                  },
+                  {
+                    "id": "7",
+                    "title": "7x"
+                  },
+                  {
+                    "id": "8",
+                    "title": "8x"
+                  },
+                  {
+                    "id": "9",
+                    "title": "9x"
+                  },
+                  {
+                    "id": "10",
+                    "title": "10x"
+                  },
+                  {
+                    "id": "11",
+                    "title": "11x"
+                  },
+                  {
+                    "id": "12",
+                    "title": "12x"
+                  }
+                ]
+              },
+              {
                 "type": "DatePicker",
                 "name": "exp3_due",
-                "label": "Quando vai pagar?",
+                "label": "Quando vence? Se for parcelado, a 1ª parcela",
                 "required": true
               }
             ]
@@ -787,16 +976,19 @@
                 "exp1_amount": "${data.exp1_amount}",
                 "exp1_method": "${data.exp1_method}",
                 "exp1_paid_now": "${data.exp1_paid_now}",
+                "exp1_installments": "${data.exp1_installments}",
                 "exp1_due": "${data.exp1_due}",
                 "exp2_category": "${data.exp2_category}",
                 "exp2_amount": "${data.exp2_amount}",
                 "exp2_method": "${data.exp2_method}",
                 "exp2_paid_now": "${data.exp2_paid_now}",
+                "exp2_installments": "${data.exp2_installments}",
                 "exp2_due": "${data.exp2_due}",
                 "exp3_category": "${form.exp3_category}",
                 "exp3_amount": "${form.exp3_amount}",
                 "exp3_method": "${form.exp3_method}",
                 "exp3_paid_now": "${form.exp3_paid_now}",
+                "exp3_installments": "${form.exp3_installments}",
                 "exp3_due": "${form.exp3_due}"
               }
             }

@@ -19,8 +19,10 @@ Cada lançamento é uma linha:
 | evento | **venda** ou **gasto** |
 | valor | em reais |
 | forma de pagamento | pix, dinheiro, cartão de débito, cartão de crédito, **fiado** |
-| prazo | **à vista** ou **a prazo**. Se for a prazo: quando vai receber (venda) ou quando vai pagar (gasto) |
+| prazo | **à vista** ou **a prazo**. Se for a prazo: quando vai receber (venda) ou quando vai pagar (gasto). Um gasto a prazo pode ser **parcelado**, em até 12 vezes: ela informa o número de parcelas e o vencimento da primeira |
 | classificação | só para gastos. Veja a lista abaixo |
+
+**Compra parcelada** (decisão da fundadora, 19/10/2026). "R$ 600 em 3x no cartão" é um lançamento só: a compra inteira entra no resultado no dia em que foi feita, e o "a pagar" segue as parcelas, uma por mês a partir do vencimento da primeira. Os centavos que não dividem certinho vão para a primeira parcela. No VER e no APAGAR, a compra aparece e é apagada inteira. Venda parcelada fica para depois.
 
 **O prazo é o que transforma o diário num sinal de crédito.** Uma venda no cartão de crédito ou no fiado entra no resultado no dia da venda, mas o dinheiro só entra no caixa depois. Com a data prevista, sabemos quanto ela **tem a receber** e quanto **tem a pagar**. As duas coisas pesam numa análise de crédito.
 
