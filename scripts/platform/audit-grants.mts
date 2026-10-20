@@ -45,18 +45,24 @@ if (!DB_URL) {
 
 // ---------------------------------------------------------------- our objects
 
-/** Every table and every public function name this repo creates. */
+/**
+ * Every table and every public function name this repo creates and has not
+ * since dropped, read in migration order. A drop removes the name, which
+ * assumes one overload per name -- true of every function dropped so far.
+ */
 function ourObjects(): { tables: string[]; functions: string[] } {
   const files = readdirSync(DIR).filter((f) => f.endsWith(".sql")).sort();
   const tables = new Set<string>();
   const functions = new Set<string>();
+  const statement =
+    /(create|drop)\s+(table|(?:or\s+replace\s+)?function)\s+(?:if\s+(?:not\s+)?exists\s+)?public\.([a-z_][a-z0-9_]*)/gi;
   for (const f of files) {
-    const sql = readFileSync(join(DIR, f), "utf8");
-    for (const m of sql.matchAll(/create\s+table\s+(?:if\s+not\s+exists\s+)?public\.([a-z_][a-z0-9_]*)/gi)) {
-      tables.add(m[1].toLowerCase());
-    }
-    for (const m of sql.matchAll(/create\s+(?:or\s+replace\s+)?function\s+public\.([a-z_][a-z0-9_]*)\s*\(/gi)) {
-      functions.add(m[1].toLowerCase());
+    const sql = readFileSync(join(DIR, f), "utf8").replace(/--.*$/gm, "");
+    for (const m of sql.matchAll(statement)) {
+      const set = /table/i.test(m[2]) ? tables : functions;
+      const name = m[3].toLowerCase();
+      if (m[1].toLowerCase() === "create") set.add(name);
+      else set.delete(name);
     }
   }
   return { tables: [...tables].sort(), functions: [...functions].sort() };
