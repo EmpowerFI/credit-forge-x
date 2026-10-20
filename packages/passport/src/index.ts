@@ -18,7 +18,7 @@
 // this same file. The Edge Functions run a byte-identical copy
 // (npm run platform:sync-shared).
 
-export const PASSPORT_VERSION = "passport-v1.0.0";
+export const PASSPORT_VERSION = "passport-v1.1.0";
 export const VC_CONTEXT = "https://www.w3.org/ns/credentials/v2";
 export const CREDENTIAL_TYP = "vc+sd-jwt";
 export const STATUS_LIST_TYP = "vc+jwt";
@@ -191,6 +191,12 @@ export interface MonthInput {
   dataOrigin: string;
   daysInPeriod: number;
   indicators: Partial<Record<Disclosable, number>>;
+  /**
+   * Whether the card fees she declared fit her card sales (the snapshot's
+   * card_fee_check): ok, missing, low, high, no_card_sales, or not_checked
+   * for a month snapshotted before the check existed. Always visible.
+   */
+  cardFees?: string;
 }
 
 /** Issues the month's credential: every indicator present becomes a disclosure. */
@@ -216,6 +222,7 @@ export async function issueMonth(input: MonthInput, signingKey: EcJwk): Promise<
       methodology: input.methodology,
       evidenceLevel: input.evidenceLevel,
       dataOrigin: input.dataOrigin,
+      ...(input.cardFees ? { consistency: { cardFees: input.cardFees } } : {}),
       _sd: sd,
     },
     credentialStatus: {

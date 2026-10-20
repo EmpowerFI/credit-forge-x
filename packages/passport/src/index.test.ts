@@ -64,6 +64,9 @@ describe("a month's credential", () => {
     const m = await verifyMonth(shown, [publicJwk(key)]);
     expect(m.disclosed).toEqual({ revenue_cents: 465000, business_expenses_cents: 187550, business_balance_cents: 277450, days_kept: 31 });
     expect(m.subject).toMatchObject({ period: "2026-10", daysInPeriod: 31, evidenceLevel: "SELF_DECLARED", snapshotVersion: 1 });
+    expect(m.subject).not.toHaveProperty("consistency");
+    const checked = await verifyMonth(present(await issueMonth({ ...october, cardFees: "missing" }, key), shared), [publicJwk(key)]);
+    expect(checked.subject.consistency).toEqual({ cardFees: "missing" });
     expect(m.statusIndex).toBe(4242);
     expect(m.statusListUrl).toBe(STATUS);
   });

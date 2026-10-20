@@ -36,7 +36,8 @@ Um mesmo dia pode ter vários lançamentos. Também vale mandar o **total do dia
 | Embalagem | CMV |
 | Aluguel, água, luz, internet, telefone | despesa operacional fixa |
 | Transporte e entrega | despesa operacional variável |
-| Taxas (maquininha, aplicativo, marketplace) | despesa operacional variável |
+| Taxa da maquininha | despesa operacional variável |
+| Taxa de app ou marketplace | despesa operacional variável |
 | Divulgação | despesa operacional |
 | Ajudante ou funcionário | despesa com pessoal |
 | **Retirada para casa (pró-labore)** | abaixo do resultado: retirada |
@@ -74,6 +75,8 @@ Nas mensagens para ela, a palavra é **"resultado"**, nunca "lucro". A regra já
 ### A taxa da maquininha
 
 **Ela declara a taxa como gasto.** Nós não calculamos por ela. O código faz uma **checagem de coerência**: se ela vendeu no cartão no período, a taxa declarada deve ficar dentro de uma faixa plausível sobre essas vendas. Se ficar fora da faixa, ou se não houver taxa nenhuma, nada é corrigido e ninguém é punido. A divergência entra como **inconsistência**, o mesmo sinal que o motor de prontidão já usa e que pesa na **confiança** mostrada para a análise e para os parceiros. A faixa é um parâmetro configurável, não um número fixo no código.
+
+*Construído em 20/10/2026.* A faixa inicial é de **1% a 6%** das vendas no débito e no crédito, avaliada mês a mês. Para a checagem fazer sentido, a classificação de taxas foi separada em duas: **taxa da maquininha**, que entra na checagem, e **taxa de app ou marketplace** (iFood e parecidos cobram de 12% a 27%), que fica fora dela. Cada mês fechado guarda o resultado (`ok`, `missing`, `low`, `high` ou sem vendas no cartão), os valores e a faixa usada. O resultado aparece na credencial do Business Passport. Ele ainda não entra na nota de prontidão: o motor está congelado na versão atual e só passa a contar a checagem na próxima versão.
 
 ## 4. O dia sem movimento
 

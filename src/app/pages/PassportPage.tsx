@@ -99,6 +99,19 @@ function Month({ m }: { m: CheckedMonth }) {
               <span className="block text-xs"><ExplorerLink tx={m.anchor.signature} /></span>
             )}
           </Check>
+          {(() => {
+            const fees = (m.month?.subject.consistency as { cardFees?: string } | undefined)?.cardFees;
+            if (!fees || fees === "not_checked" || fees === "no_card_sales") return null;
+            return (
+              <Check ok={fees === "ok" ? true : null}>
+                {fees === "ok"
+                  ? tr({ en: "Card fees declared in proportion to card sales", pt: "Taxas de cartão declaradas em proporção às vendas no cartão" })
+                  : fees === "missing"
+                    ? tr({ en: "Card sales with no card fee declared: an inconsistency in her records", pt: "Vendas no cartão sem taxa de cartão declarada: uma inconsistência nos registros" })
+                    : tr({ en: "Card fees out of proportion to card sales: an inconsistency in her records", pt: "Taxas de cartão fora da proporção das vendas no cartão: uma inconsistência nos registros" })}
+              </Check>
+            );
+          })()}
           <Check ok={null}>
             {tr({
               en: "Self-declared: her own daily records, not checked against an independent source.",

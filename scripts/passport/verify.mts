@@ -125,7 +125,8 @@ for (const m of link.months) {
     const now = Date.now();
     const current = now >= Date.parse(payload.validFrom) && now < Date.parse(payload.validUntil);
 
-    console.log(`${subject.period} v${subject.snapshotVersion}: signature valid, ${revoked ? "REVOKED" : "active"}, ${current ? "current" : "EXPIRED"}, ${subject.evidenceLevel}`);
+    console.log(`${subject.period} v${subject.snapshotVersion}: signature valid, ${revoked ? "REVOKED" : "active"}, ${current ? "current" : "EXPIRED"}, ${subject.evidenceLevel}` +
+      (subject.consistency?.cardFees ? `, card fees: ${subject.consistency.cardFees}` : ""));
     console.log(`  ${JSON.stringify(shown)}`);
     console.log(`  ${m.anchor ? await anchored(jwt, m.anchor) : "not anchored yet (the next daily batch)"}`);
     if (revoked || !current) failures++;
