@@ -107,6 +107,7 @@ async function credentialOf(snapshotId: string, key: EcJwk): Promise<string> {
     dataOrigin: String(c.data_origin),
     daysInPeriod: Number(c.days_in_period),
     indicators,
+    cardFees: typeof c.card_fees === "string" ? c.card_fees : "not_checked",
   }, key);
   const { data: stored, error: storeError } = await db.rpc("passport_credential_complete", {
     p_id: c.id,

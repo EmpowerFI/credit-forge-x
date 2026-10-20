@@ -172,7 +172,11 @@
               },
               {
                 "id": "fees",
-                "title": "Taxas (maquininha, app)"
+                "title": "Taxa da maquininha"
+              },
+              {
+                "id": "app_fees",
+                "title": "Taxa de app ou marketplace"
               },
               {
                 "id": "transport",
@@ -468,7 +472,11 @@
               },
               {
                 "id": "fees",
-                "title": "Taxas (maquininha, app)"
+                "title": "Taxa da maquininha"
+              },
+              {
+                "id": "app_fees",
+                "title": "Taxa de app ou marketplace"
               },
               {
                 "id": "transport",
@@ -800,7 +808,11 @@
               },
               {
                 "id": "fees",
-                "title": "Taxas (maquininha, app)"
+                "title": "Taxa da maquininha"
+              },
+              {
+                "id": "app_fees",
+                "title": "Taxa de app ou marketplace"
               },
               {
                 "id": "transport",

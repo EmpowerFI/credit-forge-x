@@ -59,7 +59,8 @@ export const PAYMENT_METHODS = [
 export const CATEGORIES = [
   { id: "stock", title: "Mercadoria ou matéria-prima" },
   { id: "packaging", title: "Embalagem" },
-  { id: "fees", title: "Taxas (maquininha, app)" },
+  { id: "fees", title: "Taxa da maquininha" },
+  { id: "app_fees", title: "Taxa de app ou marketplace" },
   { id: "transport", title: "Transporte e entrega" },
   { id: "rent_utilities", title: "Aluguel, água, luz, internet" },
   { id: "marketing", title: "Divulgação" },
