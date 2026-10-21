@@ -1,6 +1,6 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import {
-  brlToCents, canonicalPhone, flowReplies, sendTextRequest, signatureMatches, textMessages,
+  audioMessages, brlToCents, canonicalPhone, flowReplies, sendTextRequest, signatureMatches, textMessages,
 } from "./whatsapp.ts";
 
 Deno.test("reais as a woman writes them", () => {
@@ -181,4 +181,24 @@ Deno.test("the send request, without a token and without Meta", () => {
     // sometimes fetches the link from our servers.
     text: { preview_url: false, body: "Oi!" },
   });
+});
+
+Deno.test("a voice note arrives as Meta's id for it, not as the sound", () => {
+  const body = {
+    entry: [{
+      changes: [{
+        value: {
+          messages: [
+            { id: "wamid.a1", from: "5511999999999", timestamp: "1792000000", type: "audio", audio: { id: "media-1", mime_type: "audio/ogg; codecs=opus", voice: true } },
+            { id: "wamid.a2", from: "5511999999999", type: "audio", audio: {} },
+            { id: "wamid.t1", from: "5511999999999", type: "text", text: { body: "oi" } },
+          ],
+        },
+      }],
+    }],
+  };
+  assertEquals(audioMessages(body), [
+    { messageId: "wamid.a1", from: "5511999999999", mediaId: "media-1", mimeType: "audio/ogg; codecs=opus", timestamp: "1792000000" },
+  ]);
+  assertEquals(audioMessages({}), []);
 });

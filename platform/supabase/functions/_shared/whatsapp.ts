@@ -232,6 +232,47 @@ export function textMessages(body: unknown): TextMessage[] {
   return out;
 }
 
+/** A voice note or an audio file she sent. Only Meta's id for it arrives; the bytes are fetched with the token. */
+export interface AudioMessage {
+  messageId: string;
+  from: string;
+  mediaId: string;
+  mimeType: string | null;
+  /** Meta's "timestamp": when she sent it, in unix seconds. */
+  timestamp: string | null;
+}
+
+/** Every audio message in a delivery. Anything shaped wrong is skipped, as with the others. */
+export function audioMessages(body: unknown): AudioMessage[] {
+  const out: AudioMessage[] = [];
+  const entries = (body as { entry?: unknown })?.entry;
+  if (!Array.isArray(entries)) return out;
+  for (const entry of entries) {
+    const changes = (entry as { changes?: unknown })?.changes;
+    if (!Array.isArray(changes)) continue;
+    for (const change of changes) {
+      const messages = (change as { value?: { messages?: unknown } })?.value?.messages;
+      if (!Array.isArray(messages)) continue;
+      for (const message of messages) {
+        const m = message as {
+          id?: unknown; from?: unknown; type?: unknown; timestamp?: unknown;
+          audio?: { id?: unknown; mime_type?: unknown };
+        };
+        if (m?.type !== "audio") continue;
+        if (typeof m.id !== "string" || typeof m.from !== "string" || typeof m.audio?.id !== "string") continue;
+        out.push({
+          messageId: m.id,
+          from: m.from,
+          mediaId: m.audio.id,
+          mimeType: typeof m.audio.mime_type === "string" ? m.audio.mime_type : null,
+          timestamp: typeof m.timestamp === "string" ? m.timestamp : null,
+        });
+      }
+    }
+  }
+  return out;
+}
+
 /**
  * The Graph API call that sends her a message.
  *

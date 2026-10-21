@@ -51,7 +51,7 @@ export interface Turn {
   offerJournal?: boolean;
 }
 
-export const CONSENT_TEXT_VERSION = "whatsapp-2026-10";
+export const CONSENT_TEXT_VERSION = "whatsapp-2026-11";
 
 // ------------------------------------------------------------------ wording
 //
@@ -62,11 +62,12 @@ export const CONSENT_TEXT_VERSION = "whatsapp-2026-10";
 const SAY = {
   welcome: [
     "Oi! Aqui é a EmpowerFI 💜",
-    "A gente acompanha o seu negócio por aqui: duas vezes por mês eu pergunto quanto entrou e quanto saiu, e te devolvo uma leitura do seu mês.",
-    "Antes de começar, três coisas que você precisa saber:",
-    "1. São duas mensagens por mês. Você pode parar quando quiser, é só escrever SAIR.",
-    "2. Os seus números são seus. Ninguém vê o valor que você reporta sem você autorizar — nem quem patrocina a sua vaga.",
-    "3. A conversa acontece no WhatsApp, então o WhatsApp sabe que você fala com a gente e quando. Ele não vê os seus números.",
+    "A gente acompanha o seu negócio por aqui: todo dia você registra o que vendeu e o que gastou, e toda semana recebe uma leitura de como foi.",
+    "Antes de começar, quatro coisas que você precisa saber:",
+    "1. Eu mando um lembrete por dia. Você pode parar quando quiser, é só escrever SAIR.",
+    "2. Os seus números são seus. Ninguém vê o que você registra sem você autorizar — nem quem patrocina a sua vaga.",
+    "3. A conversa acontece no WhatsApp, e a Meta, dona do WhatsApp, entrega as mensagens entre você e a gente. Ela sabe que você fala com a gente e quando.",
+    "4. Você pode registrar pelo formulário, escrevendo ou por áudio. O que você escreve ou fala é lido por serviços de inteligência artificial (OpenAI e Anthropic, nos Estados Unidos) só para montar o registro. O áudio não fica guardado, o texto é apagado em até 24 horas, e nada é registrado antes de você confirmar.",
     "Posso começar? Responda SIM para aceitar.",
   ].join("\n\n"),
   consentRefused: "Tudo bem. Não vou te mandar mais nada. Se mudar de ideia, é só escrever aqui de novo. 💜",
@@ -80,9 +81,9 @@ const SAY = {
   askSince: "Há quanto tempo você trabalha com isso? Pode responder 3 anos, 8 meses, ou NÃO SEI.",
   askSinceAgain: "Pode ser 3 anos, 8 meses, ou NÃO SEI.",
   done: "Pronto! 🎉 Já está tudo certo.\n\nTodo dia às 9h eu te lembro de registrar as vendas e os gastos do dia anterior. Leva um minuto.\n\nQuer começar agora? É só tocar no botão.",
-  help: "Eu sou o acompanhamento da EmpowerFI.\n\nEscreva VER para conferir ou corrigir os registros de ontem e de hoje.\n\nEscreva AUTORIZAÇÕES para ver com quem você compartilha os seus números.\n\nEscreva AJUDA para ver isto de novo, ou SAIR para parar de receber mensagens.\n\nSe estiver no meio de uma pergunta, é só responder que a gente continua de onde parou.",
+  help: "Eu sou o acompanhamento da EmpowerFI.\n\nVocê pode me contar o seu dia por escrito ou por áudio, por exemplo: «vendi 250 no Pix e gastei 80 de embalagem no dinheiro». Eu te mostro o que entendi antes de registrar.\n\nEscreva VER para conferir ou corrigir os registros de ontem e de hoje.\n\nEscreva AUTORIZAÇÕES para ver com quem você compartilha os seus números.\n\nEscreva AJUDA para ver isto de novo, ou SAIR para parar de receber mensagens.\n\nSe estiver no meio de uma pergunta, é só responder que a gente continua de onde parou.",
   left: "Pronto, parei por aqui. Você não vai receber mais mensagens. Para voltar, é só escrever. 💜",
-  alreadyActive: "Para registrar o dia, toque no botão. Se não teve movimento, escreva SEM MOVIMENTO. Para conferir ou corrigir os registros de ontem e de hoje, escreva VER. 💜",
+  alreadyActive: "Para registrar o dia, toque no botão, ou me conte por escrito ou por áudio o que vendeu e o que gastou. Se não teve movimento, escreva SEM MOVIMENTO. Para conferir ou corrigir os registros de ontem e de hoje, escreva VER. 💜",
 } as const;
 
 // ------------------------------------------------------------------ parsing

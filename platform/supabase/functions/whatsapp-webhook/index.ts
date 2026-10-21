@@ -28,16 +28,22 @@
 
 import { createClient } from "@supabase/supabase-js";
 import {
-  canonicalPhone, flowReplies, sendTextRequest, signatureMatches, textMessages,
+  audioMessages, canonicalPhone, flowReplies, sendTextRequest, signatureMatches, textMessages,
 } from "../_shared/whatsapp.ts";
 import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/conversation.ts";
 import {
-  addDays, buttonReplies, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise, isDecline,
+  addDays, buttonReplies, type ButtonReply, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise, isDecline,
   isJournalReply, isListText, isSharesText, type JournalLine, listText, type ListedLine, type ListedShare,
   type Milestone, parseJournalReply, type Progress, quietButton, type QuietReason, quietTextReason, refusedText,
   revokeNumber, sendFlowRequest, sentAtOf, SHARE_CONSENT_TEXT_VERSION, shareAnswerText, shareRevokedText,
   sharesText, spDate, voidedText, voidNumber, voidRefusedText, weekToRead,
 } from "../_shared/journal.ts";
+import {
+  DEFAULT_INTERPRET_MODEL, DEFAULT_TRANSCRIBE_MODEL, DISCARDED_TEXT, draftButton, draftMessages, heardText,
+  interpretRequest, INTERPRET_PROMPT_VERSION, looksLikeFigures, MAX_AUDIO_BYTES, MAX_DRAFTS_PER_DAY, MAX_TEXT_CHARS,
+  NO_VOICE_TEXT, nothingReadText, readInterpretation, sendDraftRequest, STALE_DRAFT_TEXT, TOO_LONG_TEXT,
+  TOO_MANY_TEXT, toolInput, transcribeRequest, VOICE_FAILED_TEXT,
+} from "../_shared/spoken.ts";
 
 const env = (name: string): string => {
   const value = Deno.env.get(name);
@@ -143,7 +149,23 @@ async function recordDay(
   }
   const status = String((data as { status?: unknown })?.status ?? "recorded");
   if (status === "duplicate") return { message_id: messageId, status };
+  await afterRecorded(phone, from, String(entrepreneurId), messageId, day, sentAt);
+  return { message_id: messageId, status: `journal:${status}` };
+}
 
+/**
+ * What follows a day written down, however it came in: the confirmation, the
+ * streak and anything it earned, a share waiting to go, and the week's
+ * reading when it is due.
+ */
+async function afterRecorded(
+  phone: string,
+  from: string,
+  entrepreneurId: string,
+  messageId: string,
+  day: string,
+  sentAt: Date,
+): Promise<void> {
   const { data: summary, error: sumError } = await db.rpc("journal_day_summary", {
     p_entrepreneur_id: entrepreneurId,
     p_day: day,
@@ -163,7 +185,7 @@ async function recordDay(
     await sendText(phone, confirmationText(day, sentAt, summary as DaySummary, p));
   }
   for (const m of p?.earned ?? []) await sendText(phone, earnedText(m));
-  await deliverShare(phone, String(entrepreneurId));
+  await deliverShare(phone, entrepreneurId);
 
   // The week this day may close: read it, after the confirmation, if it is
   // due -- ended, kept at least three days, and not read yet.
@@ -173,9 +195,7 @@ async function recordDay(
     p_week_start: week,
   });
   if (dueError) console.error("could not check the week", messageId, dueError.message);
-  else if (due) background(sendReading({ entrepreneur_id: String(entrepreneurId), week_start: week }, from));
-
-  return { message_id: messageId, status: `journal:${status}` };
+  else if (due) background(sendReading({ entrepreneur_id: entrepreneurId, week_start: week }, from));
 }
 
 /**
@@ -194,6 +214,219 @@ async function deliverShare(phone: string, entrepreneurId: string): Promise<void
   if (!(await sendText(phone, share.text))) return;
   const { error: markError } = await db.rpc("share_delivered", { p_share_id: share.id });
   if (markError) console.error("share sent but not marked", share.id, markError.message);
+}
+
+// ------------------------------------------------------- in her own words
+
+/** The Graph API, with the token; null when this deployment cannot reach it. */
+function graph(): { token: string; phoneNumberId: string } | null {
+  const token = Deno.env.get("WHATSAPP_TOKEN");
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+  return token && phoneNumberId ? { token, phoneNumberId } : null;
+}
+
+/** The draft, with its Confirmar and Corrigir buttons; the formatted list first when it is long. */
+async function sendDraft(to: string, before: string | null, body: string, draftId: string): Promise<boolean> {
+  const g = graph();
+  if (!g) {
+    console.warn("not sending the draft: WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID are not set");
+    return false;
+  }
+  if (before !== null && !(await sendText(to, before))) return false;
+  const { url, init } = sendDraftRequest(g.phoneNumberId, to, body, draftId);
+  const headers = { ...(init.headers as Record<string, string>), Authorization: `Bearer ${g.token}` };
+  const response = await fetch(url, { ...init, headers });
+  if (!response.ok) {
+    console.error("draft send failed", response.status, await response.text());
+    return false;
+  }
+  return true;
+}
+
+/**
+ * The voice note's bytes, from Meta, held in memory only: they are handed to
+ * the transcriber and never written anywhere. Null when it is too large.
+ */
+async function fetchAudio(mediaId: string): Promise<{ audio: Blob; mimeType: string } | null> {
+  const g = graph();
+  if (!g) throw new Error("WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID are not set");
+  const auth = { Authorization: `Bearer ${g.token}` };
+  const metaResponse = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(mediaId)}`, {
+    headers: auth,
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!metaResponse.ok) throw new Error(`media lookup answered ${metaResponse.status}`);
+  const media = await metaResponse.json() as { url?: unknown; mime_type?: unknown; file_size?: unknown };
+  if (typeof media.url !== "string") throw new Error("media lookup returned no url");
+  if (Number(media.file_size) > MAX_AUDIO_BYTES) return null;
+  const fileResponse = await fetch(media.url, { headers: auth, signal: AbortSignal.timeout(20_000) });
+  if (!fileResponse.ok) throw new Error(`media download answered ${fileResponse.status}`);
+  const audio = await fileResponse.blob();
+  if (audio.size > MAX_AUDIO_BYTES) return null;
+  return { audio, mimeType: typeof media.mime_type === "string" ? media.mime_type : audio.type };
+}
+
+const EXTENSION: Record<string, string> = { ogg: "ogg", opus: "ogg", mpeg: "mp3", mp3: "mp3", mp4: "m4a", aac: "m4a", wav: "wav", webm: "webm" };
+const filenameFor = (mimeType: string) =>
+  `voz.${EXTENSION[mimeType.split(";")[0].split("/")[1]?.trim() ?? ""] ?? "ogg"}`;
+
+/**
+ * Reads what she said as a day, checks it, and sends her the draft to confirm
+ * -- or tells her what was missing and offers the form. Runs in the
+ * background, after Meta has its 200.
+ */
+async function propose(
+  phone: string,
+  entrepreneurId: string,
+  messageId: string,
+  source: "voice" | "text",
+  said: string,
+  sentAt: Date,
+  transcriber: string | null,
+): Promise<void> {
+  const apiKey = env("ANTHROPIC_API_KEY");
+  const model = Deno.env.get("ANTHROPIC_INTERPRET_MODEL") || DEFAULT_INTERPRET_MODEL;
+  const { url, init } = interpretRequest(apiKey, model, said);
+  const response = await fetch(url, { ...init, signal: AbortSignal.timeout(25_000) });
+  const body = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(`model answered ${response.status}`);
+  const input = toolInput(body);
+  if (input === null) throw new Error("model returned no reading");
+
+  const reading = readInterpretation(input, said, sentAt);
+  // Counts only: the refusals quote her words, and her words stay out of the log.
+  if (reading.refusals.length) console.warn("spoken: refused", reading.refusals.length, "parts", messageId);
+
+  if (reading.lines.length === 0) {
+    await sendText(phone, nothingReadText(reading));
+    await sendJournalForm(phone);
+    return;
+  }
+  const { data: draftId, error } = await db.rpc("journal_draft_create", {
+    p_entrepreneur_id: entrepreneurId,
+    p_message_id: messageId,
+    p_source: source,
+    p_transcript: said,
+    p_day: reading.day,
+    p_lines: reading.lines,
+    p_model: model,
+    p_prompt_version: INTERPRET_PROMPT_VERSION,
+    p_transcriber: transcriber,
+    p_refusals: reading.refusals,
+  });
+  if (error) throw new Error(`draft not kept: ${error.message}`);
+  const { before, body: text } = draftMessages(reading, sentAt);
+  await sendDraft(phone, before, text, String(draftId));
+}
+
+/** Whether she may send one more message to the services today. Counted if so. */
+async function mayUseServices(phone: string, entrepreneurId: string): Promise<boolean> {
+  const { data: allowed, error } = await db.rpc("journal_spoken_allow", {
+    p_entrepreneur_id: entrepreneurId,
+    p_limit: MAX_DRAFTS_PER_DAY,
+  });
+  if (error) throw new Error(`limit unavailable: ${error.message}`);
+  if (allowed) return true;
+  await sendText(phone, TOO_MANY_TEXT);
+  await sendJournalForm(phone);
+  return false;
+}
+
+/** A message she wrote, read as a day. */
+async function proposeFromText(phone: string, entrepreneurId: string, messageId: string, text: string): Promise<void> {
+  try {
+    if (!(await mayUseServices(phone, entrepreneurId))) return;
+    await propose(phone, entrepreneurId, messageId, "text", text, new Date(), null);
+  } catch (e) {
+    console.error("spoken text failed", messageId, String(e));
+    await sendText(phone, "Não consegui ler essa mensagem agora. Pode tentar de novo daqui a pouco, ou usar o formulário? 💜");
+    await sendJournalForm(phone);
+  }
+}
+
+/** A voice note, transcribed and read as a day. */
+async function proposeFromVoice(
+  phone: string,
+  entrepreneurId: string,
+  messageId: string,
+  mediaId: string,
+  sentAt: Date,
+): Promise<void> {
+  try {
+    const openAiKey = Deno.env.get("OPENAI_API_KEY");
+    if (!openAiKey || !Deno.env.get("ANTHROPIC_API_KEY")) {
+      await sendText(phone, NO_VOICE_TEXT);
+      await sendJournalForm(phone);
+      return;
+    }
+    if (!(await mayUseServices(phone, entrepreneurId))) return;
+    const fetched = await fetchAudio(mediaId);
+    if (fetched === null) {
+      await sendText(phone, TOO_LONG_TEXT);
+      return;
+    }
+    const transcriber = Deno.env.get("OPENAI_TRANSCRIBE_MODEL") || DEFAULT_TRANSCRIBE_MODEL;
+    const { url, init } = transcribeRequest(openAiKey, transcriber, fetched.audio, filenameFor(fetched.mimeType));
+    const response = await fetch(url, { ...init, signal: AbortSignal.timeout(30_000) });
+    const body = await response.json().catch(() => null) as { text?: unknown } | null;
+    if (!response.ok) throw new Error(`transcriber answered ${response.status}`);
+    const said = typeof body?.text === "string" ? body.text.trim() : "";
+    if (said === "") {
+      await sendText(phone, VOICE_FAILED_TEXT);
+      return;
+    }
+    await sendText(phone, heardText(said));
+    await propose(phone, entrepreneurId, messageId, "voice", said.slice(0, 5_000), sentAt, transcriber);
+  } catch (e) {
+    console.error("spoken voice failed", messageId, String(e));
+    await sendText(phone, VOICE_FAILED_TEXT);
+    await sendJournalForm(phone);
+  }
+}
+
+/**
+ * Confirmar or Corrigir, tapped on a draft. Confirmed, the day is written
+ * exactly as the draft showed it; corrected, nothing is written.
+ */
+async function decideDraft(button: ButtonReply, draft: { id: string; confirm: boolean }): Promise<Outcome> {
+  const { data: isNew, error: seenError } = await db.rpc("whatsapp_message_is_new", { p_message_id: button.messageId });
+  if (seenError) return { message_id: button.messageId, status: "refused", detail: seenError.message };
+  if (!isNew) return { message_id: button.messageId, status: "duplicate" };
+  let phone: string;
+  try {
+    phone = canonicalPhone(button.from);
+  } catch (error) {
+    return { message_id: button.messageId, status: "unreadable", detail: String(error) };
+  }
+  const { data: who, error: whoError } = await db.rpc("whatsapp_entrepreneur_for", { p_e164: phone });
+  if (whoError || !who) {
+    return { message_id: button.messageId, status: "refused", detail: whoError?.message ?? "not enrolled" };
+  }
+  const { data, error } = await db.rpc("journal_draft_decide", {
+    p_draft_id: draft.id,
+    p_entrepreneur_id: who,
+    p_confirm: draft.confirm,
+  });
+  if (error) {
+    console.error("draft refused", button.messageId, error.message);
+    await sendText(phone, refusedText(inHerWords(error.message)));
+    return { message_id: button.messageId, status: "refused", detail: error.message };
+  }
+  const d = data as { status: string; day?: string; recorded?: { status?: string } };
+  if (d.status === "stale") {
+    await sendText(phone, STALE_DRAFT_TEXT);
+    return { message_id: button.messageId, status: "draft:stale" };
+  }
+  if (d.status === "discarded") {
+    await sendText(phone, DISCARDED_TEXT);
+    await sendJournalForm(phone);
+    return { message_id: button.messageId, status: "draft:discarded" };
+  }
+  const recorded = String(d.recorded?.status ?? "recorded");
+  if (recorded !== "duplicate" && d.day) {
+    await afterRecorded(phone, button.from, String(who), button.messageId, d.day, button.sentAt);
+  }
+  return { message_id: button.messageId, status: `draft:confirmed:${recorded}` };
 }
 
 /** Meta's one-time handshake: echo the challenge, in plain text, only for our own verify token. */
@@ -274,6 +507,7 @@ Deno.serve(async (req) => {
   const replies = flowReplies(body);
   const texts = textMessages(body);
   const buttons = buttonReplies(body);
+  const audios = audioMessages(body);
   const outcomes: Outcome[] = [];
 
   // The entry conversation. One question at a time, and the row it reads is
@@ -417,6 +651,20 @@ Deno.serve(async (req) => {
       continue;
     }
 
+    // Her day in her own words: a message with a figure in it is read by the
+    // model, checked by code, and written only when she confirms the draft.
+    if (
+      conversation.state === "ACTIVE" && looksLikeFigures(message.text) && message.text.length <= MAX_TEXT_CHARS &&
+      Deno.env.get("ANTHROPIC_API_KEY")
+    ) {
+      const { data: who } = await db.rpc("whatsapp_entrepreneur_for", { p_e164: phone });
+      if (who) {
+        background(proposeFromText(phone, String(who), message.messageId, message.text));
+        outcomes.push({ message_id: message.messageId, status: "spoken:text" });
+        continue;
+      }
+    }
+
     const turn = advance(conversation, message.text);
 
     // Enrolling first: if it fails she must not be left recorded as ACTIVE
@@ -454,8 +702,44 @@ Deno.serve(async (req) => {
     });
   }
 
+  // A voice note: transcribed, read and checked in the background, and sent
+  // back to her as a draft to confirm.
+  for (const audio of audios) {
+    const { data: isNew, error: seenError } = await db.rpc("whatsapp_message_is_new", { p_message_id: audio.messageId });
+    if (seenError || !isNew) {
+      outcomes.push({ message_id: audio.messageId, status: seenError ? "refused" : "duplicate", detail: seenError?.message });
+      continue;
+    }
+    let phone: string;
+    try {
+      phone = canonicalPhone(audio.from);
+    } catch (error) {
+      outcomes.push({ message_id: audio.messageId, status: "unreadable", detail: String(error) });
+      continue;
+    }
+    const { data: row } = await db.rpc("whatsapp_conversation_for", { p_e164: phone });
+    const state = (row as Conversation | null)?.state ?? "NEW";
+    const { data: who } = state === "ACTIVE" ? await db.rpc("whatsapp_entrepreneur_for", { p_e164: phone }) : { data: null };
+    if (!who) {
+      if (state !== "OPTED_OUT") {
+        await sendText(phone, state === "NEW"
+          ? "Oi! Para começar, escreva OI. 💜"
+          : "Para terminar o seu cadastro, me responda por escrito, por favor. 💜");
+      }
+      outcomes.push({ message_id: audio.messageId, status: "spoken:not_enrolled" });
+      continue;
+    }
+    background(proposeFromVoice(phone, String(who), audio.messageId, audio.mediaId, sentAtOf(audio.timestamp)));
+    outcomes.push({ message_id: audio.messageId, status: "spoken:voice" });
+  }
+
   // "Não abri ontem" / "Abri e não vendi", tapped on the nine o'clock reminder.
   for (const button of buttons) {
+    const draft = draftButton(button.payload);
+    if (draft !== undefined) {
+      outcomes.push(await decideDraft(button, draft));
+      continue;
+    }
     const reason = quietButton(button.payload);
     if (reason === undefined) {
       outcomes.push({ message_id: button.messageId, status: "ignored", detail: button.payload });
