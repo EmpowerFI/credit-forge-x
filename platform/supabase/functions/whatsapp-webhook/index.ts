@@ -34,7 +34,7 @@ import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/con
 import {
   addDays, buttonReplies, type ButtonReply, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise, isDecline,
   isJournalReply, isListText, isSharesText, type JournalLine, listText, type ListedLine, type ListedShare,
-  type Milestone, parseJournalReply, type Progress, quietButton, type QuietReason, quietTextReason, refusedText,
+  type Milestone, OPEN_FORM, parseJournalReply, type Progress, quietButton, type QuietReason, quietTextReason, refusedText,
   revokeNumber, sendFlowRequest, sentAtOf, SHARE_CONSENT_TEXT_VERSION, shareAnswerText, shareRevokedText,
   sharesText, spDate, voidedText, voidNumber, voidRefusedText, weekToRead,
 } from "../_shared/journal.ts";
@@ -738,6 +738,20 @@ Deno.serve(async (req) => {
     const draft = draftButton(button.payload);
     if (draft !== undefined) {
       outcomes.push(await decideDraft(button, draft));
+      continue;
+    }
+    // "Registrar ontem", on the reminder: the form, inside the window her tap opened.
+    if (button.payload === OPEN_FORM) {
+      const { data: isNew } = await db.rpc("whatsapp_message_is_new", { p_message_id: button.messageId });
+      if (isNew) {
+        try {
+          await sendJournalForm(canonicalPhone(button.from));
+        } catch (error) {
+          outcomes.push({ message_id: button.messageId, status: "unreadable", detail: String(error) });
+          continue;
+        }
+      }
+      outcomes.push({ message_id: button.messageId, status: isNew ? "journal:form_sent" : "duplicate" });
       continue;
     }
     const reason = quietButton(button.payload);

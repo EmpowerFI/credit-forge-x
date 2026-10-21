@@ -397,3 +397,21 @@ Deno.test("VER says a purchase is in instalments", () => {
     "2. Gasto · Mercadoria ou matéria-prima · R$ 600,00 (em 3x, a 1ª em 10/11)",
   );
 });
+
+Deno.test("the reminder is the approved template, with its buttons in order", async () => {
+  const { sendReminderRequest, OPEN_FORM } = await import("./journal.ts");
+  const { url, init } = sendReminderRequest("123", "5511999990000", "lembrete_diario", "Maria");
+  assertEquals(url, "https://graph.facebook.com/v21.0/123/messages");
+  const body = JSON.parse(String(init.body));
+  assertEquals(body.type, "template");
+  assertEquals(body.template.name, "lembrete_diario");
+  assertEquals(body.template.language, { code: "pt_BR" });
+  assertEquals(body.template.components[0], { type: "body", parameters: [{ type: "text", text: "Maria" }] });
+  assertEquals(
+    body.template.components.slice(1).map((c: { index: string; parameters: { payload: string }[] }) => [c.index, c.parameters[0].payload]),
+    [["0", OPEN_FORM], ["1", CLOSED_YESTERDAY], ["2", NO_SALES_YESTERDAY]],
+  );
+  // The reminder's own buttons are read back by the webhook as quiet days.
+  assertEquals(quietButton(CLOSED_YESTERDAY), "closed");
+  assertEquals(quietButton(OPEN_FORM), undefined);
+});

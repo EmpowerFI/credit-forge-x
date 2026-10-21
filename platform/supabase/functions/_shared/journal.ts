@@ -29,6 +29,9 @@ export const CLOSED_YESTERDAY = "journal_closed_yesterday";
 /** "Abri e não vendi": open, no sales. */
 export const NO_SALES_YESTERDAY = "journal_no_sales_yesterday";
 
+/** "Registrar ontem", on the reminder: the form is sent back, inside the window her tap opened. */
+export const OPEN_FORM = "journal_open_form";
+
 export type QuietReason = "closed" | "no_sales" | null;
 
 /** The reason each quiet-day button carries; undefined for any other payload. */
@@ -627,6 +630,54 @@ export function sendFlowRequest(
               flow_action_payload: { screen: "VENDAS" },
             },
           },
+        },
+      }),
+    },
+  };
+}
+
+/** The approved template's default name and language; the name can be changed by WHATSAPP_REMINDER_TEMPLATE. */
+export const REMINDER_TEMPLATE = "lembrete_diario";
+export const REMINDER_LANGUAGE = "pt_BR";
+
+/**
+ * The nine o'clock reminder. A template, because it opens the conversation:
+ * the body says her name, and the three quick replies carry, in order, the
+ * payloads the webhook answers -- the form, "Não abri ontem", "Abri e não
+ * vendi". The template approved in WhatsApp Manager must have its buttons in
+ * this order (docs/whatsapp/META-SETUP.pt-BR.md).
+ */
+export function sendReminderRequest(
+  phoneNumberId: string,
+  to: string,
+  template: string,
+  name: string,
+): { url: string; init: RequestInit } {
+  const quickReply = (index: number, payload: string) => ({
+    type: "button",
+    sub_type: "quick_reply",
+    index: String(index),
+    parameters: [{ type: "payload", payload }],
+  });
+  return {
+    url: `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+    init: {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to,
+        type: "template",
+        template: {
+          name: template,
+          language: { code: REMINDER_LANGUAGE },
+          components: [
+            { type: "body", parameters: [{ type: "text", text: name.slice(0, 60) }] },
+            quickReply(0, OPEN_FORM),
+            quickReply(1, CLOSED_YESTERDAY),
+            quickReply(2, NO_SALES_YESTERDAY),
+          ],
         },
       }),
     },

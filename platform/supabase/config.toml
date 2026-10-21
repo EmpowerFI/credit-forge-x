@@ -451,6 +451,11 @@ verify_jwt = false
 [functions.whatsapp-webhook]
 verify_jwt = false
 
+# Called by pg_cron (private.dispatch_journal_reminder) with a shared secret,
+# not a JWT; the function compares it itself, in constant time.
+[functions.journal-reminder]
+verify_jwt = false
+
 # Called by whatsapp-webhook with the service role key, which is not a JWT
 # the gateway can check. The function compares it itself, in constant time:
 # every new month it is asked about costs a model call.
