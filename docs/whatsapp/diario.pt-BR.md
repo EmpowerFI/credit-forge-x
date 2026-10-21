@@ -28,6 +28,31 @@ Cada lançamento é uma linha:
 
 Um mesmo dia pode ter vários lançamentos. Também vale mandar o **total do dia por forma de pagamento**, por exemplo "vendas no pix: R$ 230". Não exigimos venda por venda.
 
+### Por áudio ou por escrito
+
+Decisão da fundadora, 20/10/2026. Além do formulário, ela pode **mandar um áudio** ou **escrever do jeito dela** ("vendi 250 no pix e gastei 80 de embalagem no dinheiro"). Nada é gravado antes de ela confirmar.
+
+1. **O áudio vira texto** na OpenAI (`gpt-4o-mini-transcribe`). Ela recebe de volta o que foi ouvido: *"🎙️ Ouvi: «…»"*. Assim, um erro de transcrição aparece antes de qualquer outra coisa.
+2. **O Claude separa o texto em lançamentos.** Ele não escreve nenhum número: para cada valor, cita o trecho exato do que ela disse ("250", "duzentos e cinquenta"). Faz o mesmo com a data de pagamento ("dia 10") e com as parcelas ("3x"). O que ele escolhe é a classificação: venda ou gasto, forma de pagamento, categoria. Ela vê e confirma essa escolha.
+3. **O código confere tudo**:
+   - Um valor citado que não está no que ela disse é recusado. Um valor dito uma vez não pode virar dois lançamentos.
+   - O próprio código lê cada valor, data e número de parcelas, inclusive por extenso. O modelo não faz conta nenhuma.
+   - O que falta não é preenchido. Uma venda sem forma de pagamento fica de fora, e ela é avisada: *"Venda de R$ 300,00: faltou dizer como recebeu"*. O mesmo vale para a data de receber no cartão de crédito ou no fiado e para a data de pagar uma compra a prazo.
+   - Se ela não disse o dia, uma mensagem antes do meio-dia vale para **ontem** e uma depois do meio-dia vale para **hoje**. O resumo diz qual dia foi usado e como mudar.
+4. **Ela recebe o resumo formatado com dois botões**, **Confirmar** e **Corrigir**. Confirmar grava exatamente o que estava no resumo, pelo mesmo caminho do formulário: a mesma confirmação, a mesma sequência e as mesmas recompensas. Corrigir descarta tudo e sugere mandar de novo ou usar o formulário. Um resumo vale por 23 horas e só o mais recente pode ser confirmado.
+
+**Privacidade.**
+- O áudio nunca é guardado: passa pela memória até a transcrição e some.
+- O texto fica guardado só até ela responder e, de qualquer forma, é apagado em até 23 horas.
+- O registro fica marcado como vindo de um resumo confirmado. A evidência continua `SELF_DECLARED`, como no formulário.
+- O texto de consentimento conta isso a ela antes do cadastro (versão `whatsapp-2026-11`).
+
+**Limites.**
+- No máximo 20 mensagens por dia por empreendedora vão para os serviços de IA.
+- Áudio de até 2 MB, mais ou menos 15 minutos de mensagem de voz.
+- Texto de até 1.000 caracteres.
+- Só mensagens com algum número, em algarismos ou por extenso, vão para o Claude. "Obrigada!" continua sendo só uma conversa.
+
 ## 2. Classificações e onde cada uma entra
 
 | classificação (como ela vê) | grupo no DRE |
