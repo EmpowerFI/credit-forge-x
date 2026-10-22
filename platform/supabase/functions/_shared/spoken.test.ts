@@ -202,7 +202,7 @@ Deno.test("the buttons say which draft, and nothing else is one", () => {
   assertEquals(draftButton("draft_confirm:nope"), undefined);
   assertEquals(draftButton("journal_quiet_yesterday"), undefined);
   const { url, init } = sendDraftRequest("123", "5511999999999", "Está certo?", id);
-  assertEquals(url, "https://graph.facebook.com/v21.0/123/messages");
+  assertEquals(url, "https://graph.facebook.com/v26.0/123/messages");
   const body = JSON.parse(String(init.body));
   assertEquals(body.interactive.type, "button");
   assertEquals(body.interactive.action.buttons.map((b: { reply: { id: string; title: string } }) => b.reply), [

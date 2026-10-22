@@ -28,8 +28,8 @@ export interface LegalDoc {
   sections: LegalSection[];
 }
 
-const LAST_UPDATED_PT = "14 de julho de 2026";
-const LAST_UPDATED_EN = "14 July 2026";
+const LAST_UPDATED_PT = "22 de outubro de 2026";
+const LAST_UPDATED_EN = "22 October 2026";
 
 export const privacyPt: LegalDoc = {
   title: "Política de Privacidade",
@@ -56,6 +56,16 @@ export const privacyPt: LegalDoc = {
         "Dados de perfil e oferta: descrição dos produtos ou serviços que você divulga no Marketplace, incluindo textos e imagens que você mesma publica.",
         "Dados de contato: nome, e-mail e conteúdo da mensagem enviados pelos formulários do site.",
         "Dados de uso: informações técnicas geradas na navegação, como páginas acessadas, tipo de dispositivo e dados aproximados de acesso, usados de forma agregada para entender e melhorar o produto.",
+        "Dados do acompanhamento pelo WhatsApp, se você participar: número de telefone, o nome pelo qual prefere ser chamada, cidade, ramo e tempo de atividade do negócio, e os registros diários de vendas e gastos que você envia, pelo formulário, por mensagem escrita ou por áudio.",
+      ],
+    },
+    {
+      title: "Acompanhamento pelo WhatsApp",
+      paragraphs: [
+        "Quem participa do acompanhamento registra pelo WhatsApp as vendas e os gastos do negócio, recebe um lembrete por dia e uma leitura semanal. O cadastro só começa depois que você aceita, na própria conversa, um texto que explica tudo o que está nesta seção, e a versão desse texto fica registrada junto com o seu aceite.",
+        "O seu número de telefone é guardado criptografado. Os seus registros não são mostrados a ninguém fora da EmpowerFI sem uma autorização sua, específica para cada destinatário e finalidade, que você pode encerrar a qualquer momento.",
+        "Se você mandar um áudio ou uma mensagem escrita com os valores do dia, o áudio é transcrito pela OpenAI e o texto é organizado pela Anthropic, só para montar o registro. Nada é gravado antes de você confirmar o resumo. O áudio não é armazenado pela EmpowerFI, e o texto é apagado assim que você confirma ou descarta o resumo, ou em até 24 horas.",
+        "Para parar de receber mensagens, basta escrever SAIR na conversa.",
       ],
     },
     {
@@ -64,6 +74,7 @@ export const privacyPt: LegalDoc = {
         "Operar o Marketplace e permitir que empreendedoras e clientes se encontrem e se comuniquem.",
         "Responder às mensagens enviadas pelos formulários de contato e enviar a confirmação de recebimento.",
         "Enviar comunicações sobre a plataforma quando você tiver consentido em recebê-las.",
+        "No acompanhamento pelo WhatsApp: registrar o seu dia, enviar o lembrete e a leitura da semana, e compartilhar os seus indicadores com quem você autorizar.",
         "Prevenir fraude, abuso e uso indevido, e garantir a segurança da plataforma.",
         "Cumprir obrigações legais e regulatórias aplicáveis.",
       ],
@@ -83,19 +94,22 @@ export const privacyPt: LegalDoc = {
         "Provedores de infraestrutura e banco de dados, que hospedam a aplicação e armazenam os dados da plataforma.",
         "Provedor de envio de e-mails transacionais, utilizado para entregar as mensagens dos formulários e as confirmações de recebimento.",
         "Lojas de aplicativos, no que se refere à distribuição do aplicativo, conforme as políticas de privacidade das respectivas plataformas.",
+        "Meta (WhatsApp), que entrega as mensagens do acompanhamento entre você e a EmpowerFI.",
+        "OpenAI, que transcreve os áudios, e Anthropic, que organiza os textos e escreve a leitura da semana, só para essas finalidades.",
+        "Instituições que você autorizar, com os indicadores, os meses e pelo prazo que você aprovou.",
         "Autoridades públicas, quando houver requisição legal ou ordem judicial.",
       ],
     },
     {
       title: "Transferência internacional",
       paragraphs: [
-        "Alguns dos prestadores de serviço mencionados acima podem processar dados em servidores localizados fora do Brasil. Nesses casos, adotamos as salvaguardas exigidas pela LGPD para que o seu dado mantenha o mesmo nível de proteção conferido pela legislação brasileira.",
+        "Alguns dos prestadores de serviço mencionados acima podem processar dados em servidores localizados fora do Brasil, como a Meta, a OpenAI e a Anthropic, nos Estados Unidos. Nesses casos, adotamos as salvaguardas exigidas pela LGPD para que o seu dado mantenha o mesmo nível de proteção conferido pela legislação brasileira.",
       ],
     },
     {
       title: "Por quanto tempo guardamos",
       paragraphs: [
-        "Mantemos os dados pessoais apenas pelo tempo necessário para cumprir as finalidades descritas nesta política. Dados de conta são mantidos enquanto o seu cadastro estiver ativo; mensagens de contato são mantidas pelo período necessário para o atendimento e o registro histórico do relacionamento. Encerrada a finalidade, os dados são eliminados ou anonimizados, ressalvadas as hipóteses de guarda obrigatória previstas em lei.",
+        "Mantemos os dados pessoais apenas pelo tempo necessário para cumprir as finalidades descritas nesta política. Dados de conta são mantidos enquanto o seu cadastro estiver ativo; o texto de um áudio ou de uma mensagem com valores é apagado em até 24 horas, e o áudio não é armazenado; mensagens de contato são mantidas pelo período necessário para o atendimento e o registro histórico do relacionamento. Encerrada a finalidade, os dados são eliminados ou anonimizados, ressalvadas as hipóteses de guarda obrigatória previstas em lei.",
       ],
     },
     {
@@ -173,6 +187,16 @@ export const privacyEn: LegalDoc = {
         "Profile and offer data: the description of the products or services you publish on the Marketplace, including text and images you upload yourself.",
         "Contact data: name, email and message content submitted through the website forms.",
         "Usage data: technical information generated as you browse, such as pages visited, device type and approximate access data, used in aggregate to understand and improve the product.",
+        "WhatsApp follow-up data, if you take part: phone number, the name you prefer to be called, city, business sector and time in business, and the daily sales and expense records you send, through the form, a written message or a voice note.",
+      ],
+    },
+    {
+      title: "WhatsApp follow-up",
+      paragraphs: [
+        "Participants record their business's sales and expenses on WhatsApp, receive one reminder a day and a weekly reading. Registration only starts after you accept, in the conversation itself, a text explaining everything in this section, and the version of that text is recorded with your acceptance.",
+        "Your phone number is stored encrypted. Your records are not shown to anyone outside EmpowerFI without your authorisation, specific to each recipient and purpose, which you can end at any time.",
+        "If you send a voice note or a written message with the day's figures, the audio is transcribed by OpenAI and the text is organised by Anthropic, only to build the record. Nothing is saved before you confirm the summary. EmpowerFI does not store the audio, and the text is deleted as soon as you confirm or discard the summary, or within 24 hours.",
+        "To stop receiving messages, write SAIR in the conversation.",
       ],
     },
     {
@@ -181,6 +205,7 @@ export const privacyEn: LegalDoc = {
         "Running the Marketplace and letting entrepreneurs and customers find and contact each other.",
         "Answering messages sent through the contact forms and sending you a confirmation of receipt.",
         "Sending communications about the platform where you have consented to receive them.",
+        "In the WhatsApp follow-up: recording your day, sending the reminder and the weekly reading, and sharing your indicators with whoever you authorise.",
         "Preventing fraud, abuse and misuse, and keeping the platform secure.",
         "Complying with applicable legal and regulatory obligations.",
       ],
@@ -200,19 +225,22 @@ export const privacyEn: LegalDoc = {
         "Infrastructure and database providers, which host the application and store the platform's data.",
         "A transactional email provider, used to deliver form messages and confirmations of receipt.",
         "App stores, with respect to distributing the app, subject to their own privacy policies.",
+        "Meta (WhatsApp), which delivers the follow-up messages between you and EmpowerFI.",
+        "OpenAI, which transcribes voice notes, and Anthropic, which organises the text and writes the weekly reading, for those purposes only.",
+        "Institutions you authorise, with the indicators, months and for the period you approved.",
         "Public authorities, where there is a legal request or court order.",
       ],
     },
     {
       title: "International transfers",
       paragraphs: [
-        "Some of the service providers mentioned above may process data on servers located outside Brazil. In those cases we apply the safeguards required by the LGPD so that your data keeps the same level of protection granted by Brazilian law.",
+        "Some of the service providers mentioned above may process data on servers located outside Brazil, such as Meta, OpenAI and Anthropic in the United States. In those cases we apply the safeguards required by the LGPD so that your data keeps the same level of protection granted by Brazilian law.",
       ],
     },
     {
       title: "How long we keep it",
       paragraphs: [
-        "We keep personal data only for as long as needed to fulfil the purposes described in this policy. Account data is kept while your registration is active; contact messages are kept for as long as needed to handle the request and keep a record of the relationship. Once the purpose ends, data is deleted or anonymised, except where the law requires us to retain it.",
+        "We keep personal data only for as long as needed to fulfil the purposes described in this policy. Account data is kept while your registration is active; the text of a voice note or of a message with figures is deleted within 24 hours, and the audio is not stored; contact messages are kept for as long as needed to handle the request and keep a record of the relationship. Once the purpose ends, data is deleted or anonymised, except where the law requires us to retain it.",
       ],
     },
     {

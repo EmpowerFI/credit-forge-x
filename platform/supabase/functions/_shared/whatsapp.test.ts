@@ -170,7 +170,7 @@ Deno.test("a delivery with nothing of ours in it", () => {
 
 Deno.test("the send request, without a token and without Meta", () => {
   const { url, init } = sendTextRequest("123456", "+5511987654321", "Oi!");
-  assertEquals(url, "https://graph.facebook.com/v21.0/123456/messages");
+  assertEquals(url, "https://graph.facebook.com/v26.0/123456/messages");
   assertEquals(init.method, "POST");
   assertEquals(JSON.parse(String(init.body)), {
     messaging_product: "whatsapp",
