@@ -16,7 +16,7 @@
 //
 // Pure: no network, no database.
 
-import { brlToCents } from "./whatsapp.ts";
+import { brlToCents, GRAPH } from "./whatsapp.ts";
 import { formatBRL } from "./report.ts";
 
 /** Marks a completed Flow as the daily journal. */
@@ -607,7 +607,7 @@ export function sendFlowRequest(
   text: string,
 ): { url: string; init: RequestInit } {
   return {
-    url: `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+    url: `${GRAPH}/${phoneNumberId}/messages`,
     init: {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -660,7 +660,7 @@ export function sendReminderRequest(
     parameters: [{ type: "payload", payload }],
   });
   return {
-    url: `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+    url: `${GRAPH}/${phoneNumberId}/messages`,
     init: {
       method: "POST",
       headers: { "Content-Type": "application/json" },

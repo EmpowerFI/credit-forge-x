@@ -19,7 +19,7 @@
 //
 // Pure on purpose: no network, no database, no clock except the one passed in.
 
-import { brlToCents } from "./whatsapp.ts";
+import { brlToCents, GRAPH } from "./whatsapp.ts";
 import {
   addDays, CATEGORIES, type Category, type JournalLine, MAX_INSTALLMENTS, PAYMENT_METHODS, type PaymentMethod, spDate,
 } from "./journal.ts";
@@ -600,7 +600,7 @@ export function sendDraftRequest(phoneNumberId: string, to: string, body: string
   init: RequestInit;
 } {
   return {
-    url: `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+    url: `${GRAPH}/${phoneNumberId}/messages`,
     init: {
       method: "POST",
       headers: { "Content-Type": "application/json" },

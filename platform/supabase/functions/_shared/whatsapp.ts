@@ -24,6 +24,12 @@ export interface FlowReply {
   timestamp: string | null;
 }
 
+/**
+ * The Graph API, at the version the WhatsApp app dashboard shows. Meta retires
+ * a version about two years after it ships; raise this when the dashboard does.
+ */
+export const GRAPH = "https://graph.facebook.com/v26.0";
+
 /** The same ceiling the checkins table carries: a hundred million reais is not a figure, it is a bug. */
 const MAX_CENTS = 10_000_000_000;
 
@@ -283,7 +289,7 @@ export function audioMessages(body: unknown): AudioMessage[] {
  */
 export function sendTextRequest(phoneNumberId: string, to: string, body: string): { url: string; init: RequestInit } {
   return {
-    url: `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
+    url: `${GRAPH}/${phoneNumberId}/messages`,
     init: {
       method: "POST",
       headers: { "Content-Type": "application/json" },

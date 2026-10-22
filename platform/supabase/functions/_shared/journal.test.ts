@@ -401,7 +401,7 @@ Deno.test("VER says a purchase is in instalments", () => {
 Deno.test("the reminder is the approved template, with its buttons in order", async () => {
   const { sendReminderRequest, OPEN_FORM } = await import("./journal.ts");
   const { url, init } = sendReminderRequest("123", "5511999990000", "lembrete_diario", "Maria");
-  assertEquals(url, "https://graph.facebook.com/v21.0/123/messages");
+  assertEquals(url, "https://graph.facebook.com/v26.0/123/messages");
   const body = JSON.parse(String(init.body));
   assertEquals(body.type, "template");
   assertEquals(body.template.name, "lembrete_diario");

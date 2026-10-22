@@ -2,48 +2,55 @@
 
 **Para:** a fundadora, que faz estes passos no painel da Meta e no do Supabase. O código já está pronto. Aqui estão só as configurações, na ordem certa.
 
-Comece pelo **projeto dev** (`boivrcjvsnrmzbregavl`) com o **número de teste** da Meta, que não exige verificação da empresa nem cartão. Quando tudo funcionar, repita no **projeto prod** (`efylyaroluqatqmtuuml`) com o número definitivo.
+Comece pelo **projeto dev** (`boivrcjvsnrmzbregavl`). Quando tudo funcionar, repita no **projeto prod** (`efylyaroluqatqmtuuml`).
 
 Nenhuma chave, token ou segredo deste guia vai para o chat ou para o repositório. Cada um vai direto para o painel do Supabase, em **Edge Functions → Secrets**.
+
+Os caminhos abaixo foram conferidos no painel da Meta em 22/10/2026, com o painel em português. Se algum nome mudar, procure o equivalente.
+
+> **O número de teste da Meta não serve para o Brasil.** Ele é americano (+1), e a Meta bloqueia mensagens de números estrangeiros para celulares +55 (erro 130497). Mensagens que chegam funcionam, mas as respostas não saem. Para conversar de verdade, é preciso um **número brasileiro** só da EmpowerFI, fora do aplicativo do WhatsApp (passo 7).
 
 ---
 
 ## 1. O app e o número de teste
 
-1. Em https://developers.facebook.com/apps, abra o app da EmpowerFI. Se ainda não existir, crie um: **Create app → Business → WhatsApp**.
-2. No menu do app, abra **WhatsApp → API Setup**. Anote:
-   - **Phone number ID**, o número que aparece embaixo do número de teste (não é o número de telefone);
-   - o campo **To**: adicione o seu celular. O número de teste só manda mensagem para até 5 números cadastrados ali.
-3. **App secret:** em **App settings → Basic**, clique em **Show** ao lado de *App secret*.
-4. **Token permanente.** O token que aparece em *API Setup* vence em 24 horas, então não use esse. Faça assim:
-   1. Abra https://business.facebook.com/settings → **Users → System users → Add**, com nome `empowerfi-api` e papel **Admin**.
-   2. Em **Assign assets**, dê **controle total** ao app e à conta do WhatsApp.
-   3. Clique em **Generate new token**, escolha o app, a validade **Never** e as permissões `whatsapp_business_messaging` e `whatsapp_business_management`.
-   4. O token aparece **uma vez só**. Copie direto para o passo 2.
+1. Abra https://developers.facebook.com/apps e entre no app **empowerfi**. O caso de uso "Conectar-se com os clientes pelo WhatsApp" já está configurado.
+2. No menu da esquerda, clique em **Casos de uso**. No card do WhatsApp, clique em **Personalizar**. Confirme que está em **Integrar com API**.
+3. Em **Configuração básica**, abra **Etapa 1. Experimente**. Ali estão:
+   - o número de teste;
+   - o **Phone Number ID**;
+   - a **Identificação da conta de mensagens**;
+   - um token temporário de 24 horas, que não usamos.
 
 ## 2. Os segredos no Supabase
 
-No painel do Supabase, projeto **dev**, abra **Edge Functions → Secrets** e adicione:
+No painel do Supabase, abra o projeto **dev** e depois **Edge Functions → Secrets**.
 
-| nome | valor |
-|---|---|
-| `WHATSAPP_VERIFY_TOKEN` | uma senha que você inventa, longa, por exemplo 30 letras e números. Ela vai de novo no passo 3 |
-| `WHATSAPP_APP_SECRET` | o *App secret* do passo 1.3 |
-| `WHATSAPP_TOKEN` | o token permanente do passo 1.4 |
-| `WHATSAPP_PHONE_NUMBER_ID` | o *Phone number ID* do passo 1.2 |
+| nome | valor | onde está |
+|---|---|---|
+| `WHATSAPP_APP_SECRET` | a chave secreta do app | Meta: **Configurações do app → Básico → Chave Secreta do Aplicativo → Mostrar** |
+| `WHATSAPP_VERIFY_TOKEN` | uma senha que você inventa: `openssl rand -hex 24` no terminal | vai de novo no passo 3 |
+| `WHATSAPP_PHONE_NUMBER_ID` | o Phone Number ID | Meta: Etapa 1 (teste) ou Etapa 2 (número brasileiro) |
+| `WHATSAPP_TOKEN` | o token permanente | passo 7 |
 
 (`ANTHROPIC_API_KEY` e `OPENAI_API_KEY` já estão lá.)
 
 ## 3. O webhook: onde a Meta entrega as mensagens
 
-1. No app, abra **WhatsApp → Configuration → Webhook → Edit**.
+1. Em **Casos de uso → Personalizar**, abra **Etapa 2. Configuração da produção → Configurar webhooks**.
 2. Preencha:
-   - **Callback URL:** `https://boivrcjvsnrmzbregavl.supabase.co/functions/v1/whatsapp-webhook`
-   - **Verify token:** a mesma senha de `WHATSAPP_VERIFY_TOKEN`.
-3. Clique em **Verify and save**. Se der erro, confira se a senha é exatamente a mesma e se a função `whatsapp-webhook` foi publicada.
-4. Em **Webhook fields**, ative (**Subscribe**) o campo **messages**.
+   - **URL de callback:** `https://boivrcjvsnrmzbregavl.supabase.co/functions/v1/whatsapp-webhook`
+   - **Verificar token:** a mesma senha de `WHATSAPP_VERIFY_TOKEN`
+3. Deixe o certificado de cliente desligado e clique em **Verificar e salvar**. Se der certo, a Meta muda de tela sem mostrar erro.
+4. Na lista de campos do webhook, confira que **messages** está **Assinado**.
+5. Clique em **Teste** na linha *messages*. Depois, no Supabase, em **Edge Functions → whatsapp-webhook → Invocations**, deve aparecer um **POST 200**. Um **401** quer dizer que `WHATSAPP_APP_SECRET` não confere.
 
-**Teste:** do seu celular, mande **OI** para o número de teste. A mensagem de boas-vindas deve chegar. Siga o cadastro até o fim.
+**Publicar o app.** Enquanto o app estiver "Não publicado", a Meta só manda ao webhook os testes do painel, não mensagens reais. Para publicar:
+1. Em **Configurações do app → Básico**, preencha:
+   - **URL da Política de Privacidade:** `https://www.empowerfi.io/privacidade`
+   - **URL dos Termos de Serviço:** `https://www.empowerfi.io/termos`
+   - **Categoria**.
+2. Use **Publicar** no menu da esquerda.
 
 ## 4. O formulário do diário
 
@@ -105,9 +112,17 @@ O banco chama a função `journal-reminder` todo dia às 9h, horário de Brasíl
    - **Registrar ontem** abre o formulário;
    - **Não abri ontem** e **Abri e não vendi** registram o dia sem movimento.
 
-## 7. Passar para produção
+## 7. O número brasileiro e o token permanente
 
-Quando o número definitivo existir (precisa de verificação da empresa e de uma forma de pagamento na conta do WhatsApp):
+1. Compre um chip só para a EmpowerFI. O número não pode estar no aplicativo do WhatsApp, nem no comum nem no Business.
+2. Em **Etapa 2. Configuração da produção → Registre seu número de telefone do WhatsApp**, adicione o número, o nome de exibição ("EmpowerFI") e confirme com o código recebido por SMS ou ligação.
+3. Em **Adicione informações de pagamento**, cadastre um cartão. As respostas dentro da conversa que ela abriu são grátis; o lembrete das 9h é cobrado.
+4. **Token permanente:** é criado com um usuário do sistema do portfólio da EmpowerFI. Ele vai direto para o segredo `WHATSAPP_TOKEN`, com as permissões `business_management`, `whatsapp_business_management` e `whatsapp_business_messaging`, e a validade **Nunca**.
+5. Troque `WHATSAPP_PHONE_NUMBER_ID` pelo ID do número brasileiro.
+
+## 8. Passar para produção
+
+Quando o número brasileiro estiver funcionando no dev (a verificação da empresa, Etapa 3, pode vir depois: sem ela, o limite é de cerca de 250 conversas iniciadas pela EmpowerFI por dia):
 1. Repita os passos 1 a 6 no projeto prod (`efylyaroluqatqmtuuml`):
    - use o Phone number ID do número definitivo;
    - use a URL `https://efylyaroluqatqmtuuml.supabase.co/functions/v1/whatsapp-webhook`;

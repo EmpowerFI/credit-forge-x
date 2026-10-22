@@ -28,7 +28,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import {
-  audioMessages, canonicalPhone, flowReplies, sendTextRequest, signatureMatches, textMessages,
+  audioMessages, canonicalPhone, flowReplies, GRAPH, sendTextRequest, signatureMatches, textMessages,
 } from "../_shared/whatsapp.ts";
 import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/conversation.ts";
 import {
@@ -251,7 +251,7 @@ async function fetchAudio(mediaId: string): Promise<{ audio: Blob; mimeType: str
   const g = graph();
   if (!g) throw new Error("WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID are not set");
   const auth = { Authorization: `Bearer ${g.token}` };
-  const metaResponse = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(mediaId)}`, {
+  const metaResponse = await fetch(`${GRAPH}/${encodeURIComponent(mediaId)}`, {
     headers: auth,
     signal: AbortSignal.timeout(10_000),
   });
