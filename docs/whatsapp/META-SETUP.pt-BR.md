@@ -86,6 +86,22 @@ A ordem dos botões importa: o código sabe o que cada um faz pela posição. En
 
 Se a Meta pedir mudanças no texto, pode ajustar à vontade, desde que mantenha o `{{1}}` e os três botões na mesma ordem. Se o nome do modelo tiver que mudar, coloque o novo nome no segredo `WHATSAPP_REMINDER_TEMPLATE`.
 
+### 5b. O modelo do aviso de pausa
+
+Quem passa **7 dias seguidos sem registrar** recebe, no 7º dia, este aviso no lugar do lembrete. Depois disso, não recebe mais nada até registrar um dia ou mandar qualquer mensagem. Aí os lembretes voltam sozinhos (decisão da fundadora, 26/10/2026). Como ela não escreve há uma semana, a janela de 24 horas está fechada, e por isso o aviso também precisa ser um modelo aprovado.
+
+| campo | valor |
+|---|---|
+| Category | **Utility** |
+| Name | `lembrete_pausa` (exatamente assim) |
+| Language | **Portuguese (BR)** |
+| Body | `Oi, {{1}}! Faz uma semana que o seu dia não é registrado. Para não te incomodar, vou pausar os lembretes diários. Quando quiser voltar, toque no botão ou me mande qualquer mensagem: os lembretes voltam sozinhos.` |
+| Sample para {{1}} | `Maria` |
+| Footer | `Para parar de vez, responda SAIR.` |
+| Buttons | **Quick reply**, um só: `Registrar ontem` |
+
+A Meta pode reclassificar esse modelo como **Marketing**, porque ele convida a pessoa a voltar. Se isso acontecer, ele fica mais caro por envio, mas é uma mensagem só por pausa. Se o nome do modelo mudar, coloque o novo no segredo `WHATSAPP_PAUSE_TEMPLATE`.
+
 ## 6. O agendamento do lembrete
 
 O banco chama a função `journal-reminder` todo dia às 9h, horário de Brasília. Para isso, ele precisa de um segredo compartilhado. No seu computador, na pasta do repositório, faça:
@@ -131,6 +147,9 @@ Quando o número brasileiro estiver funcionando no dev (a verificação da empre
 3. O app só aceita um webhook por vez. Ao apontá-lo para prod, o dev deixa de receber mensagens. Se quiser os dois ao mesmo tempo, crie um segundo app para o dev.
 
 ## Quem recebe o lembrete
+
+Depois de **7 dias seguidos sem registro**, ela recebe o aviso de pausa (5b) e mais nada, até registrar ou escrever.
+
 
 Todo dia às 9h, recebe quem:
 - está com o cadastro completo e ativo, ou seja, não pediu SAIR;

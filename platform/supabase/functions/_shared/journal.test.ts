@@ -472,3 +472,11 @@ Deno.test("last week's reference says only what happened", async () => {
   assertEquals(goalAsk({ days_kept: 1, sales_cents: 0 }).text.includes("registrou 1 dia."), true);
   assertEquals(goalAsk({ days_kept: 1, sales_cents: 0 }).text.includes("R$"), false);
 });
+
+Deno.test("the pause notice is its own template, with one button", async () => {
+  const { sendReminderRequest, OPEN_FORM } = await import("./journal.ts");
+  const body = JSON.parse(String(sendReminderRequest("1", "55", "lembrete_pausa", "Rosa", "pause").init.body));
+  assertEquals(body.template.name, "lembrete_pausa");
+  assertEquals(body.template.components.length, 2);
+  assertEquals(body.template.components[1].parameters[0].payload, OPEN_FORM);
+});

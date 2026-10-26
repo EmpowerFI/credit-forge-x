@@ -633,6 +633,20 @@ Deno.serve(async (req) => {
   const audios = audioMessages(body);
   const outcomes: Outcome[] = [];
 
+  // Anything she sends counts as being here: a paused reminder resumes. One
+  // stamp per sender per delivery; a failure here costs nothing she sent.
+  const senders = new Set<string>();
+  for (const m of [...texts, ...audios, ...buttons]) senders.add(m.from);
+  for (const r of replies) if (r.from) senders.add(r.from);
+  for (const from of senders) {
+    try {
+      const { error } = await db.rpc("whatsapp_heard", { p_e164: canonicalPhone(from) });
+      if (error) console.error("not stamped", error.message);
+    } catch {
+      // An unreadable number is dealt with where its message is handled.
+    }
+  }
+
   // The entry conversation. One question at a time, and the row it reads is
   // the only thing that remembers where she was -- which is why a retried
   // delivery has to be recognised before the machine sees it: run twice, an
