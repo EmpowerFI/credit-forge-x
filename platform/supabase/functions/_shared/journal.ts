@@ -281,14 +281,19 @@ export function buttonReplies(body: unknown): ButtonReply[] {
         const m = message as {
           id?: unknown; from?: unknown; timestamp?: unknown; type?: unknown;
           button?: { payload?: unknown };
-          interactive?: { type?: unknown; button_reply?: { id?: unknown } };
+          interactive?: { type?: unknown; button_reply?: { id?: unknown }; list_reply?: { id?: unknown } };
         };
         if (typeof m?.id !== "string" || typeof m.from !== "string") continue;
         // A template's quick reply arrives as type "button"; an interactive
-        // message's as interactive.button_reply.
+        // message's as interactive.button_reply, and a list's row as
+        // interactive.list_reply. All three are a tap on an option.
         const payload = m.type === "button"
           ? m.button?.payload
-          : m.interactive?.type === "button_reply" ? m.interactive.button_reply?.id : undefined;
+          : m.interactive?.type === "button_reply"
+          ? m.interactive.button_reply?.id
+          : m.interactive?.type === "list_reply"
+          ? m.interactive.list_reply?.id
+          : undefined;
         if (typeof payload !== "string") continue;
         out.push({ messageId: m.id, from: m.from, payload, sentAt: sentAtOf(m.timestamp) });
       }
@@ -387,7 +392,13 @@ export function span(days: number): string {
  * What she reads the moment the form is in. Fixed text, not a model: it
  * arrives at once, costs nothing, and its sums are the database's.
  */
-export function confirmationText(day: string, sentAt: Date, s: DaySummary, p?: Progress | null): string {
+export function confirmationText(
+  day: string,
+  sentAt: Date,
+  s: DaySummary,
+  p?: Progress | null,
+  goal?: WeekGoal | null,
+): string {
   const which = day === spDate(sentAt) ? "Hoje" : "Ontem";
   const head = s.quiet
     ? s.quiet_reason === "closed"
@@ -409,6 +420,7 @@ export function confirmationText(day: string, sentAt: Date, s: DaySummary, p?: P
       ? `Você registrou todos os ${s.week_days === 1 ? "dias" : `${s.week_days} dias`} desta semana até agora. 💜`
       : `Nesta semana você registrou ${s.week_kept} de ${s.week_days} dias.`;
   }
+  if (goal) progress += `\n${goalProgressLine(goal)}`;
   return `${head}\n${progress}\n\nTeve mais algum gasto? É só mandar o formulário de novo, que soma.`;
 }
 
@@ -634,6 +646,151 @@ export function sendFlowRequest(
       }),
     },
   };
+}
+
+// ------------------------------------------------------------- the weekly goal
+//
+// Once a week she picks a goal: days she will record (3 to 7) or how much she
+// wants to sell. The wording is encouraging and never scolds: a goal missed
+// is told as how far she got, and a smaller goal next week is offered as just
+// as good. Every figure here comes from the database.
+
+export const GOAL_DAYS = "goal:days";
+export const GOAL_SALES = "goal:sales";
+export const GOAL_SKIP = "goal:skip";
+
+/** A goal as the database reports it, with this week's figures. */
+export interface WeekGoal {
+  kind: "days" | "sales";
+  target: number;
+  met: boolean;
+  days_kept: number;
+  sales_cents: number;
+}
+
+export interface LastWeek extends WeekGoal {
+  /** Weeks in a row, ending last week, whose goal was met. */
+  run: number;
+}
+
+export interface WeekFigures {
+  days_kept: number;
+  sales_cents: number;
+}
+
+/** A question with options, as the webhook sends it: buttons up to three, a list beyond. */
+export interface GoalChoice {
+  text: string;
+  options: { id: string; title: string; description?: string }[];
+  list?: string;
+}
+
+const days = (n: number) => (n === 1 ? "1 dia" : `${n} dias`);
+const reais = (cents: number) => `R$ ${formatBRL(cents)}`;
+
+/** The line under the day's confirmation. */
+export function goalProgressLine(g: WeekGoal): string {
+  if (g.met) {
+    return g.kind === "days"
+      ? `🎯 Meta da semana batida ✅ ${days(g.days_kept)} registrados.`
+      : `🎯 Meta da semana batida ✅ ${reais(g.sales_cents)} em vendas.`;
+  }
+  return g.kind === "days"
+    ? `🎯 Meta da semana: ${g.days_kept} de ${g.target} dias registrados.`
+    : `🎯 Meta da semana: ${reais(g.sales_cents)} de ${reais(g.target)} em vendas.`;
+}
+
+/** The first time this week's goal is met. */
+export function goalMetText(g: WeekGoal, run: number): string {
+  const what = g.kind === "days" ? `registrar ${days(g.target)}` : `vender ${reais(g.target)}`;
+  const streak = run >= 2 ? `\nSão ${run} semanas seguidas batendo a meta. 👏` : "";
+  return `🏆 Você bateu a sua meta da semana: ${what}!${streak}\n\nO que você planejou, você fez. 💜`;
+}
+
+/** How last week's goal went, told once, at the first record of the new week. */
+export function lastWeekText(l: LastWeek): string {
+  const goal = l.kind === "days" ? `registrar ${days(l.target)}` : `vender ${reais(l.target)}`;
+  const did = l.kind === "days" ? `você registrou ${days(l.days_kept)}` : `você vendeu ${reais(l.sales_cents)}`;
+  if (l.met) {
+    const streak = l.run >= 2 ? ` São ${l.run} semanas seguidas. 👏` : "";
+    return `Na semana passada a sua meta era ${goal}, e ${did}. Meta batida! ✅${streak}`;
+  }
+  const done = l.kind === "days" ? l.days_kept : l.sales_cents;
+  const pct = l.target > 0 ? Math.floor((done * 100) / l.target) : 0;
+  return `Na semana passada a sua meta era ${goal}, e ${did}: ${pct}% do caminho. ` +
+    "Cada semana é uma nova chance, e uma meta um pouco menor também vale. 💜";
+}
+
+/** What she did last week, to choose a number that is hers. Empty when there is nothing to say. */
+function reference(r: WeekFigures | null | undefined): string {
+  if (!r || (r.days_kept === 0 && r.sales_cents === 0)) return "";
+  const sold = r.sales_cents > 0 ? ` e vendeu ${reais(r.sales_cents)}` : "";
+  return `\n\nNa semana passada você registrou ${days(r.days_kept)}${sold}.`;
+}
+
+/** The weekly question: which kind of goal, or not now. */
+export function goalAsk(r: WeekFigures | null | undefined): GoalChoice {
+  return {
+    text: "Vamos combinar uma meta para esta semana? 🎯 Uma meta pequena e clara ajuda a manter o ritmo." +
+      reference(r) + "\n\nQue tipo de meta você quer?",
+    options: [
+      { id: GOAL_DAYS, title: "Dias de registro" },
+      { id: GOAL_SALES, title: "Meta de vendas" },
+      { id: GOAL_SKIP, title: "Agora não" },
+    ],
+  };
+}
+
+/** How many days, from 3 to the most she can still keep this week. */
+export function goalDaysChoice(maxDays: number, r: WeekFigures | null | undefined): GoalChoice {
+  if (maxDays < 3) {
+    return {
+      text: "Nesta semana já não dá para chegar a 3 dias de registro. Que tal uma meta de vendas, ou combinar na segunda?",
+      options: [{ id: GOAL_SALES, title: "Meta de vendas" }, { id: GOAL_SKIP, title: "Agora não" }],
+    };
+  }
+  const options = [];
+  for (let n = 3; n <= Math.min(7, maxDays); n++) {
+    options.push({
+      id: `${GOAL_DAYS}:${n}`,
+      title: n === 7 ? "7 dias, todos" : `${n} dias`,
+      description: n === 7 ? "Todos os dias, de segunda a domingo" : undefined,
+    });
+  }
+  return {
+    text: "Quantos dias desta semana você vai registrar? Vale de segunda a domingo, e o dia sem movimento também conta." +
+      reference(r),
+    list: "Escolher",
+    options,
+  };
+}
+
+/** Asks for the sales amount; the next thing she types is read as it. */
+export function goalSalesAsk(r: WeekFigures | null | undefined): string {
+  return "Quanto você quer vender nesta semana, de segunda a domingo? Escreva só o valor, por exemplo: 1500." + reference(r);
+}
+
+export function goalSetText(kind: "days" | "sales", target: number, f: WeekFigures): string {
+  return kind === "days"
+    ? `Combinado! 🎯 Sua meta da semana: registrar ${days(target)}. Até agora: ${days(f.days_kept)}.`
+    : `Combinado! 🎯 Sua meta da semana: vender ${reais(target)}. Até agora: ${reais(f.sales_cents)}.`;
+}
+
+export const GOAL_SKIPPED_TEXT = "Tudo bem! Se mudar de ideia, é só escrever META. 💜";
+export const GOAL_AMOUNT_AGAIN_TEXT = "Não entendi o valor da meta. Escreva só o número, por exemplo: 1500.";
+
+/** "META", written: this week's goal and progress, or the question. */
+export function isGoalText(text: string): boolean {
+  return ["meta", "minha meta", "metas"].includes(plain(text));
+}
+
+/** The goal button tapped, or undefined if it is not one. */
+export function goalButton(payload: string): { choice: "days" | "sales" | "skip"; days?: number } | undefined {
+  if (payload === GOAL_DAYS) return { choice: "days" };
+  if (payload === GOAL_SALES) return { choice: "sales" };
+  if (payload === GOAL_SKIP) return { choice: "skip" };
+  const m = payload.match(/^goal:days:([3-7])$/);
+  return m ? { choice: "days", days: Number(m[1]) } : undefined;
 }
 
 /** The approved template's default name and language; the name can be changed by WHATSAPP_REMINDER_TEMPLATE. */
