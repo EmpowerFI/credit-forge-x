@@ -19,7 +19,10 @@
 export type State = "NEW" | "CONSENT" | "PROFILE" | "ACTIVE" | "OPTED_OUT";
 
 /** Where inside PROFILE she is. Null outside it. */
-export type Step = "name" | "city" | "sector" | "since" | null;
+export type Step = "adult" | "name" | "city" | "sector" | "since" | "cnpj" | "finance" | null;
+
+export type Formalization = "mei" | "cnpj" | "none";
+export type FinanceControl = "notebook" | "spreadsheet" | "app" | "memory" | "none";
 
 export interface Conversation {
   state: State;
@@ -35,14 +38,34 @@ export interface Draft {
   sector?: string;
   /** Months in business. Null when she said she does not know. */
   months_operating?: number | null;
+  /** She declared she is a woman of 18 or over: the programme's gate, as in the app. */
+  adult_woman?: true;
+  formalization?: Formalization;
+  /** How she keeps track of the money today. */
+  finance_control?: FinanceControl;
   /** True when she accepted; the scopes are recorded separately. */
   consented?: boolean;
 }
 
+/**
+ * A question she answers with a tap. Up to three options go as buttons
+ * (titles of 20 characters at most); more go as a list behind `list`, the
+ * button that opens it (rows of 24 characters at most, ten rows at most).
+ * Every option's id is also accepted typed, and so are plain words.
+ */
+export interface Choice {
+  text: string;
+  options: { id: string; title: string; description?: string }[];
+  list?: string;
+}
+
+/** One message: plain text, or a question with options. */
+export type Say = string | Choice;
+
 export interface Turn {
   next: Conversation;
   /** What to send, in order. Empty means say nothing at all. */
-  say: string[];
+  say: Say[];
   /** Set on the turn where she becomes enrolled, so the caller can write the row. */
   completed?: boolean;
   /** Set on the turn where she consents, so the caller can record it. */
@@ -72,16 +95,59 @@ const SAY = {
   ].join("\n\n"),
   consentRefused: "Tudo bem. Não vou te mandar mais nada. Se mudar de ideia, é só escrever aqui de novo. 💜",
   consentUnclear: "Só para eu ter certeza: responda SIM para aceitar, ou SAIR para não receber mais nada.",
+  adult: {
+    text: "Este acompanhamento é para mulheres empreendedoras.\n\nVocê se declara mulher e tem 18 anos ou mais?",
+    options: [{ id: "onb:adult:yes", title: "Sim" }, { id: "onb:adult:no", title: "Não" }],
+  } satisfies Choice,
+  adultAgain: {
+    text: "Toque em uma das opções: você se declara mulher e tem 18 anos ou mais?",
+    options: [{ id: "onb:adult:yes", title: "Sim" }, { id: "onb:adult:no", title: "Não" }],
+  } satisfies Choice,
+  notEligible:
+    "Obrigada por responder. Este acompanhamento é feito para mulheres empreendedoras com 18 anos ou mais, então não vou seguir com o cadastro, e nada do que você respondeu foi guardado. Se tocou errado, é só escrever de novo. 💜",
   askName: "Como você prefere que eu te chame?",
   askNameAgain: "Me diz só o nome, como você prefere ser chamada.",
-  askCity: "Em que cidade você trabalha? Escreva cidade e estado, assim: Campinas/SP",
-  askCityAgain: "Preciso da cidade e do estado, assim: Campinas/SP",
-  askSector: "O que você vende ou faz? Pode escrever do seu jeito.",
-  askSectorAgain: "Me conta em poucas palavras o que você vende ou faz.",
-  askSince: "Há quanto tempo você trabalha com isso? Pode responder 3 anos, 8 meses, ou NÃO SEI.",
-  askSinceAgain: "Pode ser 3 anos, 8 meses, ou NÃO SEI.",
+  askCity: "Em que cidade fica o seu negócio? Escreva a cidade e o estado, assim: Osasco/SP",
+  askCityAgain: "Preciso da cidade e da sigla do estado, separadas por uma barra, assim: Osasco/SP",
+  askSector:
+    "O que você vende ou faz? Pode escrever do seu jeito, por exemplo: bolo por encomenda, salão de beleza, revenda de roupas, marmitas, costura.",
+  askSectorAgain: "Me conta em poucas palavras o que você vende ou faz. Por exemplo: marmitas, ou unhas e sobrancelhas.",
+  since: {
+    text: "Há quanto tempo você trabalha com isso?",
+    list: "Escolher",
+    options: [
+      { id: "onb:since:1", title: "Menos de 6 meses" },
+      { id: "onb:since:6", title: "De 6 meses a 1 ano" },
+      { id: "onb:since:12", title: "De 1 a 3 anos" },
+      { id: "onb:since:36", title: "De 3 a 5 anos" },
+      { id: "onb:since:60", title: "Mais de 5 anos" },
+      { id: "onb:since:unknown", title: "Não sei" },
+    ],
+  } satisfies Choice,
+  sinceAgain: "Toque em Escolher e marque uma opção. Se preferir escrever, pode ser assim: 3 anos, 8 meses, ou NÃO SEI.",
+  cnpj: {
+    text: "O seu negócio tem CNPJ?\n\nNão tem problema se não tiver: a maioria começa assim.",
+    options: [
+      { id: "onb:cnpj:mei", title: "Sim, sou MEI" },
+      { id: "onb:cnpj:cnpj", title: "Sim, outro CNPJ" },
+      { id: "onb:cnpj:none", title: "Não tenho" },
+    ],
+  } satisfies Choice,
+  cnpjAgain: "Toque em uma das opções: Sim, sou MEI · Sim, outro CNPJ · Não tenho.",
+  finance: {
+    text: "E hoje, como você controla o dinheiro que entra e sai do negócio?",
+    list: "Escolher",
+    options: [
+      { id: "onb:finance:notebook", title: "Anoto num caderno" },
+      { id: "onb:finance:spreadsheet", title: "Uso uma planilha" },
+      { id: "onb:finance:app", title: "Uso um aplicativo" },
+      { id: "onb:finance:memory", title: "Controlo de cabeça" },
+      { id: "onb:finance:none", title: "Ainda não controlo" },
+    ],
+  } satisfies Choice,
+  financeAgain: "Toque em Escolher e marque a opção mais parecida com o seu jeito hoje. 💜",
   done: "Pronto! 🎉 Já está tudo certo.\n\nTodo dia às 9h eu te lembro de registrar as vendas e os gastos do dia anterior. Leva um minuto.\n\nQuer começar agora? É só tocar no botão.",
-  help: "Eu sou o acompanhamento da EmpowerFI.\n\nVocê pode me contar o seu dia por escrito ou por áudio, por exemplo: «vendi 250 no Pix e gastei 80 de embalagem no dinheiro». Eu te mostro o que entendi antes de registrar.\n\nEscreva VER para conferir ou corrigir os registros de ontem e de hoje.\n\nEscreva AUTORIZAÇÕES para ver com quem você compartilha os seus números.\n\nEscreva AJUDA para ver isto de novo, ou SAIR para parar de receber mensagens.\n\nSe estiver no meio de uma pergunta, é só responder que a gente continua de onde parou.",
+  help: "Eu sou o acompanhamento da EmpowerFI.\n\nVocê pode me contar o seu dia por escrito ou por áudio, por exemplo: «vendi 250 no Pix e gastei 80 de embalagem no dinheiro». Eu te mostro o que entendi antes de registrar.\n\nEscreva VER para conferir ou corrigir os registros de ontem e de hoje.\n\nEscreva META para ver ou combinar a sua meta da semana.\n\nEscreva AUTORIZAÇÕES para ver com quem você compartilha os seus números.\n\nEscreva AJUDA para ver isto de novo, ou SAIR para parar de receber mensagens.\n\nSe estiver no meio de uma pergunta, é só responder que a gente continua de onde parou.",
   left: "Pronto, parei por aqui. Você não vai receber mais mensagens. Para voltar, é só escrever. 💜",
   alreadyActive: "Para registrar o dia, toque no botão, ou me conte por escrito ou por áudio o que vendeu e o que gastou. Se não teve movimento, escreva SEM MOVIMENTO. Para conferir ou corrigir os registros de ontem e de hoje, escreva VER. 💜",
 } as const;
@@ -151,14 +217,93 @@ export function parseName(raw: string): string | null {
 export const FRESH: Conversation = { state: "NEW", step: null, draft: {} };
 
 /** The question she is on, which is also what a resumed conversation repeats. */
-export function question(conv: Conversation): string | null {
+export function question(conv: Conversation): Say | null {
   if (conv.state === "CONSENT") return SAY.welcome;
   if (conv.state !== "PROFILE") return null;
-  return { name: SAY.askName, city: SAY.askCity, sector: SAY.askSector, since: SAY.askSince }[conv.step ?? "name"];
+  return ASK[conv.step ?? "adult"];
+}
+
+const ASK: Record<Exclude<Step, null>, Say> = {
+  adult: SAY.adult,
+  name: SAY.askName,
+  city: SAY.askCity,
+  sector: SAY.askSector,
+  since: SAY.since,
+  cnpj: SAY.cnpj,
+  finance: SAY.finance,
+};
+
+/**
+ * The first thing the profile still lacks, in the order she is asked; null
+ * when nothing is missing. Deciding the next question from the draft rather
+ * than from the last step means a conversation begun before a question was
+ * added still ends with every answer the enrolment needs.
+ */
+export function nextStep(d: Draft): Exclude<Step, null> | null {
+  if (d.adult_woman !== true) return "adult";
+  if (!d.name) return "name";
+  if (!d.city || !d.state_uf) return "city";
+  if (!d.sector) return "sector";
+  if (!("months_operating" in d)) return "since";
+  if (!d.formalization) return "cnpj";
+  if (!d.finance_control) return "finance";
+  return null;
+}
+
+/** A tapped option's value, or the same answer typed in words. Undefined when it is neither. */
+function chosen<T extends string>(incoming: string, prefix: string, words: Record<string, T>): T | undefined {
+  const s = strip(incoming);
+  if (s.startsWith(prefix)) {
+    const v = s.slice(prefix.length);
+    return Object.values(words).includes(v as T) ? v as T : undefined;
+  }
+  if (s in words) return words[s];
+  // A word inside a longer answer counts only when nothing in it says no:
+  // "não sou MEI" contains "mei" and means the opposite.
+  if (/\bnao\b/.test(s)) return undefined;
+  for (const [word, value] of Object.entries(words)) {
+    if (word.length >= 3 && new RegExp(`\\b${word}\\b`).test(s)) return value;
+  }
+  return undefined;
+}
+
+const ADULT: Record<string, "yes" | "no"> = { "sim": "yes", "s": "yes", "sou": "yes", "nao": "no", "n": "no" };
+const FORMAL: Record<string, Formalization> = {
+  "mei": "mei", "outro cnpj": "cnpj", "tenho cnpj": "cnpj", "cnpj": "cnpj", "nao tenho": "none", "nao": "none",
+};
+const CONTROL: Record<string, FinanceControl> = {
+  "caderno": "notebook", "anoto": "notebook", "planilha": "spreadsheet", "excel": "spreadsheet",
+  "aplicativo": "app", "app": "app", "cabeca": "memory", "nao controlo": "none", "nada": "none", "nao": "none",
+};
+
+/** "onb:since:12", or "3 anos" typed. Undefined when it is neither. */
+function tenure(incoming: string): number | null | undefined {
+  const s = strip(incoming);
+  if (s === "onb:since:unknown") return null;
+  const tapped = s.match(/^onb:since:(\d{1,3})$/);
+  if (tapped) {
+    const n = Number(tapped[1]);
+    return n >= 1 && n <= 720 ? n : undefined;
+  }
+  return parseTenure(incoming);
+}
+
+/** Moves to the next missing answer, or finishes. */
+function onward(conv: Conversation, draft: Draft): Turn {
+  const step = nextStep(draft);
+  if (step === null) {
+    return {
+      next: { state: "ACTIVE", step: null, draft },
+      say: [SAY.done],
+      completed: true,
+      offerJournal: true,
+    };
+  }
+  return { next: { ...conv, state: "PROFILE", step, draft }, say: [ASK[step]] };
 }
 
 export function advance(conv: Conversation, incoming: string): Turn {
-  const keep = (say: string[]): Turn => ({ next: conv, say });
+  const keep = (say: Say[]): Turn => ({ next: conv, say });
 
   if (conv.state === "OPTED_OUT") {
     // She comes back by writing anything at all, and starts from the top:
@@ -179,47 +324,55 @@ export function advance(conv: Conversation, incoming: string): Turn {
 
     case "CONSENT": {
       if (!isYes(incoming)) return keep([SAY.consentUnclear]);
-      return {
-        next: { state: "PROFILE", step: "name", draft: { ...conv.draft, consented: true } },
-        say: [SAY.askName],
-        consented: true,
-      };
+      return { ...onward(conv, { ...conv.draft, consented: true }), consented: true };
     }
 
     case "PROFILE": {
+      const d = conv.draft;
       switch (conv.step) {
+        case "adult": {
+          const answer = isYes(incoming) ? "yes" : chosen(incoming, "onb:adult:", ADULT);
+          if (answer === undefined) return keep([SAY.adultAgain]);
+          // Not eligible: nothing she answered is kept, and writing again starts over.
+          if (answer === "no") return { next: FRESH, say: [SAY.notEligible] };
+          return onward(conv, { ...d, adult_woman: true });
+        }
         case "name": {
           const name = parseName(incoming);
-          if (name === null) return keep([SAY.askNameAgain]);
-          return { next: { ...conv, step: "city", draft: { ...conv.draft, name } }, say: [SAY.askCity] };
+          if (name === null || incoming.trim().toLowerCase().startsWith("onb:")) return keep([SAY.askNameAgain]);
+          return onward(conv, { ...d, name });
         }
         case "city": {
           const place = parseCity(incoming);
           if (place === null) return keep([SAY.askCityAgain]);
-          return {
-            next: { ...conv, step: "sector", draft: { ...conv.draft, city: place.city, state_uf: place.uf } },
-            say: [SAY.askSector],
-          };
+          return onward(conv, { ...d, city: place.city, state_uf: place.uf });
         }
         case "sector": {
           const sector = incoming.trim().replace(/\s+/g, " ");
-          if (sector.length < 2 || sector.length > 60 || !/\p{L}/u.test(sector)) return keep([SAY.askSectorAgain]);
-          return { next: { ...conv, step: "since", draft: { ...conv.draft, sector } }, say: [SAY.askSince] };
+          if (sector.length < 2 || sector.length > 60 || !/\p{L}/u.test(sector) || sector.startsWith("onb:")) {
+            return keep([SAY.askSectorAgain]);
+          }
+          return onward(conv, { ...d, sector });
         }
         case "since": {
-          const months = parseTenure(incoming);
-          if (months === undefined) return keep([SAY.askSinceAgain]);
-          return {
-            next: { state: "ACTIVE", step: null, draft: { ...conv.draft, months_operating: months } },
-            say: [SAY.done],
-            completed: true,
-            offerJournal: true,
-          };
+          const months = tenure(incoming);
+          if (months === undefined) return keep([SAY.sinceAgain]);
+          return onward(conv, { ...d, months_operating: months });
+        }
+        case "cnpj": {
+          const formalization = chosen(incoming, "onb:cnpj:", FORMAL);
+          if (formalization === undefined) return keep([SAY.cnpjAgain]);
+          return onward(conv, { ...d, formalization });
+        }
+        case "finance": {
+          const finance_control = chosen(incoming, "onb:finance:", CONTROL);
+          if (finance_control === undefined) return keep([SAY.financeAgain]);
+          return onward(conv, { ...d, finance_control });
         }
         default:
-          // A row with no step is a row nothing can be decided from; start the
-          // profile over rather than guess which answer is missing.
-          return { next: { ...conv, step: "name" }, say: [SAY.askName] };
+          // A row with no step is a row nothing can be decided from: ask the
+          // first missing answer rather than guess which one it was.
+          return onward(conv, d);
       }
     }
 

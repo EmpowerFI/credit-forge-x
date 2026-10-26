@@ -415,3 +415,60 @@ Deno.test("the reminder is the approved template, with its buttons in order", as
   assertEquals(quietButton(CLOSED_YESTERDAY), "closed");
   assertEquals(quietButton(OPEN_FORM), undefined);
 });
+
+Deno.test("the weekly goal, in words that encourage and never scold", async () => {
+  const j = await import("./journal.ts");
+  const days = { kind: "days" as const, target: 5, met: false, days_kept: 3, sales_cents: 0 };
+  const sales = { kind: "sales" as const, target: 150_000, met: false, days_kept: 4, sales_cents: 90_000 };
+  assertEquals(j.goalProgressLine(days), "🎯 Meta da semana: 3 de 5 dias registrados.");
+  assertEquals(j.goalProgressLine(sales), "🎯 Meta da semana: R$ 900,00 de R$ 1.500,00 em vendas.");
+  assertEquals(j.goalProgressLine({ ...days, met: true, days_kept: 5 }), "🎯 Meta da semana batida ✅ 5 dias registrados.");
+  assertEquals(j.goalMetText({ ...sales, met: true }, 1).includes("vender R$ 1.500,00"), true);
+  assertEquals(j.goalMetText({ ...sales, met: true }, 3).includes("3 semanas seguidas"), true);
+  assertEquals(
+    j.lastWeekText({ ...sales, run: 0 }),
+    "Na semana passada a sua meta era vender R$ 1.500,00, e você vendeu R$ 900,00: 60% do caminho. Cada semana é uma nova chance, e uma meta um pouco menor também vale. 💜",
+  );
+  assertEquals(j.lastWeekText({ ...days, met: true, days_kept: 6, run: 2 }).endsWith("Meta batida! ✅ São 2 semanas seguidas. 👏"), true);
+
+  const ask = j.goalAsk({ days_kept: 4, sales_cents: 120_000 });
+  assertEquals(ask.options.map((o) => o.id), [j.GOAL_DAYS, j.GOAL_SALES, j.GOAL_SKIP]);
+  assertEquals(ask.text.includes("registrou 4 dias e vendeu R$ 1.200,00"), true);
+  assertEquals(j.goalAsk({ days_kept: 0, sales_cents: 0 }).text.includes("semana passada"), false);
+
+  // Only days she can still reach; under three, days are not offered.
+  assertEquals(j.goalDaysChoice(5, null).options.map((o) => o.id), ["goal:days:3", "goal:days:4", "goal:days:5"]);
+  assertEquals(j.goalDaysChoice(2, null).options.map((o) => o.id), [j.GOAL_SALES, j.GOAL_SKIP]);
+
+  assertEquals(j.goalButton("goal:days:4"), { choice: "days", days: 4 });
+  assertEquals(j.goalButton("goal:days:9"), undefined);
+  assertEquals(j.goalButton(j.GOAL_SKIP), { choice: "skip" });
+  assertEquals(j.isGoalText("Meta"), true);
+  assertEquals(j.isGoalText("minha meta é vender mais"), false);
+});
+
+Deno.test("a tap on a list row is a tap like any other", () => {
+  const body = { entry: [{ changes: [{ value: { messages: [
+    { id: "w1", from: "5511999990000", timestamp: "1792000000", type: "interactive", interactive: { type: "list_reply", list_reply: { id: "onb:since:12", title: "De 1 a 3 anos" } } },
+  ] } }] }] };
+  assertEquals(buttonReplies(body).map((b) => b.payload), ["onb:since:12"]);
+});
+
+Deno.test("a question goes as buttons up to three options, as a list beyond", async () => {
+  const { sendChoiceRequest } = await import("./whatsapp.ts");
+  const buttons = JSON.parse(String(sendChoiceRequest("1", "55", { text: "t", options: [{ id: "a", title: "Uma opção longa demais para um botão" }] }).init.body));
+  assertEquals(buttons.interactive.type, "button");
+  assertEquals(buttons.interactive.action.buttons[0].reply.title.length, 20);
+  const list = JSON.parse(String(sendChoiceRequest("1", "55", {
+    text: "t", list: "Escolher", options: Array.from({ length: 6 }, (_, i) => ({ id: `r${i}`, title: `opção ${i}` })),
+  }).init.body));
+  assertEquals(list.interactive.type, "list");
+  assertEquals(list.interactive.action.button, "Escolher");
+  assertEquals(list.interactive.action.sections[0].rows.length, 6);
+});
+
+Deno.test("last week's reference says only what happened", async () => {
+  const { goalAsk } = await import("./journal.ts");
+  assertEquals(goalAsk({ days_kept: 1, sales_cents: 0 }).text.includes("registrou 1 dia."), true);
+  assertEquals(goalAsk({ days_kept: 1, sales_cents: 0 }).text.includes("R$"), false);
+});

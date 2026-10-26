@@ -303,3 +303,48 @@ export function sendTextRequest(phoneNumberId: string, to: string, body: string)
     },
   };
 }
+
+/**
+ * A question she answers with a tap, inside the window she opened: up to
+ * three options go as reply buttons, more as a list behind `list`. Titles
+ * are cut to Meta's limits (20 characters on a button, 24 on a list row, 72
+ * on a row's description) rather than refused, so a long title never stops
+ * the message.
+ */
+export function sendChoiceRequest(
+  phoneNumberId: string,
+  to: string,
+  choice: { text: string; options: { id: string; title: string; description?: string }[]; list?: string },
+): { url: string; init: RequestInit } {
+  const interactive = choice.options.length <= 3 && !choice.list
+    ? {
+      type: "button",
+      body: { text: choice.text.slice(0, 1024) },
+      action: {
+        buttons: choice.options.map((o) => ({ type: "reply", reply: { id: o.id, title: o.title.slice(0, 20) } })),
+      },
+    }
+    : {
+      type: "list",
+      body: { text: choice.text.slice(0, 4096) },
+      action: {
+        button: (choice.list ?? "Escolher").slice(0, 20),
+        sections: [{
+          title: "Opções",
+          rows: choice.options.slice(0, 10).map((o) => ({
+            id: o.id,
+            title: o.title.slice(0, 24),
+            ...(o.description ? { description: o.description.slice(0, 72) } : {}),
+          })),
+        }],
+      },
+    };
+  return {
+    url: `${GRAPH}/${phoneNumberId}/messages`,
+    init: {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messaging_product: "whatsapp", recipient_type: "individual", to, type: "interactive", interactive }),
+    },
+  };
+}

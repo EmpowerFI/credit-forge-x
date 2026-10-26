@@ -28,12 +28,14 @@
 
 import { createClient } from "@supabase/supabase-js";
 import {
-  audioMessages, canonicalPhone, flowReplies, GRAPH, sendTextRequest, signatureMatches, textMessages,
+  audioMessages, canonicalPhone, flowReplies, GRAPH, sendChoiceRequest, sendTextRequest, signatureMatches, textMessages,
 } from "../_shared/whatsapp.ts";
-import { advance, CONSENT_TEXT_VERSION, type Conversation } from "../_shared/conversation.ts";
+import { advance, CONSENT_TEXT_VERSION, type Conversation, type Say } from "../_shared/conversation.ts";
 import {
   addDays, buttonReplies, type ButtonReply, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise, isDecline,
   isJournalReply, isListText, isSharesText, type JournalLine, listText, type ListedLine, type ListedShare,
+  GOAL_AMOUNT_AGAIN_TEXT, GOAL_SKIPPED_TEXT, goalAsk, goalButton, goalDaysChoice, goalMetText, goalProgressLine,
+  goalSalesAsk, goalSetText, isGoalText, type LastWeek, lastWeekText, type WeekFigures, type WeekGoal,
   type Milestone, OPEN_FORM, parseJournalReply, type Progress, quietButton, type QuietReason, quietTextReason, refusedText,
   revokeNumber, sendFlowRequest, sentAtOf, SHARE_CONSENT_TEXT_VERSION, shareAnswerText, shareRevokedText,
   sharesText, spDate, voidedText, voidNumber, voidRefusedText, weekToRead,
@@ -41,7 +43,7 @@ import {
 import {
   DEFAULT_INTERPRET_MODEL, DEFAULT_TRANSCRIBE_MODEL, DISCARDED_TEXT, draftButton, draftMessages, heardText,
   interpretRequest, INTERPRET_PROMPT_VERSION, looksLikeFigures, MAX_AUDIO_BYTES, MAX_DRAFTS_PER_DAY, MAX_TEXT_CHARS,
-  NO_VOICE_TEXT, nothingReadText, readInterpretation, sendDraftRequest, STALE_DRAFT_TEXT, TOO_LONG_TEXT,
+  NO_VOICE_TEXT, nothingReadText, readInterpretation, sendDraftRequest, spokenCents, STALE_DRAFT_TEXT, TOO_LONG_TEXT,
   TOO_MANY_TEXT, toolInput, transcribeRequest, VOICE_FAILED_TEXT,
 } from "../_shared/spoken.ts";
 
@@ -97,6 +99,25 @@ async function sendJournalForm(to: string): Promise<boolean> {
   const response = await fetch(url, { ...init, headers });
   if (!response.ok) {
     console.error("form send failed", response.status, await response.text());
+    return false;
+  }
+  return true;
+}
+
+/** One message of a turn: plain text, or a question she answers with a tap. */
+async function sendSay(to: string, say: Say): Promise<boolean> {
+  if (typeof say === "string") return await sendText(to, say);
+  const token = Deno.env.get("WHATSAPP_TOKEN");
+  const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+  if (!token || !phoneNumberId) {
+    console.warn("not sending: WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID are not set");
+    return false;
+  }
+  const { url, init } = sendChoiceRequest(phoneNumberId, to, say);
+  const headers = { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` };
+  const response = await fetch(url, { ...init, headers });
+  if (!response.ok) {
+    console.error("choice send failed", response.status, await response.text());
     return false;
   }
   return true;
@@ -179,12 +200,29 @@ async function afterRecorded(
   if (progError) console.error("no progress", messageId, progError.message);
   const p = progError ? null : progress as Progress;
 
+  // The week's goal: its progress, met just now, last week's result, or the question.
+  const { data: goalData, error: goalError } = await db.rpc("journal_goal_after_record", {
+    p_entrepreneur_id: entrepreneurId,
+  });
+  if (goalError) console.error("no goal", messageId, goalError.message);
+  const g = goalError ? null : goalData as {
+    goal: WeekGoal | null;
+    just_met: boolean;
+    run: number | null;
+    last_week: LastWeek | null;
+    ask: boolean;
+    reference: WeekFigures;
+  };
+
   if (sumError) {
     console.error("no summary", messageId, sumError.message);
   } else {
-    await sendText(phone, confirmationText(day, sentAt, summary as DaySummary, p));
+    await sendText(phone, confirmationText(day, sentAt, summary as DaySummary, p, g?.goal));
   }
   for (const m of p?.earned ?? []) await sendText(phone, earnedText(m));
+  if (g?.just_met && g.goal) await sendText(phone, goalMetText(g.goal, g.run ?? 1));
+  if (g?.last_week) await sendText(phone, lastWeekText(g.last_week));
+  if (g?.ask) await sendSay(phone, goalAsk(g.reference));
   await deliverShare(phone, entrepreneurId);
 
   // The week this day may close: read it, after the confirmation, if it is
@@ -429,6 +467,91 @@ async function decideDraft(button: ButtonReply, draft: { id: string; confirm: bo
   return { message_id: button.messageId, status: `draft:confirmed:${recorded}` };
 }
 
+/**
+ * One turn of the entry conversation: her answer, typed or tapped, through the
+ * machine; the enrolment when it completes; the row saved; the reply sent.
+ */
+async function takeTurn(phone: string, messageId: string, conversation: Conversation, incoming: string): Promise<Outcome> {
+  const turn = advance(conversation, incoming);
+
+  // Enrolling first: if it fails she must not be left recorded as ACTIVE
+  // with no account behind it, answering a check-in that belongs to nobody.
+  if (turn.completed) {
+    const { error: enrolError } = await db.rpc("whatsapp_enrol", {
+      p_e164: phone,
+      p_draft: turn.next.draft,
+      p_text_version: CONSENT_TEXT_VERSION,
+    });
+    if (enrolError) {
+      console.error("could not enrol", messageId, enrolError.message);
+      return { message_id: messageId, status: "refused", detail: enrolError.message };
+    }
+  }
+
+  const { error: saveError } = await db.rpc("whatsapp_conversation_save", {
+    p_e164: phone,
+    p_state: turn.next.state,
+    p_step: turn.next.step,
+    p_draft: turn.next.draft,
+  });
+  if (saveError) {
+    console.error("could not save the conversation", messageId, saveError.message);
+    return { message_id: messageId, status: "refused", detail: saveError.message };
+  }
+
+  for (const say of turn.say) await sendSay(phone, say);
+  if (turn.offerJournal) await sendJournalForm(phone);
+  return { message_id: messageId, status: turn.completed ? "enrolled" : `conversation:${turn.next.state}` };
+}
+
+/** META, written: this week's goal and how it is going, or the question again. */
+async function goalNow(phone: string, entrepreneurId: string): Promise<void> {
+  const { data, error } = await db.rpc("journal_goal_now", { p_entrepreneur_id: entrepreneurId });
+  if (error) throw new Error(error.message);
+  const now = data as { goal: WeekGoal | null; reference?: WeekFigures };
+  if (now.goal) await sendText(phone, goalProgressLine(now.goal));
+  else await sendSay(phone, goalAsk(now.reference));
+}
+
+/** A tap on the goal question, or on how many days. */
+async function goalTapped(
+  phone: string,
+  entrepreneurId: string,
+  tap: { choice: "days" | "sales" | "skip"; days?: number },
+): Promise<string> {
+  // Days, but not how many yet: the list of what is still reachable this week.
+  if (tap.choice === "days" && tap.days === undefined) {
+    const { data, error } = await db.rpc("journal_goal_now", { p_entrepreneur_id: entrepreneurId });
+    if (error) throw new Error(error.message);
+    const now = data as { goal: WeekGoal | null; reference?: WeekFigures; max_days?: number };
+    if (now.goal) {
+      await sendText(phone, goalProgressLine(now.goal));
+      return "goal:already_set";
+    }
+    await sendSay(phone, goalDaysChoice(now.max_days ?? 0, now.reference));
+    return "goal:days_asked";
+  }
+  const choice = tap.choice === "skip" ? "skip" : tap.choice === "sales" ? "sales_pending" : "days";
+  const { data, error } = await db.rpc("journal_goal_answer", {
+    p_entrepreneur_id: entrepreneurId,
+    p_choice: choice,
+    p_target: tap.days ?? null,
+  });
+  if (error) throw new Error(error.message);
+  const r = data as { status: string; kind?: "days" | "sales"; target?: number; figures?: WeekFigures };
+  if (r.status === "already_set" && r.kind && r.target) {
+    await sendText(phone, `Você já tem uma meta nesta semana. ${goalSetText(r.kind, r.target, r.figures ?? { days_kept: 0, sales_cents: 0 })}`);
+  } else if (r.status === "skipped") {
+    await sendText(phone, GOAL_SKIPPED_TEXT);
+  } else if (r.status === "sales_pending") {
+    const { data: now } = await db.rpc("journal_goal_now", { p_entrepreneur_id: entrepreneurId });
+    await sendText(phone, goalSalesAsk((now as { reference?: WeekFigures } | null)?.reference));
+  } else if (r.kind && r.target && r.figures) {
+    await sendText(phone, goalSetText(r.kind, r.target, r.figures));
+  }
+  return `goal:${r.status}`;
+}
+
 /** Meta's one-time handshake: echo the challenge, in plain text, only for our own verify token. */
 function verification(url: URL): Response {
   const mode = url.searchParams.get("hub.mode");
@@ -651,6 +774,50 @@ Deno.serve(async (req) => {
       continue;
     }
 
+    // META, and the sales amount she was just asked for -- before the spoken
+    // path, which would otherwise read "1500" as a day.
+    if (conversation.state === "ACTIVE") {
+      const { data: who } = await db.rpc("whatsapp_entrepreneur_for", { p_e164: phone });
+      if (who && isGoalText(message.text)) {
+        try {
+          await goalNow(phone, String(who));
+          outcomes.push({ message_id: message.messageId, status: "goal:shown" });
+        } catch (error) {
+          outcomes.push({ message_id: message.messageId, status: "refused", detail: String(error) });
+        }
+        continue;
+      }
+      const { data: awaiting } = who
+        ? await db.rpc("journal_goal_awaiting_amount", { p_entrepreneur_id: who })
+        : { data: false };
+      if (who && awaiting && looksLikeFigures(message.text)) {
+        let cents: number | null = null;
+        try {
+          cents = spokenCents(message.text);
+        } catch {
+          cents = null;
+        }
+        if (cents === null || cents < 100) {
+          await sendText(phone, GOAL_AMOUNT_AGAIN_TEXT);
+          outcomes.push({ message_id: message.messageId, status: "goal:amount_unreadable" });
+          continue;
+        }
+        const { data: set, error: setError } = await db.rpc("journal_goal_answer", {
+          p_entrepreneur_id: who,
+          p_choice: "sales",
+          p_target: cents,
+        });
+        if (setError) {
+          outcomes.push({ message_id: message.messageId, status: "refused", detail: setError.message });
+          continue;
+        }
+        const r = set as { status: string; kind?: "days" | "sales"; target?: number; figures?: WeekFigures };
+        if (r.kind && r.target && r.figures) await sendText(phone, goalSetText(r.kind, r.target, r.figures));
+        outcomes.push({ message_id: message.messageId, status: `goal:${r.status}` });
+        continue;
+      }
+    }
+
     // Her day in her own words: a message with a figure in it is read by the
     // model, checked by code, and written only when she confirms the draft.
     if (
@@ -665,41 +832,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const turn = advance(conversation, message.text);
-
-    // Enrolling first: if it fails she must not be left recorded as ACTIVE
-    // with no account behind it, answering a check-in that belongs to nobody.
-    if (turn.completed) {
-      const { error: enrolError } = await db.rpc("whatsapp_enrol", {
-        p_e164: phone,
-        p_draft: turn.next.draft,
-        p_text_version: CONSENT_TEXT_VERSION,
-      });
-      if (enrolError) {
-        console.error("could not enrol", message.messageId, enrolError.message);
-        outcomes.push({ message_id: message.messageId, status: "refused", detail: enrolError.message });
-        continue;
-      }
-    }
-
-    const { error: saveError } = await db.rpc("whatsapp_conversation_save", {
-      p_e164: phone,
-      p_state: turn.next.state,
-      p_step: turn.next.step,
-      p_draft: turn.next.draft,
-    });
-    if (saveError) {
-      console.error("could not save the conversation", message.messageId, saveError.message);
-      outcomes.push({ message_id: message.messageId, status: "refused", detail: saveError.message });
-      continue;
-    }
-
-    for (const text of turn.say) await sendText(phone, text);
-    if (turn.offerJournal) await sendJournalForm(phone);
-    outcomes.push({
-      message_id: message.messageId,
-      status: turn.completed ? "enrolled" : `conversation:${turn.next.state}`,
-    });
+    outcomes.push(await takeTurn(phone, message.messageId, conversation, message.text));
   }
 
   // A voice note: transcribed, read and checked in the background, and sent
@@ -740,6 +873,43 @@ Deno.serve(async (req) => {
       outcomes.push(await decideDraft(button, draft));
       continue;
     }
+    // A tap on a sign-up question: the same turn as a typed answer.
+    if (button.payload.startsWith("onb:")) {
+      const { data: isNew } = await db.rpc("whatsapp_message_is_new", { p_message_id: button.messageId });
+      if (!isNew) {
+        outcomes.push({ message_id: button.messageId, status: "duplicate" });
+        continue;
+      }
+      try {
+        const phone = canonicalPhone(button.from);
+        const { data: row, error: readError } = await db.rpc("whatsapp_conversation_for", { p_e164: phone });
+        if (readError) throw new Error(readError.message);
+        outcomes.push(await takeTurn(phone, button.messageId, row as Conversation, button.payload));
+      } catch (error) {
+        outcomes.push({ message_id: button.messageId, status: "refused", detail: String(error) });
+      }
+      continue;
+    }
+
+    // A tap on the weekly goal question.
+    const goal = goalButton(button.payload);
+    if (goal !== undefined) {
+      const { data: isNew } = await db.rpc("whatsapp_message_is_new", { p_message_id: button.messageId });
+      if (!isNew) {
+        outcomes.push({ message_id: button.messageId, status: "duplicate" });
+        continue;
+      }
+      try {
+        const phone = canonicalPhone(button.from);
+        const { data: who } = await db.rpc("whatsapp_entrepreneur_for", { p_e164: phone });
+        if (!who) throw new Error("not enrolled");
+        outcomes.push({ message_id: button.messageId, status: await goalTapped(phone, String(who), goal) });
+      } catch (error) {
+        outcomes.push({ message_id: button.messageId, status: "refused", detail: String(error) });
+      }
+      continue;
+    }
+
     // "Registrar ontem", on the reminder: the form, inside the window her tap opened.
     if (button.payload === OPEN_FORM) {
       const { data: isNew } = await db.rpc("whatsapp_message_is_new", { p_message_id: button.messageId });

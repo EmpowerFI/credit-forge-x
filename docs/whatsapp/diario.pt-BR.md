@@ -130,6 +130,19 @@ A lógica é criar a rotina primeiro e só depois falar de dinheiro. Os perks da
 
 **O que protege os números da recompensa:** a recompensa vale pela **regularidade** (ter preenchido), nunca pelos **valores** (ter vendido muito). Uma variação brusca nos números é sinalizada para revisão humana. Ela nunca é punida automaticamente.
 
+### A meta da semana
+
+Decisão da fundadora, 26/10/2026, por sugestão da cofundadora pedagoga: uma meta por semana, de segunda a domingo, para manter o ritmo e a disciplina.
+
+- **Quando ela é perguntada:** no primeiro registro de cada semana, logo depois da confirmação. A mensagem lembra o que ela fez na semana anterior ("Na semana passada você registrou 5 dias e vendeu R$ 1.200,00"), para ela escolher um número dela e realista.
+- **Os dois tipos de meta, à escolha dela:**
+  - **Dias de registro:** de 3 a 7. Só aparecem os números que ainda dá para alcançar na semana, e o dia sem movimento conta.
+  - **Vendas:** o valor em reais. Ela escreve o valor, até por extenso ("mil e quinhentos").
+- **"Agora não"** é respeitado até a semana seguinte. Escrevendo **META**, ela vê a meta e o progresso, ou recebe a pergunta de novo.
+- **Progresso:** cada confirmação ganha uma linha, por exemplo *🎯 Meta da semana: 3 de 5 dias registrados*. Na primeira vez que a meta é batida, chega um 🏆 de parabéns. Com duas ou mais semanas seguidas, ele conta quantas são.
+- **A semana anterior** é contada no primeiro registro da semana nova, uma vez só. Meta batida vira parabéns. Meta não batida vira o quanto do caminho ela fez, mais o lembrete de que uma meta menor também vale. O texto nunca dá bronca.
+- **É reconhecimento, não recompensa:** bater a meta não muda o programa de recompensas publicado. A sequência de dias continua sendo o que vale para os marcos.
+
 ## 6. As mensagens
 
 | quando | o que diz | quem escreve |
