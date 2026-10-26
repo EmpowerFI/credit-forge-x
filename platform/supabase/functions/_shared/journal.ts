@@ -795,6 +795,8 @@ export function goalButton(payload: string): { choice: "days" | "sales" | "skip"
 
 /** The approved template's default name and language; the name can be changed by WHATSAPP_REMINDER_TEMPLATE. */
 export const REMINDER_TEMPLATE = "lembrete_diario";
+/** The seventh morning without a record: the reminders pause. WHATSAPP_PAUSE_TEMPLATE can rename it. */
+export const PAUSE_TEMPLATE = "lembrete_pausa";
 export const REMINDER_LANGUAGE = "pt_BR";
 
 /**
@@ -803,12 +805,16 @@ export const REMINDER_LANGUAGE = "pt_BR";
  * payloads the webhook answers -- the form, "Não abri ontem", "Abri e não
  * vendi". The template approved in WhatsApp Manager must have its buttons in
  * this order (docs/whatsapp/META-SETUP.pt-BR.md).
+ *
+ * The pause notice ("pause") is another template with the same body
+ * parameter and a single quick reply, "Registrar ontem".
  */
 export function sendReminderRequest(
   phoneNumberId: string,
   to: string,
   template: string,
   name: string,
+  kind: "daily" | "pause" = "daily",
 ): { url: string; init: RequestInit } {
   const quickReply = (index: number, payload: string) => ({
     type: "button",
@@ -832,8 +838,7 @@ export function sendReminderRequest(
           components: [
             { type: "body", parameters: [{ type: "text", text: name.slice(0, 60) }] },
             quickReply(0, OPEN_FORM),
-            quickReply(1, CLOSED_YESTERDAY),
-            quickReply(2, NO_SALES_YESTERDAY),
+            ...(kind === "daily" ? [quickReply(1, CLOSED_YESTERDAY), quickReply(2, NO_SALES_YESTERDAY)] : []),
           ],
         },
       }),
