@@ -549,8 +549,11 @@ const BODY_LIMIT = 1_024;
  * figure in it was read by code. A draft too long for the body goes first as
  * its own message, whole -- she confirms only what she has read, so nothing
  * is ever cut from it.
+ *
+ * What she said in a voice note, `heard`, goes on top of the draft when it
+ * fits, and otherwise in the message before it: every message sent is billed.
  */
-export function draftMessages(r: Reading, sentAt: Date): { before: string | null; body: string } {
+export function draftMessages(r: Reading, sentAt: Date, heard: string | null = null): { before: string | null; body: string } {
   const which = r.day === spDate(sentAt) ? "hoje" : "ontem";
   const parts = [`Entendi assim, para *${which}, ${ddmm(r.day)}*:`];
   const sales = r.lines.filter((l) => l.kind === "sale");
@@ -560,8 +563,10 @@ export function draftMessages(r: Reading, sentAt: Date): { before: string | null
   if (r.notes.length) parts.push("", ...r.notes);
   if (!r.daySaid) parts.push("", `Se não for de ${which}, toque em Corrigir e diga o dia.`);
   const whole = [...parts, "", "Está certo?"].join("\n");
-  if (whole.length <= BODY_LIMIT) return { before: null, body: whole };
-  return { before: parts.join("\n"), body: "Está certo o resumo acima?" };
+  const withHeard = heard === null ? whole : `${heard}\n\n${whole}`;
+  if (withHeard.length <= BODY_LIMIT) return { before: null, body: withHeard };
+  if (whole.length <= BODY_LIMIT) return { before: heard, body: whole };
+  return { before: [heard, parts.join("\n")].filter((p) => p !== null).join("\n\n"), body: "Está certo o resumo acima?" };
 }
 
 /** When nothing could be read as a line: what was missing, and the other ways in. */

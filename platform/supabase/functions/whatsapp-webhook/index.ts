@@ -32,7 +32,7 @@ import {
 } from "../_shared/whatsapp.ts";
 import { advance, CONSENT_TEXT_VERSION, type Conversation, type Say } from "../_shared/conversation.ts";
 import {
-  addDays, buttonReplies, type ButtonReply, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise, isDecline,
+  addDays, afterRecordMessages, buttonReplies, type ButtonReply, confirmationText, type DaySummary, EMPTY_FORM_TEXT, earnedText, isAuthorise, isDecline,
   isJournalReply, isListText, isSharesText, type JournalLine, listText, type ListedLine, type ListedShare,
   GOAL_AMOUNT_AGAIN_TEXT, GOAL_SKIPPED_TEXT, goalAsk, goalButton, goalDaysChoice, goalMetText, goalProgressLine,
   goalSalesAsk, goalSetText, isGoalText, type LastWeek, lastWeekText, type WeekFigures, type WeekGoal,
@@ -85,16 +85,23 @@ async function sendText(to: string, body: string): Promise<boolean> {
 /**
  * Opens the daily form for her, if this deployment knows the form's id.
  * Like sendText, a missing setting is a line in the log, not a refusal.
+ *
+ * `text`, what she should read first, goes above the form's button when it
+ * fits, so the two are one billed message; without the form it goes alone.
  */
-async function sendJournalForm(to: string): Promise<boolean> {
+async function sendJournalForm(to: string, text?: string): Promise<boolean> {
   const token = Deno.env.get("WHATSAPP_TOKEN");
   const phoneNumberId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
   const flowId = Deno.env.get("WHATSAPP_JOURNAL_FLOW_ID");
   if (!token || !phoneNumberId || !flowId) {
     console.warn("not sending the form: WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_JOURNAL_FLOW_ID not set");
-    return false;
+    return text ? await sendText(to, text) : false;
   }
-  const { url, init } = sendFlowRequest(phoneNumberId, to, flowId, "Registro do dia 📒");
+  if (text && text.length > 1_024) {
+    if (!(await sendText(to, text))) return false;
+    text = undefined;
+  }
+  const { url, init } = sendFlowRequest(phoneNumberId, to, flowId, text ?? "Registro do dia 📒");
   const headers = { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` };
   const response = await fetch(url, { ...init, headers });
   if (!response.ok) {
@@ -214,15 +221,14 @@ async function afterRecorded(
     reference: WeekFigures;
   };
 
-  if (sumError) {
-    console.error("no summary", messageId, sumError.message);
-  } else {
-    await sendText(phone, confirmationText(day, sentAt, summary as DaySummary, p, g?.goal));
-  }
-  for (const m of p?.earned ?? []) await sendText(phone, earnedText(m));
-  if (g?.just_met && g.goal) await sendText(phone, goalMetText(g.goal, g.run ?? 1));
-  if (g?.last_week) await sendText(phone, lastWeekText(g.last_week));
-  if (g?.ask) await sendSay(phone, goalAsk(g.reference));
+  if (sumError) console.error("no summary", messageId, sumError.message);
+  const parts = [
+    sumError ? "" : confirmationText(day, sentAt, summary as DaySummary, p, g?.goal),
+    ...(p?.earned ?? []).map(earnedText),
+    g?.just_met && g.goal ? goalMetText(g.goal, g.run ?? 1) : "",
+    g?.last_week ? lastWeekText(g.last_week) : "",
+  ];
+  for (const say of afterRecordMessages(parts, g?.ask ? goalAsk(g.reference) : null)) await sendSay(phone, say);
   await deliverShare(phone, entrepreneurId);
 
   // The week this day may close: read it, after the confirmation, if it is
@@ -321,6 +327,7 @@ async function propose(
   said: string,
   sentAt: Date,
   transcriber: string | null,
+  heard: string | null,
 ): Promise<void> {
   const apiKey = env("ANTHROPIC_API_KEY");
   const model = Deno.env.get("ANTHROPIC_INTERPRET_MODEL") || DEFAULT_INTERPRET_MODEL;
@@ -336,8 +343,8 @@ async function propose(
   if (reading.refusals.length) console.warn("spoken: refused", reading.refusals.length, "parts", messageId);
 
   if (reading.lines.length === 0) {
-    await sendText(phone, nothingReadText(reading));
-    await sendJournalForm(phone);
+    const nothing = nothingReadText(reading);
+    await sendJournalForm(phone, heard === null ? nothing : `${heard}\n\n${nothing}`);
     return;
   }
   const { data: draftId, error } = await db.rpc("journal_draft_create", {
@@ -353,7 +360,7 @@ async function propose(
     p_refusals: reading.refusals,
   });
   if (error) throw new Error(`draft not kept: ${error.message}`);
-  const { before, body: text } = draftMessages(reading, sentAt);
+  const { before, body: text } = draftMessages(reading, sentAt, heard);
   await sendDraft(phone, before, text, String(draftId));
 }
 
@@ -365,8 +372,7 @@ async function mayUseServices(phone: string, entrepreneurId: string): Promise<bo
   });
   if (error) throw new Error(`limit unavailable: ${error.message}`);
   if (allowed) return true;
-  await sendText(phone, TOO_MANY_TEXT);
-  await sendJournalForm(phone);
+  await sendJournalForm(phone, TOO_MANY_TEXT);
   return false;
 }
 
@@ -374,11 +380,10 @@ async function mayUseServices(phone: string, entrepreneurId: string): Promise<bo
 async function proposeFromText(phone: string, entrepreneurId: string, messageId: string, text: string): Promise<void> {
   try {
     if (!(await mayUseServices(phone, entrepreneurId))) return;
-    await propose(phone, entrepreneurId, messageId, "text", text, new Date(), null);
+    await propose(phone, entrepreneurId, messageId, "text", text, new Date(), null, null);
   } catch (e) {
     console.error("spoken text failed", messageId, String(e));
-    await sendText(phone, "Não consegui ler essa mensagem agora. Pode tentar de novo daqui a pouco, ou usar o formulário? 💜");
-    await sendJournalForm(phone);
+    await sendJournalForm(phone, "Não consegui ler essa mensagem agora. Pode tentar de novo daqui a pouco, ou usar o formulário? 💜");
   }
 }
 
@@ -393,8 +398,7 @@ async function proposeFromVoice(
   try {
     const openAiKey = Deno.env.get("OPENAI_API_KEY");
     if (!openAiKey || !Deno.env.get("ANTHROPIC_API_KEY")) {
-      await sendText(phone, NO_VOICE_TEXT);
-      await sendJournalForm(phone);
+      await sendJournalForm(phone, NO_VOICE_TEXT);
       return;
     }
     if (!(await mayUseServices(phone, entrepreneurId))) return;
@@ -413,12 +417,10 @@ async function proposeFromVoice(
       await sendText(phone, VOICE_FAILED_TEXT);
       return;
     }
-    await sendText(phone, heardText(said));
-    await propose(phone, entrepreneurId, messageId, "voice", said.slice(0, 5_000), sentAt, transcriber);
+    await propose(phone, entrepreneurId, messageId, "voice", said.slice(0, 5_000), sentAt, transcriber, heardText(said));
   } catch (e) {
     console.error("spoken voice failed", messageId, String(e));
-    await sendText(phone, VOICE_FAILED_TEXT);
-    await sendJournalForm(phone);
+    await sendJournalForm(phone, VOICE_FAILED_TEXT);
   }
 }
 
@@ -456,8 +458,7 @@ async function decideDraft(button: ButtonReply, draft: { id: string; confirm: bo
     return { message_id: button.messageId, status: "draft:stale" };
   }
   if (d.status === "discarded") {
-    await sendText(phone, DISCARDED_TEXT);
-    await sendJournalForm(phone);
+    await sendJournalForm(phone, DISCARDED_TEXT);
     return { message_id: button.messageId, status: "draft:discarded" };
   }
   const recorded = String(d.recorded?.status ?? "recorded");
@@ -499,8 +500,11 @@ async function takeTurn(phone: string, messageId: string, conversation: Conversa
     return { message_id: messageId, status: "refused", detail: saveError.message };
   }
 
-  for (const say of turn.say) await sendSay(phone, say);
-  if (turn.offerJournal) await sendJournalForm(phone);
+  // The form, when offered, carries the turn's last words above its button.
+  const last = turn.say.at(-1);
+  const formCarries = turn.offerJournal && typeof last === "string";
+  for (const say of formCarries ? turn.say.slice(0, -1) : turn.say) await sendSay(phone, say);
+  if (turn.offerJournal) await sendJournalForm(phone, formCarries ? last : undefined);
   return { message_id: messageId, status: turn.completed ? "enrolled" : `conversation:${turn.next.state}` };
 }
 
