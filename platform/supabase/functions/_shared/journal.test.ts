@@ -480,3 +480,23 @@ Deno.test("the pause notice is its own template, with one button", async () => {
   assertEquals(body.template.components.length, 2);
   assertEquals(body.template.components[1].parameters[0].payload, OPEN_FORM);
 });
+
+Deno.test("what follows a day goes in as few messages as fit", async () => {
+  const { afterRecordMessages, goalAsk } = await import("./journal.ts");
+  const ask = goalAsk(null);
+
+  // Confirmation, milestone and last week: one text, blank lines between.
+  assertEquals(afterRecordMessages(["Registrado ✅", "", "🎁 Ganhou", "Na semana passada…"]), [
+    "Registrado ✅\n\n🎁 Ganhou\n\nNa semana passada…",
+  ]);
+  // The goal question carries them above its buttons.
+  const one = afterRecordMessages(["Registrado ✅"], ask);
+  assertEquals(one.length, 1);
+  assertEquals(one[0], { ...ask, text: `Registrado ✅\n\n${ask.text}` });
+  // Too long for a button body: the text first, then the question as it was.
+  const long = "x".repeat(1_000);
+  assertEquals(afterRecordMessages([long], ask), [long, ask]);
+  // Nothing to say, nothing sent.
+  assertEquals(afterRecordMessages(["", ""]), []);
+  assertEquals(afterRecordMessages([], ask), [ask]);
+});

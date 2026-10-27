@@ -1,6 +1,6 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import {
-  draftButton, draftMessages, dueFrom, installmentsFrom, looksLikeFigures, occurrences, readInterpretation,
+  draftButton, draftMessages, dueFrom, heardText, installmentsFrom, looksLikeFigures, occurrences, readInterpretation,
   sendDraftRequest, spokenCents, toolInput,
 } from "./spoken.ts";
 
@@ -216,4 +216,28 @@ Deno.test("the model's answer is its tool call and nothing else", () => {
   assertEquals(toolInput({ content: [{ type: "tool_use", name: "record_day", input: { day: "today" } }] }), { day: "today" });
   assertEquals(readInterpretation(null, "vendi 250", EVENING).lines, []);
   assertEquals(readInterpretation({ lines: "250" }, "vendi 250", EVENING).lines, []);
+});
+
+Deno.test("what she said rides on the draft, so a voice note costs one message", () => {
+  const r = readInterpretation({
+    day: "today",
+    lines: [line({ amount_quote: "250", payment_method: "pix" })],
+    left_out: [],
+  }, "hoje vendi 250 no pix", EVENING);
+  const heard = heardText("hoje vendi 250 no pix");
+  const one = draftMessages(r, EVENING, heard);
+  assertEquals(one.before, null);
+  assertEquals(one.body.startsWith(`${heard}\n\nEntendi assim`), true);
+
+  // A long transcript that does not fit above the buttons goes just before them.
+  const quotes = ["101", "102", "103", "104", "105", "106"];
+  const several = readInterpretation({
+    day: "today",
+    lines: quotes.map((q) => line({ kind: "expense", amount_quote: q, payment_method: "debit_card", category: "rent_utilities" })),
+    left_out: [],
+  }, `hoje ${quotes.join(" ")}`, EVENING);
+  const longHeard = heardText("a".repeat(900));
+  const two = draftMessages(several, EVENING, longHeard);
+  assertEquals(two.before, longHeard);
+  assertEquals(two.body.startsWith("Entendi assim"), true);
 });

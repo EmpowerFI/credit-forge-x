@@ -410,7 +410,7 @@ export function confirmationText(
   let progress: string;
   if (p && p.streak_days > 0) {
     progress = `🔥 ${p.streak_days === 1 ? "1 dia" : `${p.streak_days} dias`} seguidos registrando.`;
-    // The milestone just earned is announced in its own message; "next" is
+    // The milestone just earned is announced in its own lines; "next" is
     // already the one after it.
     if (p.next && p.next.days_left > 0) {
       progress += `\nFaltam ${p.next.days_left === 1 ? "1 dia" : `${p.next.days_left} dias`} para: ${p.next.title}.`;
@@ -739,6 +739,24 @@ export function goalAsk(r: WeekFigures | null | undefined): GoalChoice {
       { id: GOAL_SKIP, title: "Agora não" },
     ],
   };
+}
+
+/** An interactive message's body holds 1,024 characters. */
+const INTERACTIVE_BODY_LIMIT = 1_024;
+
+/**
+ * What follows a recorded day, in as few messages as it fits. Since October
+ * 2026 Meta bills every message the business sends, replies included, so the
+ * confirmation, what she earned and how the goal stands go as one text, and
+ * the week's goal question carries them above its buttons when they fit.
+ * Empty parts are left out.
+ */
+export function afterRecordMessages(parts: string[], ask?: GoalChoice | null): Array<string | GoalChoice> {
+  const text = parts.filter((p) => p !== "").join("\n\n");
+  if (!ask) return text ? [text] : [];
+  const together = text ? `${text}\n\n${ask.text}` : ask.text;
+  if (together.length <= INTERACTIVE_BODY_LIMIT) return [{ ...ask, text: together }];
+  return [text, ask];
 }
 
 /** How many days, from 3 to the most she can still keep this week. */
