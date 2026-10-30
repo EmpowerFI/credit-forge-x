@@ -156,6 +156,14 @@ Deno.test("the streak, and what is next", () => {
   });
   assertEquals(text.includes("🔥 5 dias seguidos registrando."), true);
   assertEquals(text.includes("Faltam 2 dias para: Presente da semana 1."), true);
+  // One day, and one day left, in Portuguese that agrees.
+  const first = confirmationText("2026-10-14", MORNING, summary, {
+    streak_days: 1, streak_started_on: "2026-10-14", earned: [],
+    next: { code: "week1", title: "Presente da semana 1", kind: "perk", threshold_days: 2, days_left: 1 },
+  });
+  assertEquals(first.includes("🔥 1º dia de sequência registrando."), true);
+  assertEquals(first.includes("Falta 1 dia para: Presente da semana 1."), true);
+  assertEquals(first.includes("seguidos"), false);
   // The week count is the fallback when there is no progress to report.
   assertEquals(confirmationText("2026-10-14", MORNING, summary, null).includes("2 de 3 dias"), true);
   // Everything earned: no "faltam".

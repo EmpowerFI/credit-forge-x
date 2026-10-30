@@ -409,11 +409,16 @@ export function confirmationText(
     : `Registrado ✅ ${which}: R$ ${formatBRL(s.sales_cents)} em vendas e R$ ${formatBRL(s.expenses_cents)} em gastos.`;
   let progress: string;
   if (p && p.streak_days > 0) {
-    progress = `🔥 ${p.streak_days === 1 ? "1 dia" : `${p.streak_days} dias`} seguidos registrando.`;
+    // "1 dia seguidos" is not Portuguese: the first day of a run is said on its own.
+    progress = p.streak_days === 1
+      ? "🔥 1º dia de sequência registrando."
+      : `🔥 ${p.streak_days} dias seguidos registrando.`;
     // The milestone just earned is announced in its own lines; "next" is
     // already the one after it.
     if (p.next && p.next.days_left > 0) {
-      progress += `\nFaltam ${p.next.days_left === 1 ? "1 dia" : `${p.next.days_left} dias`} para: ${p.next.title}.`;
+      progress += p.next.days_left === 1
+        ? `\nFalta 1 dia para: ${p.next.title}.`
+        : `\nFaltam ${p.next.days_left} dias para: ${p.next.title}.`;
     }
   } else {
     progress = s.week_kept === s.week_days
