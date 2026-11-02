@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { platform } from "../lib/platform";
+import { diaryDb } from "./db";
 import { tr } from "../i18n";
 import {
   addDays, type AfterRecord, brl, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
@@ -345,7 +345,7 @@ function Words({ day, busy, setBusy, setError, onDraft, onBack }: {
     setBusy(true);
     setError(null);
     setNotes([]);
-    const { data, error } = await platform.functions.invoke<Draft & { error?: string }>("diary-speak", { body });
+    const { data, error } = await diaryDb.functions.invoke<Draft & { error?: string }>("diary-speak", { body });
     setBusy(false);
     if (error) {
       let key = "";

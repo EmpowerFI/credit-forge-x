@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { tr } from "../i18n";
+import { diaryDb, useDiarySession } from "./db";
 import { diary, diaryErrorText, PROFILE_KEY } from "./diary";
 
 const TIMES = Array.from({ length: 33 }, (_, i) => {
@@ -15,6 +16,7 @@ const TIMES = Array.from({ length: 33 }, (_, i) => {
 /** On or off, and at what time. Notifications on this device come with the next step (Web Push). */
 export default function Reminders() {
   const queryClient = useQueryClient();
+  const { session } = useDiarySession();
   const profile = useQuery({ queryKey: [...PROFILE_KEY, "reminders"], queryFn: diary.profile });
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [time, setTime] = useState<string | null>(null);
@@ -79,6 +81,18 @@ export default function Reminders() {
             pt: "Em breve: ative aqui as notificações para receber o lembrete mesmo com o app fechado.",
           })}
         </p>
+      </section>
+
+      <section className="space-y-2 border-t border-border pt-5 text-sm">
+        {session?.user.email && (
+          <p className="text-muted-foreground">
+            {tr({ en: "Signed in as ", pt: "Você entrou como " })}<span className="break-all">{session.user.email}</span>
+          </p>
+        )}
+        <Button variant="outline" className="h-11"
+          onClick={() => void diaryDb.auth.signOut().then(() => queryClient.removeQueries({ queryKey: ["diary"] }))}>
+          {tr({ en: "Sign out", pt: "Sair" })}
+        </Button>
       </section>
     </div>
   );
