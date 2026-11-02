@@ -2,10 +2,10 @@ import { lazy, Suspense } from "react";
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, BookOpen, Loader2, PenLine } from "lucide-react";
-import { useAuth } from "../auth/useAuth";
 import { tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
 import { Button } from "@/components/ui/button";
+import { diaryClosed, useDiarySession } from "./db";
 import { diary, diaryErrorText, PROFILE_KEY } from "./diary";
 import SignIn from "./SignIn";
 
@@ -26,6 +26,16 @@ const waiting = (
  * /app/diario/entrar to sign in with a code sent by e-mail.
  */
 export default function DiaryApp() {
+  if (diaryClosed) {
+    return (
+      <main className="mx-auto max-w-md space-y-2 px-4 py-16 text-center">
+        <p className="font-heading text-2xl font-semibold">EmpowerFI</p>
+        <p className="text-muted-foreground">
+          {tr({ en: "The diary is not open here yet.", pt: "O diário ainda não está aberto aqui." })}
+        </p>
+      </main>
+    );
+  }
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <Suspense fallback={waiting}>
@@ -45,7 +55,7 @@ export default function DiaryApp() {
 
 /** Signed in, then enrolled, then the diary. */
 function Gate() {
-  const { session, loading } = useAuth();
+  const { session, loading } = useDiarySession();
   const location = useLocation();
   const profile = useQuery({
     queryKey: [...PROFILE_KEY, session?.user.id],
@@ -66,7 +76,7 @@ function Gate() {
       </main>
     );
   }
-  if (!profile.data.enrolled) return <Enrol />;
+  if (!profile.data.enrolled) return <Enrol fromApp={profile.data.from_app ?? null} />;
   return <Layout name={profile.data.name ?? ""} />;
 }
 

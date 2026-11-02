@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { useAuth } from "../auth/useAuth";
-import { platform } from "../lib/platform";
+import { diaryDb, useDiarySession } from "./db";
 import { tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
 
@@ -14,11 +13,12 @@ const CODE_LENGTH = 6;
 
 /**
  * Sign in or sign up in one: her e-mail, then the six-digit code sent to it.
- * No password to forget. A new e-mail creates the account; the diary then
- * asks the sign-up questions.
+ * No password to forget. The e-mail she uses in the EmpowerFI app opens the
+ * same account; a new e-mail creates one, and the diary then asks the
+ * sign-up questions.
  */
 export default function SignIn() {
-  const { session } = useAuth();
+  const { session } = useDiarySession();
   const [params] = useSearchParams();
   const next = params.get("next")?.startsWith("/app/diario") ? params.get("next")! : "/app/diario";
   const [email, setEmail] = useState("");
@@ -38,7 +38,7 @@ export default function SignIn() {
     }
     setBusy(true);
     setError(null);
-    const { error } = await platform.auth.signInWithOtp({ email: address, options: { shouldCreateUser: true } });
+    const { error } = await diaryDb.auth.signInWithOtp({ email: address, options: { shouldCreateUser: true } });
     setBusy(false);
     if (error) {
       setError(error.status === 429
@@ -54,7 +54,7 @@ export default function SignIn() {
     if (!sentTo || value.length !== CODE_LENGTH) return;
     setBusy(true);
     setError(null);
-    const { error } = await platform.auth.verifyOtp({ email: sentTo, token: value, type: "email" });
+    const { error } = await diaryDb.auth.verifyOtp({ email: sentTo, token: value, type: "email" });
     setBusy(false);
     if (error) {
       setError(tr({ en: "That code did not work. Check it, or ask for a new one.", pt: "Esse código não funcionou. Confira, ou peça um novo." }));

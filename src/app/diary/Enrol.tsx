@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { localized, tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
-import { diary, diaryErrorText, type EnrolForm } from "./diary";
+import { diary, diaryErrorText, type EnrolForm, type FromApp } from "./diary";
 
 const UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
   "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
@@ -58,12 +58,20 @@ function ConsentText() {
   });
 }
 
-export default function Enrol() {
+/**
+ * The sign-up. When her e-mail already has an account in the EmpowerFI app,
+ * nothing it knows is asked again: she sees it, agrees, and starts. The
+ * consent is still hers to give, because the diary keeps something the app
+ * never did: her sales and expenses. "Correct my details" opens the whole
+ * form, filled in.
+ */
+export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
   const queryClient = useQueryClient();
-  const [name, setName] = useState("");
-  const [city, setCity] = useState("");
-  const [uf, setUf] = useState("");
-  const [sector, setSector] = useState("");
+  const [short, setShort] = useState(fromApp !== null);
+  const [name, setName] = useState(fromApp?.name ?? "");
+  const [city, setCity] = useState(fromApp?.city ?? "");
+  const [uf, setUf] = useState(fromApp?.state_uf ?? "");
+  const [sector, setSector] = useState(fromApp?.sector ?? fromApp?.business_name ?? "");
   const [since, setSince] = useState<string | null>(null);
   const [formalization, setFormalization] = useState<string | null>(null);
   const [finance, setFinance] = useState<string | null>(null);
@@ -75,7 +83,8 @@ export default function Enrol() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return setError(tr({ en: "Tell us your name.", pt: "Conte como prefere ser chamada." }));
-    if (!adult) {
+    const declared = adult || fromApp?.declared === true;
+    if (!declared) {
       return setError(tr({
         en: "This diary is for women entrepreneurs aged 18 or over.",
         pt: "Este diário é para mulheres empreendedoras com 18 anos ou mais.",
@@ -120,6 +129,69 @@ export default function Enrol() {
     </fieldset>
   );
 
+  const agree = (
+    <>
+      <div className="space-y-3 rounded-md border border-border p-3 text-sm">
+        <ConsentText />
+      </div>
+      {!fromApp?.declared && (
+        <label htmlFor="enrol-adult" className="flex cursor-pointer items-start gap-3">
+          <Checkbox id="enrol-adult" checked={adult} onCheckedChange={(v) => setAdult(v === true)} className="mt-0.5" />
+          <span>{tr({ en: "I declare that I am a woman aged 18 or over.", pt: "Declaro que sou mulher e tenho 18 anos ou mais." })}</span>
+        </label>
+      )}
+      <label htmlFor="enrol-consent" className="flex cursor-pointer items-start gap-3">
+        <Checkbox id="enrol-consent" checked={consented} onCheckedChange={(v) => setConsented(v === true)} className="mt-0.5" />
+        <span>{tr({ en: "I have read and agree.", pt: "Li e concordo." })}</span>
+      </label>
+      {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
+      <Button type="submit" className="h-12 w-full text-base" disabled={busy}>
+        {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
+        {tr({ en: "Start my diary", pt: "Começar meu diário" })}
+      </Button>
+    </>
+  );
+
+  if (short && fromApp) {
+    const place = [fromApp.city, fromApp.state_uf].filter(Boolean).join(" / ");
+    const business = fromApp.business_name ?? fromApp.sector;
+    return (
+      <main className="mx-auto max-w-md px-4 py-6">
+        <div className="flex justify-end"><LanguageSwitch /></div>
+        <h1 className="mt-4 text-xl font-semibold">
+          {fromApp.name
+            ? tr({ en: `Hi, ${fromApp.name}!`, pt: `Oi, ${fromApp.name}!` })
+            : tr({ en: "Hi!", pt: "Oi!" })}
+        </h1>
+        <p className="mt-1 text-muted-foreground">
+          {tr({
+            en: "You already have an account in the EmpowerFI app, so there is no need to sign up again.",
+            pt: "Você já tem conta no app EmpowerFI, então não precisa se cadastrar de novo.",
+          })}
+        </p>
+
+        <form onSubmit={submit} className="mt-6 space-y-6" noValidate>
+          {fromApp.name ? (
+            <dl className="space-y-2 rounded-md bg-muted p-4 text-sm">
+              <div><dt className="text-muted-foreground">{tr({ en: "Name", pt: "Nome" })}</dt><dd className="font-medium">{fromApp.name}</dd></div>
+              {business && <div><dt className="text-muted-foreground">{tr({ en: "Business", pt: "Negócio" })}</dt><dd className="font-medium">{business}</dd></div>}
+              {place && <div><dt className="text-muted-foreground">{tr({ en: "City", pt: "Cidade" })}</dt><dd className="font-medium">{place}</dd></div>}
+              <Button type="button" variant="link" className="h-10 px-0" onClick={() => { setShort(false); setError(null); }}>
+                {tr({ en: "Correct my details", pt: "Corrigir meus dados" })}
+              </Button>
+            </dl>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="enrol-name">{tr({ en: "What should we call you?", pt: "Como você prefere ser chamada?" })}</Label>
+              <Input id="enrol-name" autoComplete="given-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} className="h-12 text-base" />
+            </div>
+          )}
+          {agree}
+        </form>
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto max-w-md px-4 py-6">
       <div className="flex justify-end"><LanguageSwitch /></div>
@@ -157,24 +229,7 @@ export default function Enrol() {
         {choice("cnpj", tr({ en: "Does your business have a CNPJ?", pt: "O seu negócio tem CNPJ?" }), FORMALIZATION, formalization, setFormalization)}
         {choice("finance", tr({ en: "How do you track money in and out today?", pt: "Hoje, como você controla o dinheiro que entra e sai?" }), FINANCE, finance, setFinance)}
 
-        <div className="space-y-3 rounded-md border border-border p-3 text-sm">
-          <ConsentText />
-        </div>
-
-        <label htmlFor="enrol-adult" className="flex cursor-pointer items-start gap-3">
-          <Checkbox id="enrol-adult" checked={adult} onCheckedChange={(v) => setAdult(v === true)} className="mt-0.5" />
-          <span>{tr({ en: "I declare that I am a woman aged 18 or over.", pt: "Declaro que sou mulher e tenho 18 anos ou mais." })}</span>
-        </label>
-        <label htmlFor="enrol-consent" className="flex cursor-pointer items-start gap-3">
-          <Checkbox id="enrol-consent" checked={consented} onCheckedChange={(v) => setConsented(v === true)} className="mt-0.5" />
-          <span>{tr({ en: "I have read and agree.", pt: "Li e concordo." })}</span>
-        </label>
-
-        {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
-        <Button type="submit" className="h-12 w-full text-base" disabled={busy}>
-          {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
-          {tr({ en: "Start my diary", pt: "Começar meu diário" })}
-        </Button>
+        {agree}
       </form>
     </main>
   );

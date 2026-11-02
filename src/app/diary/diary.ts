@@ -1,15 +1,16 @@
-import { platform } from "../lib/platform";
+import { diaryDb } from "./db";
 import { localized, tr } from "../i18n";
 
 // The entrepreneur's daily diary, in the browser (/app/diario). Everything
 // here goes through the diary_* functions, which find her by her session;
-// nothing sends an entrepreneur id. The functions are newer than the
-// generated platform types, so they are called through one untyped door.
+// nothing sends an entrepreneur id. They live in the mobile app's database
+// (db.ts), whose generated types this repository does not carry, so they are
+// called through one untyped door.
 
 type RpcResult<T> = { data: T | null; error: { message: string; code?: string } | null };
 const rpc = <T>(fn: string, args?: Record<string, unknown>) =>
-  (platform.rpc as unknown as (this: typeof platform, f: string, a?: Record<string, unknown>) => Promise<RpcResult<T>>)
-    .call(platform, fn, args);
+  (diaryDb.rpc as unknown as (this: typeof diaryDb, f: string, a?: Record<string, unknown>) => Promise<RpcResult<T>>)
+    .call(diaryDb, fn, args);
 
 export class DiaryError extends Error {
   constructor(public readonly key: string) {
@@ -37,6 +38,18 @@ export interface DiaryProfile {
   name?: string;
   reminders?: { enabled: boolean; remind_at: string; time_zone: string };
   devices?: number;
+  /** Not enrolled yet, but she has an account in the EmpowerFI app: what it already knows. */
+  from_app?: FromApp | null;
+}
+
+/** Her app account, as the diary may reuse it. declared: she made the app's woman-of-18 declaration. */
+export interface FromApp {
+  name: string | null;
+  city: string | null;
+  state_uf: string | null;
+  business_name: string | null;
+  sector: string | null;
+  declared: boolean;
 }
 
 export type PaymentMethod = "pix" | "cash" | "debit_card" | "credit_card" | "fiado";
