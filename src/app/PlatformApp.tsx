@@ -37,6 +37,7 @@ const AuditZcashTransaction = lazy(() => import("./pages/audit/ZcashTransaction"
 const AuditReports = lazy(() => import("./pages/audit/Reports"));
 // A shared audit report opens without an account.
 const ReportPage = lazy(() => import("./pages/ReportPage"));
+const DiaryApp = lazy(() => import("./diary/DiaryApp"));
 const PassportPage = lazy(() => import("./pages/PassportPage"));
 const ConsentPage = lazy(() => import("./pages/ConsentPage"));
 const EvidencePage = lazy(() => import("./pages/EvidencePage"));
@@ -124,6 +125,8 @@ function Pages() {
   return (
     <Routes key={locale}>
       <Route path="login" element={<LoginPage />} />
+      {/* The entrepreneur's daily diary: its own sign-in, layout and guard. */}
+      <Route path="diario/*" element={<Suspense fallback={null}><DiaryApp /></Suspense>} />
       <Route path="report/:token" element={<Suspense fallback={null}><ReportPage /></Suspense>} />
       <Route path="passport/:token" element={<Suspense fallback={null}><PassportPage /></Suspense>} />
       <Route element={<RequireAuth><AppLayout /></RequireAuth>}>

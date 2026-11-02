@@ -1,0 +1,46 @@
+import { describe, expect, it } from "vitest";
+import { addDays, brl, dayName, diaryErrorText, parseReais } from "./diary";
+import { setCurrentLocale } from "../i18n";
+
+describe("parseReais", () => {
+  it("reads what she types the Brazilian way", () => {
+    expect(parseReais("250")).toBe(25_000);
+    expect(parseReais("250,5")).toBe(25_050);
+    expect(parseReais("250,50")).toBe(25_050);
+    expect(parseReais("1.250,00")).toBe(125_000);
+    expect(parseReais("R$ 1.250")).toBe(125_000);
+    expect(parseReais("12.500")).toBe(1_250_000);
+    expect(parseReais("1250.75")).toBe(125_075);
+    expect(parseReais(" 80 ")).toBe(8_000);
+  });
+
+  it("refuses what is not an amount", () => {
+    for (const bad of ["", "abc", "0", "0,00", "1,2,3", "1.25.0", "12,345", "-5", "1.2345"]) {
+      expect(parseReais(bad), bad).toBeNull();
+    }
+  });
+});
+
+describe("days and money", () => {
+  it("writes reais with the comma", () => {
+    expect(brl(125_050)).toBe("R$ 1.250,50");
+  });
+
+  it("names today and yesterday", () => {
+    setCurrentLocale("pt");
+    expect(dayName("2026-11-02", "2026-11-02")).toBe("hoje");
+    expect(dayName("2026-11-01", "2026-11-02")).toBe("ontem");
+    expect(dayName("2026-10-30", "2026-11-02")).toBe("30/10");
+    expect(addDays("2026-03-01", -1)).toBe("2026-02-28");
+  });
+});
+
+describe("diaryErrorText", () => {
+  it("turns the database's refusals into her words", () => {
+    setCurrentLocale("pt");
+    expect(diaryErrorText(new Error("a day is written on the day or the day after, not on 2026-10-01")))
+      .toBe("Só dá para registrar hoje ou ontem.");
+    expect(diaryErrorText(new Error("month_closed"))).toBe("Esse mês já foi fechado.");
+    expect(diaryErrorText(new Error("anything else"))).toBe("Algo deu errado. Tente de novo daqui a pouco.");
+  });
+});
