@@ -246,6 +246,14 @@ export const newRequestId = () => crypto.randomUUID();
 /** The database's refusals, in words she can act on. */
 export function diaryErrorText(error: unknown): string {
   const key = error instanceof Error ? error.message : String(error);
+  // No signal: the page opens from the phone, but every figure lives on the server.
+  const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+  if (offline || /Failed to fetch|NetworkError|Load failed/i.test(key)) {
+    return tr({
+      en: "No internet right now. The diary needs a connection to show and save your days. Try again when the signal is back.",
+      pt: "Sem internet agora. O diário precisa de conexão para mostrar e guardar os seus dias. Tente de novo quando o sinal voltar.",
+    });
+  }
   const known: [RegExp | string, { en: string; pt: string }][] = [
     ["not_signed_in", { en: "Your session ended. Sign in again.", pt: "Sua sessão terminou. Entre de novo." }],
     ["not_enrolled", { en: "Finish your sign-up first.", pt: "Termine o seu cadastro primeiro." }],

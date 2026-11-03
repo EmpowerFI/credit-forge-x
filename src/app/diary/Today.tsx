@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { diaryDb } from "./db";
+import { InstallInvite } from "./Install";
 import { tr } from "../i18n";
 import {
   addDays, type AfterRecord, brl, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
@@ -501,6 +502,8 @@ function Done({ result, today, onMore }: { result: AfterRecord; today: string; o
       ))}
 
       {g && <GoalNews goal={g} />}
+
+      <InstallInvite />
 
       <div className="grid grid-cols-2 gap-3">
         <Button variant="outline" className="h-12" onClick={onMore}>{tr({ en: "Add more", pt: "Registrar mais" })}</Button>

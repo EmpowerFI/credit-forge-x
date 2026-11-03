@@ -10,6 +10,16 @@
     { "source": "/en/terms", "destination": "/terms", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|app/diario-sw\\.js|app/diario\\.webmanifest|app/diario-icons/).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    { "source": "/app/diario-sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+    {
+      "source": "/app/diario.webmanifest",
+      "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ]
+    }
   ]
 }
