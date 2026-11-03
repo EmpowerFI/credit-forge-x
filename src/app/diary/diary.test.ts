@@ -43,4 +43,10 @@ describe("diaryErrorText", () => {
     expect(diaryErrorText(new Error("month_closed"))).toBe("Esse mês já foi fechado.");
     expect(diaryErrorText(new Error("anything else"))).toBe("Algo deu errado. Tente de novo daqui a pouco.");
   });
+
+  it("says so when there is no signal, rather than that something went wrong", () => {
+    setCurrentLocale("pt");
+    expect(diaryErrorText(new Error("TypeError: Failed to fetch"))).toMatch(/^Sem internet agora/);
+    expect(diaryErrorText(new Error("Load failed"))).toMatch(/^Sem internet agora/);
+  });
 });

@@ -7,6 +7,7 @@ import LanguageSwitch from "../i18n/LanguageSwitch";
 import { Button } from "@/components/ui/button";
 import { diaryClosed, useDiarySession } from "./db";
 import { diary, diaryErrorText, PROFILE_KEY } from "./diary";
+import { useDiaryPwa } from "./pwa";
 import SignIn from "./SignIn";
 
 const Enrol = lazy(() => import("./Enrol"));
@@ -26,6 +27,7 @@ const waiting = (
  * /app/diario/entrar to sign in with a code sent by e-mail.
  */
 export default function DiaryApp() {
+  useDiaryPwa(!diaryClosed);
   if (diaryClosed) {
     return (
       <main className="mx-auto max-w-md space-y-2 px-4 py-16 text-center">

@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { tr } from "../i18n";
 import { diaryDb, useDiarySession } from "./db";
 import { diary, diaryErrorText, PROFILE_KEY } from "./diary";
+import { InstallSteps } from "./Install";
 
 const TIMES = Array.from({ length: 33 }, (_, i) => {
   const minutes = 6 * 60 + i * 30; // 06:00 to 22:00, every half hour
@@ -81,6 +82,11 @@ export default function Reminders() {
             pt: "Em breve: ative aqui as notificações para receber o lembrete mesmo com o app fechado.",
           })}
         </p>
+      </section>
+
+      <section className="space-y-3 rounded-md border border-border p-4 text-sm">
+        <h2 className="text-base font-semibold">{tr({ en: "Diary on the home screen", pt: "Diário na tela de início" })}</h2>
+        <InstallSteps />
       </section>
 
       <section className="space-y-2 border-t border-border pt-5 text-sm">
