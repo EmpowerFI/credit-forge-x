@@ -1,5 +1,5 @@
-import { lazy, Suspense } from "react";
-import { Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
+import { Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, BookOpen, Loader2, PenLine } from "lucide-react";
 import { tr } from "../i18n";
@@ -7,6 +7,7 @@ import LanguageSwitch from "../i18n/LanguageSwitch";
 import { Button } from "@/components/ui/button";
 import { diaryClosed, useDiarySession } from "./db";
 import { diary, diaryErrorText, PROFILE_KEY } from "./diary";
+import { resyncPush } from "./push";
 import { useDiaryPwa } from "./pwa";
 import SignIn from "./SignIn";
 
@@ -83,6 +84,19 @@ function Gate() {
 }
 
 function Layout({ name }: { name: string }) {
+  const navigate = useNavigate();
+  useEffect(() => {
+    void resyncPush();
+    // A tapped notification, while the diary was already open: the worker asks the page to go there.
+    const onMessage = (e: MessageEvent) => {
+      const url = (e.data as { type?: string; url?: string } | null)?.type === "open" ? e.data.url : null;
+      if (typeof url !== "string") return;
+      const target = new URL(url, location.origin);
+      if (target.origin === location.origin && target.pathname.startsWith("/app/diario")) navigate(target.pathname + target.search);
+    };
+    navigator.serviceWorker?.addEventListener("message", onMessage);
+    return () => navigator.serviceWorker?.removeEventListener("message", onMessage);
+  }, [navigate]);
   const tab = (to: string, label: string, Icon: typeof PenLine, end = false) => (
     <NavLink
       to={to}
