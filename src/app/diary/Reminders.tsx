@@ -8,13 +8,14 @@ import { tr } from "../i18n";
 import { diaryDb, useDiarySession } from "./db";
 import { diary, diaryErrorText, PROFILE_KEY } from "./diary";
 import { InstallSteps } from "./Install";
+import Notifications from "./Notifications";
 
 const TIMES = Array.from({ length: 33 }, (_, i) => {
   const minutes = 6 * 60 + i * 30; // 06:00 to 22:00, every half hour
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 });
 
-/** On or off, and at what time. Notifications on this device come with the next step (Web Push). */
+/** On or off, and at what time; notifications on this phone; the diary on the home screen; signing out. */
 export default function Reminders() {
   const queryClient = useQueryClient();
   const { session } = useDiarySession();
@@ -74,15 +75,7 @@ export default function Reminders() {
       {saved && <p role="status" className="text-sm">{tr({ en: "Saved ✅", pt: "Salvo ✅" })}</p>}
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
 
-      <section className="rounded-md bg-muted p-4 text-sm">
-        <p className="font-medium">{tr({ en: "Notifications on this phone", pt: "Notificações neste celular" })}</p>
-        <p className="mt-1 text-muted-foreground">
-          {tr({
-            en: "Coming next: turn on notifications here to receive the reminder even with the app closed.",
-            pt: "Em breve: ative aqui as notificações para receber o lembrete mesmo com o app fechado.",
-          })}
-        </p>
-      </section>
+      <Notifications remindersOn={current?.enabled ?? true} />
 
       <section className="space-y-3 rounded-md border border-border p-4 text-sm">
         <h2 className="text-base font-semibold">{tr({ en: "Diary on the home screen", pt: "Diário na tela de início" })}</h2>

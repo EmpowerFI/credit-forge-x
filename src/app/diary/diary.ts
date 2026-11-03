@@ -168,6 +168,11 @@ export const diary = {
   setReminders: (enabled: boolean, remindAt?: string) =>
     call<{ enabled: boolean; remind_at: string }>("diary_reminders_set", { p_enabled: enabled, p_remind_at: remindAt ?? null }),
   reminderOpened: (reminderId: string) => call<null>("diary_reminder_opened", { p_reminder_id: reminderId }),
+  pushSubscribe: (endpoint: string, p256dh: string, auth: string) =>
+    call<{ devices: number }>("diary_push_subscribe", {
+      p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth, p_user_agent: navigator.userAgent,
+    }),
+  pushUnsubscribe: (endpoint: string) => call<{ devices: number }>("diary_push_unsubscribe", { p_endpoint: endpoint }),
 };
 
 export interface EnrolForm {
@@ -263,6 +268,7 @@ export function diaryErrorText(error: unknown): string {
     ["too_old_to_correct", { en: "Only today's and yesterday's lines can be corrected.", pt: "Só dá para corrigir lançamentos de hoje e de ontem." }],
     ["month_closed", { en: "That month is already closed.", pt: "Esse mês já foi fechado." }],
     ["no_such_line", { en: "That line was not found.", pt: "Esse lançamento não foi encontrado." }],
+    ["not_a_push_service", { en: "This browser cannot receive the reminder. Try Chrome or Safari.", pt: "Este navegador não recebe o lembrete. Tente o Chrome ou o Safari." }],
     ["too_many_devices", { en: "Reminders are on in 10 devices already. Turn one off first.", pt: "Os lembretes já estão ligados em 10 aparelhos. Desligue um primeiro." }],
     [/consent/, { en: "Your consent is needed to continue.", pt: "Precisamos do seu consentimento para continuar." }],
     [/woman of 18/, { en: "This diary is for women entrepreneurs aged 18 or over.", pt: "Este diário é para mulheres empreendedoras com 18 anos ou mais." }],

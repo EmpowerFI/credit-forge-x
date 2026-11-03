@@ -456,6 +456,11 @@ verify_jwt = false
 [functions.journal-reminder]
 verify_jwt = false
 
+# Called by pg_cron with its own secret, and by the browser for the public key
+# (GET) and a test (her session, checked inside the function).
+[functions.diary-push]
+verify_jwt = false
+
 # Called by whatsapp-webhook with the service role key, which is not a JWT
 # the gateway can check. The function compares it itself, in constant time:
 # every new month it is asked about costs a model call.

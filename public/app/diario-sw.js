@@ -12,6 +12,9 @@
 // The page is network-first: online, she always gets the latest build. If
 // the network has not answered in a few seconds, the kept copy opens instead
 // and the network's answer, when it comes, replaces it for next time.
+//
+// It also shows the daily reminder (Web Push, sent by the diary-push
+// function) and opens the diary when she taps it.
 
 const SHELL = "diario-shell-v1";
 const ASSETS = "diario-assets-v1";
@@ -112,3 +115,40 @@ async function trim(cache) {
   const keys = await cache.keys();
   await Promise.all(keys.slice(0, Math.max(0, keys.length - MAX_ASSETS)).map((k) => cache.delete(k)));
 }
+
+// ------------------------------------------------------------------ reminders
+
+const ICON = "/app/diario-icons/icon-192.png";
+
+self.addEventListener("push", (event) => {
+  let n = {};
+  try {
+    n = event.data ? event.data.json() : {};
+  } catch {
+    // Not ours to read: still show something, because a push that shows
+    // nothing teaches the browser to stop delivering them.
+  }
+  const url = typeof n.url === "string" && inScope(new URL(n.url, self.location.origin).pathname) ? n.url : PAGE;
+  event.waitUntil(self.registration.showNotification(n.title || "EmpowerFI", {
+    body: n.body || "Registre seu dia no diário.",
+    icon: ICON,
+    tag: n.tag || "diario-lembrete",
+    data: { url },
+    lang: "pt-BR",
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || PAGE, self.location.origin).href;
+  event.waitUntil((async () => {
+    const open = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const diary = open.find((c) => inScope(new URL(c.url).pathname));
+    if (diary) {
+      // The page navigates itself (pwa.ts): WindowClient.navigate is not everywhere.
+      diary.postMessage({ type: "open", url });
+      return diary.focus();
+    }
+    return self.clients.openWindow(url);
+  })());
+});
