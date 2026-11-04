@@ -412,6 +412,13 @@ Deno.test("VER says a purchase is in instalments", () => {
   );
 });
 
+Deno.test("VER says a sale is received in instalments", () => {
+  const sale = lineText({ n: 1, day: "2026-10-14", kind: "sale", amount_cents: 60_000, payment_method: "credit_card", category: null, due_on: "2026-11-14", installments: 3 });
+  assertEquals(sale.endsWith("R$ 600,00 (em 3x, a 1ª em 14/11)"), true, sale);
+  const once = lineText({ n: 1, day: "2026-10-14", kind: "sale", amount_cents: 60_000, payment_method: "credit_card", category: null, due_on: "2026-11-14" });
+  assertEquals(once.endsWith("(recebe em 14/11)"), true, once);
+});
+
 Deno.test("the reminder is the approved template, with its buttons in order", async () => {
   const { sendReminderRequest, OPEN_FORM } = await import("./journal.ts");
   const { url, init } = sendReminderRequest("123", "5511999990000", "lembrete_diario", "Maria");

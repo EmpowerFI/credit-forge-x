@@ -308,7 +308,7 @@ function readLine(d: LineDraft, day: string): Line | string {
     payment_method: d.method,
     ...(d.kind === "expense" ? { category: d.category as Category } : {}),
     ...(d.later ? { due_on: d.due } : {}),
-    ...(d.later && d.kind === "expense" && d.installments > 1 ? { installments: d.installments } : {}),
+    ...(d.later && d.installments > 1 ? { installments: d.installments } : {}),
   };
 }
 
@@ -353,19 +353,19 @@ function LineFields({ draft, set, day }: { draft: LineDraft; set: (patch: Partia
       {draft.later && (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label htmlFor="line-due">{draft.kind === "sale" ? tr({ en: "Receive on", pt: "Recebe em" }) : tr({ en: "First payment", pt: "1º pagamento" })}</Label>
+            <Label htmlFor="line-due">{draft.kind === "sale"
+                ? draft.installments > 1 ? tr({ en: "First receipt", pt: "1º recebimento" }) : tr({ en: "Receive on", pt: "Recebe em" })
+                : tr({ en: "First payment", pt: "1º pagamento" })}</Label>
             <Input id="line-due" type="date" min={addDays(day, 1)} value={draft.due}
               onChange={(e) => set({ due: e.target.value })} className="h-12" />
           </div>
-          {draft.kind === "expense" && (
-            <div className="space-y-1">
-              <Label htmlFor="line-inst">{tr({ en: "Instalments", pt: "Parcelas" })}</Label>
-              <select id="line-inst" className={selectClass} value={draft.installments}
-                onChange={(e) => set({ installments: Number(e.target.value) })}>
-                {Array.from({ length: 12 }, (_, n) => <option key={n + 1} value={n + 1}>{n + 1}x</option>)}
-              </select>
-            </div>
-          )}
+          <div className="space-y-1">
+            <Label htmlFor="line-inst">{tr({ en: "Instalments", pt: "Parcelas" })}</Label>
+            <select id="line-inst" className={selectClass} value={draft.installments}
+              onChange={(e) => set({ installments: Number(e.target.value) })}>
+              {Array.from({ length: 12 }, (_, n) => <option key={n + 1} value={n + 1}>{n + 1}x</option>)}
+            </select>
+          </div>
         </div>
       )}
     </>
