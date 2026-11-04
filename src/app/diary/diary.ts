@@ -50,7 +50,13 @@ export interface DiaryProfile {
     /** The sponsor's logo in the public sponsor-logos bucket, and where it links. */
     logo_path?: string | null;
     link_url?: string | null;
+    /** She joined it by herself (an open campaign), so she may leave it. */
+    joined_herself?: boolean;
+    /** She has left it: today is its last day. */
+    leaving?: boolean;
   } | null;
+  /** Every reward she has earned, newest first. */
+  rewards?: Reward[];
   /** Her latest answer to "count my business in impact figures", and the wording it was given under. */
   impact_consent?: { share: boolean; text_version: string } | null;
 }
@@ -90,9 +96,33 @@ export interface DaySummary {
   week_days: number;
 }
 
+/** A reward she earned: what, how to redeem it, and, in a sponsor's campaign, whose it is. */
+export interface Reward {
+  title: string;
+  kind: string;
+  how_to_redeem: string | null;
+  redeem_url?: string | null;
+  sponsor_name?: string | null;
+  status?: "granted" | "awaiting_consent";
+  granted_at?: string;
+}
+
+/** An open campaign she can join with one tap. blocked_by: the campaign she is already named in for later. */
+export interface OpenCampaign {
+  id: string;
+  name: string;
+  description: string | null;
+  sponsor_name: string;
+  period_end: string;
+  logo_path: string | null;
+  link_url: string | null;
+  offers_rewards: boolean;
+  blocked_by: string | null;
+}
+
 export interface Progress {
   streak_days: number;
-  earned: { code: string; kind: string; title: string; how_to_redeem: string | null; partner_name: string | null; threshold_days: number }[];
+  earned: (Reward & { code: string; partner_name: string | null; threshold_days: number })[];
   next: { title: string; days_left: number } | null;
 }
 
@@ -188,6 +218,9 @@ export const diary = {
   setImpactConsent: (share: boolean) =>
     call<{ share: boolean }>("diary_impact_consent_set", { p_share: share, p_text_version: CONSENT_TEXT_VERSION }),
   pushUnsubscribe: (endpoint: string) => call<{ devices: number }>("diary_push_unsubscribe", { p_endpoint: endpoint }),
+  openCampaigns: () => call<OpenCampaign[]>("diary_campaigns"),
+  joinCampaign: (id: string) => call<{ starts_on: string; until: string }>("diary_campaign_join", { p_program_id: id }),
+  leaveCampaign: () => call<{ ends_on: string }>("diary_campaign_leave"),
 };
 
 export interface EnrolForm {
@@ -287,6 +320,17 @@ export function diaryErrorText(error: unknown): string {
     ["month_closed", { en: "That month is already closed.", pt: "Esse mês já foi fechado." }],
     ["no_such_line", { en: "That line was not found.", pt: "Esse lançamento não foi encontrado." }],
     ["not_a_push_service", { en: "This browser cannot receive the reminder. Try Chrome or Safari.", pt: "Este navegador não recebe o lembrete. Tente o Chrome ou o Safari." }],
+    ["campaign_not_open", { en: "This campaign is not open to join.", pt: "Esta campanha não está aberta para adesão." }],
+    ["campaign_not_running", { en: "This campaign is not running today.", pt: "Esta campanha não está acontecendo hoje." }],
+    ["already_in_this_campaign", { en: "You have already taken part in this campaign.", pt: "Você já participou desta campanha." }],
+    [/^in_another_campaign/, { en: "You are already in another campaign at the same time.", pt: "Você já está em outra campanha no mesmo período." }],
+    ["already_left", { en: "You have already left this campaign.", pt: "Você já saiu desta campanha." }],
+    ["campaign_named_you", { en: "EmpowerFI included you in this campaign; to leave it, talk to EmpowerFI.", pt: "A EmpowerFI incluiu você nesta campanha; para sair, fale com a EmpowerFI." }],
+    ["not_in_a_campaign", { en: "You are not in a campaign.", pt: "Você não está em uma campanha." }],
+    ["not_allowed_to_publish_rewards", { en: "Only the sponsor's people can change these rewards.", pt: "Só as pessoas do patrocinador podem mudar estes prêmios." }],
+    ["a_sponsor_reward_is_a_gift", { en: "A sponsor's reward is a gift redeemed by code or link.", pt: "O prêmio do patrocinador é um presente resgatado por código ou link." }],
+    ["a_sponsor_reward_says_how_to_redeem", { en: "Each reward needs to say how to redeem it.", pt: "Cada prêmio precisa dizer como resgatar." }],
+    ["link_must_be_https", { en: "The link must start with https://", pt: "O link precisa começar com https://" }],
     ["too_many_devices", { en: "Reminders are on in 10 devices already. Turn one off first.", pt: "Os lembretes já estão ligados em 10 aparelhos. Desligue um primeiro." }],
     [/consent/, { en: "Your consent is needed to continue.", pt: "Precisamos do seu consentimento para continuar." }],
     [/woman of 18/, { en: "This diary is for women entrepreneurs aged 18 or over.", pt: "Este diário é para mulheres empreendedoras com 18 anos ou mais." }],

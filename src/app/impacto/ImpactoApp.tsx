@@ -10,6 +10,7 @@ import { addDays, diaryErrorText } from "../diary/diary";
 import { diaryClosed, diaryDb, useDiarySession } from "../diary/db";
 import SignIn from "../diary/SignIn";
 import Dashboard from "./Dashboard";
+import RewardsPanel from "./RewardsPanel";
 import { type Campaign, ddmm, impacto } from "./impacto";
 
 /**
@@ -101,6 +102,7 @@ type Period = "all" | "30d";
 function Area({ campaigns, email }: { campaigns: Campaign[]; email: string }) {
   const [params, setParams] = useSearchParams();
   const id = campaigns.some((c) => c.id === params.get("campanha")) ? params.get("campanha")! : campaigns[0].id;
+  const face = campaigns.find((c) => c.id === id);
   const [period, setPeriod] = useState<Period>("all");
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const from = period === "30d" ? addDays(today, -29) : null;
@@ -171,7 +173,8 @@ function Area({ campaigns, email }: { campaigns: Campaign[]; email: string }) {
             <Button variant="outline" onClick={() => void live.refetch()}>{tr({ en: "Try again", pt: "Tentar de novo" })}</Button>
           </div>
         )}
-        {live.data && <Dashboard data={live.data} face={campaigns.find((c) => c.id === id)} />}
+        {live.data && <Dashboard data={live.data} face={face} />}
+        {face && !face.is_default && <RewardsPanel key={face.id} campaign={face} />}
       </main>
     </>
   );
