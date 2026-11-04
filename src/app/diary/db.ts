@@ -48,3 +48,6 @@ export function useDiarySession(): { session: Session | null; loading: boolean }
   }, []);
   return state;
 }
+
+/** A sponsor's logo, uploaded from empowerfi-dashboard to the public sponsor-logos bucket. */
+export const sponsorLogoUrl = (path: string) => diaryDb.storage.from("sponsor-logos").getPublicUrl(path).data.publicUrl;

@@ -21,6 +21,9 @@ export interface Campaign {
   is_default: boolean;
   period_start: string;
   period_end: string | null;
+  /** From impact_campaigns: the sponsor's logo (sponsor-logos bucket) and link. */
+  logo_path?: string | null;
+  link_url?: string | null;
 }
 
 export interface Segment { key: string; women: number; started: number }

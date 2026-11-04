@@ -41,7 +41,16 @@ export interface DiaryProfile {
   /** Not enrolled yet, but she has an account in the EmpowerFI app: what it already knows. */
   from_app?: FromApp | null;
   /** The campaign her days count for today; EmpowerFI's own when she is in none. */
-  campaign?: { name: string; sponsor_name: string; is_default: boolean; until: string | null } | null;
+  campaign?: {
+    name: string;
+    sponsor_name: string;
+    is_default: boolean;
+    until: string | null;
+    offers_rewards?: boolean;
+    /** The sponsor's logo in the public sponsor-logos bucket, and where it links. */
+    logo_path?: string | null;
+    link_url?: string | null;
+  } | null;
   /** Her latest answer to "count my business in impact figures", and the wording it was given under. */
   impact_consent?: { share: boolean; text_version: string } | null;
 }
