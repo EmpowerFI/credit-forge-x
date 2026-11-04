@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -74,7 +74,10 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
   const [name, setName] = useState(fromApp?.name ?? "");
   const [city, setCity] = useState(fromApp?.city ?? "");
   const [uf, setUf] = useState(fromApp?.state_uf ?? "");
-  const [sector, setSector] = useState(fromApp?.sector ?? fromApp?.business_name ?? "");
+  // The app's category, when her app account has one: the same list this form offers.
+  const [sector, setSector] = useState(fromApp?.sector ?? "");
+  const categories = useQuery({ queryKey: ["diary", "categories"], queryFn: diary.categories, staleTime: 60 * 60_000 });
+  const listed = categories.data ?? [];
   const [since, setSince] = useState<string | null>(null);
   const [formalization, setFormalization] = useState<string | null>(null);
   const [finance, setFinance] = useState<string | null>(null);
@@ -233,8 +236,18 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
 
         <div className="space-y-2">
           <Label htmlFor="enrol-sector">{tr({ en: "What do you sell or do?", pt: "O que você vende ou faz?" })}</Label>
-          <Input id="enrol-sector" value={sector} onChange={(e) => setSector(e.target.value)} maxLength={80} className="h-12 text-base"
-            placeholder={tr({ en: "e.g. cakes to order, hair salon", pt: "ex.: bolo por encomenda, salão de beleza" })} />
+          {listed.length > 0 ? (
+            // The app's own categories: one name for one kind of business.
+            <select id="enrol-sector" value={listed.some((c) => c.label === sector) ? sector : ""} onChange={(e) => setSector(e.target.value)}
+              className="h-12 w-full rounded-md border border-input bg-background px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <option value="">{tr({ en: "Choose a category", pt: "Escolha uma categoria" })}</option>
+              {listed.map((c) => <option key={c.slug} value={c.label}>{c.icon ? `${c.icon} ` : ""}{c.label}</option>)}
+            </select>
+          ) : (
+            <Input id="enrol-sector" value={sector} onChange={(e) => setSector(e.target.value)} maxLength={80} className="h-12 text-base"
+              disabled={categories.isLoading}
+              placeholder={tr({ en: "e.g. cakes to order, hair salon", pt: "ex.: bolo por encomenda, salão de beleza" })} />
+          )}
         </div>
 
         {choice("since", tr({ en: "How long have you been doing it?", pt: "Há quanto tempo você trabalha com isso?" }), SINCE, since, setSince)}

@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { tr } from "../i18n";
 import { diaryDb, useDiarySession } from "./db";
 import { diary, diaryErrorText, PROFILE_KEY } from "./diary";
+import DeleteAccount from "./DeleteAccount";
 import { InstallSteps } from "./Install";
 import { YourData } from "./ImpactChoice";
 import Notifications from "./Notifications";
@@ -96,6 +97,7 @@ export default function Reminders() {
           {tr({ en: "Sign out", pt: "Sair" })}
         </Button>
       </section>
+      <DeleteAccount />
     </div>
   );
 }

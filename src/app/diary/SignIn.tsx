@@ -75,6 +75,11 @@ export default function SignIn({ home = "/app/diario", title, intro }: {
       </div>
       <div className="mt-10 space-y-2">
         <p className="font-heading text-2xl font-semibold">EmpowerFI</p>
+        {params.get("conta") === "excluida" && (
+          <p role="status" className="mb-4 rounded-md bg-muted p-3 text-sm">
+            {tr({ en: "Your account was deleted. Thank you for using the diary.", pt: "Sua conta foi excluída. Obrigada por usar o diário." })}
+          </p>
+        )}
         <h1 className="text-xl font-semibold">{title ?? tr({ en: "Your business diary", pt: "O diário do seu negócio" })}</h1>
         <p className="text-muted-foreground">
           {intro ?? tr({

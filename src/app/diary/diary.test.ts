@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, brl, dayName, diaryErrorText, parseReais } from "./diary";
+import { addDays, brl, dayName, diaryErrorText, mondayOf, parseReais, PROGRESS_EMOJIS } from "./diary";
 import { setCurrentLocale } from "../i18n";
 
 describe("parseReais", () => {
@@ -48,5 +48,17 @@ describe("diaryErrorText", () => {
     setCurrentLocale("pt");
     expect(diaryErrorText(new Error("TypeError: Failed to fetch"))).toMatch(/^Sem internet agora/);
     expect(diaryErrorText(new Error("Load failed"))).toMatch(/^Sem internet agora/);
+  });
+});
+
+describe("her week", () => {
+  it("starts on Monday", () => {
+    expect(mondayOf("2026-11-04")).toBe("2026-11-02"); // a Wednesday
+    expect(mondayOf("2026-11-02")).toBe("2026-11-02");
+    expect(mondayOf("2026-11-08")).toBe("2026-11-02"); // a Sunday
+    expect(mondayOf("2027-01-01")).toBe("2026-12-28"); // across the year
+  });
+  it("offers twelve distinct emojis", () => {
+    expect(new Set(PROGRESS_EMOJIS).size).toBe(12);
   });
 });

@@ -1,23 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Mic, Plus, Square, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { diaryDb } from "./db";
 import { OpenCampaigns, RewardCard } from "./Campaigns";
 import { ImpactAsk } from "./ImpactChoice";
 import { InstallInvite } from "./Install";
+import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
   addDays, type AfterRecord, brl, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
-  type Draft, type GoalAfter, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
+  type GoalAfter, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
 } from "./diary";
 
 interface LineDraft {
-  key: string;
   kind: "sale" | "expense";
   amount: string;
   method: PaymentMethod;
@@ -27,14 +25,59 @@ interface LineDraft {
   installments: number;
 }
 
+/** One line she has noted, waiting for "Registrar o dia". */
+interface Noted extends Line {
+  key: string;
+}
+
 const blank = (kind: "sale" | "expense"): LineDraft => ({
-  key: crypto.randomUUID(), kind, amount: "", method: "pix", category: "", later: false, due: "", installments: 1,
+  kind, amount: "", method: "pix", category: "", later: false, due: "", installments: 1,
 });
 
 const selectClass =
   "h-12 w-full rounded-md border border-input bg-background px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-/** The day: what happened, by form, by voice or in her words; then what it adds up to. */
+const MAX_LINES = 20;
+
+// What she noted and has not recorded yet, kept on this phone per day, so a
+// reload or a call in the middle does not lose it. Storage may be refused
+// (private mode); then it simply lives in memory.
+const pendingKey = (day: string) => `empowerfi-diary-pending:${day}`;
+function loadPending(day: string): Noted[] {
+  try {
+    const raw = localStorage.getItem(pendingKey(day));
+    const list = raw ? (JSON.parse(raw) as Noted[]) : [];
+    return Array.isArray(list) ? list.filter((l) => l && typeof l.amount_cents === "number").slice(0, MAX_LINES) : [];
+  } catch {
+    return [];
+  }
+}
+function savePending(day: string, list: Noted[]) {
+  try {
+    if (list.length) localStorage.setItem(pendingKey(day), JSON.stringify(list));
+    else localStorage.removeItem(pendingKey(day));
+  } catch {
+    // Memory only.
+  }
+}
+
+/** A noted line back into the form, to be changed. */
+const toDraft = (l: Line): LineDraft => ({
+  kind: l.kind,
+  amount: (l.amount_cents / 100).toFixed(2).replace(".", ","),
+  method: l.payment_method,
+  category: l.category ?? "",
+  later: Boolean(l.due_on),
+  due: l.due_on ?? "",
+  installments: l.installments ?? 1,
+});
+
+/**
+ * The day: she notes each sale or expense one at a time -- the form empties
+ * after each, so the screen never fills with cards -- and they wait on this
+ * phone. "Registrar o dia" shows the list; she changes or removes what she
+ * needs and confirms, and only then is the day recorded.
+ */
 export default function Today() {
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
@@ -42,11 +85,10 @@ export default function Today() {
   const me = useQuery({ queryKey: [...PROFILE_KEY, "reminders"], queryFn: diary.profile });
   const today = profile?.today ?? new Date().toISOString().slice(0, 10);
   const [day, setDay] = useState(today);
-  const [mode, setMode] = useState<"ask" | "lines" | "words" | "draft" | "done">("ask");
-  const [lines, setLines] = useState<LineDraft[]>([blank("sale")]);
+  const [mode, setMode] = useState<"ask" | "entry" | "review" | "done">("ask");
+  const [noted, setNoted] = useState<Noted[]>(() => loadPending(today));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Draft | null>(null);
   const [result, setResult] = useState<AfterRecord | null>(null);
   const started = useRef(Date.now());
   const seconds = () => Math.min(3600, Math.round((Date.now() - started.current) / 1000));
@@ -61,13 +103,22 @@ export default function Today() {
     }
   }, [params, setParams]);
 
-  const kept = useQuery({ queryKey: ["diary", "history", 2], queryFn: () => diary.history(2) });
-  const keptDay = kept.data?.find((d) => d.day === day);
+  const week = useQuery({ queryKey: ["diary", "history", 7], queryFn: () => diary.history(7) });
+  const keptDay = week.data?.find((d) => d.day === day);
+
+  const keep = (list: Noted[]) => {
+    setNoted(list);
+    savePending(day, list);
+  };
+  const pickDay = (d: string) => {
+    setDay(d);
+    setNoted(loadPending(d));
+    setMode("ask");
+    setError(null);
+  };
 
   const restart = () => {
     setMode("ask");
-    setLines([blank("sale")]);
-    setDraft(null);
     setResult(null);
     setError(null);
     started.current = Date.now();
@@ -77,6 +128,7 @@ export default function Today() {
     setResult(out);
     setMode("done");
     await queryClient.invalidateQueries({ queryKey: ["diary", "history"] });
+    await queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
   };
 
   const recordQuiet = async (reason: "closed" | "no_sales") => {
@@ -91,49 +143,15 @@ export default function Today() {
     }
   };
 
-  const recordLines = async () => {
-    const out: Line[] = [];
-    for (const l of lines) {
-      if (l.amount.trim() === "") continue;
-      const cents = parseReais(l.amount);
-      if (cents === null) return setError(tr({ en: `"${l.amount}" is not an amount.`, pt: `"${l.amount}" não é um valor.` }));
-      if (l.kind === "expense" && !l.category) return setError(tr({ en: "Say what each expense was for.", pt: "Diga com o que foi cada gasto." }));
-      if (l.later && !(l.due > day)) {
-        return setError(tr({ en: "Choose a date after the day for what is paid later.", pt: "Escolha uma data depois do dia para o que fica para depois." }));
-      }
-      out.push({
-        kind: l.kind,
-        amount_cents: cents,
-        payment_method: l.method,
-        ...(l.kind === "expense" ? { category: l.category as Category } : {}),
-        ...(l.later ? { due_on: l.due } : {}),
-        ...(l.later && l.kind === "expense" && l.installments > 1 ? { installments: l.installments } : {}),
-      });
-    }
-    if (out.length === 0) return setError(tr({ en: "Fill in at least one amount.", pt: "Preencha pelo menos um valor." }));
+  const recordNoted = async () => {
+    if (!noted.length) return setMode("entry");
     setBusy(true);
     setError(null);
     try {
-      await finish(await diary.record({ requestId: newRequestId(), day, lines: out, seconds: seconds() }));
-    } catch (e) {
-      setError(diaryErrorText(e));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const decide = async (confirm: boolean) => {
-    if (!draft) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const out = await diary.decideDraft(draft.draft_id, confirm, seconds());
-      if (out.status === "confirmed" && out.summary) await finish(out as AfterRecord);
-      else if (out.status === "stale") {
-        setError(tr({ en: "That reading expired. Tell it again.", pt: "Essa leitura expirou. Conte de novo." }));
-        setMode("words");
-      } else setMode("words");
-      setDraft(null);
+      const lines: Line[] = noted.map(({ key: _key, ...l }) => l);
+      const out = await diary.record({ requestId: newRequestId(), day, lines, seconds: seconds() });
+      keep([]);
+      await finish(out);
     } catch (e) {
       setError(diaryErrorText(e));
     } finally {
@@ -152,7 +170,7 @@ export default function Today() {
         <div role="group" aria-label={tr({ en: "Which day", pt: "Qual dia" })} className="mt-3 flex gap-2">
           {[today, addDays(today, -1)].map((d) => (
             <Button key={d} variant={d === day ? "default" : "outline"} className="h-10 flex-1" aria-pressed={d === day}
-              onClick={() => { setDay(d); setError(null); }}>
+              disabled={busy} onClick={() => pickDay(d)}>
               {d === today ? tr({ en: "Today", pt: "Hoje" }) : tr({ en: "Yesterday", pt: "Ontem" })}
             </Button>
           ))}
@@ -172,10 +190,18 @@ export default function Today() {
       {mode === "ask" && me.data && <ImpactAsk profile={me.data} />}
       {mode === "ask" && (
         <div className="grid gap-3">
-          <Button className="h-14 text-base" onClick={() => setMode("lines")}>{tr({ en: "I sold or spent", pt: "Vendi ou gastei" })}</Button>
-          <Button variant="outline" className="h-14 text-base" onClick={() => setMode("words")}>
-            <Mic aria-hidden="true" />{tr({ en: "Tell it by voice or in my words", pt: "Contar por áudio ou escrevendo" })}
-          </Button>
+          {noted.length > 0 ? (
+            <>
+              <Button className="h-14 text-base" onClick={() => setMode("review")}>
+                {tr({ en: `Review and save the day (${noted.length})`, pt: `Revisar e registrar o dia (${noted.length})` })}
+              </Button>
+              <Button variant="outline" className="h-12" onClick={() => setMode("entry")}>
+                {tr({ en: "Note another sale or expense", pt: "Anotar outra venda ou gasto" })}
+              </Button>
+            </>
+          ) : (
+            <Button className="h-14 text-base" onClick={() => setMode("entry")}>{tr({ en: "I sold or spent", pt: "Vendi ou gastei" })}</Button>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <Button variant="outline" className="h-14" disabled={busy} onClick={() => void recordQuiet("no_sales")}>
               {tr({ en: "Open, no sales", pt: "Abri e não vendi" })}
@@ -186,39 +212,24 @@ export default function Today() {
           </div>
         </div>
       )}
-
+      {mode === "ask" && me.data && <WeekProgress emoji={me.data.progress_emoji ?? "🌱"} today={today} days={week.data ?? []} />}
       {mode === "ask" && me.data && <OpenCampaigns profile={me.data} />}
 
-      {mode === "lines" && (
-        <LinesForm lines={lines} setLines={setLines} day={day} busy={busy} onSubmit={() => void recordLines()} onBack={restart} />
+      {mode === "entry" && (
+        <Entry day={day} count={noted.length}
+          onAdd={(l) => keep([...noted, { ...l, key: crypto.randomUUID() }])}
+          onReview={() => { setError(null); setMode("review"); }}
+          onBack={() => { setError(null); setMode("ask"); }} />
       )}
 
-      {mode === "words" && (
-        <Words day={day} busy={busy} setBusy={setBusy} setError={setError}
-          onDraft={(d) => { setDraft(d); setMode("draft"); }} onBack={restart} />
-      )}
-
-      {mode === "draft" && draft && (
-        <section className="space-y-3 rounded-md border border-border p-4" aria-live="polite">
-          {draft.heard && <p className="text-sm text-muted-foreground">🎙️ «{draft.heard}»</p>}
-          <h2 className="font-semibold">
-            {tr({ en: `This is what I understood, for ${dayName(draft.day, today)}:`, pt: `Entendi assim, para ${dayName(draft.day, today)}:` })}
-          </h2>
-          <ul className="space-y-1">
-            {draft.lines.map((l, i) => <li key={i}>{lineText(l)}</li>)}
-          </ul>
-          {draft.notes.length > 0 && (
-            <ul className="list-disc pl-5 text-sm text-muted-foreground">{draft.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <Button className="h-12" disabled={busy} onClick={() => void decide(true)}>{tr({ en: "It's right", pt: "Está certo" })}</Button>
-            <Button variant="outline" className="h-12" disabled={busy} onClick={() => void decide(false)}>{tr({ en: "Fix it", pt: "Corrigir" })}</Button>
-          </div>
-        </section>
+      {mode === "review" && (
+        <Review day={day} today={today} noted={noted} busy={busy} onChange={keep}
+          onMore={() => { setError(null); setMode("entry"); }}
+          onConfirm={() => void recordNoted()} />
       )}
 
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
-      {busy && mode !== "lines" && <Loader2 className="mx-auto animate-spin text-muted-foreground" aria-label={tr({ en: "Working", pt: "Processando" })} />}
+      {busy && mode === "ask" && <Loader2 className="mx-auto animate-spin text-muted-foreground" aria-label={tr({ en: "Working", pt: "Processando" })} />}
     </div>
   );
 }
@@ -234,83 +245,130 @@ function lineText(l: Line): string {
     : `💸 ${categoryLabel(l.category ?? null)}: ${brl(l.amount_cents)} · ${methodLabel(l.payment_method)}${later}`;
 }
 
-function LinesForm({ lines, setLines, day, busy, onSubmit, onBack }: {
-  lines: LineDraft[];
-  setLines: (l: LineDraft[]) => void;
-  day: string;
-  busy: boolean;
-  onSubmit: () => void;
-  onBack: () => void;
-}) {
-  const set = (key: string, patch: Partial<LineDraft>) => setLines(lines.map((l) => (l.key === key ? { ...l, ...patch } : l)));
+/** The form, read into a line, or the reason it cannot be one. */
+function readLine(d: LineDraft, day: string): Line | string {
+  const cents = parseReais(d.amount);
+  if (cents === null) {
+    return d.amount.trim()
+      ? tr({ en: `"${d.amount}" is not an amount.`, pt: `"${d.amount}" não é um valor.` })
+      : tr({ en: "Fill in the amount.", pt: "Preencha o valor." });
+  }
+  if (d.kind === "expense" && !d.category) return tr({ en: "Say what the expense was for.", pt: "Diga com o que foi o gasto." });
+  if (d.later && !(d.due > day)) {
+    return tr({ en: "Choose a date after the day for what is paid later.", pt: "Escolha uma data depois do dia para o que fica para depois." });
+  }
+  return {
+    kind: d.kind,
+    amount_cents: cents,
+    payment_method: d.method,
+    ...(d.kind === "expense" ? { category: d.category as Category } : {}),
+    ...(d.later ? { due_on: d.due } : {}),
+    ...(d.later && d.kind === "expense" && d.installments > 1 ? { installments: d.installments } : {}),
+  };
+}
+
+/** One sale or expense at a time. The same form adds a new line or, with `editing`, changes one. */
+function LineFields({ draft, set, day }: { draft: LineDraft; set: (patch: Partial<LineDraft>) => void; day: string }) {
   return (
-    <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); onSubmit(); }} noValidate>
-      {lines.map((l, i) => (
-        <fieldset key={l.key} className="space-y-3 rounded-md border border-border p-3">
-          <legend className="px-1 text-sm font-semibold">
-            {l.kind === "sale" ? tr({ en: "💰 Sale", pt: "💰 Venda" }) : tr({ en: "💸 Expense", pt: "💸 Gasto" })}
-          </legend>
+    <>
+      <div role="group" aria-label={tr({ en: "Sale or expense", pt: "Venda ou gasto" })} className="grid grid-cols-2 gap-2">
+        {(["sale", "expense"] as const).map((k) => (
+          <Button key={k} type="button" variant={draft.kind === k ? "default" : "outline"} className="h-12 text-base" aria-pressed={draft.kind === k}
+            onClick={() => set({ kind: k, category: k === "sale" ? "" : draft.category, installments: 1 })}>
+            {k === "sale" ? tr({ en: "💰 Sale", pt: "💰 Venda" }) : tr({ en: "💸 Expense", pt: "💸 Gasto" })}
+          </Button>
+        ))}
+      </div>
+      <div className="space-y-1">
+        <Label htmlFor="line-amount">{tr({ en: "Amount (R$)", pt: "Valor (R$)" })}</Label>
+        <Input id="line-amount" inputMode="decimal" autoComplete="off" placeholder="0,00" value={draft.amount}
+          onChange={(e) => set({ amount: e.target.value })} className="h-12 text-lg" autoFocus />
+      </div>
+      {draft.kind === "expense" && (
+        <div className="space-y-1">
+          <Label htmlFor="line-cat">{tr({ en: "What for", pt: "Com o quê" })}</Label>
+          <select id="line-cat" className={selectClass} value={draft.category}
+            onChange={(e) => set({ category: e.target.value as Category })}>
+            <option value="">{tr({ en: "Choose", pt: "Escolha" })}</option>
+            {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+          </select>
+        </div>
+      )}
+      <div className="space-y-1">
+        <Label htmlFor="line-method">{draft.kind === "sale" ? tr({ en: "Received by", pt: "Recebeu como" }) : tr({ en: "Paid by", pt: "Pagou como" })}</Label>
+        <select id="line-method" className={selectClass} value={draft.method}
+          onChange={(e) => set({ method: e.target.value as PaymentMethod })}>
+          {PAYMENT_METHODS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+        </select>
+      </div>
+      <label className="flex min-h-11 items-center gap-3 text-sm">
+        <input type="checkbox" className="h-5 w-5" checked={draft.later} onChange={(e) => set({ later: e.target.checked })} />
+        {draft.kind === "sale" ? tr({ en: "I will receive it later", pt: "Vou receber depois" }) : tr({ en: "I will pay it later", pt: "Vou pagar depois" })}
+      </label>
+      {draft.later && (
+        <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label htmlFor={`amount-${l.key}`}>{tr({ en: "Amount (R$)", pt: "Valor (R$)" })}</Label>
-            <Input id={`amount-${l.key}`} inputMode="decimal" autoComplete="off" placeholder="0,00" value={l.amount}
-              onChange={(e) => set(l.key, { amount: e.target.value })} className="h-12 text-lg" autoFocus={i === lines.length - 1} />
+            <Label htmlFor="line-due">{draft.kind === "sale" ? tr({ en: "Receive on", pt: "Recebe em" }) : tr({ en: "First payment", pt: "1º pagamento" })}</Label>
+            <Input id="line-due" type="date" min={addDays(day, 1)} value={draft.due}
+              onChange={(e) => set({ due: e.target.value })} className="h-12" />
           </div>
-          {l.kind === "expense" && (
+          {draft.kind === "expense" && (
             <div className="space-y-1">
-              <Label htmlFor={`cat-${l.key}`}>{tr({ en: "What for", pt: "Com o quê" })}</Label>
-              <select id={`cat-${l.key}`} className={selectClass} value={l.category}
-                onChange={(e) => set(l.key, { category: e.target.value as Category })}>
-                <option value="">{tr({ en: "Choose", pt: "Escolha" })}</option>
-                {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+              <Label htmlFor="line-inst">{tr({ en: "Instalments", pt: "Parcelas" })}</Label>
+              <select id="line-inst" className={selectClass} value={draft.installments}
+                onChange={(e) => set({ installments: Number(e.target.value) })}>
+                {Array.from({ length: 12 }, (_, n) => <option key={n + 1} value={n + 1}>{n + 1}x</option>)}
               </select>
             </div>
           )}
-          <div className="space-y-1">
-            <Label htmlFor={`method-${l.key}`}>{l.kind === "sale" ? tr({ en: "Received by", pt: "Recebeu como" }) : tr({ en: "Paid by", pt: "Pagou como" })}</Label>
-            <select id={`method-${l.key}`} className={selectClass} value={l.method}
-              onChange={(e) => set(l.key, { method: e.target.value as PaymentMethod })}>
-              {PAYMENT_METHODS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-            </select>
-          </div>
-          <label className="flex min-h-11 items-center gap-3 text-sm">
-            <input type="checkbox" className="h-5 w-5" checked={l.later} onChange={(e) => set(l.key, { later: e.target.checked })} />
-            {l.kind === "sale" ? tr({ en: "I will receive it later", pt: "Vou receber depois" }) : tr({ en: "I will pay it later", pt: "Vou pagar depois" })}
-          </label>
-          {l.later && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label htmlFor={`due-${l.key}`}>{l.kind === "sale" ? tr({ en: "Receive on", pt: "Recebe em" }) : tr({ en: "First payment", pt: "1º pagamento" })}</Label>
-                <Input id={`due-${l.key}`} type="date" min={addDays(day, 1)} value={l.due}
-                  onChange={(e) => set(l.key, { due: e.target.value })} className="h-12" />
-              </div>
-              {l.kind === "expense" && (
-                <div className="space-y-1">
-                  <Label htmlFor={`inst-${l.key}`}>{tr({ en: "Instalments", pt: "Parcelas" })}</Label>
-                  <select id={`inst-${l.key}`} className={selectClass} value={l.installments}
-                    onChange={(e) => set(l.key, { installments: Number(e.target.value) })}>
-                    {Array.from({ length: 12 }, (_, n) => <option key={n + 1} value={n + 1}>{n + 1}x</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
-          )}
-          {lines.length > 1 && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => setLines(lines.filter((x) => x.key !== l.key))}>
-              <Trash2 aria-hidden="true" />{tr({ en: "Remove", pt: "Remover" })}
-            </Button>
-          )}
-        </fieldset>
-      ))}
-      <div className="grid grid-cols-2 gap-3">
-        <Button type="button" variant="outline" className="h-12" onClick={() => setLines([...lines, blank("sale")])} disabled={lines.length >= 20}>
-          <Plus aria-hidden="true" />{tr({ en: "Sale", pt: "Venda" })}
-        </Button>
-        <Button type="button" variant="outline" className="h-12" onClick={() => setLines([...lines, blank("expense")])} disabled={lines.length >= 20}>
-          <Plus aria-hidden="true" />{tr({ en: "Expense", pt: "Gasto" })}
-        </Button>
-      </div>
-      <Button type="submit" className="h-14 w-full text-base" disabled={busy}>
-        {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Noting: the form empties after each line; only a count says how many are waiting. */
+function Entry({ day, count, onAdd, onReview, onBack }: {
+  day: string;
+  count: number;
+  onAdd: (l: Line) => void;
+  onReview: () => void;
+  onBack: () => void;
+}) {
+  const [draft, setDraft] = useState<LineDraft>(blank("sale"));
+  const [problem, setProblem] = useState<string | null>(null);
+  const [added, setAdded] = useState<string | null>(null);
+  const full = count >= MAX_LINES;
+
+  const add = () => {
+    const line = readLine(draft, day);
+    if (typeof line === "string") return setProblem(line);
+    onAdd(line);
+    setProblem(null);
+    setAdded(line.kind === "sale"
+      ? tr({ en: `Sale of ${brl(line.amount_cents)} noted ✅`, pt: `Venda de ${brl(line.amount_cents)} anotada ✅` })
+      : tr({ en: `Expense of ${brl(line.amount_cents)} noted ✅`, pt: `Gasto de ${brl(line.amount_cents)} anotado ✅` }));
+    // Ready for the next one, of the same kind and paid the same way.
+    setDraft({ ...blank(draft.kind), method: draft.method });
+  };
+
+  return (
+    <form className="space-y-4" noValidate onSubmit={(e) => { e.preventDefault(); add(); }}>
+      <LineFields draft={draft} day={day} set={(patch) => { setAdded(null); setDraft((d) => ({ ...d, ...patch })); }} />
+      {problem && <p role="alert" className="text-sm font-medium text-destructive">{problem}</p>}
+      <Button type="submit" variant="outline" className="h-12 w-full text-base" disabled={full}>
+        {tr({ en: "Add", pt: "Adicionar" })}
+      </Button>
+      <p role="status" aria-live="polite" className="min-h-5 text-center text-sm">
+        {added && <span className="block">{added}</span>}
+        {count > 0 && (
+          <span className="text-muted-foreground">
+            {count === 1 ? tr({ en: "1 item noted", pt: "1 item anotado" }) : tr({ en: `${count} items noted`, pt: `${count} itens anotados` })}
+          </span>
+        )}
+        {full && <span className="block text-muted-foreground">{tr({ en: "That is the most for one day.", pt: "Esse é o máximo para um dia." })}</span>}
+      </p>
+      <Button type="button" className="h-14 w-full text-base" disabled={count === 0} onClick={onReview}>
         {tr({ en: "Save the day", pt: "Registrar o dia" })}
       </Button>
       <Button type="button" variant="ghost" className="w-full" onClick={onBack}>{tr({ en: "Back", pt: "Voltar" })}</Button>
@@ -318,142 +376,81 @@ function LinesForm({ lines, setLines, day, busy, onSubmit, onBack }: {
   );
 }
 
-/** A recorder's type the browser can make: Chrome and Android make webm, Safari mp4. */
-function recorderType(): string | undefined {
-  for (const t of ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]) {
-    if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t)) return t;
-  }
-  return undefined;
-}
-
-const MAX_SECONDS = 120;
-
-function Words({ day, busy, setBusy, setError, onDraft, onBack }: {
+/** The list, before anything is saved: change or remove each line, then confirm. */
+function Review({ day, today, noted, busy, onChange, onMore, onConfirm }: {
   day: string;
+  today: string;
+  noted: Noted[];
   busy: boolean;
-  setBusy: (b: boolean) => void;
-  setError: (e: string | null) => void;
-  onDraft: (d: Draft) => void;
-  onBack: () => void;
+  onChange: (list: Noted[]) => void;
+  onMore: () => void;
+  onConfirm: () => void;
 }) {
-  const [text, setText] = useState("");
-  const [recording, setRecording] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const recorder = useRef<MediaRecorder | null>(null);
-  const timer = useRef<number | null>(null);
-  const [notes, setNotes] = useState<string[]>([]);
+  const [editing, setEditing] = useState<{ key: string; draft: LineDraft } | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const sales = noted.filter((l) => l.kind === "sale").reduce((s, l) => s + l.amount_cents, 0);
+  const expenses = noted.filter((l) => l.kind === "expense").reduce((s, l) => s + l.amount_cents, 0);
 
-  useEffect(() => () => {
-    if (timer.current) window.clearInterval(timer.current);
-    recorder.current?.stream.getTracks().forEach((t) => t.stop());
-  }, []);
-
-  const send = async (body: FormData | { text: string; day: string; request_id: string }) => {
-    setBusy(true);
-    setError(null);
-    setNotes([]);
-    const { data, error } = await diaryDb.functions.invoke<Draft & { error?: string }>("diary-speak", { body });
-    setBusy(false);
-    if (error) {
-      let key = "";
-      try {
-        key = ((await (error as { context?: Response }).context?.json()) as { error?: string })?.error ?? "";
-      } catch { /* not json */ }
-      setError(key === "too_many_today"
-        ? tr({ en: "That is the limit for today. Use the form instead.", pt: "Esse é o limite de hoje. Use o formulário." })
-        : key === "too_long"
-          ? tr({ en: "Too long. Try a shorter message.", pt: "Ficou longo demais. Tente uma mensagem mais curta." })
-          : tr({ en: "I could not read it now. Try again, or use the form.", pt: "Não consegui ler agora. Tente de novo, ou use o formulário." }));
-      return;
-    }
-    if (!data) return;
-    if (data.draft_id) onDraft(data);
-    else {
-      setNotes([
-        ...(data.heard ? [`🎙️ «${data.heard}»`] : []),
-        tr({ en: "I could not make a record from that.", pt: "Não consegui montar um registro com isso." }),
-        ...(data.notes ?? []),
-        tr({
-          en: "Say the amount and how it was paid, e.g. «sold 250 by Pix and spent 80 on packaging in cash».",
-          pt: "Diga o valor e como recebeu ou pagou, por exemplo: «vendi 250 no Pix e gastei 80 de embalagem no dinheiro».",
-        }),
-      ]);
-    }
-  };
-
-  const start = async () => {
-    setError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const type = recorderType();
-      const rec = new MediaRecorder(stream, type ? { mimeType: type } : undefined);
-      const chunks: Blob[] = [];
-      rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
-      rec.onstop = () => {
-        stream.getTracks().forEach((t) => t.stop());
-        if (timer.current) window.clearInterval(timer.current);
-        setRecording(false);
-        const blob = new Blob(chunks, { type: rec.mimeType || type || "audio/webm" });
-        if (blob.size === 0) return;
-        const form = new FormData();
-        form.append("audio", new File([blob], "voice", { type: blob.type }));
-        form.append("day", day);
-        form.append("request_id", newRequestId());
-        void send(form);
-      };
-      recorder.current = rec;
-      rec.start();
-      setRecording(true);
-      setElapsed(0);
-      const began = Date.now();
-      timer.current = window.setInterval(() => {
-        const s = Math.round((Date.now() - began) / 1000);
-        setElapsed(s);
-        if (s >= MAX_SECONDS) rec.stop();
-      }, 500);
-    } catch {
-      setError(tr({
-        en: "The microphone is not available. Allow it in the browser, or write instead.",
-        pt: "O microfone não está disponível. Libere no navegador, ou escreva.",
-      }));
-    }
-  };
+  if (editing) {
+    const save = () => {
+      const line = readLine(editing.draft, day);
+      if (typeof line === "string") return setProblem(line);
+      onChange(noted.map((l) => (l.key === editing.key ? { ...line, key: l.key } : l)));
+      setEditing(null);
+      setProblem(null);
+    };
+    return (
+      <form className="space-y-4" noValidate onSubmit={(e) => { e.preventDefault(); save(); }}>
+        <h2 className="text-lg font-semibold">{tr({ en: "Change this item", pt: "Alterar este item" })}</h2>
+        <LineFields draft={editing.draft} day={day} set={(patch) => setEditing({ ...editing, draft: { ...editing.draft, ...patch } })} />
+        {problem && <p role="alert" className="text-sm font-medium text-destructive">{problem}</p>}
+        <div className="grid grid-cols-2 gap-3">
+          <Button type="submit" className="h-12">{tr({ en: "Save change", pt: "Salvar alteração" })}</Button>
+          <Button type="button" variant="outline" className="h-12" onClick={() => { setEditing(null); setProblem(null); }}>
+            {tr({ en: "Cancel", pt: "Cancelar" })}
+          </Button>
+        </div>
+      </form>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2 text-center">
-        {recording ? (
-          <Button className="h-20 w-20 rounded-full" onClick={() => recorder.current?.stop()}
-            aria-label={tr({ en: "Stop and send", pt: "Parar e enviar" })}>
-            <Square aria-hidden="true" />
-          </Button>
-        ) : (
-          <Button className="h-20 w-20 rounded-full" onClick={() => void start()} disabled={busy}
-            aria-label={tr({ en: "Record a voice note", pt: "Gravar áudio" })}>
-            <Mic aria-hidden="true" />
-          </Button>
-        )}
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          {recording
-            ? tr({ en: `Recording… ${elapsed}s — tap to send`, pt: `Gravando… ${elapsed}s — toque para enviar` })
-            : tr({ en: "Tap and tell what you sold and spent", pt: "Toque e conte o que vendeu e gastou" })}
+    <section className="space-y-4" aria-labelledby="review-title">
+      <h2 id="review-title" className="text-lg font-semibold">
+        {tr({ en: `Check ${dayName(day, today)} before saving`, pt: `Confira ${dayName(day, today)} antes de registrar` })}
+      </h2>
+      {noted.length === 0 ? (
+        <p className="rounded-md bg-muted p-3 text-sm">{tr({ en: "Nothing noted yet.", pt: "Nada anotado ainda." })}</p>
+      ) : (
+        <ul className="divide-y divide-border rounded-md border border-border">
+          {noted.map((l) => (
+            <li key={l.key} className="flex items-center gap-2 p-3">
+              <span className="min-w-0 flex-1 text-sm">{lineText(l)}</span>
+              <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" disabled={busy}
+                aria-label={tr({ en: "Change", pt: "Alterar" })} onClick={() => setEditing({ key: l.key, draft: toDraft(l) })}>
+                <Pencil aria-hidden="true" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" disabled={busy}
+                aria-label={tr({ en: "Remove", pt: "Remover" })} onClick={() => onChange(noted.filter((x) => x.key !== l.key))}>
+                <Trash2 aria-hidden="true" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {noted.length > 0 && (
+        <p className="text-sm">
+          {tr({ en: "Sales", pt: "Vendas" })}: <strong>{brl(sales)}</strong>{" · "}{tr({ en: "Expenses", pt: "Gastos" })}: <strong>{brl(expenses)}</strong>
         </p>
-      </div>
-      <form className="space-y-2" onSubmit={(e) => {
-        e.preventDefault();
-        if (text.trim()) void send({ text: text.trim(), day, request_id: newRequestId() });
-      }}>
-        <Label htmlFor="diary-words">{tr({ en: "Or write it", pt: "Ou escreva" })}</Label>
-        <Textarea id="diary-words" rows={3} maxLength={1000} value={text} onChange={(e) => setText(e.target.value)}
-          placeholder={tr({ en: "sold 250 by Pix, spent 80 on packaging in cash", pt: "vendi 250 no Pix, gastei 80 de embalagem no dinheiro" })}
-          className="text-base" />
-        <Button type="submit" className="h-12 w-full" disabled={busy || recording || !text.trim()}>
-          {tr({ en: "Read it", pt: "Ler" })}
-        </Button>
-      </form>
-      {notes.length > 0 && <ul className="space-y-1 rounded-md bg-muted p-3 text-sm">{notes.map((n, i) => <li key={i}>{n}</li>)}</ul>}
-      <Button variant="ghost" className="w-full" onClick={onBack}>{tr({ en: "Back", pt: "Voltar" })}</Button>
-    </div>
+      )}
+      <Button className="h-14 w-full text-base" disabled={busy || noted.length === 0} onClick={onConfirm}>
+        {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
+        {tr({ en: "Confirm and save", pt: "Confirmar e registrar" })}
+      </Button>
+      <Button variant="outline" className="h-12 w-full" disabled={busy || noted.length >= MAX_LINES} onClick={onMore}>
+        {tr({ en: "Note more", pt: "Anotar mais" })}
+      </Button>
+    </section>
   );
 }
 
