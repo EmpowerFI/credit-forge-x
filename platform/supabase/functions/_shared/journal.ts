@@ -86,7 +86,7 @@ export interface JournalLine {
   amount_cents: number;
   payment_method: PaymentMethod;
   due_on?: string;
-  /** An expense paid later in instalments: how many, the first due on due_on. */
+  /** A sale or expense settled later in instalments: how many, the first due on due_on. */
   installments?: number;
   category?: Category;
 }
@@ -572,8 +572,8 @@ const ddmm = (day: string) => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
 export function lineText(l: Omit<ListedLine, "due_on"> & { due_on?: string | null }): string {
   const what = l.kind === "sale" ? `Venda · ${METHOD_TITLE[l.payment_method] ?? l.payment_method}` : `Gasto · ${CATEGORY_TITLE[l.category ?? ""] ?? l.category}`;
   const later = !l.due_on ? ""
-    : l.kind === "sale" ? ` (recebe em ${ddmm(l.due_on)})`
     : (l.installments ?? 1) > 1 ? ` (em ${l.installments}x, a 1ª em ${ddmm(l.due_on)})`
+    : l.kind === "sale" ? ` (recebe em ${ddmm(l.due_on)})`
     : ` (paga em ${ddmm(l.due_on)})`;
   return `${l.n}. ${what} · R$ ${formatBRL(l.amount_cents)}${later}`;
 }
