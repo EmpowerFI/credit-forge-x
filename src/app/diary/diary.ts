@@ -28,7 +28,15 @@ async function call<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
 export const PROFILE_KEY = ["diary", "profile"] as const;
 
 /** The consent wording's version, recorded with her enrolment. Change it whenever CONSENT changes. */
-export const CONSENT_TEXT_VERSION = "web-2026-12";
+export const CONSENT_TEXT_VERSION = "web-2026-12b";
+
+/**
+ * The wordings that already asked whether to count her business in the
+ * impact figures. Whoever enrolled under one of these has answered it, so the
+ * one-time question is not asked again when the wording moves on for another
+ * reason. "web-2026-12b" only drops the voice paragraph (voice left the diary).
+ */
+export const IMPACT_ASKED_IN = ["web-2026-12", "web-2026-12b"];
 
 // ------------------------------------------------------------------ shapes
 

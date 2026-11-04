@@ -45,7 +45,6 @@ function ConsentText() {
         <li>Your figures are yours. Nobody sees what you record unless you authorise it, not even whoever sponsors your place.</li>
         <li>If a sponsor backs your participation, it sees only group figures -- how many women take part and how many days they record -- in groups of at least 5. Never your name, never your figures alone.</li>
         <li>Reminders are optional: you choose the time and can turn them off at any moment.</li>
-        <li>If you record by voice or in your own words, what you say is read by AI services (OpenAI and Anthropic, in the United States) only to prepare the record. The audio is not kept, the text is deleted within 24 hours, and nothing is recorded before you confirm.</li>
         <li>You can ask for your data to be deleted. Details in the <a className="underline" href="/privacidade" target="_blank" rel="noreferrer">privacy policy</a>.</li>
       </ul>
     ),
@@ -54,7 +53,6 @@ function ConsentText() {
         <li>Os seus números são seus. Ninguém vê o que você registra sem você autorizar, nem quem patrocina a sua vaga.</li>
         <li>Se um patrocinador apoia a sua participação, ele vê só números do grupo (quantas participam e quantos dias registram), em grupos de pelo menos 5. Nunca o seu nome, nunca os seus números sozinhos.</li>
         <li>Os lembretes são opcionais: você escolhe o horário e pode desligar quando quiser.</li>
-        <li>Se você registrar por áudio ou escrevendo do seu jeito, o que você diz é lido por serviços de inteligência artificial (OpenAI e Anthropic, nos Estados Unidos) só para montar o registro. O áudio não fica guardado, o texto é apagado em até 24 horas, e nada é registrado antes de você confirmar.</li>
         <li>Você pode pedir a exclusão dos seus dados. Detalhes na <a className="underline" href="/privacidade" target="_blank" rel="noreferrer">política de privacidade</a>.</li>
       </ul>
     ),
