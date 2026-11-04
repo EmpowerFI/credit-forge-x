@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { tr } from "../i18n";
 import { LeaveCampaign } from "./Campaigns";
-import { CONSENT_TEXT_VERSION, diary, diaryErrorText, type DiaryProfile, PROFILE_KEY } from "./diary";
+import { diary, diaryErrorText, type DiaryProfile, IMPACT_ASKED_IN, PROFILE_KEY } from "./diary";
 
 /** The question itself, the same words wherever it is asked. Its version is CONSENT_TEXT_VERSION. */
 export function ImpactChoiceText() {
@@ -42,7 +42,7 @@ function useSetImpact() {
 /** Asked once of whoever signed up before the question existed. Either answer is kept, and can be changed under Lembretes. */
 export function ImpactAsk({ profile }: { profile: DiaryProfile }) {
   const { set, busy, error } = useSetImpact();
-  if (!profile.impact_consent || profile.impact_consent.text_version === CONSENT_TEXT_VERSION) return null;
+  if (!profile.impact_consent || IMPACT_ASKED_IN.includes(profile.impact_consent.text_version)) return null;
   return (
     <section className="space-y-3 rounded-md border border-border p-4 text-sm">
       <h2 className="text-base font-semibold">{tr({ en: "A question, once", pt: "Uma pergunta, só uma vez" })}</h2>

@@ -55,6 +55,8 @@ export interface BusinessMonth {
   suppressed: boolean;
   women: number | null;
   median_sales_cents?: number;
+  /** The mean of the same businesses' sales (20261212). */
+  mean_sales_cents?: number;
   median_expenses_cents?: number;
   total_sales_cents?: number;
   positive_share_bps?: number;
@@ -92,8 +94,11 @@ export interface ImpactLive {
     months: BusinessMonth[];
     payment_mix: Record<string, number> | null;
   };
-  segments?: Record<"sector" | "state" | "formalization" | "finance_control", Segment[]>;
+  segments?: Partial<Record<SegmentKey, Segment[]>>;
 }
+
+export type SegmentKey = "sector" | "state" | "formalization" | "finance_control" | "age_range";
+export const SEGMENT_KEYS: SegmentKey[] = ["sector", "state", "age_range", "formalization", "finance_control"];
 
 export type FunnelKey = "authorised" | "enrolled" | "first_day" | "kept_7" | "kept_30" | "kept_60";
 
@@ -159,6 +164,7 @@ export const SEGMENT_TITLE = localized({
   state: { en: "By state", pt: "Por estado" },
   formalization: { en: "By formalisation", pt: "Por formalização" },
   finance_control: { en: "By how she tracked money before", pt: "Por como controlava o dinheiro antes" },
+  age_range: { en: "By age range", pt: "Por faixa etária" },
 });
 
 const KEY_LABEL: Record<string, { en: string; pt: string }> = {
@@ -171,6 +177,13 @@ const KEY_LABEL: Record<string, { en: string; pt: string }> = {
   memory: { en: "In her head", pt: "De cabeça" },
   outros: { en: "Others (small groups)", pt: "Outros (grupos pequenos)" },
   "não informado": { en: "Not said", pt: "Não informado" },
+  "18_24": { en: "18 to 24", pt: "18 a 24 anos" },
+  "25_34": { en: "25 to 34", pt: "25 a 34 anos" },
+  "35_44": { en: "35 to 44", pt: "35 a 44 anos" },
+  "45_54": { en: "45 to 54", pt: "45 a 54 anos" },
+  "55_64": { en: "55 to 64", pt: "55 a 64 anos" },
+  "65_plus": { en: "65 or over", pt: "65 anos ou mais" },
+  prefere_nao_declarar: { en: "Prefer not to say", pt: "Prefere não declarar" },
   pix: { en: "Pix", pt: "Pix" },
   cash: { en: "Cash", pt: "Dinheiro" },
   debit_card: { en: "Debit card", pt: "Cartão de débito" },
@@ -197,4 +210,46 @@ export function monthName(day: string): string {
   const d = new Date(`${day.slice(0, 10)}T12:00:00Z`);
   const text = d.toLocaleDateString(tr({ en: "en-GB", pt: "pt-BR" }), { month: "long", year: "numeric", timeZone: "UTC" });
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+export interface CohortSales {
+  /** The month the figures describe: the latest complete month shown. */
+  month: string;
+  women: number;
+  mean_cents: number;
+  median_cents: number;
+  /** The complete month before it, when it is shown too. */
+  previous?: { month: string; mean_cents: number; median_cents: number };
+  /** The median's change, in basis points, and which way it went (within ±1%: steady). */
+  change_bps?: number;
+  trend?: "up" | "down" | "steady";
+}
+
+/**
+ * The cohort's sales: mean and median of the last complete month shown, and
+ * the trend against the complete month before. A month still running is left
+ * out of the comparison -- half a month against a whole one would read as a
+ * fall -- and suppressed months (under 5 businesses) never count. The trend
+ * follows the median, which one large business cannot move.
+ */
+export function cohortSales(months: BusinessMonth[], to: string): CohortSales | null {
+  const running = to.slice(0, 7);
+  const lastDay = new Date(Date.UTC(Number(to.slice(0, 4)), Number(to.slice(5, 7)), 0)).getUTCDate();
+  const complete = months
+    .filter((m) => !m.suppressed && m.median_sales_cents != null && m.mean_sales_cents != null)
+    .filter((m) => m.month.slice(0, 7) !== running || Number(to.slice(8, 10)) === lastDay)
+    .sort((a, b) => a.month.localeCompare(b.month));
+  const last = complete[complete.length - 1];
+  if (!last) return null;
+  const out: CohortSales = {
+    month: last.month, women: last.women ?? 0, mean_cents: last.mean_sales_cents!, median_cents: last.median_sales_cents!,
+  };
+  const prev = complete[complete.length - 2];
+  const monthBefore = new Date(Date.UTC(Number(last.month.slice(0, 4)), Number(last.month.slice(5, 7)) - 2, 1)).toISOString().slice(0, 7);
+  if (prev && prev.month.slice(0, 7) === monthBefore && prev.median_sales_cents! > 0) {
+    out.previous = { month: prev.month, mean_cents: prev.mean_sales_cents!, median_cents: prev.median_sales_cents! };
+    out.change_bps = Math.round(((last.median_sales_cents! - prev.median_sales_cents!) * 10000) / prev.median_sales_cents!);
+    out.trend = out.change_bps > 100 ? "up" : out.change_bps < -100 ? "down" : "steady";
+  }
+  return out;
 }

@@ -1,10 +1,11 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { ShieldCheck } from "lucide-react";
+import { Minus, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
 import { brl } from "../diary/diary";
 import SponsorLogo from "../diary/SponsorLogo";
 import { tr } from "../i18n";
 import {
-  type BusinessMonth, type Campaign, ddmm, FUNNEL, FUNNEL_OPEN, type ImpactLive, keyLabel, monthName, pct, ratio, SEGMENT_TITLE, type Segment,
+  type BusinessMonth, type Campaign, cohortSales, ddmm, FUNNEL, FUNNEL_OPEN, type ImpactLive, keyLabel, monthName, pct, ratio,
+  SEGMENT_KEYS, SEGMENT_TITLE, type Segment,
 } from "./impacto";
 
 const WeeklyChart = lazy(() => import("./WeeklyChart"));
@@ -86,7 +87,7 @@ function MonthRow({ m }: { m: BusinessMonth }) {
     return (
       <tr className="border-t border-border">
         <td className="py-2">{monthName(m.month)}</td>
-        <td colSpan={5} className="py-2 text-muted-foreground">
+        <td colSpan={6} className="py-2 text-muted-foreground">
           {tr({ en: "Fewer than 5 well-recorded businesses: hidden.", pt: "Menos de 5 negócios bem registrados: oculto." })}
         </td>
       </tr>
@@ -96,6 +97,7 @@ function MonthRow({ m }: { m: BusinessMonth }) {
     <tr className="border-t border-border">
       <td className="py-2">{monthName(m.month)}</td>
       <td className="py-2 text-right tabular-nums">{m.women}</td>
+      <td className="py-2 text-right tabular-nums">{m.mean_sales_cents == null ? "—" : brl(m.mean_sales_cents)}</td>
       <td className="py-2 text-right tabular-nums">{brl(m.median_sales_cents ?? 0)}</td>
       <td className="py-2 text-right tabular-nums">{brl(m.median_expenses_cents ?? 0)}</td>
       <td className="py-2 text-right tabular-nums">{pct(m.positive_share_bps)}</td>
@@ -103,6 +105,52 @@ function MonthRow({ m }: { m: BusinessMonth }) {
         {m.median_growth_bps == null ? "—" : `${m.median_growth_bps > 0 ? "+" : ""}${pct(m.median_growth_bps)}`}
       </td>
     </tr>
+  );
+}
+
+/**
+ * The cohort's sales in the latest complete month: mean, median and which way
+ * the median went against the month before. The arrow carries a word and a
+ * number too, so the trend never rests on the icon or its colour.
+ */
+function CohortSalesTiles({ months, to }: { months: BusinessMonth[]; to: string }) {
+  const c = cohortSales(months, to);
+  if (!c) return null;
+  const Icon = c.trend === "up" ? TrendingUp : c.trend === "down" ? TrendingDown : Minus;
+  const word = c.trend === "up" ? tr({ en: "Up", pt: "Subindo" }) : c.trend === "down" ? tr({ en: "Down", pt: "Caindo" }) : tr({ en: "Steady", pt: "Estável" });
+  return (
+    <div className="space-y-2">
+      <h3 className="text-sm font-semibold">
+        {tr({ en: "The cohort's sales in ", pt: "Vendas do grupo em " })}{monthName(c.month).toLowerCase()}
+      </h3>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Tile label={tr({ en: "Mean per business", pt: "Média por negócio" })} value={brl(c.mean_cents)} />
+        <Tile label={tr({ en: "Median per business", pt: "Mediana por negócio" })} value={brl(c.median_cents)}
+          hint={tr({ en: `${c.women} businesses`, pt: `${c.women} negócios` })} />
+        {c.trend && c.previous ? (
+          <div className="rounded-md border border-border p-3">
+            <p className="text-sm text-muted-foreground">{tr({ en: "Trend (median)", pt: "Tendência (mediana)" })}</p>
+            <p className="mt-1 flex items-center gap-2 text-2xl font-semibold">
+              <Icon size={22} aria-hidden="true" className={c.trend === "up" ? "text-positive" : c.trend === "down" ? "text-alert" : "text-muted-foreground"} />
+              {word}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {`${c.change_bps! > 0 ? "+" : ""}${pct(c.change_bps)} `}
+              {tr({ en: "vs ", pt: "vs " })}{monthName(c.previous.month).toLowerCase()}
+            </p>
+          </div>
+        ) : (
+          <Tile label={tr({ en: "Trend (median)", pt: "Tendência (mediana)" })} value="—"
+            hint={tr({ en: "Needs the month before, complete and with 5+ businesses", pt: "Precisa do mês anterior completo, com 5+ negócios" })} />
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {tr({
+          en: "Only complete months: the month still running is not compared. The mean can be pulled by one large business; the median cannot.",
+          pt: "Só meses completos: o mês em andamento não entra na comparação. A média pode ser puxada por um negócio grande; a mediana, não.",
+        })}
+      </p>
+    </div>
   );
 }
 
@@ -211,6 +259,7 @@ export default function Dashboard({ data, face }: { data: ImpactLive; face?: Cam
                 pt: `${data.business.consenting} de ${data.business.of} escolheram incluir o negócio nos números. Só meses com pelo menos ${data.business.well_recorded_days} dias registrados; medianas, nunca um negócio sozinho.`,
               })}
             >
+              <CohortSalesTiles months={data.business.months} to={data.to} />
               {data.business.months.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   {tr({ en: "No well-recorded month yet.", pt: "Ainda nenhum mês bem registrado." })}
@@ -222,6 +271,7 @@ export default function Dashboard({ data, face }: { data: ImpactLive; face?: Cam
                       <tr className="text-left text-muted-foreground">
                         <th className="py-1 font-normal">{tr({ en: "Month", pt: "Mês" })}</th>
                         <th className="py-1 text-right font-normal">{tr({ en: "Businesses", pt: "Negócios" })}</th>
+                        <th className="py-1 text-right font-normal">{tr({ en: "Mean sales", pt: "Vendas (média)" })}</th>
                         <th className="py-1 text-right font-normal">{tr({ en: "Median sales", pt: "Vendas (mediana)" })}</th>
                         <th className="py-1 text-right font-normal">{tr({ en: "Median expenses", pt: "Gastos (mediana)" })}</th>
                         <th className="py-1 text-right font-normal">{tr({ en: "Sold more than spent", pt: "Venderam mais que gastaram" })}</th>
@@ -251,8 +301,9 @@ export default function Dashboard({ data, face }: { data: ImpactLive; face?: Cam
               {data.channels && (
                 <>
                   <Tile label={tr({ en: "By form", pt: "Pelo formulário" })} value={data.channels.form} />
-                  <Tile label={tr({ en: "By voice", pt: "Por áudio" })} value={data.channels.voice} />
-                  <Tile label={tr({ en: "In their words", pt: "Escrevendo" })} value={data.channels.text} />
+                  {/* Voice and free text left the diary (20261210): shown only for the days recorded that way before. */}
+                  {data.channels.voice > 0 && <Tile label={tr({ en: "By voice", pt: "Por áudio" })} value={data.channels.voice} />}
+                  {data.channels.text > 0 && <Tile label={tr({ en: "In their words", pt: "Escrevendo" })} value={data.channels.text} />}
                   <Tile label={tr({ en: "Median time to record", pt: "Tempo mediano para registrar" })}
                     value={data.channels.median_seconds == null ? "—" : `${data.channels.median_seconds}s`} />
                 </>
@@ -273,8 +324,8 @@ export default function Dashboard({ data, face }: { data: ImpactLive; face?: Cam
             <Card title={tr({ en: "Who takes part", pt: "Quem participa" })}
               note={tr({ en: "Groups under 5 are folded into \"Others\", or left out.", pt: "Grupos com menos de 5 entram em \"Outros\", ou ficam de fora." })}>
               <div className="grid gap-5 md:grid-cols-2">
-                {(["sector", "state", "formalization", "finance_control"] as const).map((k) => (
-                  <SegmentTable key={k} title={SEGMENT_TITLE[k]} rows={data.segments![k]} />
+                {SEGMENT_KEYS.filter((k) => data.segments![k]).map((k) => (
+                  <SegmentTable key={k} title={SEGMENT_TITLE[k]} rows={data.segments![k]!} />
                 ))}
               </div>
             </Card>
