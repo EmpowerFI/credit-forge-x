@@ -121,11 +121,11 @@ export const FUNNEL_OPEN = localized({
 });
 
 /**
- * Why a sponsor's rewards cannot be published yet, or null. The database
+ * Why a sponsor's rewards cannot be published yet, or null. None at all is
+ * fine: a campaign may offer no reward (20261209). The database
  * checks the same; this only says it before the round trip.
  */
 export function rewardsProblem(milestones: SponsorMilestone[]): string | null {
-  if (!milestones.length) return tr({ en: "Add at least one reward.", pt: "Inclua pelo menos um prêmio." });
   const days = new Set<number>();
   for (const [i, m] of milestones.entries()) {
     const n = tr({ en: `Reward ${i + 1}: `, pt: `Prêmio ${i + 1}: ` });

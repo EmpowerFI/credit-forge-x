@@ -10,8 +10,8 @@ describe("a sponsor's rewards, before they go", () => {
   it("accepts a gift with its code and an https link", () => {
     expect(rewardsProblem([ok, { ...ok, code: "m_2", threshold_days: 14, redeem_url: "https://rede.org/cupom" }])).toBeNull();
   });
-  it("needs at least one reward", () => {
-    expect(rewardsProblem([])).not.toBeNull();
+  it("accepts no reward at all", () => {
+    expect(rewardsProblem([])).toBeNull();
   });
   it("needs to say how to redeem it", () => {
     expect(rewardsProblem([{ ...ok, how_to_redeem: "  " }])).toMatch(/resgatar|redeem/);
