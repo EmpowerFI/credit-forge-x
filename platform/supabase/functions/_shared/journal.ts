@@ -370,6 +370,10 @@ export interface Milestone {
   kind: "perk" | "partner_benefit";
   title: string;
   how_to_redeem: string | null;
+  /** A sponsor's reward may link to where it is redeemed. */
+  redeem_url?: string | null;
+  /** Set in a sponsor's campaign: whose gift it is. */
+  sponsor_name?: string | null;
   partner_name: string | null;
   threshold_days: number;
   status?: "granted" | "awaiting_consent";
@@ -432,7 +436,8 @@ export function confirmationText(
 /** The message for a milestone she has just reached. */
 export function earnedText(m: Milestone): string {
   if (m.kind === "perk") {
-    return [`🎁 Você completou ${span(m.threshold_days)} registrando o seu negócio!`, `Ganhou: *${m.title}*.`, m.how_to_redeem]
+    const gift = m.sponsor_name ? `Ganhou: *${m.title}*, de ${m.sponsor_name}.` : `Ganhou: *${m.title}*.`;
+    return [`🎁 Você completou ${span(m.threshold_days)} registrando o seu negócio!`, gift, m.how_to_redeem, m.redeem_url]
       .filter(Boolean).join("\n");
   }
   // A partner's benefit is the partner's: whose offer, and who decides, is

@@ -24,6 +24,28 @@ export interface Campaign {
   /** From impact_campaigns: the sponsor's logo (sponsor-logos bucket) and link. */
   logo_path?: string | null;
   link_url?: string | null;
+  /** invited: only the e-mails EmpowerFI names; open: anyone in the diary joins with a tap. */
+  enrolment?: "invited" | "open";
+  offers_rewards?: boolean;
+  /** The caller is one of the sponsor's people, who set its rewards (or, for EmpowerFI's, its dashboard owners). */
+  can_edit_rewards?: boolean;
+}
+
+/** One milestone of a sponsor's rewards: a gift handed over by code or link. */
+export interface SponsorMilestone {
+  code: string;
+  threshold_days: number;
+  title: string;
+  how_to_redeem: string | null;
+  redeem_url: string | null;
+}
+
+export interface CampaignRewards {
+  offers_rewards: boolean;
+  can_edit: boolean;
+  programme: { version: number; published_at: string; note: string | null; milestones: SponsorMilestone[] | null } | null;
+  /** How many women earned each milestone, by code. */
+  earned: Record<string, number>;
 }
 
 export interface Segment { key: string; women: number; started: number }
@@ -79,7 +101,49 @@ export const impacto = {
   campaigns: () => call<Campaign[]>("impact_campaigns"),
   live: (id: string, from?: string | null, to?: string | null) =>
     call<ImpactLive>("impact_live", { p_program_id: id, p_from: from ?? null, p_to: to ?? null }),
+  rewards: (id: string) => call<CampaignRewards>("impact_rewards", { p_program_id: id }),
+  offerRewards: (id: string, on: boolean) => call<boolean>("impact_rewards_offer", { p_program_id: id, p_on: on }),
+  publishRewards: (id: string, milestones: SponsorMilestone[]) =>
+    call<{ version: number }>("reward_programme_publish", {
+      p_program_id: id,
+      p_note: null,
+      p_milestones: milestones.map((m) => ({
+        code: m.code, threshold_days: m.threshold_days, kind: "perk", title: m.title.trim(),
+        how_to_redeem: m.how_to_redeem?.trim() ?? "", ...(m.redeem_url?.trim() ? { redeem_url: m.redeem_url.trim() } : {}),
+      })),
+    }),
 };
+
+/** The open campaign's first step: whoever is in it, named by e-mail or joined with a tap. */
+export const FUNNEL_OPEN = localized({
+  label: { en: "In the campaign", pt: "Na campanha" },
+  hint: { en: "Named by e-mail or joined in the diary", pt: "Incluídas por e-mail ou que aderiram no diário" },
+});
+
+/**
+ * Why a sponsor's rewards cannot be published yet, or null. The database
+ * checks the same; this only says it before the round trip.
+ */
+export function rewardsProblem(milestones: SponsorMilestone[]): string | null {
+  if (!milestones.length) return tr({ en: "Add at least one reward.", pt: "Inclua pelo menos um prêmio." });
+  const days = new Set<number>();
+  for (const [i, m] of milestones.entries()) {
+    const n = tr({ en: `Reward ${i + 1}: `, pt: `Prêmio ${i + 1}: ` });
+    if (!Number.isInteger(m.threshold_days) || m.threshold_days < 1 || m.threshold_days > 3650)
+      return n + tr({ en: "days between 1 and 3650.", pt: "dias entre 1 e 3650." });
+    if (days.has(m.threshold_days)) return n + tr({ en: "another reward falls on the same day.", pt: "outro prêmio cai no mesmo dia." });
+    days.add(m.threshold_days);
+    if (!m.title.trim() || m.title.trim().length > 80) return n + tr({ en: "a name of up to 80 characters.", pt: "um nome de até 80 caracteres." });
+    if (!m.how_to_redeem?.trim() || m.how_to_redeem.trim().length > 300)
+      return n + tr({ en: "say how to redeem it (a code or an instruction), up to 300 characters.", pt: "diga como resgatar (um código ou uma instrução), em até 300 caracteres." });
+    if (m.redeem_url?.trim() && !/^https:\/\/\S+$/.test(m.redeem_url.trim()))
+      return n + tr({ en: "the link must start with https://", pt: "o link precisa começar com https://" });
+  }
+  return null;
+}
+
+/** A milestone's stable code: kept across versions, so whoever earned it does not earn it again. */
+export const newMilestoneCode = () => `m_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
 
 export const FUNNEL: Record<FunnelKey, { label: string; hint: string }> = localized({
   authorised: { label: { en: "Authorised", pt: "Autorizadas" }, hint: { en: "E-mails the campaign names", pt: "E-mails que a campanha inclui" } },

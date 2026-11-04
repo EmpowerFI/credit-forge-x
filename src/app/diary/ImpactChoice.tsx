@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { tr } from "../i18n";
+import { LeaveCampaign } from "./Campaigns";
 import { CONSENT_TEXT_VERSION, diary, diaryErrorText, type DiaryProfile, PROFILE_KEY } from "./diary";
 
 /** The question itself, the same words wherever it is asked. Its version is CONSENT_TEXT_VERSION. */
@@ -85,6 +86,7 @@ export function YourData({ profile }: { profile: DiaryProfile }) {
             })}
         </p>
       )}
+      <LeaveCampaign profile={profile} />
       <div className="flex items-start justify-between gap-4">
         <Label htmlFor="impact-share" className="text-sm font-normal leading-relaxed"><ImpactChoiceText /></Label>
         <Switch id="impact-share" checked={share} disabled={busy} onCheckedChange={(v) => void set(v)} className="mt-1 shrink-0" />

@@ -195,6 +195,12 @@ Deno.test("a perk is announced with how to get it", () => {
   assertEquals(t.includes("A equipe vai falar com você."), true);
 });
 
+Deno.test("a sponsor's gift names the sponsor and carries its code and link", () => {
+  const t = earnedText({ ...perk, title: "Kit Rede", how_to_redeem: "Cupom REDE10", redeem_url: "https://rede.org/cupom", sponsor_name: "Instituto Rede" });
+  assertEquals(t.includes("Ganhou: *Kit Rede*, de Instituto Rede."), true);
+  assertEquals(t.includes("Cupom REDE10\nhttps://rede.org/cupom"), true);
+});
+
 Deno.test("a partner's benefit says whose it is, who decides, and asks before sharing", () => {
   const waiting = earnedText(card);
   assertEquals(waiting.includes("uma oferta de Banco Exemplo"), true);

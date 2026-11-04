@@ -4,7 +4,7 @@ import { brl } from "../diary/diary";
 import SponsorLogo from "../diary/SponsorLogo";
 import { tr } from "../i18n";
 import {
-  type BusinessMonth, type Campaign, ddmm, FUNNEL, type ImpactLive, keyLabel, monthName, pct, ratio, SEGMENT_TITLE, type Segment,
+  type BusinessMonth, type Campaign, ddmm, FUNNEL, FUNNEL_OPEN, type ImpactLive, keyLabel, monthName, pct, ratio, SEGMENT_TITLE, type Segment,
 } from "./impacto";
 
 const WeeklyChart = lazy(() => import("./WeeklyChart"));
@@ -147,7 +147,7 @@ export default function Dashboard({ data, face }: { data: ImpactLive; face?: Cam
         <>
           <Card title={tr({ en: "Participation", pt: "Participação" })}>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {p.authorised != null && <Tile label={tr({ en: "Authorised", pt: "Autorizadas" })} value={p.authorised} />}
+              {p.authorised != null && <Tile label={face?.enrolment === "open" ? FUNNEL_OPEN.label : tr({ en: "Authorised", pt: "Autorizadas" })} value={p.authorised} />}
               <Tile label={tr({ en: "Signed up", pt: "Cadastradas" })} value={p.enrolled} />
               <Tile label={tr({ en: "Recorded in the period", pt: "Registraram no período" })} value={p.started} hint={ratio(p.started, p.enrolled)} />
               <Tile label={tr({ en: "Active, last 7 days", pt: "Ativas nos últimos 7 dias" })} value={p.active_7d} hint={ratio(p.active_7d, p.enrolled)} />
@@ -167,7 +167,8 @@ export default function Dashboard({ data, face }: { data: ImpactLive; face?: Cam
               <Bars
                 max={Math.max(...data.funnel.map((f) => f.n ?? 0), 1)}
                 rows={data.funnel.filter((f) => f.n != null).map((f) => ({
-                  key: f.key, label: FUNNEL[f.key].label, hint: FUNNEL[f.key].hint, value: f.n ?? 0, text: String(f.n),
+                  key: f.key, value: f.n ?? 0, text: String(f.n),
+                  ...(f.key === "authorised" && face?.enrolment === "open" ? FUNNEL_OPEN : FUNNEL[f.key]),
                 }))}
               />
             </Card>

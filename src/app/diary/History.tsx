@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { tr } from "../i18n";
+import { MyRewards } from "./Campaigns";
 import { addDays, brl, categoryLabel, dayName, diary, diaryErrorText, type HistoryEntry, methodLabel, PROFILE_KEY } from "./diary";
 
 /** The last 31 days she kept, newest first. Today's and yesterday's lines can be taken back. */
@@ -16,6 +17,7 @@ export default function History() {
   const today = queryClient.getQueriesData<{ today: string }>({ queryKey: PROFILE_KEY })[0]?.[1]?.today
     ?? new Date().toISOString().slice(0, 10);
   const history = useQuery({ queryKey: ["diary", "history", 31], queryFn: () => diary.history(31) });
+  const me = useQuery({ queryKey: [...PROFILE_KEY, "reminders"], queryFn: diary.profile });
   const [toVoid, setToVoid] = useState<HistoryEntry | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export default function History() {
           pt: `${kept.length} dos últimos 31 dias registrados.`,
         })}
       </p>
+      {me.data && <MyRewards profile={me.data} />}
 
       {history.isLoading && <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-20 w-full" />)}</div>}
       {history.error && (

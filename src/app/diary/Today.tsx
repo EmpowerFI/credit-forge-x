@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { diaryDb } from "./db";
+import { OpenCampaigns, RewardCard } from "./Campaigns";
 import { ImpactAsk } from "./ImpactChoice";
 import { InstallInvite } from "./Install";
 import { tr } from "../i18n";
@@ -185,6 +186,8 @@ export default function Today() {
           </div>
         </div>
       )}
+
+      {mode === "ask" && me.data && <OpenCampaigns profile={me.data} />}
 
       {mode === "lines" && (
         <LinesForm lines={lines} setLines={setLines} day={day} busy={busy} onSubmit={() => void recordLines()} onBack={restart} />
@@ -497,12 +500,7 @@ function Done({ result, today, onMore }: { result: AfterRecord; today: string; o
         )}
       </section>
 
-      {p?.earned.map((m) => (
-        <section key={m.code} className="rounded-md border border-primary/40 bg-primary/5 p-4">
-          <p className="font-semibold">🎁 {m.title}</p>
-          {m.how_to_redeem && <p className="text-sm">{m.how_to_redeem}</p>}
-        </section>
-      ))}
+      {p?.earned.map((m) => <RewardCard key={m.code} reward={m} />)}
 
       {g && <GoalNews goal={g} />}
 
