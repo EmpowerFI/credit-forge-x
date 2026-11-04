@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BellOff, BellRing, Loader2 } from "lucide-react";
+import { BellOff, BellRing, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { tr } from "../i18n";
 import { diaryErrorText } from "./diary";
@@ -35,8 +35,15 @@ export default function Notifications({ remindersOn }: { remindersOn: boolean })
   const spinner = busy && <Loader2 className="animate-spin" aria-hidden="true" />;
 
   return (
-    <section className="space-y-3 rounded-md border border-border p-4 text-sm" aria-live="polite">
-      <h2 className="text-base font-semibold">{tr({ en: "Notifications on this phone", pt: "Notificações neste celular" })}</h2>
+    <section className="space-y-3 rounded-2xl border border-border bg-card p-5" aria-live="polite">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-heading text-xl font-semibold">{tr({ en: "Notifications", pt: "Notificações" })}</h2>
+        {status === "on" && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-sm text-emerald-900">
+            <Check size={16} aria-hidden="true" />{tr({ en: "On", pt: "Ativadas" })}
+          </span>
+        )}
+      </div>
 
       {status === "checking" && <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Checking", pt: "Conferindo" })} />}
 
@@ -68,7 +75,7 @@ export default function Notifications({ remindersOn }: { remindersOn: boolean })
           <p className="flex items-center gap-2 font-medium"><BellOff size={18} aria-hidden="true" />{tr({ en: "Notifications are blocked on this phone.", pt: "As notificações estão bloqueadas neste celular." })}</p>
           <p className="text-muted-foreground">
             {device === "ios"
-              ? tr({ en: "To allow them: Settings → Notifications → Diário → Allow Notifications.", pt: "Para liberar: Ajustes → Notificações → Diário → Permitir Notificações." })
+              ? tr({ en: "To allow them: Settings → Notifications → EmpowerFI Diário → Allow Notifications.", pt: "Para liberar: Ajustes → Notificações → EmpowerFI Diário → Permitir Notificações." })
               : tr({
                 en: "To allow them: open the site settings (the icon beside the address, or the app info of the installed diary) → Notifications → Allow. Then reload this page.",
                 pt: "Para liberar: abra as configurações do site (o ícone ao lado do endereço, ou as informações do app instalado) → Notificações → Permitir. Depois recarregue esta página.",
@@ -85,7 +92,7 @@ export default function Notifications({ remindersOn }: { remindersOn: boolean })
               pt: "Receba o lembrete diário aqui, mesmo com o diário fechado. Só nos dias em que você ainda não registrou, e nunca com os seus valores.",
             })}
           </p>
-          <Button className="h-11" disabled={busy || !ready} onClick={() => void run(async () => {
+          <Button className="h-12 w-full rounded-xl text-base" disabled={busy || !ready} onClick={() => void run(async () => {
             await enable();
             return null;
           })}>
@@ -103,30 +110,27 @@ export default function Notifications({ remindersOn }: { remindersOn: boolean })
 
       {status === "on" && (
         <div className="space-y-3">
-          <p className="flex items-center gap-2 font-medium">
-            <BellRing size={18} className="text-primary" aria-hidden="true" />
-            {tr({ en: "On for this phone.", pt: "Ativadas neste celular." })}
-          </p>
+          <p className="text-muted-foreground">{tr({ en: "On this phone.", pt: "Neste celular." })}</p>
           {!remindersOn && (
             <p className="text-muted-foreground">
               {tr({ en: "The daily reminder is off above, so nothing will come until you turn it on.", pt: "O lembrete diário está desligado acima, então nada vai chegar até você ligar." })}
             </p>
           )}
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" className="h-11" disabled={busy} onClick={() => void run(async () => {
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="outline" className="h-12 rounded-xl border-2 border-primary text-base" disabled={busy} onClick={() => void run(async () => {
               const r = await test();
               return r.accepted > 0
                 ? tr({ en: "Sent. It should arrive in a few seconds.", pt: "Enviada. Deve chegar em alguns segundos." })
                 : tr({ en: "It could not be sent to this phone. Turn notifications off and on again.", pt: "Não deu para enviar para este celular. Desative e ative de novo." });
             })}>
               {spinner}
-              {tr({ en: "Send a test", pt: "Enviar um teste" })}
+              {tr({ en: "Send a test", pt: "Enviar teste" })}
             </Button>
-            <Button variant="ghost" className="h-11" disabled={busy} onClick={() => void run(async () => {
+            <Button variant="outline" className="h-12 rounded-xl text-base text-muted-foreground" disabled={busy} onClick={() => void run(async () => {
               await disable();
               return null;
             })}>
-              {tr({ en: "Turn off on this phone", pt: "Desativar neste celular" })}
+              {tr({ en: "Turn off", pt: "Desativar" })}
             </Button>
           </div>
         </div>

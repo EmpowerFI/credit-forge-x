@@ -3,10 +3,10 @@ import { Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } fr
 import { useQuery } from "@tanstack/react-query";
 import { Bell, BookOpen, Loader2, PenLine } from "lucide-react";
 import { tr } from "../i18n";
-import LanguageSwitch from "../i18n/LanguageSwitch";
 import { Button } from "@/components/ui/button";
 import { diaryClosed, useDiarySession } from "./db";
 import { diary, diaryErrorText, type DiaryProfile, PROFILE_KEY } from "./diary";
+import { Avatar, DiaryLogo } from "./Brand";
 import SponsorLogo from "./SponsorLogo";
 import { resyncPush } from "./push";
 import { useDiaryPwa } from "./pwa";
@@ -33,7 +33,7 @@ export default function DiaryApp() {
   if (diaryClosed) {
     return (
       <main className="mx-auto max-w-md space-y-2 px-4 py-16 text-center">
-        <p className="font-heading text-2xl font-semibold">EmpowerFI</p>
+        <DiaryLogo size="lg" />
         <p className="text-muted-foreground">
           {tr({ en: "The diary is not open here yet.", pt: "O diário ainda não está aberto aqui." })}
         </p>
@@ -41,7 +41,7 @@ export default function DiaryApp() {
     );
   }
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div className="diary min-h-dvh bg-background text-foreground">
       <Suspense fallback={waiting}>
         <Routes>
           <Route path="entrar" element={<SignIn />} />
@@ -103,26 +103,32 @@ function Layout({ name, campaign }: { name: string; campaign: DiaryProfile["camp
       to={to}
       end={end}
       className={({ isActive }) =>
-        `flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-          isActive ? "font-semibold text-primary" : "text-muted-foreground"
+        `group flex min-h-16 flex-1 flex-col items-center justify-center gap-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
+          isActive ? "font-semibold text-foreground" : "text-muted-foreground"
         }`}
     >
-      <Icon size={20} aria-hidden="true" />
-      {label}
+      {({ isActive }) => (
+        <>
+          <span className={`flex h-8 w-14 items-center justify-center rounded-full transition-colors ${isActive ? "bg-secondary" : ""}`}>
+            <Icon size={20} aria-hidden="true" />
+          </span>
+          {label}
+        </>
+      )}
     </NavLink>
   );
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
-          <span className="font-heading text-lg font-semibold">EmpowerFI</span>
+        <div className="mx-auto flex h-16 max-w-md items-center justify-between gap-3 px-4">
+          <DiaryLogo />
           <div className="flex min-w-0 items-center gap-3">
-            {/* With a sponsor's logo there is no room for her name on a phone. */}
-            <span className={`max-w-[10rem] truncate text-sm text-muted-foreground ${campaign?.logo_path && !campaign.is_default ? "hidden sm:inline" : ""}`}>{name}</span>
-            <LanguageSwitch />
             {campaign && !campaign.is_default && campaign.logo_path && (
               <SponsorLogo sponsor={campaign.sponsor_name} logoPath={campaign.logo_path} linkUrl={campaign.link_url} />
             )}
+            {/* With a sponsor's logo there is no room for her name on a phone. */}
+            <span className={`max-w-[8rem] truncate text-base ${campaign?.logo_path && !campaign.is_default ? "hidden sm:inline" : ""}`}>{name}</span>
+            <Avatar name={name} />
           </div>
         </div>
       </header>
@@ -130,7 +136,7 @@ function Layout({ name, campaign }: { name: string; campaign: DiaryProfile["camp
         <Outlet />
       </main>
       <nav
-        aria-label={tr({ en: "Diary", pt: "Diário" })}
+        aria-label="EmpowerFI Diário"
         className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
       >
         <div className="mx-auto flex max-w-md">

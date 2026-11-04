@@ -37,15 +37,15 @@ export function OpenCampaigns({ profile }: { profile: DiaryProfile }) {
 
   return (
     <section className="space-y-3" aria-labelledby="open-campaigns">
-      <h2 id="open-campaigns" className="text-base font-semibold">
+      <h2 id="open-campaigns" className="font-heading text-xl font-semibold">
         {tr({ en: "Campaigns you can join", pt: "Campanhas abertas para você" })}
       </h2>
       {list.data.map((c) => (
-        <article key={c.id} className="space-y-3 rounded-md border border-border p-4 text-sm">
+        <article key={c.id} className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-muted-foreground">{c.sponsor_name}</p>
-              <h3 className="text-base font-semibold">{c.name}</h3>
+              <h3 className="font-heading text-xl font-semibold">{c.name}</h3>
             </div>
             {c.logo_path && <SponsorLogo sponsor={c.sponsor_name} logoPath={c.logo_path} linkUrl={c.link_url} />}
           </div>
@@ -150,8 +150,8 @@ export function LeaveCampaign({ profile }: { profile: DiaryProfile }) {
 export function RewardCard({ reward }: { reward: Reward }) {
   const link = reward.redeem_url && /^https:\/\/\S+$/.test(reward.redeem_url) ? reward.redeem_url : null;
   return (
-    <section className="space-y-2 rounded-md border border-primary/40 bg-primary/5 p-4 text-sm">
-      <p className="text-base font-semibold">
+    <section className="space-y-2 rounded-2xl border border-primary/40 bg-primary/5 p-5 text-sm">
+      <p className="font-heading text-xl font-semibold">
         🎁 {reward.title}
         {reward.sponsor_name && (
           <span className="font-normal text-muted-foreground">{tr({ en: `, from ${reward.sponsor_name}`, pt: `, de ${reward.sponsor_name}` })}</span>
@@ -182,7 +182,7 @@ export function MyRewards({ profile }: { profile: DiaryProfile }) {
   if (!rewards.length) return null;
   return (
     <section className="space-y-3" aria-labelledby="my-rewards">
-      <h2 id="my-rewards" className="text-base font-semibold">{tr({ en: "Your rewards", pt: "Seus prêmios" })}</h2>
+      <h2 id="my-rewards" className="font-heading text-xl font-semibold">{tr({ en: "Your rewards", pt: "Seus prêmios" })}</h2>
       {rewards.map((r, i) => <RewardCard key={`${r.title}-${r.granted_at ?? i}`} reward={r} />)}
     </section>
   );

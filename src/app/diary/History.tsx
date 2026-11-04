@@ -43,7 +43,7 @@ export default function History() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">{tr({ en: "History", pt: "Histórico" })}</h1>
+      <h1 className="font-heading text-[2.25rem] font-semibold leading-tight">{tr({ en: "History", pt: "Histórico" })}</h1>
       <p className="text-sm text-muted-foreground">
         {tr({
           en: `${kept.length} of the last 31 days recorded.`,
@@ -70,7 +70,7 @@ export default function History() {
         {kept.map((d) => {
           const correctable = d.day === today || d.day === addDays(today, -1);
           return (
-            <li key={d.day} className="rounded-md border border-border p-3">
+            <li key={d.day} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-baseline justify-between gap-2">
                 <h2 className="font-semibold capitalize">{dayName(d.day, today)}</h2>
                 {!d.no_activity && (

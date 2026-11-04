@@ -104,10 +104,14 @@ export function useDiaryPwa(enabled: boolean) {
     const link = (rel: string) => () => Object.assign(document.createElement("link"), { rel });
     const meta = (name: string) => () => Object.assign(document.createElement("meta"), { name });
 
+    const title = document.title;
+    document.title = "EmpowerFI Diário";
+    undo.push(() => { document.title = title; });
+
     set('link[rel="manifest"]', link("manifest"), "href", "/app/diario.webmanifest");
     set('link[rel="apple-touch-icon"]', link("apple-touch-icon"), "href", "/app/diario-icons/apple-touch-icon.png");
     set('meta[name="theme-color"]', meta("theme-color"), "content", "#f6f4ef");
-    set('meta[name="apple-mobile-web-app-title"]', meta("apple-mobile-web-app-title"), "content", "Diário");
+    set('meta[name="apple-mobile-web-app-title"]', meta("apple-mobile-web-app-title"), "content", "EmpowerFI Diário");
     set('meta[name="apple-mobile-web-app-capable"]', meta("apple-mobile-web-app-capable"), "content", "yes");
     set('meta[name="mobile-web-app-capable"]', meta("mobile-web-app-capable"), "content", "yes");
 

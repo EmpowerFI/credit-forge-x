@@ -28,15 +28,17 @@ async function call<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
 export const PROFILE_KEY = ["diary", "profile"] as const;
 
 /** The consent wording's version, recorded with her enrolment. Change it whenever CONSENT changes. */
-export const CONSENT_TEXT_VERSION = "web-2026-12b";
+export const CONSENT_TEXT_VERSION = "web-2026-12c";
 
 /**
  * The wordings that already asked whether to count her business in the
  * impact figures. Whoever enrolled under one of these has answered it, so the
  * one-time question is not asked again when the wording moves on for another
- * reason. "web-2026-12b" only drops the voice paragraph (voice left the diary).
+ * reason. "web-2026-12b" only drops the voice paragraph (voice left the diary);
+ * "web-2026-12c" sets the same points as titled items, and says she deletes
+ * her account herself, under Reminders.
  */
-export const IMPACT_ASKED_IN = ["web-2026-12", "web-2026-12b"];
+export const IMPACT_ASKED_IN = ["web-2026-12", "web-2026-12b", "web-2026-12c"];
 
 // ------------------------------------------------------------------ shapes
 
@@ -379,4 +381,11 @@ export const PROGRESS_EMOJIS = ["🌱", "🌸", "🌻", "⭐", "🔥", "💪", "
 export function mondayOf(day: string): string {
   const weekday = new Date(`${day}T12:00:00Z`).getUTCDay(); // 0 = Sunday
   return addDays(day, -((weekday + 6) % 7));
+}
+
+/** "qua, 4/11": the day as the day switch names it. */
+export function shortDay(day: string): string {
+  const d = new Date(`${day}T12:00:00Z`);
+  const weekday = d.toLocaleDateString(tr({ en: "en-GB", pt: "pt-BR" }), { weekday: "short", timeZone: "UTC" }).replace(".", "");
+  return `${weekday}, ${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
 }

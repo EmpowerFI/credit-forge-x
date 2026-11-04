@@ -38,9 +38,9 @@ export function WeekProgress({ emoji, today, days }: { emoji: string; today: str
   };
 
   return (
-    <section className="space-y-3 rounded-md border border-border p-4" aria-labelledby="week-title">
+    <section className="space-y-3 rounded-2xl border border-border bg-card p-5" aria-labelledby="week-title">
       <div className="flex items-center justify-between gap-2">
-        <h2 id="week-title" className="text-base font-semibold">{tr({ en: "Your week", pt: "Sua semana" })}</h2>
+        <h2 id="week-title" className="font-heading text-xl font-semibold">{tr({ en: "Your week", pt: "Sua semana" })}</h2>
         <Button variant="ghost" size="sm" className="h-10" aria-expanded={picking} onClick={() => setPicking(!picking)}>
           {tr({ en: `Change ${emoji}`, pt: `Trocar ${emoji}` })}
         </Button>
