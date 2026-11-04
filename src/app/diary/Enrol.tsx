@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { localized, tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
-import { diary, diaryErrorText, type EnrolForm, type FromApp } from "./diary";
+import { AGE_RANGES, type AgeRange, diary, diaryErrorText, type EnrolForm, type FromApp } from "./diary";
 import { ImpactChoiceText } from "./ImpactChoice";
 
 const UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
@@ -78,6 +78,7 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
   const [sector, setSector] = useState(fromApp?.sector ?? "");
   const categories = useQuery({ queryKey: ["diary", "categories"], queryFn: diary.categories, staleTime: 60 * 60_000 });
   const listed = categories.data ?? [];
+  const [age, setAge] = useState<string>(fromApp?.age_range ?? "");
   const [since, setSince] = useState<string | null>(null);
   const [formalization, setFormalization] = useState<string | null>(null);
   const [finance, setFinance] = useState<string | null>(null);
@@ -97,6 +98,7 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
         pt: "Este diário é para mulheres empreendedoras com 18 anos ou mais.",
       }));
     }
+    if (!age) return setError(tr({ en: "Choose your age range.", pt: "Escolha a sua faixa etária." }));
     if (!consented) return setError(tr({ en: "Your consent is needed to continue.", pt: "Precisamos do seu consentimento para continuar." }));
     const profile: EnrolForm = {
       name: name.trim(),
@@ -106,6 +108,7 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
       city: city.trim(),
       state_uf: uf,
       sector: sector.trim(),
+      age_range: age as AgeRange,
       months_operating: since ? Number(since) : null,
       formalization: (formalization as EnrolForm["formalization"]) ?? null,
       finance_control: (finance as EnrolForm["finance_control"]) ?? null,
@@ -135,6 +138,17 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
         ))}
       </RadioGroup>
     </fieldset>
+  );
+
+  const ageField = (
+    <div className="space-y-2">
+      <Label htmlFor="enrol-age">{tr({ en: "Age range", pt: "Faixa etária" })}</Label>
+      <select id="enrol-age" value={age} onChange={(e) => setAge(e.target.value)} required
+        className="h-12 w-full rounded-md border border-input bg-background px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <option value="">{tr({ en: "Choose", pt: "Escolha" })}</option>
+        {AGE_RANGES.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+      </select>
+    </div>
   );
 
   const agree = (
@@ -201,6 +215,7 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
               <Input id="enrol-name" autoComplete="given-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} className="h-12 text-base" />
             </div>
           )}
+          {!fromApp.age_range && ageField}
           {agree}
         </form>
       </main>
@@ -233,6 +248,8 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
             </select>
           </div>
         </div>
+
+        {ageField}
 
         <div className="space-y-2">
           <Label htmlFor="enrol-sector">{tr({ en: "What do you sell or do?", pt: "O que você vende ou faz?" })}</Label>
