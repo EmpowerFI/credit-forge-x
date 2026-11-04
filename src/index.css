@@ -322,6 +322,11 @@
      the reference's 3–4px, including the pages not rewritten by hand. */
   :root:not(.dark) .rounded-2xl,
   :root:not(.dark) .rounded-xl { border-radius: 0.25rem; }
+  /* The diary is an app in her hand, not a page of the site: it keeps the
+     softer corners of its own screens (founder's mock-ups, 04/11/2026). */
+  :root:not(.dark) .diary { --radius: 0.75rem; }
+  :root:not(.dark) .diary .rounded-xl { border-radius: 0.875rem; }
+  :root:not(.dark) .diary .rounded-2xl { border-radius: 1rem; }
 
   /* The glow era's decorative blobs — a blurred circle floated behind the
      content. The editorial field is flat, and on cream they only read as a

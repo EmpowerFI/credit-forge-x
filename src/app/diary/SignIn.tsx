@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2, Lock, Timer } from "lucide-react";
+import { DiaryLogo } from "./Brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,14 @@ export default function SignIn({ home = "/app/diario", title, intro }: {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Seconds before another code may be asked for: the e-mail takes up to a
+  // minute, and asking again sooner only invalidates the one on its way.
+  const [wait, setWait] = useState(0);
+  useEffect(() => {
+    if (wait <= 0) return;
+    const t = setTimeout(() => setWait((w) => w - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
 
   if (session) return <Navigate to={next} replace />;
 
@@ -53,6 +62,7 @@ export default function SignIn({ home = "/app/diario", title, intro }: {
     }
     setSentTo(address);
     setCode("");
+    setWait(60);
   };
 
   const verify = async (value: string) => {
@@ -69,88 +79,106 @@ export default function SignIn({ home = "/app/diario", title, intro }: {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-4 py-8">
-      <div className="flex justify-end">
-        <LanguageSwitch />
-      </div>
-      <div className="mt-10 space-y-2">
-        <p className="font-heading text-2xl font-semibold">EmpowerFI</p>
-        {params.get("conta") === "excluida" && (
-          <p role="status" className="mb-4 rounded-md bg-muted p-3 text-sm">
-            {tr({ en: "Your account was deleted. Thank you for using the diary.", pt: "Sua conta foi excluída. Obrigada por usar o diário." })}
-          </p>
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col px-5 pb-6 pt-6">
+      <div className="flex items-center justify-between gap-3">
+        {sentTo === null ? (
+          <DiaryLogo />
+        ) : (
+          <button type="button" onClick={() => { setSentTo(null); setError(null); }} disabled={busy}
+            className="-ml-2 inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <ChevronLeft size={20} aria-hidden="true" />{tr({ en: "Change e-mail", pt: "Trocar e-mail" })}
+          </button>
         )}
-        <h1 className="text-xl font-semibold">{title ?? tr({ en: "Your business diary", pt: "O diário do seu negócio" })}</h1>
-        <p className="text-muted-foreground">
-          {intro ?? tr({
-            en: "Record what you sold and spent each day, in under a minute.",
-            pt: "Registre o que vendeu e gastou a cada dia, em menos de um minuto.",
-          })}
-        </p>
+        <LanguageSwitch variant="pill" />
       </div>
 
+      {params.get("conta") === "excluida" && (
+        <p role="status" className="mt-6 rounded-lg bg-secondary p-4 text-sm">
+          {tr({ en: "Your account was deleted. Thank you for using EmpowerFI Diário.", pt: "Sua conta foi excluída. Obrigada por usar o EmpowerFI Diário." })}
+        </p>
+      )}
+
       {sentTo === null ? (
-        <form onSubmit={send} className="mt-8 space-y-4" noValidate>
-          <div className="space-y-2">
-            <Label htmlFor="diary-email">{tr({ en: "Your e-mail", pt: "Seu e-mail" })}</Label>
-            <Input
-              id="diary-email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              autoCapitalize="none"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-12 text-base"
-              required
-            />
+        <>
+          <div className="mt-14 space-y-3">
+            <h1 className="font-heading text-[2.5rem] font-semibold leading-[1.1]">
+              {title ?? tr({ en: "Your business diary.", pt: "O diário do seu negócio." })}
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              {intro ?? tr({
+                en: "Note what you sold and spent in under a minute a day.",
+                pt: "Anote o que vendeu e gastou em menos de um minuto por dia.",
+              })}
+            </p>
           </div>
-          <Button type="submit" className="h-12 w-full text-base" disabled={busy}>
-            {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
-            {tr({ en: "Send me a code", pt: "Receber código" })}
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            {tr({
-              en: "We send a 6-digit code to your e-mail. No password needed.",
-              pt: "Enviamos um código de 6 números para o seu e-mail. Não precisa de senha.",
-            })}
-          </p>
-        </form>
+          <form onSubmit={send} className="mt-10 space-y-4" noValidate>
+            <div className="space-y-2">
+              <Label htmlFor="diary-email" className="text-base">{tr({ en: "Your e-mail", pt: "Seu e-mail" })}</Label>
+              <Input id="diary-email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none"
+                placeholder={tr({ en: "you@example.com", pt: "voce@exemplo.com" })}
+                value={email} onChange={(e) => setEmail(e.target.value)} className="h-14 rounded-xl bg-card text-lg" required />
+            </div>
+            <Button type="submit" className="h-14 w-full rounded-xl text-lg" disabled={busy}>
+              {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
+              {tr({ en: "Send me a code", pt: "Receber código" })}
+            </Button>
+            <p className="text-muted-foreground">
+              {tr({
+                en: "We send a 6-digit code. No password to remember.",
+                pt: "Vamos mandar um código de 6 números. Sem senha para lembrar.",
+              })}
+            </p>
+          </form>
+          <ul className="mt-auto space-y-3 border-t border-border pt-5 text-muted-foreground">
+            <li className="flex items-center gap-3"><Lock size={20} className="shrink-0 text-foreground" aria-hidden="true" />
+              {tr({ en: "Your figures are yours alone.", pt: "Seus números são só seus." })}</li>
+            <li className="flex items-center gap-3"><Timer size={20} className="shrink-0 text-foreground" aria-hidden="true" />
+              {tr({ en: "Note it with a few taps, in under a minute.", pt: "Anote em poucos toques, em menos de um minuto." })}</li>
+          </ul>
+        </>
       ) : (
-        <div className="mt-8 space-y-4">
-          <p>
-            {tr({ en: "We sent a code to ", pt: "Enviamos um código para " })}
-            <strong className="break-all">{sentTo}</strong>.
-            {" "}
-            {tr({ en: "It may take a minute; check the spam folder too.", pt: "Pode levar um minuto; olhe também no spam." })}
-          </p>
-          <Label htmlFor="diary-code">{tr({ en: "Code", pt: "Código" })}</Label>
-          <InputOTP
-            id="diary-code"
-            maxLength={CODE_LENGTH}
-            value={code}
-            onChange={(v) => {
-              setCode(v);
-              if (v.length === CODE_LENGTH) void verify(v);
-            }}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            disabled={busy}
-          >
-            <InputOTPGroup>
-              {Array.from({ length: CODE_LENGTH }, (_, i) => <InputOTPSlot key={i} index={i} className="h-12 w-11 text-lg" />)}
-            </InputOTPGroup>
-          </InputOTP>
-          {busy && <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Checking", pt: "Conferindo" })} />}
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => void send()} disabled={busy}>
-              {tr({ en: "Send a new code", pt: "Enviar outro código" })}
-            </Button>
-            <Button variant="ghost" onClick={() => { setSentTo(null); setError(null); }} disabled={busy}>
-              {tr({ en: "Change e-mail", pt: "Trocar e-mail" })}
+        <>
+          <div className="mt-10 space-y-2">
+            <h1 className="font-heading text-[2.25rem] font-semibold leading-tight">{tr({ en: "Check your e-mail.", pt: "Confira seu e-mail." })}</h1>
+            <p className="text-lg text-muted-foreground">
+              {tr({ en: "We sent a 6-digit code to", pt: "Mandamos um código de 6 números para" })}
+            </p>
+            <p className="break-all text-lg font-semibold">{sentTo}</p>
+          </div>
+          <div className="mt-8 space-y-3">
+            <Label htmlFor="diary-code" className="text-base">{tr({ en: "Code", pt: "Código" })}</Label>
+            <InputOTP id="diary-code" maxLength={CODE_LENGTH} value={code} inputMode="numeric" autoComplete="one-time-code" disabled={busy}
+              containerClassName="w-full"
+              onChange={(v) => {
+                setCode(v);
+                if (v.length === CODE_LENGTH) void verify(v);
+              }}>
+              <InputOTPGroup className="grid w-full grid-cols-6 gap-2">
+                {Array.from({ length: CODE_LENGTH }, (_, i) => (
+                  <InputOTPSlot key={i} index={i}
+                    className="h-16 w-full rounded-xl border-2 border-input bg-card font-heading text-2xl first:rounded-xl first:border-l-2 last:rounded-xl" />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
+            <p className="text-muted-foreground">
+              {busy
+                ? <span className="inline-flex items-center gap-2"><Loader2 className="animate-spin" size={16} aria-hidden="true" />{tr({ en: "Checking…", pt: "Conferindo…" })}</span>
+                : tr({ en: "Once the 6 digits are in, you are in.", pt: "Ao completar os 6 números, você entra sozinha." })}
+            </p>
+          </div>
+          <div className="mt-6 space-y-3 rounded-xl bg-secondary p-4">
+            <p>
+              {tr({ en: "Not there? It can take up to 1 minute.", pt: "Não chegou? Pode levar até 1 minuto." })}
+              <br />
+              {tr({ en: "Check spam and Promotions too.", pt: "Olhe também no spam e em Promoções." })}
+            </p>
+            <Button variant="outline" className="h-12 w-full rounded-xl text-base" disabled={busy || wait > 0} onClick={() => void send()}>
+              {wait > 0
+                ? tr({ en: `Send another code in 0:${String(wait).padStart(2, "0")}`, pt: `Enviar outro código em 0:${String(wait).padStart(2, "0")}` })
+                : tr({ en: "Send another code", pt: "Enviar outro código" })}
             </Button>
           </div>
-        </div>
+        </>
       )}
 
       {error && <p role="alert" className="mt-4 text-sm font-medium text-destructive">{error}</p>}

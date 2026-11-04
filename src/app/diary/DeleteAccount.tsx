@@ -62,8 +62,8 @@ export default function DeleteAccount() {
   }
 
   return (
-    <section className="space-y-3 rounded-md border border-destructive/40 p-4 text-sm" aria-labelledby="delete-title">
-      <h2 id="delete-title" className="text-base font-semibold">{tr({ en: "Delete account", pt: "Excluir conta" })}</h2>
+    <section className="space-y-3 rounded-2xl border border-destructive/40 bg-card p-5 text-sm" aria-labelledby="delete-title">
+      <h2 id="delete-title" className="font-heading text-xl font-semibold">{tr({ en: "Delete account", pt: "Excluir conta" })}</h2>
       {!open ? (
         <Button variant="outline" className="h-11 border-destructive/50 text-destructive" onClick={() => setOpen(true)}>
           {tr({ en: "Delete my account", pt: "Excluir minha conta" })}

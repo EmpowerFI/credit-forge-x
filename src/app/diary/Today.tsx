@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { ClipboardCheck, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { InstallInvite } from "./Install";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
-  addDays, type AfterRecord, brl, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
+  addDays, type AfterRecord, brl, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
   type GoalAfter, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
 } from "./diary";
 
@@ -161,56 +161,78 @@ export default function Today() {
 
   if (mode === "done" && result) return <Done result={result} today={today} onMore={restart} />;
 
+  const daySales = keptDay?.entries.filter((e) => !e.voided && e.kind === "sale").reduce((t, e) => t + e.amount_cents, 0) ?? 0;
+  const dayExpenses = keptDay?.entries.filter((e) => !e.voided && e.kind === "expense").reduce((t, e) => t + e.amount_cents, 0) ?? 0;
+  const isToday = day === today;
+
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">
-          {day === today ? tr({ en: "How did today go?", pt: "Como foi hoje?" }) : tr({ en: "How did yesterday go?", pt: "Como foi ontem?" })}
-        </h1>
-        <div role="group" aria-label={tr({ en: "Which day", pt: "Qual dia" })} className="mt-3 flex gap-2">
-          {[today, addDays(today, -1)].map((d) => (
-            <Button key={d} variant={d === day ? "default" : "outline"} className="h-10 flex-1" aria-pressed={d === day}
-              disabled={busy} onClick={() => pickDay(d)}>
-              {d === today ? tr({ en: "Today", pt: "Hoje" }) : tr({ en: "Yesterday", pt: "Ontem" })}
-            </Button>
-          ))}
-        </div>
-        {keptDay && (
-          <p className="mt-3 rounded-md bg-muted p-3 text-sm">
-            {keptDay.no_activity
-              ? tr({ en: `Already recorded ${dayName(day, today)}: no activity.`, pt: `Já registrado ${dayName(day, today)}: sem movimento.` })
-              : tr({
-                en: `Already recorded ${dayName(day, today)}. Anything you add now adds up.`,
-                pt: `Já tem registro ${dayName(day, today)}. O que você incluir agora soma.`,
-              })}
-          </p>
-        )}
+    <div className="space-y-6">
+      <div role="group" aria-label={tr({ en: "Which day", pt: "Qual dia" })} className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1">
+        {[today, addDays(today, -1)].map((d) => (
+          <button key={d} type="button" aria-pressed={d === day} disabled={busy} onClick={() => pickDay(d)}
+            className={`min-h-12 rounded-lg px-2 text-base transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              d === day ? "bg-card font-semibold shadow-sm" : "text-muted-foreground"}`}>
+            {d === today ? `${tr({ en: "Today", pt: "Hoje" })} · ${shortDay(d)}` : tr({ en: "Yesterday", pt: "Ontem" })}
+          </button>
+        ))}
       </div>
+
+      <h1 className="font-heading text-[2.25rem] font-semibold leading-tight">
+        {isToday ? tr({ en: "How did today go?", pt: "Como foi hoje?" }) : tr({ en: "How did yesterday go?", pt: "Como foi ontem?" })}
+      </h1>
 
       {mode === "ask" && me.data && <ImpactAsk profile={me.data} />}
       {mode === "ask" && (
-        <div className="grid gap-3">
+        <div className="space-y-3">
           {noted.length > 0 ? (
             <>
-              <Button className="h-14 text-base" onClick={() => setMode("review")}>
-                {tr({ en: `Review and save the day (${noted.length})`, pt: `Revisar e registrar o dia (${noted.length})` })}
-              </Button>
-              <Button variant="outline" className="h-12" onClick={() => setMode("entry")}>
-                {tr({ en: "Note another sale or expense", pt: "Anotar outra venda ou gasto" })}
-              </Button>
+              <BigAction primary icon={ClipboardCheck} onClick={() => setMode("review")}
+                title={tr({ en: "Review and save the day", pt: "Revisar e registrar o dia" })}
+                hint={noted.length === 1 ? tr({ en: "1 item noted", pt: "1 item anotado" }) : tr({ en: `${noted.length} items noted`, pt: `${noted.length} itens anotados` })} />
+              <BigAction icon={Plus} onClick={() => setMode("entry")}
+                title={tr({ en: "Note another one", pt: "Anotar mais um" })}
+                hint={tr({ en: "A sale or an expense", pt: "Uma venda ou um gasto" })} />
             </>
           ) : (
-            <Button className="h-14 text-base" onClick={() => setMode("entry")}>{tr({ en: "I sold or spent", pt: "Vendi ou gastei" })}</Button>
+            <BigAction primary icon={Plus} onClick={() => setMode("entry")}
+              title={tr({ en: "I sold or spent", pt: "Vendi ou gastei" })}
+              hint={tr({ en: "Note the amount and what it was", pt: "Anotar valor e o que foi" })} />
           )}
+          <p className="pt-3 text-muted-foreground">{tr({ en: "No activity?", pt: "Não teve movimento?" })}</p>
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="h-14" disabled={busy} onClick={() => void recordQuiet("no_sales")}>
+            <Button variant="outline" className="h-14 rounded-xl text-base" disabled={busy} onClick={() => void recordQuiet("no_sales")}>
               {tr({ en: "Open, no sales", pt: "Abri e não vendi" })}
             </Button>
-            <Button variant="outline" className="h-14" disabled={busy} onClick={() => void recordQuiet("closed")}>
+            <Button variant="outline" className="h-14 rounded-xl text-base" disabled={busy} onClick={() => void recordQuiet("closed")}>
               {tr({ en: "Did not open", pt: "Não abri" })}
             </Button>
           </div>
         </div>
+      )}
+
+      {mode === "ask" && (
+        <section className="space-y-3 border-t border-border pt-6" aria-labelledby="day-summary">
+          <h2 id="day-summary" className="font-heading text-xl font-semibold">
+            {isToday ? tr({ en: "Today so far", pt: "Resumo de hoje" }) : tr({ en: "Yesterday", pt: "Resumo de ontem" })}
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-muted-foreground">{tr({ en: "Sales", pt: "Vendas" })}</p>
+              <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">{brl(daySales)}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-muted-foreground">{tr({ en: "Expenses", pt: "Gastos" })}</p>
+              <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">{brl(dayExpenses)}</p>
+            </div>
+          </div>
+          <p className="text-muted-foreground">
+            {!keptDay
+              ? isToday ? tr({ en: "Nothing recorded yet today.", pt: "Nada anotado ainda hoje." }) : tr({ en: "Nothing recorded for yesterday.", pt: "Nada anotado para ontem." })
+              : keptDay.no_activity
+                ? tr({ en: "Recorded: no activity.", pt: "Registrado: sem movimento." })
+                : tr({ en: "Recorded. Anything you add now adds up.", pt: "Registrado. O que você incluir agora soma." })}
+          </p>
+        </section>
       )}
       {mode === "ask" && me.data && <WeekProgress emoji={me.data.progress_emoji ?? "🌱"} today={today} days={week.data ?? []} />}
       {mode === "ask" && me.data && <OpenCampaigns profile={me.data} />}
@@ -231,6 +253,29 @@ export default function Today() {
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
       {busy && mode === "ask" && <Loader2 className="mx-auto animate-spin text-muted-foreground" aria-label={tr({ en: "Working", pt: "Processando" })} />}
     </div>
+  );
+}
+
+/** The screen's big choices: an icon in a circle, a title and what it does. */
+function BigAction({ icon: Icon, title, hint, onClick, primary = false }: {
+  icon: typeof Plus;
+  title: string;
+  hint: string;
+  onClick: () => void;
+  primary?: boolean;
+}) {
+  return (
+    <button type="button" onClick={onClick}
+      className={`flex min-h-[5.5rem] w-full items-center gap-4 rounded-2xl px-5 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+        primary ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border-2 border-primary bg-card hover:bg-secondary"}`}>
+      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${primary ? "bg-primary-foreground/15" : "bg-secondary"}`}>
+        <Icon size={24} aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block font-heading text-xl font-semibold">{title}</span>
+        <span className={`block ${primary ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{hint}</span>
+      </span>
+    </button>
   );
 }
 

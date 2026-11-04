@@ -44,8 +44,8 @@ export function ImpactAsk({ profile }: { profile: DiaryProfile }) {
   const { set, busy, error } = useSetImpact();
   if (!profile.impact_consent || IMPACT_ASKED_IN.includes(profile.impact_consent.text_version)) return null;
   return (
-    <section className="space-y-3 rounded-md border border-border p-4 text-sm">
-      <h2 className="text-base font-semibold">{tr({ en: "A question, once", pt: "Uma pergunta, só uma vez" })}</h2>
+    <section className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
+      <h2 className="font-heading text-xl font-semibold">{tr({ en: "A question, once", pt: "Uma pergunta, só uma vez" })}</h2>
       <p><ImpactChoiceText /></p>
       <p className="text-muted-foreground">
         {tr({
@@ -74,8 +74,8 @@ export function YourData({ profile }: { profile: DiaryProfile }) {
   const share = profile.impact_consent?.share ?? false;
   const until = c?.until ? c.until.split("-").reverse().join("/") : null;
   return (
-    <section className="space-y-3 rounded-md border border-border p-4 text-sm">
-      <h2 className="text-base font-semibold">{tr({ en: "Your participation and your data", pt: "Sua participação e seus dados" })}</h2>
+    <section className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
+      <h2 className="font-heading text-xl font-semibold">{tr({ en: "Your participation and your data", pt: "Sua participação e seus dados" })}</h2>
       {c && (
         <p>
           {c.is_default

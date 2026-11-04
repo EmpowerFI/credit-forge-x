@@ -1,7 +1,7 @@
 {
   "id": "/app/diario",
-  "name": "Diário EmpowerFI",
-  "short_name": "Diário",
+  "name": "EmpowerFI Diário",
+  "short_name": "EmpowerFI Diário",
   "description": "Registre o que vendeu e gastou a cada dia, em menos de um minuto.",
   "lang": "pt-BR",
   "start_url": "/app/diario",
@@ -11,8 +11,23 @@
   "background_color": "#f6f4ef",
   "theme_color": "#f6f4ef",
   "icons": [
-    { "src": "/app/diario-icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/app/diario-icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/app/diario-icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/app/diario-icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app/diario-icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app/diario-icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

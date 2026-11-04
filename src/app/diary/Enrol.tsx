@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Bell, Loader2, Lock, Pencil, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { localized, tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
+import { DiaryLogo } from "./Brand";
 import { AGE_RANGES, type AgeRange, diary, diaryErrorText, type EnrolForm, type FromApp } from "./diary";
 import { ImpactChoiceText } from "./ImpactChoice";
 
@@ -37,26 +38,57 @@ const FINANCE = localized([
   { value: "none", label: { en: "I don't track it yet", pt: "Ainda não controlo" } },
 ]);
 
-/** What she agrees to. Its version is CONSENT_TEXT_VERSION in diary.ts: change both together. */
+/**
+ * What she agrees to, item by item, each with a short title. Its version is
+ * CONSENT_TEXT_VERSION in diary.ts: change both together.
+ */
 function ConsentText() {
-  return tr({
-    en: (
-      <ul className="list-disc space-y-1 pl-5">
-        <li>Your figures are yours. Nobody sees what you record unless you authorise it, not even whoever sponsors your place.</li>
-        <li>If a sponsor backs your participation, it sees only group figures -- how many women take part and how many days they record -- in groups of at least 5. Never your name, never your figures alone.</li>
-        <li>Reminders are optional: you choose the time and can turn them off at any moment.</li>
-        <li>You can ask for your data to be deleted. Details in the <a className="underline" href="/privacidade" target="_blank" rel="noreferrer">privacy policy</a>.</li>
-      </ul>
-    ),
-    pt: (
-      <ul className="list-disc space-y-1 pl-5">
-        <li>Os seus números são seus. Ninguém vê o que você registra sem você autorizar, nem quem patrocina a sua vaga.</li>
-        <li>Se um patrocinador apoia a sua participação, ele vê só números do grupo (quantas participam e quantos dias registram), em grupos de pelo menos 5. Nunca o seu nome, nunca os seus números sozinhos.</li>
-        <li>Os lembretes são opcionais: você escolhe o horário e pode desligar quando quiser.</li>
-        <li>Você pode pedir a exclusão dos seus dados. Detalhes na <a className="underline" href="/privacidade" target="_blank" rel="noreferrer">política de privacidade</a>.</li>
-      </ul>
-    ),
-  });
+  const items: { icon: typeof Lock; title: { en: string; pt: string }; body: ReactNode }[] = [
+    {
+      icon: Lock,
+      title: { en: "Your figures are yours.", pt: "Seus números são seus." },
+      body: tr({
+        en: "Nobody sees what you record unless you authorise it, not even whoever sponsors your place.",
+        pt: "Ninguém vê o que você registra sem você autorizar, nem quem patrocina a sua vaga.",
+      }),
+    },
+    {
+      icon: Users,
+      title: { en: "A sponsor sees only the group.", pt: "O patrocinador vê só o grupo." },
+      body: tr({
+        en: "How many women take part and how many days they record, in groups of at least 5. Never your name, never your figures alone.",
+        pt: "Quantas participam e quantos dias registram, em grupos de pelo menos 5. Nunca o seu nome, nunca os seus números sozinhos.",
+      }),
+    },
+    {
+      icon: Bell,
+      title: { en: "Reminders, only if you want them.", pt: "Lembretes, só se quiser." },
+      body: tr({ en: "You choose the time and turn them off whenever you like.", pt: "Você escolhe o horário e desliga quando quiser." }),
+    },
+    {
+      icon: Trash2,
+      title: { en: "You can delete everything.", pt: "Pode apagar tudo." },
+      body: (
+        <>
+          {tr({ en: "Delete your account whenever you like, under Reminders. ", pt: "Exclua a sua conta quando quiser, em Lembretes. " })}
+          <a className="underline" href="/privacidade" target="_blank" rel="noreferrer">{tr({ en: "Privacy policy", pt: "Política de privacidade" })}</a>
+        </>
+      ),
+    },
+  ];
+  return (
+    <ul className="space-y-4">
+      {items.map(({ icon: Icon, title, body }) => (
+        <li key={title.en} className="flex gap-3">
+          <Icon size={22} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>
+            <span className="block font-semibold">{tr(title)}</span>
+            <span className="block text-muted-foreground">{body}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /**
@@ -149,30 +181,34 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
     </div>
   );
 
+  const box = "flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border-2 border-input bg-card p-4";
   const agree = (
     <>
-      <div className="space-y-3 rounded-md border border-border p-3 text-sm">
+      <section className="space-y-4" aria-labelledby="enrol-care">
+        <h2 id="enrol-care" className="font-heading text-xl font-semibold">
+          {tr({ en: "How we look after what you record", pt: "Como cuidamos do que você registra" })}
+        </h2>
         <ConsentText />
-      </div>
+      </section>
       {!fromApp?.declared && (
-        <label htmlFor="enrol-adult" className="flex cursor-pointer items-start gap-3">
-          <Checkbox id="enrol-adult" checked={adult} onCheckedChange={(v) => setAdult(v === true)} className="mt-0.5" />
+        <label htmlFor="enrol-adult" className={box}>
+          <Checkbox id="enrol-adult" checked={adult} onCheckedChange={(v) => setAdult(v === true)} className="mt-0.5 h-6 w-6" />
           <span>{tr({ en: "I declare that I am a woman aged 18 or over.", pt: "Declaro que sou mulher e tenho 18 anos ou mais." })}</span>
         </label>
       )}
-      <label htmlFor="enrol-consent" className="flex cursor-pointer items-start gap-3">
-        <Checkbox id="enrol-consent" checked={consented} onCheckedChange={(v) => setConsented(v === true)} className="mt-0.5" />
-        <span>{tr({ en: "I have read and agree.", pt: "Li e concordo." })}</span>
+      <label htmlFor="enrol-consent" className={box}>
+        <Checkbox id="enrol-consent" checked={consented} onCheckedChange={(v) => setConsented(v === true)} className="mt-0.5 h-6 w-6" />
+        <span className="text-lg">{tr({ en: "I have read and agree.", pt: "Li e concordo." })}</span>
       </label>
-      <label htmlFor="enrol-impact" className="flex cursor-pointer items-start gap-3">
-        <Checkbox id="enrol-impact" checked={shareImpact} onCheckedChange={(v) => setShareImpact(v === true)} className="mt-0.5" />
+      <label htmlFor="enrol-impact" className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 text-sm">
+        <Checkbox id="enrol-impact" checked={shareImpact} onCheckedChange={(v) => setShareImpact(v === true)} className="mt-0.5 h-5 w-5" />
         <span>
           <ImpactChoiceText />
           <span className="block text-muted-foreground">{tr({ en: "Optional. You can change it any time.", pt: "Opcional. Você pode mudar quando quiser." })}</span>
         </span>
       </label>
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
-      <Button type="submit" className="h-12 w-full text-base" disabled={busy}>
+      <Button type="submit" className="h-14 w-full rounded-xl text-lg" disabled={busy || !consented}>
         {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
         {tr({ en: "Start my diary", pt: "Começar meu diário" })}
       </Button>
@@ -182,31 +218,39 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
   if (short && fromApp) {
     const place = [fromApp.city, fromApp.state_uf].filter(Boolean).join(" / ");
     const business = fromApp.business_name ?? fromApp.sector;
+    const row = (label: string, value: string) => (
+      <div className="flex items-center justify-between gap-4 border-b border-border py-4 first:pt-0">
+        <dt className="text-muted-foreground">{label}</dt>
+        <dd className="text-right font-semibold">{value}</dd>
+      </div>
+    );
     return (
-      <main className="mx-auto max-w-md px-4 py-6">
-        <div className="flex justify-end"><LanguageSwitch /></div>
-        <h1 className="mt-4 text-xl font-semibold">
-          {fromApp.name
-            ? tr({ en: `Hi, ${fromApp.name}!`, pt: `Oi, ${fromApp.name}!` })
-            : tr({ en: "Hi!", pt: "Oi!" })}
-        </h1>
-        <p className="mt-1 text-muted-foreground">
+      <main className="mx-auto max-w-md px-5 pb-8 pt-6">
+        <div className="flex items-center justify-between gap-3">
+          <DiaryLogo />
+          <span className="text-muted-foreground">{tr({ en: "Last step", pt: "Último passo" })}</span>
+        </div>
+        <h1 className="mt-8 font-heading text-[2.25rem] font-semibold leading-tight">{tr({ en: "Before you start.", pt: "Antes de começar." })}</h1>
+        <p className="mt-2 text-lg text-muted-foreground">
           {tr({
-            en: "You already have an account in the EmpowerFI app, so there is no need to sign up again.",
-            pt: "Você já tem conta no app EmpowerFI, então não precisa se cadastrar de novo.",
+            en: "Your EmpowerFI app account brings you in. Check your details and how we look after them.",
+            pt: "A sua conta do app EmpowerFI já traz você. Confira seus dados e como cuidamos deles.",
           })}
         </p>
 
-        <form onSubmit={submit} className="mt-6 space-y-6" noValidate>
+        <form onSubmit={submit} className="mt-8 space-y-7" noValidate>
           {fromApp.name ? (
-            <dl className="space-y-2 rounded-md bg-muted p-4 text-sm">
-              <div><dt className="text-muted-foreground">{tr({ en: "Name", pt: "Nome" })}</dt><dd className="font-medium">{fromApp.name}</dd></div>
-              {business && <div><dt className="text-muted-foreground">{tr({ en: "Business", pt: "Negócio" })}</dt><dd className="font-medium">{business}</dd></div>}
-              {place && <div><dt className="text-muted-foreground">{tr({ en: "City", pt: "Cidade" })}</dt><dd className="font-medium">{place}</dd></div>}
-              <Button type="button" variant="link" className="h-10 px-0" onClick={() => { setShort(false); setError(null); }}>
-                {tr({ en: "Correct my details", pt: "Corrigir meus dados" })}
-              </Button>
-            </dl>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <dl>
+                {row(tr({ en: "Name", pt: "Nome" }), fromApp.name)}
+                {business && row(tr({ en: "Business", pt: "Negócio" }), business)}
+                {place && row(tr({ en: "City", pt: "Cidade" }), place)}
+              </dl>
+              <button type="button" onClick={() => { setShort(false); setError(null); }}
+                className="mt-3 inline-flex min-h-11 items-center gap-2 font-semibold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <Pencil size={18} aria-hidden="true" />{tr({ en: "Correct my details", pt: "Corrigir meus dados" })}
+              </button>
+            </div>
           ) : (
             <div className="space-y-2">
               <Label htmlFor="enrol-name">{tr({ en: "What should we call you?", pt: "Como você prefere ser chamada?" })}</Label>
@@ -221,10 +265,13 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
   }
 
   return (
-    <main className="mx-auto max-w-md px-4 py-6">
-      <div className="flex justify-end"><LanguageSwitch /></div>
-      <h1 className="mt-4 text-xl font-semibold">{tr({ en: "Welcome! A few questions to start", pt: "Boas-vindas! Algumas perguntas para começar" })}</h1>
-      <p className="mt-1 text-muted-foreground">{tr({ en: "It takes two minutes.", pt: "Leva dois minutos." })}</p>
+    <main className="mx-auto max-w-md px-5 pb-8 pt-6">
+      <div className="flex items-center justify-between gap-3">
+        <DiaryLogo />
+        <LanguageSwitch variant="pill" />
+      </div>
+      <h1 className="mt-8 font-heading text-[2.25rem] font-semibold leading-tight">{tr({ en: "Welcome!", pt: "Boas-vindas!" })}</h1>
+      <p className="mt-2 text-lg text-muted-foreground">{tr({ en: "A few questions to start. It takes two minutes.", pt: "Algumas perguntas para começar. Leva dois minutos." })}</p>
 
       <form onSubmit={submit} className="mt-6 space-y-6" noValidate>
         <div className="space-y-2">
