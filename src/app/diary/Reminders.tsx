@@ -8,6 +8,7 @@ import { tr } from "../i18n";
 import { diaryDb, useDiarySession } from "./db";
 import { diary, diaryErrorText, PROFILE_KEY } from "./diary";
 import { InstallSteps } from "./Install";
+import { YourData } from "./ImpactChoice";
 import Notifications from "./Notifications";
 
 const TIMES = Array.from({ length: 33 }, (_, i) => {
@@ -76,6 +77,8 @@ export default function Reminders() {
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
 
       <Notifications remindersOn={current?.enabled ?? true} />
+
+      {profile.data && <YourData profile={profile.data} />}
 
       <section className="space-y-3 rounded-md border border-border p-4 text-sm">
         <h2 className="text-base font-semibold">{tr({ en: "Diary on the home screen", pt: "Diário na tela de início" })}</h2>

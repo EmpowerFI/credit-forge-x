@@ -17,10 +17,15 @@ const CODE_LENGTH = 6;
  * same account; a new e-mail creates one, and the diary then asks the
  * sign-up questions.
  */
-export default function SignIn() {
+export default function SignIn({ home = "/app/diario", title, intro }: {
+  /** Where she lands, and the only prefix a ?next= may point into. */
+  home?: string;
+  title?: string;
+  intro?: string;
+} = {}) {
   const { session } = useDiarySession();
   const [params] = useSearchParams();
-  const next = params.get("next")?.startsWith("/app/diario") ? params.get("next")! : "/app/diario";
+  const next = params.get("next")?.startsWith(home) ? params.get("next")! : home;
   const [email, setEmail] = useState("");
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [code, setCode] = useState("");
@@ -70,9 +75,9 @@ export default function SignIn() {
       </div>
       <div className="mt-10 space-y-2">
         <p className="font-heading text-2xl font-semibold">EmpowerFI</p>
-        <h1 className="text-xl font-semibold">{tr({ en: "Your business diary", pt: "O diário do seu negócio" })}</h1>
+        <h1 className="text-xl font-semibold">{title ?? tr({ en: "Your business diary", pt: "O diário do seu negócio" })}</h1>
         <p className="text-muted-foreground">
-          {tr({
+          {intro ?? tr({
             en: "Record what you sold and spent each day, in under a minute.",
             pt: "Registre o que vendeu e gastou a cada dia, em menos de um minuto.",
           })}

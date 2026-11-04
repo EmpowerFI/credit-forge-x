@@ -76,9 +76,14 @@ export interface ImpactIntelligence {
 export interface ProgramRow { id: string; name: string; period_start: string; period_end: string }
 
 export async function fetchPrograms(): Promise<ProgramRow[]> {
-  const { data, error } = await platform.from("programs").select("id, name, period_start, period_end").order("period_start", { ascending: false });
+  // "*" rather than naming is_default: the column arrives with the campaigns
+  // migration, and the showroom must not break on a database without it.
+  const { data, error } = await platform.from("programs").select("*").order("period_start", { ascending: false });
   if (error) throw error;
-  return data;
+  // EmpowerFI's own diary programme belongs to the real impact area (/impacto), not to the prototype's story.
+  return (data as (ProgramRow & { is_default?: boolean })[])
+    .filter((p) => p.is_default !== true)
+    .map(({ id, name, period_start, period_end }) => ({ id, name, period_start, period_end: period_end ?? "" }));
 }
 
 export async function fetchImpactIntelligence(programId: string): Promise<ImpactIntelligence> {

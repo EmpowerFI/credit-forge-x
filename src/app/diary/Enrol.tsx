@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { localized, tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
 import { diary, diaryErrorText, type EnrolForm, type FromApp } from "./diary";
+import { ImpactChoiceText } from "./ImpactChoice";
 
 const UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
   "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
@@ -42,6 +43,7 @@ function ConsentText() {
     en: (
       <ul className="list-disc space-y-1 pl-5">
         <li>Your figures are yours. Nobody sees what you record unless you authorise it, not even whoever sponsors your place.</li>
+        <li>If a sponsor backs your participation, it sees only group figures -- how many women take part and how many days they record -- in groups of at least 5. Never your name, never your figures alone.</li>
         <li>Reminders are optional: you choose the time and can turn them off at any moment.</li>
         <li>If you record by voice or in your own words, what you say is read by AI services (OpenAI and Anthropic, in the United States) only to prepare the record. The audio is not kept, the text is deleted within 24 hours, and nothing is recorded before you confirm.</li>
         <li>You can ask for your data to be deleted. Details in the <a className="underline" href="/privacidade" target="_blank" rel="noreferrer">privacy policy</a>.</li>
@@ -50,6 +52,7 @@ function ConsentText() {
     pt: (
       <ul className="list-disc space-y-1 pl-5">
         <li>Os seus números são seus. Ninguém vê o que você registra sem você autorizar, nem quem patrocina a sua vaga.</li>
+        <li>Se um patrocinador apoia a sua participação, ele vê só números do grupo (quantas participam e quantos dias registram), em grupos de pelo menos 5. Nunca o seu nome, nunca os seus números sozinhos.</li>
         <li>Os lembretes são opcionais: você escolhe o horário e pode desligar quando quiser.</li>
         <li>Se você registrar por áudio ou escrevendo do seu jeito, o que você diz é lido por serviços de inteligência artificial (OpenAI e Anthropic, nos Estados Unidos) só para montar o registro. O áudio não fica guardado, o texto é apagado em até 24 horas, e nada é registrado antes de você confirmar.</li>
         <li>Você pode pedir a exclusão dos seus dados. Detalhes na <a className="underline" href="/privacidade" target="_blank" rel="noreferrer">política de privacidade</a>.</li>
@@ -77,6 +80,7 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
   const [finance, setFinance] = useState<string | null>(null);
   const [adult, setAdult] = useState(false);
   const [consented, setConsented] = useState(false);
+  const [shareImpact, setShareImpact] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,6 +99,7 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
       name: name.trim(),
       adult_woman: adult,
       consented,
+      share_impact: shareImpact,
       city: city.trim(),
       state_uf: uf,
       sector: sector.trim(),
@@ -143,6 +148,13 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
       <label htmlFor="enrol-consent" className="flex cursor-pointer items-start gap-3">
         <Checkbox id="enrol-consent" checked={consented} onCheckedChange={(v) => setConsented(v === true)} className="mt-0.5" />
         <span>{tr({ en: "I have read and agree.", pt: "Li e concordo." })}</span>
+      </label>
+      <label htmlFor="enrol-impact" className="flex cursor-pointer items-start gap-3">
+        <Checkbox id="enrol-impact" checked={shareImpact} onCheckedChange={(v) => setShareImpact(v === true)} className="mt-0.5" />
+        <span>
+          <ImpactChoiceText />
+          <span className="block text-muted-foreground">{tr({ en: "Optional. You can change it any time.", pt: "Opcional. Você pode mudar quando quiser." })}</span>
+        </span>
       </label>
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
       <Button type="submit" className="h-12 w-full text-base" disabled={busy}>

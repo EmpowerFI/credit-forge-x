@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { diaryDb } from "./db";
+import { ImpactAsk } from "./ImpactChoice";
 import { InstallInvite } from "./Install";
 import { tr } from "../i18n";
 import {
@@ -37,6 +38,7 @@ export default function Today() {
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const profile = queryClient.getQueriesData<{ today: string }>({ queryKey: PROFILE_KEY })[0]?.[1];
+  const me = useQuery({ queryKey: [...PROFILE_KEY, "reminders"], queryFn: diary.profile });
   const today = profile?.today ?? new Date().toISOString().slice(0, 10);
   const [day, setDay] = useState(today);
   const [mode, setMode] = useState<"ask" | "lines" | "words" | "draft" | "done">("ask");
@@ -166,6 +168,7 @@ export default function Today() {
         )}
       </div>
 
+      {mode === "ask" && me.data && <ImpactAsk profile={me.data} />}
       {mode === "ask" && (
         <div className="grid gap-3">
           <Button className="h-14 text-base" onClick={() => setMode("lines")}>{tr({ en: "I sold or spent", pt: "Vendi ou gastei" })}</Button>

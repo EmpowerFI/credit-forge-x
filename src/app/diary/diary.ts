@@ -28,7 +28,7 @@ async function call<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
 export const PROFILE_KEY = ["diary", "profile"] as const;
 
 /** The consent wording's version, recorded with her enrolment. Change it whenever CONSENT changes. */
-export const CONSENT_TEXT_VERSION = "web-2026-11";
+export const CONSENT_TEXT_VERSION = "web-2026-12";
 
 // ------------------------------------------------------------------ shapes
 
@@ -40,6 +40,10 @@ export interface DiaryProfile {
   devices?: number;
   /** Not enrolled yet, but she has an account in the EmpowerFI app: what it already knows. */
   from_app?: FromApp | null;
+  /** The campaign her days count for today; EmpowerFI's own when she is in none. */
+  campaign?: { name: string; sponsor_name: string; is_default: boolean; until: string | null } | null;
+  /** Her latest answer to "count my business in impact figures", and the wording it was given under. */
+  impact_consent?: { share: boolean; text_version: string } | null;
 }
 
 /** Her app account, as the diary may reuse it. declared: she made the app's woman-of-18 declaration. */
@@ -172,6 +176,8 @@ export const diary = {
     call<{ devices: number }>("diary_push_subscribe", {
       p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth, p_user_agent: navigator.userAgent,
     }),
+  setImpactConsent: (share: boolean) =>
+    call<{ share: boolean }>("diary_impact_consent_set", { p_share: share, p_text_version: CONSENT_TEXT_VERSION }),
   pushUnsubscribe: (endpoint: string) => call<{ devices: number }>("diary_push_unsubscribe", { p_endpoint: endpoint }),
 };
 
@@ -179,6 +185,8 @@ export interface EnrolForm {
   name: string;
   adult_woman: boolean;
   consented: boolean;
+  /** Optional: her business counted, with others and never alone, in the figures the sponsor sees. */
+  share_impact: boolean;
   city: string;
   state_uf: string;
   sector: string;
@@ -261,6 +269,7 @@ export function diaryErrorText(error: unknown): string {
   }
   const known: [RegExp | string, { en: string; pt: string }][] = [
     ["not_signed_in", { en: "Your session ended. Sign in again.", pt: "Sua sessão terminou. Entre de novo." }],
+    ["forbidden", { en: "This e-mail has no access to that.", pt: "Este e-mail não tem acesso a isso." }],
     ["not_enrolled", { en: "Finish your sign-up first.", pt: "Termine o seu cadastro primeiro." }],
     [/on the day or the day after/, { en: "You can record today or yesterday only.", pt: "Só dá para registrar hoje ou ontem." }],
     [/already has lines/, { en: "This day already has sales or expenses recorded.", pt: "Esse dia já tem vendas ou gastos registrados." }],
