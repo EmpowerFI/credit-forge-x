@@ -6,7 +6,8 @@ import { tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
 import { Button } from "@/components/ui/button";
 import { diaryClosed, useDiarySession } from "./db";
-import { diary, diaryErrorText, PROFILE_KEY } from "./diary";
+import { diary, diaryErrorText, type DiaryProfile, PROFILE_KEY } from "./diary";
+import SponsorLogo from "./SponsorLogo";
 import { resyncPush } from "./push";
 import { useDiaryPwa } from "./pwa";
 import SignIn from "./SignIn";
@@ -80,10 +81,10 @@ function Gate() {
     );
   }
   if (!profile.data.enrolled) return <Enrol fromApp={profile.data.from_app ?? null} />;
-  return <Layout name={profile.data.name ?? ""} />;
+  return <Layout name={profile.data.name ?? ""} campaign={profile.data.campaign ?? null} />;
 }
 
-function Layout({ name }: { name: string }) {
+function Layout({ name, campaign }: { name: string; campaign: DiaryProfile["campaign"] }) {
   const navigate = useNavigate();
   useEffect(() => {
     void resyncPush();
@@ -115,9 +116,13 @@ function Layout({ name }: { name: string }) {
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
           <span className="font-heading text-lg font-semibold">EmpowerFI</span>
-          <div className="flex items-center gap-3">
-            <span className="max-w-[10rem] truncate text-sm text-muted-foreground">{name}</span>
+          <div className="flex min-w-0 items-center gap-3">
+            {/* With a sponsor's logo there is no room for her name on a phone. */}
+            <span className={`max-w-[10rem] truncate text-sm text-muted-foreground ${campaign?.logo_path && !campaign.is_default ? "hidden sm:inline" : ""}`}>{name}</span>
             <LanguageSwitch />
+            {campaign && !campaign.is_default && campaign.logo_path && (
+              <SponsorLogo sponsor={campaign.sponsor_name} logoPath={campaign.logo_path} linkUrl={campaign.link_url} />
+            )}
           </div>
         </div>
       </header>

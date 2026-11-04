@@ -171,7 +171,7 @@ function Area({ campaigns, email }: { campaigns: Campaign[]; email: string }) {
             <Button variant="outline" onClick={() => void live.refetch()}>{tr({ en: "Try again", pt: "Tentar de novo" })}</Button>
           </div>
         )}
-        {live.data && <Dashboard data={live.data} />}
+        {live.data && <Dashboard data={live.data} face={campaigns.find((c) => c.id === id)} />}
       </main>
     </>
   );

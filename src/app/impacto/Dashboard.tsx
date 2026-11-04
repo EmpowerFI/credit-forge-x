@@ -1,9 +1,10 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { ShieldCheck } from "lucide-react";
 import { brl } from "../diary/diary";
+import SponsorLogo from "../diary/SponsorLogo";
 import { tr } from "../i18n";
 import {
-  type BusinessMonth, ddmm, FUNNEL, type ImpactLive, keyLabel, monthName, pct, ratio, SEGMENT_TITLE, type Segment,
+  type BusinessMonth, type Campaign, ddmm, FUNNEL, type ImpactLive, keyLabel, monthName, pct, ratio, SEGMENT_TITLE, type Segment,
 } from "./impacto";
 
 const WeeklyChart = lazy(() => import("./WeeklyChart"));
@@ -105,14 +106,23 @@ function MonthRow({ m }: { m: BusinessMonth }) {
   );
 }
 
-export default function Dashboard({ data }: { data: ImpactLive }) {
+export default function Dashboard({ data, face }: { data: ImpactLive; face?: Campaign }) {
   const c = data.campaign;
   const p = data.participation;
 
   return (
     <div className="space-y-5">
       <header className="space-y-1">
-        <p className="text-sm text-muted-foreground">{c.sponsor_name}</p>
+        {face?.logo_path && !c.is_default ? (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{tr({ en: "Sponsored by", pt: "Patrocinado por" })}</span>
+            <SponsorLogo sponsor={c.sponsor_name} logoPath={face.logo_path} linkUrl={face.link_url} className="h-10 max-w-[10rem]" />
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {c.is_default ? c.sponsor_name : `${tr({ en: "Sponsored by", pt: "Patrocinado por" })} ${c.sponsor_name}`}
+          </p>
+        )}
         <h1 className="text-2xl font-semibold sm:text-3xl">{c.name}</h1>
         <p className="text-sm text-muted-foreground">
           {tr({ en: "Campaign ", pt: "Campanha " })}{ddmm(c.period_start)} – {c.period_end ? ddmm(c.period_end) : tr({ en: "ongoing", pt: "contínua" })}
