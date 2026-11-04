@@ -70,6 +70,8 @@ export interface FromApp {
   state_uf: string | null;
   business_name: string | null;
   sector: string | null;
+  /** The app's answer, in its own buckets (AGE_RANGES), when she gave one. */
+  age_range?: AgeRange | null;
   declared: boolean;
 }
 
@@ -223,10 +225,23 @@ export interface EnrolForm {
   city: string;
   state_uf: string;
   sector: string;
+  age_range: AgeRange;
   months_operating: number | null;
   formalization: "mei" | "cnpj" | "none" | null;
   finance_control: "notebook" | "spreadsheet" | "app" | "memory" | "none" | null;
 }
+
+/** The app's age buckets (public.users.age_range), in the app's own words; the database checks the same set. */
+export const AGE_RANGES = localized([
+  { value: "18_24", label: { en: "18 to 24", pt: "18 a 24 anos" } },
+  { value: "25_34", label: { en: "25 to 34", pt: "25 a 34 anos" } },
+  { value: "35_44", label: { en: "35 to 44", pt: "35 a 44 anos" } },
+  { value: "45_54", label: { en: "45 to 54", pt: "45 a 54 anos" } },
+  { value: "55_64", label: { en: "55 to 64", pt: "55 a 64 anos" } },
+  { value: "65_plus", label: { en: "65 or over", pt: "65 anos ou mais" } },
+  { value: "prefere_nao_declarar", label: { en: "I prefer not to say", pt: "Prefiro não declarar" } },
+]);
+export type AgeRange = "18_24" | "25_34" | "35_44" | "45_54" | "55_64" | "65_plus" | "prefere_nao_declarar";
 
 // ------------------------------------------------------------------ what she reads
 
@@ -311,6 +326,7 @@ export function diaryErrorText(error: unknown): string {
     ["month_closed", { en: "That month is already closed.", pt: "Esse mês já foi fechado." }],
     ["no_such_line", { en: "That line was not found.", pt: "Esse lançamento não foi encontrado." }],
     ["not_a_push_service", { en: "This browser cannot receive the reminder. Try Chrome or Safari.", pt: "Este navegador não recebe o lembrete. Tente o Chrome ou o Safari." }],
+    ["age_range_required", { en: "Choose your age range.", pt: "Escolha a sua faixa etária." }],
     ["sector_not_a_category", { en: "Choose what you sell from the list.", pt: "Escolha o que você vende na lista." }],
     ["emoji_not_offered", { en: "Choose one of the emojis offered.", pt: "Escolha um dos emojis da lista." }],
     ["campaign_not_open", { en: "This campaign is not open to join.", pt: "Esta campanha não está aberta para adesão." }],
