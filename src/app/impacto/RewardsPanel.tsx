@@ -135,6 +135,11 @@ export default function RewardsPanel({ campaign }: { campaign: Campaign }) {
             })}
           </p>
 
+          {rows.length === 0 && (
+            <p className="rounded-md bg-muted p-3 text-sm">
+              {tr({ en: "No rewards in this campaign.", pt: "Nenhum prêmio nesta campanha." })}
+            </p>
+          )}
           <ol className="space-y-3">
             {rows.map((m, i) => {
               const id = `reward-${i}`;
