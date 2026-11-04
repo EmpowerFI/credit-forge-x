@@ -55,6 +55,8 @@ export interface DiaryProfile {
     /** She has left it: today is its last day. */
     leaving?: boolean;
   } | null;
+  /** The emoji that marks a day recorded in her week. */
+  progress_emoji?: string;
   /** Every reward she has earned, newest first. */
   rewards?: Reward[];
   /** Her latest answer to "count my business in impact figures", and the wording it was given under. */
@@ -174,14 +176,6 @@ export interface GoalNow {
   max_days?: number;
 }
 
-export interface Draft {
-  draft_id: string;
-  day: string;
-  lines: Line[];
-  notes: string[];
-  heard: string | null;
-}
-
 // ------------------------------------------------------------------ calls
 
 export const diary = {
@@ -196,12 +190,6 @@ export const diary = {
       p_no_activity: args.noActivity ?? false,
       p_quiet_reason: args.quietReason ?? null,
       p_seconds: args.seconds ?? null,
-    }),
-  decideDraft: (draftId: string, confirm: boolean, seconds?: number) =>
-    call<{ status: "confirmed" | "discarded" | "stale"; day?: string } & Partial<AfterRecord>>("diary_draft_decide", {
-      p_draft_id: draftId,
-      p_confirm: confirm,
-      p_seconds: seconds ?? null,
     }),
   history: (days = 31) => call<HistoryDay[]>("diary_history", { p_days: days }),
   voidEntry: (entryId: string) => call<{ status: "voided" | "already_voided" }>("diary_void_entry", { p_entry_id: entryId }),
@@ -218,6 +206,9 @@ export const diary = {
   setImpactConsent: (share: boolean) =>
     call<{ share: boolean }>("diary_impact_consent_set", { p_share: share, p_text_version: CONSENT_TEXT_VERSION }),
   pushUnsubscribe: (endpoint: string) => call<{ devices: number }>("diary_push_unsubscribe", { p_endpoint: endpoint }),
+  categories: () => call<{ slug: string; label: string; icon: string | null }[]>("diary_categories"),
+  setEmoji: (emoji: string) => call<string>("diary_emoji_set", { p_emoji: emoji }),
+  forget: () => call<{ erased: boolean }>("diary_account_forget", { p_confirmation: "EXCLUIR" }),
   openCampaigns: () => call<OpenCampaign[]>("diary_campaigns"),
   joinCampaign: (id: string) => call<{ starts_on: string; until: string }>("diary_campaign_join", { p_program_id: id }),
   leaveCampaign: () => call<{ ends_on: string }>("diary_campaign_leave"),
@@ -320,6 +311,8 @@ export function diaryErrorText(error: unknown): string {
     ["month_closed", { en: "That month is already closed.", pt: "Esse mês já foi fechado." }],
     ["no_such_line", { en: "That line was not found.", pt: "Esse lançamento não foi encontrado." }],
     ["not_a_push_service", { en: "This browser cannot receive the reminder. Try Chrome or Safari.", pt: "Este navegador não recebe o lembrete. Tente o Chrome ou o Safari." }],
+    ["sector_not_a_category", { en: "Choose what you sell from the list.", pt: "Escolha o que você vende na lista." }],
+    ["emoji_not_offered", { en: "Choose one of the emojis offered.", pt: "Escolha um dos emojis da lista." }],
     ["campaign_not_open", { en: "This campaign is not open to join.", pt: "Esta campanha não está aberta para adesão." }],
     ["campaign_not_running", { en: "This campaign is not running today.", pt: "Esta campanha não está acontecendo hoje." }],
     ["already_in_this_campaign", { en: "You have already taken part in this campaign.", pt: "Você já participou desta campanha." }],
@@ -353,4 +346,13 @@ export function addDays(day: string, n: number): string {
   const t = new Date(`${day}T12:00:00Z`);
   t.setUTCDate(t.getUTCDate() + n);
   return t.toISOString().slice(0, 10);
+}
+
+/** The emojis she can pick, the same set the database accepts (20261210). */
+export const PROGRESS_EMOJIS = ["🌱", "🌸", "🌻", "⭐", "🔥", "💪", "🐝", "🦋", "💎", "🍀", "🎯", "🚀"] as const;
+
+/** Monday of the week a day is in (YYYY-MM-DD in, YYYY-MM-DD out). */
+export function mondayOf(day: string): string {
+  const weekday = new Date(`${day}T12:00:00Z`).getUTCDay(); // 0 = Sunday
+  return addDays(day, -((weekday + 6) % 7));
 }
