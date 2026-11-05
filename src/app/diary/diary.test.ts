@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, brl, dayName, diaryErrorText, mondayOf, parseReais, PROGRESS_EMOJIS } from "./diary";
+import { addDays, brl, cachedToday, dayName, diaryErrorText, mondayOf, parseReais, PROGRESS_EMOJIS, spToday } from "./diary";
 import { setCurrentLocale } from "../i18n";
 
 describe("parseReais", () => {
@@ -60,5 +60,19 @@ describe("her week", () => {
   });
   it("offers twelve distinct emojis", () => {
     expect(new Set(PROGRESS_EMOJIS).size).toBe(12);
+  });
+});
+
+describe("today, where she is", () => {
+  it("is São Paulo's date, not UTC's, late in the evening", () => {
+    // 22:30 in São Paulo on 4 Nov is already 5 Nov in UTC.
+    expect(spToday(new Date("2026-11-05T01:30:00Z"))).toBe("2026-11-04");
+    expect(spToday(new Date("2026-11-05T03:30:00Z"))).toBe("2026-11-05");
+  });
+
+  it("takes the server's date from whichever cached profile has it", () => {
+    const queries = [[["diary", "profile", "open-campaigns"], []], [["diary", "profile", "u1"], { today: "2026-11-04" }]] as const;
+    expect(cachedToday(queries)).toBe("2026-11-04");
+    expect(cachedToday([[["x"], undefined]])).toBe(spToday());
   });
 });

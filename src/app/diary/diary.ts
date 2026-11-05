@@ -205,6 +205,8 @@ export const diary = {
     }),
   history: (days = 31) => call<HistoryDay[]>("diary_history", { p_days: days }),
   voidEntry: (entryId: string) => call<{ status: "voided" | "already_voided" }>("diary_void_entry", { p_entry_id: entryId }),
+  correctEntry: (entryId: string, line: Line, requestId: string) =>
+    call<{ status: "corrected" | "duplicate" }>("diary_correct_entry", { p_entry_id: entryId, p_entry: line, p_request_id: requestId }),
   goalNow: () => call<GoalNow>("diary_goal_now"),
   goalAnswer: (choice: "days" | "sales" | "skip", target?: number) =>
     call<{ status: string }>("diary_goal_answer", { p_choice: choice, p_target: target ?? null }),
@@ -335,6 +337,7 @@ export function diaryErrorText(error: unknown): string {
     ["too_old_to_correct", { en: "Only today's and yesterday's lines can be corrected.", pt: "Só dá para corrigir lançamentos de hoje e de ontem." }],
     ["month_closed", { en: "That month is already closed.", pt: "Esse mês já foi fechado." }],
     ["no_such_line", { en: "That line was not found.", pt: "Esse lançamento não foi encontrado." }],
+    ["already_voided", { en: "That line was already taken back.", pt: "Esse lançamento já tinha sido desfeito." }],
     ["not_a_push_service", { en: "This browser cannot receive the reminder. Try Chrome or Safari.", pt: "Este navegador não recebe o lembrete. Tente o Chrome ou o Safari." }],
     ["age_range_required", { en: "Choose your age range.", pt: "Escolha a sua faixa etária." }],
     ["sector_not_a_category", { en: "Choose what you sell from the list.", pt: "Escolha o que você vende na lista." }],
@@ -366,6 +369,24 @@ export function dayName(day: string, today: string): string {
   if (day === addDays(today, -1)) return tr({ en: "yesterday", pt: "ontem" });
   const [y, m, d] = day.split("-");
   return `${d}/${m}${y === today.slice(0, 4) ? "" : `/${y}`}`;
+}
+
+/**
+ * Today where she is. The server's date (diary_profile.today) is the one
+ * that counts; this is what to show until it arrives, and never the UTC
+ * date, which after 21:00 in São Paulo is already tomorrow.
+ */
+export function spToday(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+/** The server's today from whichever cached profile query has it, else São Paulo's. */
+export function cachedToday(queries: ReadonlyArray<readonly [unknown, unknown]>): string {
+  for (const [, data] of queries) {
+    const today = (data as { today?: unknown } | undefined)?.today;
+    if (typeof today === "string" && /^\d{4}-\d{2}-\d{2}$/.test(today)) return today;
+  }
+  return spToday();
 }
 
 export function addDays(day: string, n: number): string {

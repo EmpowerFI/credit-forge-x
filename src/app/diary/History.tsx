@@ -9,13 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { tr } from "../i18n";
 import { MyRewards } from "./Campaigns";
-import { addDays, brl, categoryLabel, dayName, diary, diaryErrorText, type HistoryEntry, methodLabel, PROFILE_KEY } from "./diary";
+import { addDays, brl, cachedToday, categoryLabel, dayName, diary, diaryErrorText, type HistoryEntry, methodLabel, PROFILE_KEY } from "./diary";
 
 /** The last 31 days she kept, newest first. Today's and yesterday's lines can be taken back. */
 export default function History() {
   const queryClient = useQueryClient();
-  const today = queryClient.getQueriesData<{ today: string }>({ queryKey: PROFILE_KEY })[0]?.[1]?.today
-    ?? new Date().toISOString().slice(0, 10);
+  const today = cachedToday(queryClient.getQueriesData({ queryKey: PROFILE_KEY }));
   const history = useQuery({ queryKey: ["diary", "history", 31], queryFn: () => diary.history(31) });
   const me = useQuery({ queryKey: [...PROFILE_KEY, "reminders"], queryFn: diary.profile });
   const [toVoid, setToVoid] = useState<HistoryEntry | null>(null);
