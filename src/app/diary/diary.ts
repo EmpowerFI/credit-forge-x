@@ -453,6 +453,28 @@ export function mondayOf(day: string): string {
 }
 
 /** "qua, 4/11": the day as the day switch names it. */
+// The first-time tour, seen once per person on this phone. A new phone shows
+// it again, which is no harm: it is short, and "Pular" is always there.
+// Storage may be refused (private mode); then it shows each time the diary
+// opens, until skipped.
+const tourKey = (userId: string) => `empowerfi-diary-tour:${userId}`;
+
+export function tourSeen(userId: string): boolean {
+  try {
+    return localStorage.getItem(tourKey(userId)) !== null;
+  } catch {
+    return false;
+  }
+}
+
+export function markTourSeen(userId: string) {
+  try {
+    localStorage.setItem(tourKey(userId), new Date().toISOString());
+  } catch {
+    // Memory only: the tour closes for this visit either way.
+  }
+}
+
 /** Every weekday, Monday first, by ISO number. */
 export const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
 

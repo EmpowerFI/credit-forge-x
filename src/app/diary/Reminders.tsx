@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Smartphone } from "lucide-react";
+import { Link } from "react-router-dom";
+import { GraduationCap, Loader2, Smartphone } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { tr } from "../i18n";
@@ -120,6 +121,11 @@ export default function Reminders() {
           {tr({ en: "Sign out", pt: "Sair" })}
         </button>
       </div>
+      <Link to="/app/diario?tutorial=1"
+        className="flex min-h-11 items-center gap-2 font-semibold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <GraduationCap size={18} aria-hidden="true" />
+        {tr({ en: "See the tutorial again", pt: "Ver o tutorial de novo" })}
+      </Link>
       <div className="flex items-center justify-between gap-3">
         <span className="text-muted-foreground">{tr({ en: "Language", pt: "Idioma" })}</span>
         <LanguageSwitch variant="pill" />
