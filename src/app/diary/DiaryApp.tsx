@@ -1,13 +1,14 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, BookOpen, Loader2, PenLine } from "lucide-react";
+import { Bell, BookOpen, Loader2, PenLine, RefreshCw } from "lucide-react";
 import { tr } from "../i18n";
 import { Button } from "@/components/ui/button";
 import { diaryClosed, useDiarySession } from "./db";
 import { diary, diaryErrorText, type DiaryProfile, markTourSeen, PROFILE_KEY, tourSeen } from "./diary";
 import { Tour } from "./Tour";
 import { TOUR, TourContext } from "./tour-steps";
+import { useDiaryUpdate } from "./update";
 import { Avatar, DiaryLogo } from "./Brand";
 import SponsorLogo from "./SponsorLogo";
 import { resyncPush } from "./push";
@@ -95,6 +96,7 @@ function Layout({ name, campaign, userId }: { name: string; campaign: DiaryProfi
   useEffect(() => {
     if (pathname === "/app/diario" && !tourSeen(userId)) setTouring(true);
   }, [pathname, userId]);
+  const update = useDiaryUpdate();
   const endTour = () => {
     markTourSeen(userId);
     setTouring(false);
@@ -146,6 +148,19 @@ function Layout({ name, campaign, userId }: { name: string; campaign: DiaryProfi
           </div>
         </div>
       </header>
+      <div aria-live="polite">
+        {update.ready && (
+          <div className="border-b border-border bg-secondary">
+            <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-2">
+              <p className="flex items-center gap-2 text-sm">
+                <RefreshCw size={16} aria-hidden="true" />
+                {tr({ en: "A new version of the diary is ready.", pt: "Tem uma versão nova do diário." })}
+              </p>
+              <Button size="sm" className="h-10 shrink-0" onClick={update.apply}>{tr({ en: "Update", pt: "Atualizar" })}</Button>
+            </div>
+          </div>
+        )}
+      </div>
       <main className="mx-auto max-w-md px-4 pb-28 pt-4">
         <Outlet />
       </main>
