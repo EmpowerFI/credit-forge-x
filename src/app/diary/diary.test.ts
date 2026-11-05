@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, brl, cachedToday, dayName, diaryErrorText, mondayOf, parseReais, PROGRESS_EMOJIS, spToday } from "./diary";
+import { addDays, brl, cachedToday, dayName, diaryErrorText, mondayOf, parseReais, progressIcon, PROGRESS_ICONS, spToday } from "./diary";
 import { setCurrentLocale } from "../i18n";
 
 describe("parseReais", () => {
@@ -58,8 +58,11 @@ describe("her week", () => {
     expect(mondayOf("2026-11-08")).toBe("2026-11-02"); // a Sunday
     expect(mondayOf("2027-01-01")).toBe("2026-12-28"); // across the year
   });
-  it("offers twelve distinct emojis", () => {
-    expect(new Set(PROGRESS_EMOJIS).size).toBe(12);
+  it("offers EmpowerFI's five icons, and the first for anything else", () => {
+    expect(new Set(PROGRESS_ICONS.map((i) => i.code)).size).toBe(5);
+    expect(progressIcon("calendar")).toBe("calendar");
+    expect(progressIcon("🌱")).toBe("growth");
+    expect(progressIcon(undefined)).toBe("growth");
   });
 });
 
