@@ -44,9 +44,13 @@ export function ReadingCard({ reading, open = true }: { reading: WeekReading; op
       <p><strong>{tr({ en: "For this week:", pt: "Para esta semana:" })}</strong> {r.action}</p>
       <p className="text-sm italic text-muted-foreground">{r.limits}</p>
       <p className="text-sm text-muted-foreground">
-        {reading.days_kept === 1
-          ? tr({ en: "You recorded 1 day that week.", pt: "Você registrou 1 dia nessa semana." })
-          : tr({ en: `You recorded ${reading.days_kept} days that week.`, pt: `Você registrou ${reading.days_kept} dias nessa semana.` })}
+        {reading.days_kept > (reading.open_days ?? 7)
+          // She recorded on a day she usually closes: it counts, and the sentence says so.
+          ? tr({ en: `You recorded ${reading.days_kept} days that week.`, pt: `Você registrou ${reading.days_kept} dias nessa semana.` })
+          : tr({
+            en: `You recorded ${reading.days_kept} of the ${reading.open_days ?? 7} days your business opens that week.`,
+            pt: `Você registrou ${reading.days_kept} dos ${reading.open_days ?? 7} dias em que seu negócio abre nessa semana.`,
+          })}
       </p>
       <p className="border-t border-border pt-3 text-xs text-muted-foreground">
         {reading.source === "model"

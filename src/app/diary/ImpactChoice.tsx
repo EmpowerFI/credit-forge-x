@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { tr } from "../i18n";
+import { AiReadingSwitch } from "./BusinessWeek";
 import { LeaveCampaign } from "./Campaigns";
 import { diary, diaryErrorText, type DiaryProfile, IMPACT_ASKED_IN, PROFILE_KEY } from "./diary";
 
@@ -91,6 +92,7 @@ export function YourData({ profile }: { profile: DiaryProfile }) {
         <Label htmlFor="impact-share" className="text-sm font-normal leading-relaxed"><ImpactChoiceText /></Label>
         <Switch id="impact-share" checked={share} disabled={busy} onCheckedChange={(v) => void set(v)} className="mt-1 shrink-0" />
       </div>
+      <AiReadingSwitch profile={profile} />
       {error && <p role="alert" className="font-medium text-destructive">{error}</p>}
     </section>
   );

@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Loader2, Lock, Pencil, Trash2, Users } from "lucide-react";
+import { Bell, Loader2, Lock, Pencil, Sparkles, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,14 @@ function ConsentText() {
       body: tr({
         en: "How many women take part and how many days they record, in groups of at least 5. Never your name, never your figures alone.",
         pt: "Quantas participam e quantos dias registram, em grupos de pelo menos 5. Nunca o seu nome, nunca os seus números sozinhos.",
+      }),
+    },
+    {
+      icon: Sparkles,
+      title: { en: "AI writes your weekly reading.", pt: "A leitura da semana é escrita por IA." },
+      body: tr({
+        en: "Anthropic's AI receives your week's figures and your business sector, never your name, e-mail or city, and every number it writes is checked against yours. Prefer without AI? Turn it off under Reminders.",
+        pt: "A IA da Anthropic recebe os valores da sua semana e o ramo do seu negócio, nunca seu nome, e-mail ou cidade, e cada número que ela escreve é conferido com os seus. Prefere sem IA? Desligue em Lembretes.",
       }),
     },
     {

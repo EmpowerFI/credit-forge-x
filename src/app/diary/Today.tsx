@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OpenCampaigns, RewardCard } from "./Campaigns";
+import { AiNotice } from "./BusinessWeek";
 import { ImpactAsk } from "./ImpactChoice";
 import { InstallInvite } from "./Install";
 import { LatestReading } from "./Reading";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
-  addDays, type AfterRecord, brl, cachedToday, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
+  addDays, type AfterRecord, brl, cachedToday, openDaysOf, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
   type GoalAfter, type HistoryEntry, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
 } from "./diary";
 
@@ -202,6 +203,7 @@ export default function Today() {
       </h1>
 
       {mode === "ask" && me.data && <ImpactAsk profile={me.data} />}
+      {mode === "ask" && me.data && <AiNotice profile={me.data} />}
       {mode === "ask" && (
         <div className="space-y-3">
           {noted.length > 0 ? (
@@ -264,7 +266,7 @@ export default function Today() {
         </section>
       )}
       {mode === "ask" && <LatestReading today={today} />}
-      {mode === "ask" && me.data && <WeekProgress icon={progressIcon(me.data.progress_emoji)} today={today} days={week.data ?? []} />}
+      {mode === "ask" && me.data && <WeekProgress icon={progressIcon(me.data.progress_emoji)} openDays={openDaysOf(me.data)} today={today} days={week.data ?? []} />}
       {mode === "ask" && me.data && <OpenCampaigns profile={me.data} />}
 
       {mode === "entry" && (

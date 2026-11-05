@@ -18,7 +18,8 @@
 //      the reasons are kept for review.
 //   4. Record the reading, who wrote it, the tokens and the cost.
 //
-// Her first name goes into the message here and nowhere near the model.
+// Her first name goes into the message here and nowhere near the model. When
+// she has turned the AI off (ai_reading), the model is not called at all.
 //
 // Secrets: ANTHROPIC_API_KEY (without it every reading is the fallback, which
 // is a deliberate and safe degradation); optional ANTHROPIC_MODEL,
@@ -84,6 +85,8 @@ interface Inputs {
   previous: MonthFigures | null;
   /** Weeks only: days kept in the last thirty, said by code under the reading. */
   coverage?: { kept: number; days: number } | null;
+  /** Weeks only: false when she chose a reading without AI. Absent: on. */
+  ai_reading?: boolean;
 }
 
 /** What a reading call answers: an HTTP status and its body. */
@@ -131,7 +134,10 @@ export async function writeReading(db: SupabaseClient, target: Target): Promise<
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     const model = Deno.env.get("ANTHROPIC_MODEL") || DEFAULT_MODEL;
 
-    if (action === "run" && apiKey) {
+    if (inputs.ai_reading === false) {
+      // Her choice: the same figures, in fixed sentences, and nothing sent out.
+      error = "she chose a reading without AI; fallback written";
+    } else if (action === "run" && apiKey) {
       try {
         const { url, init, facts } = anthropicRequest(apiKey, model, insights, inputs.sector);
         const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) });

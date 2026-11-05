@@ -264,3 +264,23 @@ Deno.test("coverage is said by code, under the reading", () => {
   const text = renderMessage(fallbackReport(weekOf()), "Maria", "week", coverageLine({ kept: 24, days: 30 }));
   assertEquals(text.endsWith("📅 Você registrou em 24 dos últimos 30 dias."), true);
 });
+
+Deno.test("a week is counted on the days she opens", () => {
+  // Opens two days a week (a fair): selling on both is not "few days".
+  assertEquals(weekOf({ active_days: 2, open_days: 2 }).flags.includes("FEW_ACTIVE_DAYS"), false);
+  assertEquals(weekOf({ active_days: 1, open_days: 2 }).flags.includes("FEW_ACTIVE_DAYS"), true);
+  // Opens one day: one day selling is the whole week.
+  assertEquals(weekOf({ active_days: 1, open_days: 1 }).flags.includes("FEW_ACTIVE_DAYS"), false);
+  // Not said: seven, as before.
+  assertEquals(weekOf({ active_days: 1 }).flags.includes("FEW_ACTIVE_DAYS"), true);
+  assertEquals(weekOf({ active_days: 1 }).open_days, null);
+
+  const { lines, allowedNumbers } = factsFor(weekOf({ active_days: 5, open_days: 5 }));
+  assertEquals(lines.includes("Dias em que o negócio abre na semana: 5"), true);
+  assertEquals(allowedNumbers.has("5"), true);
+  assertEquals(promptFor(weekOf({ open_days: 5 })).system.includes("não são falta"), true);
+});
+
+Deno.test("open days outside a week are refused", () => {
+  assertThrows(() => weekOf({ open_days: 8 }), Error, "open_days out of range");
+});

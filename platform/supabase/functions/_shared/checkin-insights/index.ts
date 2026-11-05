@@ -31,7 +31,7 @@
 // named by its Monday, "YYYY-MM-DD". Months are computed exactly as in v0.1.0;
 // only the version moved, because the formula now answers a second question.
 
-export const INSIGHTS_FORMULA_VERSION = "insights-v0.2.0";
+export const INSIGHTS_FORMULA_VERSION = "insights-v0.3.0";
 
 /** A month is "YYYY-MM"; a week is its Monday, "YYYY-MM-DD". */
 export type Span = "month" | "week";
@@ -66,6 +66,8 @@ export interface MonthFigures {
   keeps_records: boolean;
   /** Days the business operated in the period: 0–31 for a month, 0–7 for a week. */
   active_days: number;
+  /** Weeks only: the days a week her business opens (1–7), the week's base. Absent: seven. */
+  open_days?: number | null;
 }
 
 export interface InsightsInput {
@@ -107,6 +109,8 @@ export interface Insights {
   revenue_cents: number;
   household_cents: number;
   active_days: number;
+  /** Weeks only: the days a week her business opens. Null for a month or when not said. */
+  open_days: number | null;
 
   /** cogs + opex. Null when either category is unknown. */
   business_cost_cents: number | null;
@@ -133,7 +137,7 @@ export interface Insights {
 export const RULES = {
   /** A month running under five days is barely open. */
   FEW_ACTIVE_DAYS: 5,
-  /** A week selling on fewer than two days is barely open. */
+  /** A week selling on fewer than two days is barely open -- or on fewer than the days it opens, if those are fewer. */
   FEW_ACTIVE_DAYS_WEEK: 2,
   /** Below this, a revenue change is noise, not a trend. 15%. */
   MATERIAL_CHANGE_BPS: 1500,
@@ -181,6 +185,10 @@ export function computeInsights(input: InsightsInput): Insights {
   if (!Number.isInteger(m.active_days) || m.active_days < 0 || m.active_days > (span === "week" ? 7 : 31)) {
     throw new Error(`active_days out of range: ${m.active_days}`);
   }
+  const open_days = span === "week" && m.open_days != null ? m.open_days : null;
+  if (open_days !== null && (!Number.isInteger(open_days) || open_days < 1 || open_days > 7)) {
+    throw new Error(`open_days out of range: ${open_days}`);
+  }
 
   const costKnown = m.cogs_cents !== null && m.opex_cents !== null;
   const business_cost_cents = costKnown ? (m.cogs_cents as number) + (m.opex_cents as number) : null;
@@ -215,7 +223,8 @@ export function computeInsights(input: InsightsInput): Insights {
   // of business and household money moving as one, which is the thing the
   // product most wants to help her separate.
   if (m.revenue_cents > 0 && m.household_cents > m.revenue_cents) flags.push("HOUSEHOLD_OVER_REVENUE");
-  if (m.active_days < (span === "week" ? RULES.FEW_ACTIVE_DAYS_WEEK : RULES.FEW_ACTIVE_DAYS)) flags.push("FEW_ACTIVE_DAYS");
+  const fewDays = span === "week" ? Math.min(RULES.FEW_ACTIVE_DAYS_WEEK, open_days ?? 7) : RULES.FEW_ACTIVE_DAYS;
+  if (m.active_days < fewDays) flags.push("FEW_ACTIVE_DAYS");
   if (revenue_change_bps !== null && revenue_change_bps >= RULES.MATERIAL_CHANGE_BPS) flags.push("REVENUE_UP");
   if (revenue_change_bps !== null && revenue_change_bps <= -RULES.MATERIAL_CHANGE_BPS) flags.push("REVENUE_DOWN");
 
@@ -227,6 +236,7 @@ export function computeInsights(input: InsightsInput): Insights {
     revenue_cents: m.revenue_cents,
     household_cents: m.household_cents,
     active_days: m.active_days,
+    open_days,
     business_cost_cents,
     result_cents,
     result_is_estimated,

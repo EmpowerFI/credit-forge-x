@@ -12,6 +12,7 @@ import { useInstall } from "./pwa";
 import LanguageSwitch from "../i18n/LanguageSwitch";
 import { YourData } from "./ImpactChoice";
 import Notifications from "./Notifications";
+import { OpenDays } from "./BusinessWeek";
 
 const TIMES = Array.from({ length: 33 }, (_, i) => {
   const minutes = 6 * 60 + i * 30; // 06:00 to 22:00, every half hour
@@ -62,6 +63,8 @@ export default function Reminders() {
           })}
         </p>
       </div>
+
+      {profile.data && <OpenDays profile={profile.data} />}
 
       <section className={card} aria-labelledby="reminder-title">
         <div className="flex items-center justify-between gap-4">
