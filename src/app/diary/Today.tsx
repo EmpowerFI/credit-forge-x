@@ -11,8 +11,8 @@ import { InstallInvite } from "./Install";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
-  addDays, type AfterRecord, brl, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
-  type GoalAfter, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
+  addDays, type AfterRecord, brl, cachedToday, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
+  type GoalAfter, type HistoryEntry, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
 } from "./diary";
 
 interface LineDraft {
@@ -61,6 +61,16 @@ function savePending(day: string, list: Noted[]) {
   }
 }
 
+/** A recorded line as the form and the list read it. */
+const fromEntry = (e: HistoryEntry): Line => ({
+  kind: e.kind,
+  amount_cents: e.amount_cents,
+  payment_method: e.payment_method,
+  ...(e.category ? { category: e.category } : {}),
+  ...(e.due_on ? { due_on: e.due_on } : {}),
+  ...(e.installments > 1 ? { installments: e.installments } : {}),
+});
+
 /** A noted line back into the form, to be changed. */
 const toDraft = (l: Line): LineDraft => ({
   kind: l.kind,
@@ -81,12 +91,19 @@ const toDraft = (l: Line): LineDraft => ({
 export default function Today() {
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
-  const profile = queryClient.getQueriesData<{ today: string }>({ queryKey: PROFILE_KEY })[0]?.[1];
   const me = useQuery({ queryKey: [...PROFILE_KEY, "reminders"], queryFn: diary.profile });
-  const today = profile?.today ?? new Date().toISOString().slice(0, 10);
+  const today = me.data?.today ?? cachedToday(queryClient.getQueriesData({ queryKey: PROFILE_KEY }));
   const [day, setDay] = useState(today);
   const [mode, setMode] = useState<"ask" | "entry" | "review" | "done">("ask");
   const [noted, setNoted] = useState<Noted[]>(() => loadPending(today));
+  // The server's date arrives, or a new day comes in with the screen open: the
+  // day she is on moves with it, unless she chose yesterday on purpose.
+  useEffect(() => {
+    if (day !== today && day !== addDays(today, -1)) {
+      setDay(today);
+      setNoted(loadPending(today));
+    }
+  }, [today, day]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AfterRecord | null>(null);
@@ -164,6 +181,8 @@ export default function Today() {
   const daySales = keptDay?.entries.filter((e) => !e.voided && e.kind === "sale").reduce((t, e) => t + e.amount_cents, 0) ?? 0;
   const dayExpenses = keptDay?.entries.filter((e) => !e.voided && e.kind === "expense").reduce((t, e) => t + e.amount_cents, 0) ?? 0;
   const isToday = day === today;
+  const liveEntries = keptDay?.entries.filter((e) => !e.voided) ?? [];
+  const recorded = liveEntries.length > 0;
 
   return (
     <div className="space-y-6">
@@ -193,11 +212,19 @@ export default function Today() {
                 title={tr({ en: "Note another one", pt: "Anotar mais um" })}
                 hint={tr({ en: "A sale or an expense", pt: "Uma venda ou um gasto" })} />
             </>
+          ) : recorded ? (
+            <BigAction primary icon={Plus} onClick={() => setMode("entry")}
+              title={tr({ en: "Add more", pt: "Incluir mais" })}
+              hint={tr({ en: "Remembered something? Note a sale or an expense", pt: "Lembrou de algo? Anote uma venda ou um gasto" })} />
           ) : (
             <BigAction primary icon={Plus} onClick={() => setMode("entry")}
               title={tr({ en: "I sold or spent", pt: "Vendi ou gastei" })}
               hint={tr({ en: "Note the amount and what it was", pt: "Anotar valor e o que foi" })} />
           )}
+        </div>
+      )}
+      {mode === "ask" && !recorded && (
+        <div className="space-y-3">
           <p className="pt-3 text-muted-foreground">{tr({ en: "No activity?", pt: "Não teve movimento?" })}</p>
           <div className="grid grid-cols-2 gap-3">
             <Button variant="outline" className="h-14 rounded-xl text-base" disabled={busy} onClick={() => void recordQuiet("no_sales")}>
@@ -230,8 +257,9 @@ export default function Today() {
               ? isToday ? tr({ en: "Nothing recorded yet today.", pt: "Nada anotado ainda hoje." }) : tr({ en: "Nothing recorded for yesterday.", pt: "Nada anotado para ontem." })
               : keptDay.no_activity
                 ? tr({ en: "Recorded: no activity.", pt: "Registrado: sem movimento." })
-                : tr({ en: "Recorded. Anything you add now adds up.", pt: "Registrado. O que você incluir agora soma." })}
+                : tr({ en: "Recorded. Anything you add now adds up, and you can change or remove what is below.", pt: "Registrado. O que você incluir agora soma, e dá para corrigir ou remover o que está abaixo." })}
           </p>
+          {recorded && <Recorded key={day} day={day} entries={liveEntries} />}
         </section>
       )}
       {mode === "ask" && me.data && <WeekProgress emoji={me.data.progress_emoji ?? "🌱"} today={today} days={week.data ?? []} />}
@@ -499,6 +527,98 @@ function Review({ day, today, noted, busy, onChange, onMore, onConfirm }: {
   );
 }
 
+/**
+ * What the day already has, each line open to her: changed (the old one is
+ * struck through and the new one recorded, at once) or removed (struck
+ * through, as in the history). Only today's and yesterday's, as the server
+ * allows.
+ */
+function Recorded({ day, entries }: { day: string; entries: HistoryEntry[] }) {
+  const queryClient = useQueryClient();
+  const [editing, setEditing] = useState<{ id: string; draft: LineDraft; requestId: string } | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  const run = async (what: () => Promise<unknown>) => {
+    setBusy(true);
+    setProblem(null);
+    try {
+      await what();
+      await queryClient.invalidateQueries({ queryKey: ["diary", "history"] });
+      await queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
+      setEditing(null);
+      setRemoving(null);
+    } catch (e) {
+      setProblem(diaryErrorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (editing) {
+    const save = () => {
+      const line = readLine(editing.draft, day);
+      if (typeof line === "string") return setProblem(line);
+      void run(() => diary.correctEntry(editing.id, line, editing.requestId));
+    };
+    return (
+      <form className="space-y-4 rounded-2xl border border-border bg-card p-4" noValidate onSubmit={(e) => { e.preventDefault(); save(); }}>
+        <h3 className="font-heading text-lg font-semibold">{tr({ en: "Correct this line", pt: "Corrigir este lançamento" })}</h3>
+        <LineFields draft={editing.draft} day={day} set={(patch) => setEditing({ ...editing, draft: { ...editing.draft, ...patch } })} />
+        {problem && <p role="alert" className="text-sm font-medium text-destructive">{problem}</p>}
+        <div className="grid grid-cols-2 gap-3">
+          <Button type="submit" className="h-12" disabled={busy}>
+            {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
+            {tr({ en: "Save", pt: "Salvar" })}
+          </Button>
+          <Button type="button" variant="outline" className="h-12" disabled={busy} onClick={() => { setEditing(null); setProblem(null); }}>
+            {tr({ en: "Cancel", pt: "Cancelar" })}
+          </Button>
+        </div>
+      </form>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <ul className="divide-y divide-border rounded-2xl border border-border bg-card" aria-label={tr({ en: "Recorded lines", pt: "Lançamentos registrados" })}>
+        {entries.map((e) => (
+          <li key={e.id} className="p-3">
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 text-sm">{lineText(fromEntry(e))}</span>
+              <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" disabled={busy}
+                aria-label={tr({ en: "Correct", pt: "Corrigir" })}
+                onClick={() => { setProblem(null); setRemoving(null); setEditing({ id: e.id, draft: toDraft(fromEntry(e)), requestId: newRequestId() }); }}>
+                <Pencil aria-hidden="true" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" disabled={busy}
+                aria-label={tr({ en: "Remove", pt: "Remover" })} onClick={() => { setProblem(null); setRemoving(e.id); }}>
+                <Trash2 aria-hidden="true" />
+              </Button>
+            </div>
+            {removing === e.id && (
+              <div className="mt-2 space-y-2 rounded-md bg-muted p-3 text-sm" role="group" aria-label={tr({ en: "Remove this line?", pt: "Remover este lançamento?" })}>
+                <p>{tr({ en: "Remove this line? It stays struck through in your history.", pt: "Remover este lançamento? Ele fica riscado no seu histórico." })}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="destructive" className="h-11" disabled={busy} onClick={() => void run(() => diary.voidEntry(e.id))}>
+                    {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
+                    {tr({ en: "Yes, remove", pt: "Sim, remover" })}
+                  </Button>
+                  <Button variant="outline" className="h-11" disabled={busy} onClick={() => setRemoving(null)}>
+                    {tr({ en: "Keep", pt: "Manter" })}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      {problem && <p role="alert" className="text-sm font-medium text-destructive">{problem}</p>}
+    </div>
+  );
+}
+
 function Done({ result, today, onMore }: { result: AfterRecord; today: string; onMore: () => void }) {
   const s = result.summary;
   const p = result.progress;
@@ -549,7 +669,7 @@ function Done({ result, today, onMore }: { result: AfterRecord; today: string; o
       <InstallInvite />
 
       <div className="grid grid-cols-2 gap-3">
-        <Button variant="outline" className="h-12" onClick={onMore}>{tr({ en: "Add more", pt: "Registrar mais" })}</Button>
+        <Button variant="outline" className="h-12" onClick={onMore}>{tr({ en: "Add or correct", pt: "Incluir ou corrigir" })}</Button>
         <Button asChild variant="outline" className="h-12">
           <Link to="/app/diario/historico">{tr({ en: "See history", pt: "Ver histórico" })}</Link>
         </Button>
