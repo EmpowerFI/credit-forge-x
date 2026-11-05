@@ -226,7 +226,24 @@ export const diary = {
   openCampaigns: () => call<OpenCampaign[]>("diary_campaigns"),
   joinCampaign: (id: string) => call<{ starts_on: string; until: string }>("diary_campaign_join", { p_program_id: id }),
   leaveCampaign: () => call<{ ends_on: string }>("diary_campaign_leave"),
+  readings: (limit = 12) => call<WeekReading[]>("diary_readings", { p_limit: limit }),
+  /** Writes the week that has just closed, if it is due a reading. Once per week, whoever asks. */
+  checkReading: async () => {
+    const { data, error } = await diaryDb.functions.invoke<{ week_start: string; status: "not_due" | "written" | "busy" | "failed" }>(
+      "diary-reading", { method: "POST" });
+    if (error) throw error;
+    return data;
+  },
 };
+
+/** A week's reading: what the model wrote (checked) or the fixed-sentence fallback, in Portuguese. */
+export interface WeekReading {
+  week_start: string;
+  source: "model" | "fallback";
+  report: { summary: string; observations: string[]; action: string; limits: string };
+  days_kept: number;
+  completed_at: string;
+}
 
 export interface EnrolForm {
   name: string;
@@ -423,6 +440,16 @@ export function mondayOf(day: string): string {
 }
 
 /** "qua, 4/11": the day as the day switch names it. */
+/** "2 a 8/11", or "29/12 a 4/1" across months. */
+export function weekSpan(monday: string): string {
+  const a = new Date(`${monday}T12:00:00Z`);
+  const b = new Date(a);
+  b.setUTCDate(b.getUTCDate() + 6);
+  const to = `${b.getUTCDate()}/${b.getUTCMonth() + 1}`;
+  const from = a.getUTCMonth() === b.getUTCMonth() ? `${a.getUTCDate()}` : `${a.getUTCDate()}/${a.getUTCMonth() + 1}`;
+  return tr({ en: `${from} to ${to}`, pt: `${from} a ${to}` });
+}
+
 export function shortDay(day: string): string {
   const d = new Date(`${day}T12:00:00Z`);
   const weekday = d.toLocaleDateString(tr({ en: "en-GB", pt: "pt-BR" }), { weekday: "short", timeZone: "UTC" }).replace(".", "");

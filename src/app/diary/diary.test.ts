@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, brl, cachedToday, dayName, diaryErrorText, mondayOf, parseReais, progressIcon, PROGRESS_ICONS, spToday } from "./diary";
+import { addDays, brl, cachedToday, dayName, diaryErrorText, mondayOf, parseReais, progressIcon, PROGRESS_ICONS, spToday, weekSpan } from "./diary";
 import { setCurrentLocale } from "../i18n";
 
 describe("parseReais", () => {
@@ -77,5 +77,13 @@ describe("today, where she is", () => {
     const queries = [[["diary", "profile", "open-campaigns"], []], [["diary", "profile", "u1"], { today: "2026-11-04" }]] as const;
     expect(cachedToday(queries)).toBe("2026-11-04");
     expect(cachedToday([[["x"], undefined]])).toBe(spToday());
+  });
+});
+
+describe("weekSpan", () => {
+  it("names a week by its days, across months too", () => {
+    setCurrentLocale("pt");
+    expect(weekSpan("2026-11-02")).toBe("2 a 8/11");
+    expect(weekSpan("2026-12-28")).toBe("28/12 a 3/1");
   });
 });
