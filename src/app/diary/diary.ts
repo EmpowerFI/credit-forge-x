@@ -28,7 +28,7 @@ async function call<T>(fn: string, args?: Record<string, unknown>): Promise<T> {
 export const PROFILE_KEY = ["diary", "profile"] as const;
 
 /** The consent wording's version, recorded with her enrolment. Change it whenever CONSENT changes. */
-export const CONSENT_TEXT_VERSION = "web-2026-12c";
+export const CONSENT_TEXT_VERSION = "web-2026-12d";
 
 /**
  * The wordings that already asked whether to count her business in the
@@ -36,9 +36,13 @@ export const CONSENT_TEXT_VERSION = "web-2026-12c";
  * one-time question is not asked again when the wording moves on for another
  * reason. "web-2026-12b" only drops the voice paragraph (voice left the diary);
  * "web-2026-12c" sets the same points as titled items, and says she deletes
- * her account herself, under Reminders.
+ * her account herself, under Reminders. "web-2026-12d" adds the AI that writes
+ * the weekly reading.
  */
-export const IMPACT_ASKED_IN = ["web-2026-12", "web-2026-12b", "web-2026-12c"];
+export const IMPACT_ASKED_IN = ["web-2026-12", "web-2026-12b", "web-2026-12c", "web-2026-12d"];
+
+/** The wordings that already tell her the weekly reading is written by AI. Anyone else is told once, on Hoje. */
+export const AI_TOLD_IN = ["web-2026-12d"];
 
 // ------------------------------------------------------------------ shapes
 
@@ -65,8 +69,12 @@ export interface DiaryProfile {
     /** She has left it: today is its last day. */
     leaving?: boolean;
   } | null;
-  /** The emoji that marks a day recorded in her week. */
+  /** The icon that marks a day recorded in her week (a PROGRESS_ICONS code). */
   progress_emoji?: string;
+  /** The ISO weekdays her business opens (1 = Monday ... 7 = Sunday): her week's base. */
+  open_days?: number[];
+  /** Whether the weekly reading is written by AI (true) or in fixed sentences only. */
+  ai_reading?: boolean;
   /** Every reward she has earned, newest first. */
   rewards?: Reward[];
   /** Her latest answer to "count my business in impact figures", and the wording it was given under. */
@@ -226,6 +234,8 @@ export const diary = {
   openCampaigns: () => call<OpenCampaign[]>("diary_campaigns"),
   joinCampaign: (id: string) => call<{ starts_on: string; until: string }>("diary_campaign_join", { p_program_id: id }),
   leaveCampaign: () => call<{ ends_on: string }>("diary_campaign_leave"),
+  setOpenDays: (days: number[]) => call<number[]>("diary_open_days_set", { p_days: days }),
+  setAiReading: (on: boolean) => call<boolean>("diary_ai_reading_set", { p_on: on }),
   readings: (limit = 12) => call<WeekReading[]>("diary_readings", { p_limit: limit }),
   /** Writes the week that has just closed, if it is due a reading. Once per week, whoever asks. */
   checkReading: async () => {
@@ -242,6 +252,8 @@ export interface WeekReading {
   source: "model" | "fallback";
   report: { summary: string; observations: string[]; action: string; limits: string };
   days_kept: number;
+  /** The days a week her business opened, the week's base. */
+  open_days: number;
   completed_at: string;
 }
 
@@ -354,6 +366,7 @@ export function diaryErrorText(error: unknown): string {
     ["too_old_to_correct", { en: "Only today's and yesterday's lines can be corrected.", pt: "Só dá para corrigir lançamentos de hoje e de ontem." }],
     ["month_closed", { en: "That month is already closed.", pt: "Esse mês já foi fechado." }],
     ["no_such_line", { en: "That line was not found.", pt: "Esse lançamento não foi encontrado." }],
+    ["open_days_invalid", { en: "Choose at least one day.", pt: "Escolha pelo menos um dia." }],
     ["already_voided", { en: "That line was already taken back.", pt: "Esse lançamento já tinha sido desfeito." }],
     ["not_a_push_service", { en: "This browser cannot receive the reminder. Try Chrome or Safari.", pt: "Este navegador não recebe o lembrete. Tente o Chrome ou o Safari." }],
     ["age_range_required", { en: "Choose your age range.", pt: "Escolha a sua faixa etária." }],
@@ -440,6 +453,25 @@ export function mondayOf(day: string): string {
 }
 
 /** "qua, 4/11": the day as the day switch names it. */
+/** Every weekday, Monday first, by ISO number. */
+export const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const;
+
+/** One letter per weekday, Monday first, in her language. */
+export const weekdayLetters = () => tr({ en: "MTWTFSS", pt: "STQQSSD" }).split("");
+
+/** Weekday names, Monday first, in her language. */
+export const weekdayNames = () => tr({
+  en: "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday",
+  pt: "Segunda,Terça,Quarta,Quinta,Sexta,Sábado,Domingo",
+}).split(",");
+
+/** The days her business opens, every day when she has not said. */
+export const openDaysOf = (p: { open_days?: number[] } | undefined): number[] =>
+  p?.open_days?.length ? p.open_days : [...WEEKDAYS];
+
+/** ISO weekday of a YYYY-MM-DD day (1 = Monday ... 7 = Sunday). */
+export const isoWeekday = (day: string) => ((new Date(`${day}T12:00:00Z`).getUTCDay() + 6) % 7) + 1;
+
 /** "2 a 8/11", or "29/12 a 4/1" across months. */
 export function weekSpan(monday: string): string {
   const a = new Date(`${monday}T12:00:00Z`);

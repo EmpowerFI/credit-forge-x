@@ -28,7 +28,7 @@
 
 import { type InsightFlag, type Insights, type Span, spanOf } from "./checkin-insights/index.ts";
 
-export const PROMPT_VERSION = "report-prompt-v0.2.0";
+export const PROMPT_VERSION = "report-prompt-v0.3.0";
 export const DEFAULT_MODEL = "claude-haiku-5-5";
 
 /** The reading, as the model must return it and as the fallback builds it. */
@@ -145,6 +145,10 @@ export function factsFor(i: Insights): Facts {
   money("Retirado para casa", i.household_cents);
   lines.push(`${WORDS[span].activeDays}: ${i.active_days}`);
   allowed.add(String(i.active_days));
+  if (span === "week" && i.open_days !== null) {
+    lines.push(`Dias em que o negócio abre na semana: ${i.open_days}`);
+    allowed.add(String(i.open_days));
+  }
 
   if (i.previous_period !== null && i.revenue_prev_cents !== null) {
     if (span === "week") {
@@ -177,7 +181,7 @@ function systemFor(span: Span): string {
   const w = WORDS[span];
   return [
     `Você escreve, em português do Brasil, a leitura ${span === "week" ? "semanal" : "mensal"} do negócio de uma microempreendedora.`,
-    "Ela vai ler no WhatsApp. Escreva como uma pessoa próxima e respeitosa escreveria: frases curtas, palavras simples, sem jargão financeiro.",
+    "Ela vai ler no diário da EmpowerFI, no celular. Escreva como uma pessoa próxima e respeitosa escreveria: frases curtas, palavras simples, sem jargão financeiro.",
     "",
     "Regras que não podem ser quebradas:",
     "1. Use apenas os números da lista de fatos, escritos exatamente como estão lá. Não arredonde, não some, não calcule, não crie nenhum número novo.",
@@ -188,6 +192,9 @@ function systemFor(span: Span): string {
     "6. Não dê conselho contábil, jurídico ou de investimento.",
     "",
     `Sobre os sinais: RESULT_NEGATIVE quer dizer que os custos passaram das vendas. HOUSEHOLD_OVER_RESULT quer dizer que ela retirou para casa mais do que o negócio gerou. HOUSEHOLD_OVER_REVENUE sugere que o dinheiro da casa e do negócio estão misturados. FIGURES_ESTIMATED e COST_UNKNOWN pedem cuidado ao tirar conclusões. REVENUE_UP e REVENUE_DOWN são mudanças grandes em relação ${w.previous}. FEW_ACTIVE_DAYS quer dizer que o negócio vendeu em poucos dias ${w.this}.`,
+    ...(span === "week"
+      ? ["Os dias em que o negócio não abre não são falta: nunca diga que ela deixou de vender ou de anotar nesses dias."]
+      : []),
   ].join("\n");
 }
 

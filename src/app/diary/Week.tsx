@@ -4,13 +4,8 @@ import { Button } from "@/components/ui/button";
 import { tr } from "../i18n";
 import {
   addDays, diary, diaryErrorText, type HistoryDay, mondayOf, PROFILE_KEY, PROGRESS_ICONS, type ProgressIcon, progressIconSrc,
+  weekdayLetters, weekdayNames,
 } from "./diary";
-
-const LETTERS = { en: ["M", "T", "W", "T", "F", "S", "S"], pt: ["S", "T", "Q", "Q", "S", "S", "D"] };
-const NAMES = {
-  en: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-  pt: ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"],
-};
 
 /** One of EmpowerFI's progress icons, decorative: what it stands for is always written beside it. */
 function ProgressImg({ code, size }: { code: ProgressIcon; size: number }) {
@@ -20,9 +15,10 @@ function ProgressImg({ code, size }: { code: ProgressIcon; size: number }) {
 /**
  * Her week, Monday to Sunday, with her own icon on every day she recorded.
  * Playful on purpose; the count is written too, so it never rests on the
- * picture alone.
+ * picture alone. Days her business does not open are marked closed, not
+ * missed, and the count is out of the days it opens.
  */
-export function WeekProgress({ icon, today, days }: { icon: ProgressIcon; today: string; days: HistoryDay[] }) {
+export function WeekProgress({ icon, today, days, openDays }: { icon: ProgressIcon; today: string; days: HistoryDay[]; openDays: number[] }) {
   const queryClient = useQueryClient();
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +26,9 @@ export function WeekProgress({ icon, today, days }: { icon: ProgressIcon; today:
   const week = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const recorded = new Set(days.map((d) => d.day));
   const kept = week.filter((d) => recorded.has(d)).length;
-  const letters = tr({ en: LETTERS.en.join(""), pt: LETTERS.pt.join("") }).split("");
-  const names = tr({ en: NAMES.en.join(","), pt: NAMES.pt.join(",") }).split(",");
+  const letters = weekdayLetters();
+  const names = weekdayNames();
+  const opens = new Set(openDays);
 
   const pick = async (e: ProgressIcon) => {
     setError(null);
@@ -57,23 +54,36 @@ export function WeekProgress({ icon, today, days }: { icon: ProgressIcon; today:
         {week.map((d, i) => {
           const done = recorded.has(d);
           const future = d > today;
+          const closed = !opens.has(i + 1);
+          const state = done
+            ? tr({ en: "recorded", pt: "registrado" })
+            : closed
+              ? tr({ en: "closed", pt: "fechado" })
+              : future ? tr({ en: "still to come", pt: "ainda vai chegar" }) : tr({ en: "not recorded", pt: "sem registro" });
           return (
             <li key={d} className="flex flex-col items-center gap-1">
               <span className="text-xs text-muted-foreground" aria-hidden="true">{letters[i]}</span>
               <span
-                aria-label={`${names[i]}: ${done ? tr({ en: "recorded", pt: "registrado" }) : future ? tr({ en: "still to come", pt: "ainda vai chegar" }) : tr({ en: "not recorded", pt: "sem registro" })}`}
+                aria-label={`${names[i]}: ${state}`}
                 className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                  done ? "bg-primary/10" : d === today ? "border-2 border-dashed border-primary/50" : future ? "opacity-40" : "border border-border"}`}>
-                {done && <ProgressImg code={icon} size={30} />}
+                  done ? "bg-primary/10"
+                    : closed ? "bg-muted text-xs text-muted-foreground"
+                      : d === today ? "border-2 border-dashed border-primary/50" : future ? "opacity-40" : "border border-border"}`}>
+                {done ? <ProgressImg code={icon} size={30} /> : closed ? <span aria-hidden="true">—</span> : null}
               </span>
             </li>
           );
         })}
       </ol>
       <p className="text-sm">
-        {kept === 1
-          ? tr({ en: "1 of 7 days recorded this week.", pt: "1 de 7 dias registrados nesta semana." })
-          : tr({ en: `${kept} of 7 days recorded this week.`, pt: `${kept} de 7 dias registrados nesta semana.` })}
+        {openDays.length === 7
+          ? kept === 1
+            ? tr({ en: "1 of 7 days recorded this week.", pt: "1 de 7 dias registrados nesta semana." })
+            : tr({ en: `${kept} of 7 days recorded this week.`, pt: `${kept} de 7 dias registrados nesta semana.` })
+          : tr({
+            en: `${kept} recorded this week, of the ${openDays.length} days your business opens.`,
+            pt: `${kept} ${kept === 1 ? "dia registrado" : "dias registrados"} nesta semana, dos ${openDays.length} em que seu negócio abre.`,
+          })}
       </p>
       {picking && (
         <div role="group" aria-label={tr({ en: "Choose your icon", pt: "Escolha o seu ícone" })} className="grid grid-cols-5 gap-2">
