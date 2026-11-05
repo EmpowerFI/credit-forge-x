@@ -39,7 +39,7 @@ export function OpenDays({ profile }: { profile: DiaryProfile }) {
   };
 
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card p-5" aria-labelledby="open-days-title">
+    <section data-tour="open-days" className="space-y-3 rounded-2xl border border-border bg-card p-5" aria-labelledby="open-days-title">
       <div className="flex items-center justify-between gap-2">
         <h2 id="open-days-title" className="font-heading text-xl font-semibold">
           {tr({ en: "Days your business opens", pt: "Dias em que seu negócio abre" })}

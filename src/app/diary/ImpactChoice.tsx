@@ -75,7 +75,7 @@ export function YourData({ profile }: { profile: DiaryProfile }) {
   const share = profile.impact_consent?.share ?? false;
   const until = c?.until ? c.until.split("-").reverse().join("/") : null;
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
+    <section data-tour="your-data" className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
       <h2 className="font-heading text-xl font-semibold">{tr({ en: "Your participation and your data", pt: "Sua participação e seus dados" })}</h2>
       {c && (
         <p>
