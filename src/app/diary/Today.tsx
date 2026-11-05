@@ -10,12 +10,10 @@ import { AiNotice } from "./BusinessWeek";
 import { ImpactAsk } from "./ImpactChoice";
 import { InstallInvite } from "./Install";
 import { LatestReading } from "./Reading";
-import { Tour } from "./Tour";
-import { useDiarySession } from "./db";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
-  addDays, type AfterRecord, brl, cachedToday, openDaysOf, progressIcon, tourSeen, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
+  addDays, type AfterRecord, brl, cachedToday, openDaysOf, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
   type GoalAfter, type HistoryEntry, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
 } from "./diary";
 
@@ -114,22 +112,6 @@ export default function Today() {
   const started = useRef(Date.now());
   const seconds = () => Math.min(3600, Math.round((Date.now() - started.current) / 1000));
 
-  // The tour: once for whoever starts, and again when Lembretes asks (?tutorial).
-  const { session } = useDiarySession();
-  const userId = session?.user.id;
-  const [touring, setTouring] = useState(false);
-  const enrolled = Boolean(me.data);
-  useEffect(() => {
-    if (!enrolled || !userId) return;
-    if (params.has("tutorial")) {
-      setTouring(true);
-      params.delete("tutorial");
-      setParams(params, { replace: true });
-    } else if (!tourSeen(userId)) {
-      setTouring(true);
-    }
-  }, [enrolled, userId, params, setParams]);
-
   // Opened from a reminder: say so, once, and clean the address.
   useEffect(() => {
     const id = params.get("lembrete");
@@ -206,7 +188,7 @@ export default function Today() {
 
   return (
     <div className="space-y-6">
-      <div role="group" aria-label={tr({ en: "Which day", pt: "Qual dia" })} className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1">
+      <div data-tour="day" role="group" aria-label={tr({ en: "Which day", pt: "Qual dia" })} className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1">
         {[today, addDays(today, -1)].map((d) => (
           <button key={d} type="button" aria-pressed={d === day} disabled={busy} onClick={() => pickDay(d)}
             className={`min-h-12 rounded-lg px-2 text-base transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
@@ -223,7 +205,7 @@ export default function Today() {
       {mode === "ask" && me.data && <ImpactAsk profile={me.data} />}
       {mode === "ask" && me.data && <AiNotice profile={me.data} />}
       {mode === "ask" && (
-        <div className="space-y-3">
+        <div data-tour="add" className="space-y-3">
           {noted.length > 0 ? (
             <>
               <BigAction primary icon={ClipboardCheck} onClick={() => setMode("review")}
@@ -245,7 +227,7 @@ export default function Today() {
         </div>
       )}
       {mode === "ask" && !recorded && (
-        <div className="space-y-3">
+        <div data-tour="quiet" className="space-y-3">
           <p className="pt-3 text-muted-foreground">{tr({ en: "No activity?", pt: "Não teve movimento?" })}</p>
           <div className="grid grid-cols-2 gap-3">
             <Button variant="outline" className="h-14 rounded-xl text-base" disabled={busy} onClick={() => void recordQuiet("no_sales")}>
@@ -259,7 +241,7 @@ export default function Today() {
       )}
 
       {mode === "ask" && (
-        <section className="space-y-3 border-t border-border pt-6" aria-labelledby="day-summary">
+        <section data-tour="summary" className="space-y-3 border-t border-border pt-6" aria-labelledby="day-summary">
           <h2 id="day-summary" className="font-heading text-xl font-semibold">
             {isToday ? tr({ en: "Today so far", pt: "Resumo de hoje" }) : tr({ en: "Yesterday", pt: "Resumo de ontem" })}
           </h2>
@@ -300,7 +282,6 @@ export default function Today() {
           onConfirm={() => void recordNoted()} />
       )}
 
-      {touring && me.data && userId && <Tour profile={me.data} userId={userId} onClose={() => setTouring(false)} />}
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
       {busy && mode === "ask" && <Loader2 className="mx-auto animate-spin text-muted-foreground" aria-label={tr({ en: "Working", pt: "Processando" })} />}
     </div>

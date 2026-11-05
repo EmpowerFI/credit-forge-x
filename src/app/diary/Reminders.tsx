@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import { GraduationCap, Loader2, Smartphone } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +13,7 @@ import LanguageSwitch from "../i18n/LanguageSwitch";
 import { YourData } from "./ImpactChoice";
 import Notifications from "./Notifications";
 import { OpenDays } from "./BusinessWeek";
+import { useTour } from "./tour-steps";
 
 const TIMES = Array.from({ length: 33 }, (_, i) => {
   const minutes = 6 * 60 + i * 30; // 06:00 to 22:00, every half hour
@@ -27,6 +27,7 @@ const TIMES = Array.from({ length: 33 }, (_, i) => {
 export default function Reminders() {
   const queryClient = useQueryClient();
   const { session } = useDiarySession();
+  const tour = useTour();
   const profile = useQuery({ queryKey: [...PROFILE_KEY, "reminders"], queryFn: diary.profile });
   const { installed } = useInstall();
   const [busy, setBusy] = useState(false);
@@ -67,7 +68,7 @@ export default function Reminders() {
 
       {profile.data && <OpenDays profile={profile.data} />}
 
-      <section className={card} aria-labelledby="reminder-title">
+      <section data-tour="reminder" className={card} aria-labelledby="reminder-title">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 id="reminder-title" className="font-heading text-xl font-semibold">{tr({ en: "Daily reminder", pt: "Lembrete diário" })}</h2>
@@ -121,11 +122,11 @@ export default function Reminders() {
           {tr({ en: "Sign out", pt: "Sair" })}
         </button>
       </div>
-      <Link to="/app/diario?tutorial=1"
+      <button type="button" data-tour="tour-link" onClick={tour.start}
         className="flex min-h-11 items-center gap-2 font-semibold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <GraduationCap size={18} aria-hidden="true" />
         {tr({ en: "See the tutorial again", pt: "Ver o tutorial de novo" })}
-      </Link>
+      </button>
       <div className="flex items-center justify-between gap-3">
         <span className="text-muted-foreground">{tr({ en: "Language", pt: "Idioma" })}</span>
         <LanguageSwitch variant="pill" />

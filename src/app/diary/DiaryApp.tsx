@@ -1,11 +1,13 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, BookOpen, Loader2, PenLine } from "lucide-react";
 import { tr } from "../i18n";
 import { Button } from "@/components/ui/button";
 import { diaryClosed, useDiarySession } from "./db";
-import { diary, diaryErrorText, type DiaryProfile, PROFILE_KEY } from "./diary";
+import { diary, diaryErrorText, type DiaryProfile, markTourSeen, PROFILE_KEY, tourSeen } from "./diary";
+import { Tour } from "./Tour";
+import { TOUR, TourContext } from "./tour-steps";
 import { Avatar, DiaryLogo } from "./Brand";
 import SponsorLogo from "./SponsorLogo";
 import { resyncPush } from "./push";
@@ -81,11 +83,22 @@ function Gate() {
     );
   }
   if (!profile.data.enrolled) return <Enrol fromApp={profile.data.from_app ?? null} />;
-  return <Layout name={profile.data.name ?? ""} campaign={profile.data.campaign ?? null} />;
+  return <Layout name={profile.data.name ?? ""} campaign={profile.data.campaign ?? null} userId={session.user.id} />;
 }
 
-function Layout({ name, campaign }: { name: string; campaign: DiaryProfile["campaign"] }) {
+function Layout({ name, campaign, userId }: { name: string; campaign: DiaryProfile["campaign"]; userId: string }) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // The guided tour: once for whoever starts, on Hoje; again from Lembretes.
+  const [touring, setTouring] = useState(false);
+  const tour = useMemo(() => ({ start: () => setTouring(true) }), []);
+  useEffect(() => {
+    if (pathname === "/app/diario" && !tourSeen(userId)) setTouring(true);
+  }, [pathname, userId]);
+  const endTour = () => {
+    markTourSeen(userId);
+    setTouring(false);
+  };
   useEffect(() => {
     void resyncPush();
     // A tapped notification, while the diary was already open: the worker asks the page to go there.
@@ -98,10 +111,11 @@ function Layout({ name, campaign }: { name: string; campaign: DiaryProfile["camp
     navigator.serviceWorker?.addEventListener("message", onMessage);
     return () => navigator.serviceWorker?.removeEventListener("message", onMessage);
   }, [navigate]);
-  const tab = (to: string, label: string, Icon: typeof PenLine, end = false) => (
+  const tab = (to: string, label: string, Icon: typeof PenLine, end = false, tourName?: string) => (
     <NavLink
       to={to}
       end={end}
+      data-tour={tourName}
       className={({ isActive }) =>
         `group flex min-h-16 flex-1 flex-col items-center justify-center gap-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
           isActive ? "font-semibold text-foreground" : "text-muted-foreground"
@@ -118,7 +132,7 @@ function Layout({ name, campaign }: { name: string; campaign: DiaryProfile["camp
     </NavLink>
   );
   return (
-    <>
+    <TourContext.Provider value={tour}>
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-md items-center justify-between gap-3 px-4">
           <DiaryLogo />
@@ -141,10 +155,11 @@ function Layout({ name, campaign }: { name: string; campaign: DiaryProfile["camp
       >
         <div className="mx-auto flex max-w-md">
           {tab("/app/diario", tr({ en: "Today", pt: "Hoje" }), PenLine, true)}
-          {tab("/app/diario/historico", tr({ en: "History", pt: "Histórico" }), BookOpen)}
+          {tab("/app/diario/historico", tr({ en: "History", pt: "Histórico" }), BookOpen, false, "tab-history")}
           {tab("/app/diario/lembretes", tr({ en: "Reminders", pt: "Lembretes" }), Bell)}
         </div>
       </nav>
-    </>
+      {touring && <Tour steps={TOUR} onClose={endTour} />}
+    </TourContext.Provider>
   );
 }
