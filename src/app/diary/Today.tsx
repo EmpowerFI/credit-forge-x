@@ -11,7 +11,7 @@ import { InstallInvite } from "./Install";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
-  addDays, type AfterRecord, brl, cachedToday, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
+  addDays, type AfterRecord, brl, cachedToday, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
   type GoalAfter, type HistoryEntry, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
 } from "./diary";
 
@@ -262,7 +262,7 @@ export default function Today() {
           {recorded && <Recorded key={day} day={day} entries={liveEntries} />}
         </section>
       )}
-      {mode === "ask" && me.data && <WeekProgress emoji={me.data.progress_emoji ?? "🌱"} today={today} days={week.data ?? []} />}
+      {mode === "ask" && me.data && <WeekProgress icon={progressIcon(me.data.progress_emoji)} today={today} days={week.data ?? []} />}
       {mode === "ask" && me.data && <OpenCampaigns profile={me.data} />}
 
       {mode === "entry" && (

@@ -341,7 +341,7 @@ export function diaryErrorText(error: unknown): string {
     ["not_a_push_service", { en: "This browser cannot receive the reminder. Try Chrome or Safari.", pt: "Este navegador não recebe o lembrete. Tente o Chrome ou o Safari." }],
     ["age_range_required", { en: "Choose your age range.", pt: "Escolha a sua faixa etária." }],
     ["sector_not_a_category", { en: "Choose what you sell from the list.", pt: "Escolha o que você vende na lista." }],
-    ["emoji_not_offered", { en: "Choose one of the emojis offered.", pt: "Escolha um dos emojis da lista." }],
+    ["emoji_not_offered", { en: "Choose one of the icons offered.", pt: "Escolha um dos ícones da lista." }],
     ["campaign_not_open", { en: "This campaign is not open to join.", pt: "Esta campanha não está aberta para adesão." }],
     ["campaign_not_running", { en: "This campaign is not running today.", pt: "Esta campanha não está acontecendo hoje." }],
     ["already_in_this_campaign", { en: "You have already taken part in this campaign.", pt: "Você já participou desta campanha." }],
@@ -395,8 +395,26 @@ export function addDays(day: string, n: number): string {
   return t.toISOString().slice(0, 10);
 }
 
-/** The emojis she can pick, the same set the database accepts (20261210). */
-export const PROGRESS_EMOJIS = ["🌱", "🌸", "🌻", "⭐", "🔥", "💪", "🐝", "🦋", "💎", "🍀", "🎯", "🚀"] as const;
+/**
+ * EmpowerFI's own progress icons, the same codes the database accepts
+ * (20261216). The files live where the service worker keeps them for offline
+ * use, cache-first: a redrawn icon gets a new file name, not the same one.
+ */
+export const PROGRESS_ICONS = [
+  { code: "growth", label: { en: "Coins growing", pt: "Moedas crescendo" } },
+  { code: "money_bag", label: { en: "Money bag", pt: "Saco de dinheiro" } },
+  { code: "dashboard", label: { en: "Dashboard", pt: "Painel" } },
+  { code: "calendar", label: { en: "Calendar", pt: "Calendário" } },
+  { code: "folder", label: { en: "Folder in order", pt: "Pasta organizada" } },
+] as const;
+export type ProgressIcon = (typeof PROGRESS_ICONS)[number]["code"];
+
+/** Her icon, or the first one for anything else (an old emoji, nothing yet). */
+export function progressIcon(code: string | null | undefined): ProgressIcon {
+  return PROGRESS_ICONS.find((i) => i.code === code)?.code ?? "growth";
+}
+
+export const progressIconSrc = (code: ProgressIcon) => `/app/diario-icons/progress/${code}.png`;
 
 /** Monday of the week a day is in (YYYY-MM-DD in, YYYY-MM-DD out). */
 export function mondayOf(day: string): string {
