@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { OpenCampaigns, RewardCard } from "./Campaigns";
 import { ImpactAsk } from "./ImpactChoice";
 import { InstallInvite } from "./Install";
+import { LatestReading } from "./Reading";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
@@ -262,6 +263,7 @@ export default function Today() {
           {recorded && <Recorded key={day} day={day} entries={liveEntries} />}
         </section>
       )}
+      {mode === "ask" && <LatestReading today={today} />}
       {mode === "ask" && me.data && <WeekProgress icon={progressIcon(me.data.progress_emoji)} today={today} days={week.data ?? []} />}
       {mode === "ask" && me.data && <OpenCampaigns profile={me.data} />}
 
