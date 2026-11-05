@@ -10,10 +10,12 @@ import { AiNotice } from "./BusinessWeek";
 import { ImpactAsk } from "./ImpactChoice";
 import { InstallInvite } from "./Install";
 import { LatestReading } from "./Reading";
+import { Tour } from "./Tour";
+import { useDiarySession } from "./db";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
-  addDays, type AfterRecord, brl, cachedToday, openDaysOf, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
+  addDays, type AfterRecord, brl, cachedToday, openDaysOf, progressIcon, tourSeen, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
   type GoalAfter, type HistoryEntry, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
 } from "./diary";
 
@@ -111,6 +113,22 @@ export default function Today() {
   const [result, setResult] = useState<AfterRecord | null>(null);
   const started = useRef(Date.now());
   const seconds = () => Math.min(3600, Math.round((Date.now() - started.current) / 1000));
+
+  // The tour: once for whoever starts, and again when Lembretes asks (?tutorial).
+  const { session } = useDiarySession();
+  const userId = session?.user.id;
+  const [touring, setTouring] = useState(false);
+  const enrolled = Boolean(me.data);
+  useEffect(() => {
+    if (!enrolled || !userId) return;
+    if (params.has("tutorial")) {
+      setTouring(true);
+      params.delete("tutorial");
+      setParams(params, { replace: true });
+    } else if (!tourSeen(userId)) {
+      setTouring(true);
+    }
+  }, [enrolled, userId, params, setParams]);
 
   // Opened from a reminder: say so, once, and clean the address.
   useEffect(() => {
@@ -282,6 +300,7 @@ export default function Today() {
           onConfirm={() => void recordNoted()} />
       )}
 
+      {touring && me.data && userId && <Tour profile={me.data} userId={userId} onClose={() => setTouring(false)} />}
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
       {busy && mode === "ask" && <Loader2 className="mx-auto animate-spin text-muted-foreground" aria-label={tr({ en: "Working", pt: "Processando" })} />}
     </div>
