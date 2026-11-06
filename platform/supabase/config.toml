@@ -477,6 +477,11 @@ verify_jwt = false
 [functions.passport-anchor]
 verify_jwt = false
 
+# Called once a day by pg_cron with its own shared secret
+# (x-campaign-attest-secret), as passport-anchor is.
+[functions.campaign-attest]
+verify_jwt = false
+
 # Called by her diary in the browser with her session: the gateway checks the
 # JWT, and the function resolves who she is from it.
 [functions.diary-reading]
