@@ -10,7 +10,7 @@ const AboutHero = ({ hero }: { hero: AboutContent["hero"] }) => (
     <div className="absolute -top-32 -right-24 w-[30rem] h-[30rem] rounded-full bg-accent/10 blur-3xl" />
     <div className="absolute -bottom-24 left-1/4 w-[24rem] h-[24rem] rounded-full bg-primary/5 blur-3xl" />
 
-    <div className="relative container mx-auto px-4">
+    <div className="relative container mx-auto w-full px-4 md:px-8">
       <div className="max-w-3xl space-y-7">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glow-border text-xs text-accent font-medium opacity-0 animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-accent animate-pulse-glow" />

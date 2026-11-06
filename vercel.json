@@ -7,7 +7,9 @@
     { "source": "/en", "destination": "/", "permanent": true },
     { "source": "/en/about", "destination": "/about", "permanent": true },
     { "source": "/en/privacy", "destination": "/privacy", "permanent": true },
-    { "source": "/en/terms", "destination": "/terms", "permanent": true }
+    { "source": "/en/terms", "destination": "/terms", "permanent": true },
+    { "source": "/investors", "destination": "/protocol", "permanent": true },
+    { "source": "/pt/investidores", "destination": "/pt/protocolo", "permanent": true }
   ],
   "rewrites": [
     { "source": "/((?!assets/|app/diario-sw\\.js|app/diario\\.webmanifest|app/diario-icons/).*)", "destination": "/index.html" }

@@ -1,7 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import Seo from "@/components/Seo";
-import FooterEn from "@/components/en/FooterEn";
-import NavbarEn from "@/components/en/NavbarEn";
+import { SiteFoot, SiteNav } from "@/site/parts";
 import SectionHeading from "@/components/SectionHeading";
 import MarketEvidenceSectionEn from "@/components/en/MarketEvidenceSectionEn";
 import { sourceGroups } from "@/content/sources";
@@ -28,7 +27,7 @@ const Sources = () => (
       lang="en"
       alternates={alternates}
     />
-    <NavbarEn />
+    <SiteNav lang="en" twin="/pt" />
     <div className="pt-16"><MarketEvidenceSectionEn sourcesLink={false} /></div>
 
     <main className="section-padding">
@@ -86,7 +85,7 @@ const Sources = () => (
       </div>
     </main>
 
-    <FooterEn />
+    <SiteFoot lang="en" twin="/pt" />
   </div>
 );
 

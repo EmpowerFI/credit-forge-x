@@ -33,7 +33,7 @@ export const organizationSchema = (): Record<string, unknown> => ({
   logo: `${SITE_URL}/favicon.png`,
   foundingDate: COMPANY_FOUNDING_YEAR,
   description:
-    "EmpowerFI is building the capital infrastructure that connects productive businesses and local economies to the best-fit sources of capital, built in Brazil. It qualifies productive capital demand, maps the capital instruments available to a business or a territory, allocates local and domestic capital first, and evaluates the qualified demand that remains underserved for additional global capital. Servicing, repayment and outcomes are measured after deployment. EmpowerFI holds no lending, P2P, investment, FX or local-currency licence, and regulated financial functions are expected to operate through regulated structures and partners.",
+    "EmpowerFI builds simple financial tools and sponsored engagement campaigns for women entrepreneurs in Brazil. Entrepreneurs track sales, expenses and profit and keep daily financial records; organizations sponsor 30-day campaigns, priced per participant, with conditional rewards. Its long-term infrastructure is privacy-preserving, programmable financial reputation. EmpowerFI holds no lending or investment licence.",
   address: {
     "@type": "PostalAddress",
     addressLocality: COMPANY_CITY,
@@ -73,7 +73,7 @@ export const softwareApplicationSchema = (): Record<string, unknown> => ({
   sameAs: [PLAY_STORE_URL, APP_STORE_URL],
   inLanguage: "pt-BR",
   description:
-    "Marketplace que conecta microempreendedoras a novos clientes e constrói o histórico financeiro que abre acesso a crédito justo.",
+    "App da EmpowerFI para mulheres que empreendem: organize o negócio e participe de oportunidades patrocinadas.",
   publisher: { "@id": `${SITE_URL}/#organization` },
   // Free to download and sign up for. The product is freemium, so revisit this
   // once paid subscription plans ship — the install stays free, but the listing

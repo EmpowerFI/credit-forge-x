@@ -1,7 +1,7 @@
 import { ArrowLeft, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import Seo from "@/components/Seo";
-import InstitutionalFooter from "@/components/InstitutionalFooter";
+import { SiteFoot } from "@/site/parts";
 import { aboutEn, aboutPt } from "@/content/about";
 import type { LegalDoc } from "@/content/legal";
 
@@ -81,7 +81,7 @@ const LegalPage = ({ doc, lang, path, alternates }: LegalPageProps) => {
         </ol>
       </main>
 
-      <InstitutionalFooter footer={content.footer} homePath={homePath} lang={lang} />
+      <SiteFoot lang={pt ? "pt" : "en"} page={path.includes("priva") ? "privacy" : "terms"} />
     </div>
   );
 };
