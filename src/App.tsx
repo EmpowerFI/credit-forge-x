@@ -24,8 +24,6 @@ import Unsubscribe from "./pages/Unsubscribe.tsx";
 const PlatformApp = lazy(() => import("./app/PlatformApp"));
 // The reserved impact area: real figures from the diary, for sponsors and the team.
 const ImpactoApp = lazy(() => import("./app/impacto/ImpactoApp"));
-// EmpowerFI Missions: campaign vaults on Solana devnet, open to anyone.
-const MissionsApp = lazy(() => import("./app/missions/MissionsApp"));
 
 // One retry: the Supabase client already retries a failed read three times,
 // and stacking TanStack's default three on top kept a spinner up for ~40 s
@@ -84,15 +82,6 @@ const App = () => (
             element={
               <Suspense fallback={null}>
                 <ImpactoApp />
-              </Suspense>
-            }
-          />
-          {/* EmpowerFI Missions: open, read-only, real figures under the five-woman floor. */}
-          <Route
-            path="/missions"
-            element={
-              <Suspense fallback={null}>
-                <MissionsApp />
               </Suspense>
             }
           />

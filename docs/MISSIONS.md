@@ -7,7 +7,7 @@ A sponsor buys a 30-day campaign, priced per entrepreneur, for at least 100 entr
 - **Impact** campaigns only for now. What is not claimed goes to EmpowerFI.
 - **Activation** campaigns (30 days plus a verified activation, with unclaimed money going back to the sponsor) are refused by the program until an activation can be verified.
 
-The page at **`/missions`** is open to anyone. It reads the app's production database (`campaign_vaults_public()`) and checks it against the chain's own account.
+The page at **`/app/missions`**, inside the platform (Explore the platform), is open to anyone without a sign-in. It reads the app's production database (`campaign_vaults_public()`) and checks it against the chain's own account.
 
 ## What is where
 
@@ -16,7 +16,7 @@ The page at **`/missions`** is open to anyone. It reads the app's production dat
 | Program `empowerfi_rewards` | `programs/empowerfi-rewards`: `create_campaign`, `fund_campaign`, `attest_engagement`. LiteSVM tests in `tests/rewards.rs`. |
 | Database | Migration `20261222000000_a_campaign_paid_into_a_vault_on_solana.sql`: `campaign_vaults`, `campaign_attestations`, `private.campaign_leaf_salts`. |
 | Daily proof | Edge Function `campaign-attest`, called by the `campaign-attest` cron at 23:40 São Paulo. |
-| Open page | `src/app/missions/` (route `/missions`). |
+| Open page | `src/app/missions/` (route `/app/missions`; a card on the platform entrance and a link in its header). |
 | Scripts | `scripts/rewards/generate-keys.mts` and `scripts/rewards/create-campaign.mts`. |
 
 ## Privacy

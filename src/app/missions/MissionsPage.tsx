@@ -1,10 +1,11 @@
 import { useLayoutEffect } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Building2, CheckCircle2, CircleAlert, Loader2, Lock, Users } from "lucide-react";
 import { formatDate, tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
-import { LocaleProvider } from "../i18n/LocaleProvider";
 import ExplorerLink from "../components/product/ExplorerLink";
+import NetworkBadge from "../components/product/NetworkBadge";
 import { diaryClosed } from "../diary/db";
 import { checks, missions, type PublicCampaign, readOnChain, units } from "./chain";
 
@@ -12,28 +13,29 @@ import { checks, missions, type PublicCampaign, readOnChain, units } from "./cha
 const day = (d: string) => formatDate(`${d.slice(0, 10)}T12:00:00Z`, { day: "numeric", month: "short", year: "numeric" });
 
 /**
- * /missions -- EmpowerFI Missions, open to anyone: each campaign a sponsor
- * paid into a vault on Solana devnet, read from the app's real database and
- * checked against the chain's own account. Counts show only from five women
- * up, and nothing on this page names one.
+ * /app/missions -- EmpowerFI Missions, inside the platform and open without a
+ * sign-in: each campaign a sponsor paid into a vault on Solana devnet, read
+ * from the app's real database (not the showroom's) and checked against the
+ * chain's own account. Counts show only from five women up, and nothing on
+ * this page names one. The platform's locale provider redraws it on a switch.
  */
-export default function MissionsApp() {
+export default function MissionsPage() {
   useLayoutEffect(() => {
     document.title = "EmpowerFI Missions";
   }, []);
   return (
-    <LocaleProvider>
-      <Page />
-    </LocaleProvider>
-  );
-}
-
-/** Under the provider, so the language switch redraws all of it. */
-function Page() {
-  return (
       <div className="min-h-dvh bg-background text-foreground">
+        <div className="border-b border-border">
+          <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-3 px-4 sm:px-8">
+            <Link to="/app" className="font-heading text-xl font-bold text-gradient">EmpowerFI</Link>
+            <div className="flex items-center gap-2">
+              <LanguageSwitch />
+              <NetworkBadge />
+            </div>
+          </div>
+        </div>
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-8 sm:py-14">
-          <div className="flex items-start justify-between gap-4">
+          <div>
             <header className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-accent">EmpowerFI Missions</p>
               <h1 className="font-heading text-4xl leading-tight sm:text-5xl">
@@ -47,7 +49,6 @@ function Page() {
                 })}
               </p>
             </header>
-            <LanguageSwitch />
           </div>
           {diaryClosed ? (
             <p className="mt-12 text-muted-foreground">{tr({ en: "Missions are not open here yet.", pt: "As missões ainda não estão abertas aqui." })}</p>
