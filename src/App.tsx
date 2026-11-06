@@ -7,11 +7,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import ScrollToTop from "@/components/ScrollToTop";
 import About from "./pages/About.tsx";
 import AboutPt from "./pages/AboutPt.tsx";
-import Index from "./pages/Index.tsx";
-import IndexPt from "./pages/IndexPt.tsx";
-import Investors from "./pages/Investors.tsx";
-import InvestorsPt from "./pages/InvestorsPt.tsx";
-import EmpreendedorasPt from "./pages/EmpreendedorasPt";
 import NotFound from "./pages/NotFound.tsx";
 import Sources from "./pages/Sources";
 import Privacy from "./pages/Privacy.tsx";
@@ -19,6 +14,7 @@ import PrivacyPt from "./pages/PrivacyPt.tsx";
 import Terms from "./pages/Terms.tsx";
 import TermsPt from "./pages/TermsPt.tsx";
 import Unsubscribe from "./pages/Unsubscribe.tsx";
+import { EntrepreneursPage, HomePage, ProtocolPage, SponsorsPage } from "./site/pages";
 
 // The restricted platform area, split out of the marketing bundle.
 const PlatformApp = lazy(() => import("./app/PlatformApp"));
@@ -40,18 +36,21 @@ const App = () => (
         <Routes>
           {/* English is the corporate site and lives at the root: it is what an
               investor, a partner or a hackathon judge opens at empowerfi.io. */}
-          <Route path="/" element={<Index />} />
-          <Route path="/investors" element={<Investors />} />
+          <Route path="/" element={<HomePage lang="en" />} />
+          <Route path="/entrepreneurs" element={<EntrepreneursPage lang="en" />} />
+          <Route path="/sponsors" element={<SponsorsPage lang="en" />} />
+          <Route path="/protocol" element={<ProtocolPage lang="en" />} />
           <Route path="/about" element={<About />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/sources" element={<Sources />} />
 
-          {/* Portuguese: the entrepreneur-facing product communication. */}
-          <Route path="/pt" element={<IndexPt />} />
+          {/* Portuguese: the same five places, written for Brazil. */}
+          <Route path="/pt" element={<HomePage lang="pt" />} />
+          <Route path="/pt/empreendedoras" element={<EntrepreneursPage lang="pt" />} />
+          <Route path="/pt/patrocinadores" element={<SponsorsPage lang="pt" />} />
+          <Route path="/pt/protocolo" element={<ProtocolPage lang="pt" />} />
           <Route path="/pt/sobre" element={<AboutPt />} />
-          <Route path="/pt/investidores" element={<InvestorsPt />} />
-          <Route path="/pt/empreendedoras" element={<EmpreendedorasPt />} />
           {/* These two paths are referenced by the Play Store listing and from
               inside the app, so they keep their original URLs. */}
           <Route path="/privacidade" element={<PrivacyPt />} />
@@ -64,6 +63,10 @@ const App = () => (
           <Route path="/en/about" element={<Navigate to="/about" replace />} />
           <Route path="/en/privacy" element={<Navigate to="/privacy" replace />} />
           <Route path="/en/terms" element={<Navigate to="/terms" replace />} />
+          {/* The capital-provider pages told the previous thesis; the long-term
+              infrastructure now has the Protocol page (also 308s in vercel.json). */}
+          <Route path="/investors" element={<Navigate to="/protocol" replace />} />
+          <Route path="/pt/investidores" element={<Navigate to="/pt/protocolo" replace />} />
 
           <Route path="/unsubscribe" element={<Unsubscribe />} />
 

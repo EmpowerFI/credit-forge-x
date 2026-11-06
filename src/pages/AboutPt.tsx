@@ -1,5 +1,4 @@
 import Seo from "@/components/Seo";
-import AboutNavbar from "@/components/about/AboutNavbar";
 import AboutHero from "@/components/about/AboutHero";
 import AboutStory from "@/components/about/AboutStory";
 import AboutProblem from "@/components/about/AboutProblem";
@@ -12,7 +11,7 @@ import AboutMedia from "@/components/about/AboutMedia";
 import AboutRecognitions from "@/components/about/AboutRecognitions";
 import AboutFaq from "@/components/about/AboutFaq";
 import AboutContact from "@/components/about/AboutContact";
-import InstitutionalFooter from "@/components/InstitutionalFooter";
+import { SiteFoot, SiteNav } from "@/site/parts";
 import founderPhoto from "@/assets/founder-daniele.png";
 import { aboutPt } from "@/content/about";
 import { mediaPt, mediaItemsPt } from "@/content/media";
@@ -40,7 +39,7 @@ const AboutPt = () => (
       alternates={alternates}
       jsonLd={jsonLd}
     />
-    <AboutNavbar nav={aboutPt.nav} homePath="/pt" langSwitchPath="/about" />
+    <SiteNav lang="pt" page="about" />
     <AboutHero hero={aboutPt.hero} />
     <AboutStory story={aboutPt.story} />
     <AboutProblem problem={aboutPt.problem} />
@@ -53,7 +52,7 @@ const AboutPt = () => (
     <AboutMedia media={mediaPt} items={mediaItemsPt} pageLang="pt-BR" />
     <AboutFaq faq={aboutPt.faq} />
     <AboutContact contact={aboutPt.contact} />
-    <InstitutionalFooter footer={aboutPt.footer} homePath="/pt" lang="pt-BR" />
+    <SiteFoot lang="pt" page="about" />
   </div>
 );
 

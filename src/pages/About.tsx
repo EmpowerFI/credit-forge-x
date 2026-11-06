@@ -1,5 +1,4 @@
 import Seo from "@/components/Seo";
-import AboutNavbar from "@/components/about/AboutNavbar";
 import AboutHero from "@/components/about/AboutHero";
 import AboutStory from "@/components/about/AboutStory";
 import AboutProblem from "@/components/about/AboutProblem";
@@ -12,7 +11,7 @@ import AboutMedia from "@/components/about/AboutMedia";
 import AboutRecognitions from "@/components/about/AboutRecognitions";
 import AboutFaq from "@/components/about/AboutFaq";
 import AboutContact from "@/components/about/AboutContact";
-import InstitutionalFooter from "@/components/InstitutionalFooter";
+import { SiteFoot, SiteNav } from "@/site/parts";
 import founderPhoto from "@/assets/founder-daniele.png";
 import { aboutEn } from "@/content/about";
 import { mediaEn, mediaItemsEn } from "@/content/media";
@@ -40,7 +39,7 @@ const About = () => (
       alternates={alternates}
       jsonLd={jsonLd}
     />
-    <AboutNavbar nav={aboutEn.nav} homePath="/" langSwitchPath="/pt/sobre" />
+    <SiteNav lang="en" page="about" />
     <AboutHero hero={aboutEn.hero} />
     <AboutStory story={aboutEn.story} />
     <AboutProblem problem={aboutEn.problem} />
@@ -53,7 +52,7 @@ const About = () => (
     <AboutMedia media={mediaEn} items={mediaItemsEn} pageLang="en" />
     <AboutFaq faq={aboutEn.faq} />
     <AboutContact contact={aboutEn.contact} />
-    <InstitutionalFooter footer={aboutEn.footer} homePath="/" lang="en" />
+    <SiteFoot lang="en" page="about" />
   </div>
 );
 
