@@ -59,12 +59,6 @@ export function OpenDays({ profile }: { profile: DiaryProfile }) {
           );
         })}
       </div>
-      <p className="text-sm text-muted-foreground">
-        {tr({
-          en: "Your week counts only these days: a closed day is never a missed one, and no reminder comes on it. Saved as you tap.",
-          pt: "Sua semana conta só esses dias: dia fechado não é falta, e não chega lembrete nele. Salvo a cada toque.",
-        })}
-      </p>
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
     </section>
   );
