@@ -14,9 +14,9 @@ function ProgressImg({ code, size }: { code: ProgressIcon; size: number }) {
 
 /**
  * Her week, Monday to Sunday, with her own icon on every day she recorded.
- * Playful on purpose; the count is written too, so it never rests on the
- * picture alone. Days her business does not open are marked closed, not
- * missed, and the count is out of the days it opens.
+ * Playful on purpose; each day also says in words, to a screen reader,
+ * whether it was recorded. Days her business does not open are marked
+ * closed, not missed.
  */
 export function WeekProgress({ icon, today, days, openDays }: { icon: ProgressIcon; today: string; days: HistoryDay[]; openDays: number[] }) {
   const queryClient = useQueryClient();
@@ -25,7 +25,6 @@ export function WeekProgress({ icon, today, days, openDays }: { icon: ProgressIc
   const start = mondayOf(today);
   const week = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   const recorded = new Set(days.map((d) => d.day));
-  const kept = week.filter((d) => recorded.has(d)).length;
   const letters = weekdayLetters();
   const names = weekdayNames();
   const opens = new Set(openDays);
@@ -75,16 +74,6 @@ export function WeekProgress({ icon, today, days, openDays }: { icon: ProgressIc
           );
         })}
       </ol>
-      <p className="text-sm">
-        {openDays.length === 7
-          ? kept === 1
-            ? tr({ en: "1 of 7 days recorded this week.", pt: "1 de 7 dias registrados nesta semana." })
-            : tr({ en: `${kept} of 7 days recorded this week.`, pt: `${kept} de 7 dias registrados nesta semana.` })
-          : tr({
-            en: `${kept} recorded this week, of the ${openDays.length} days your business opens.`,
-            pt: `${kept} ${kept === 1 ? "dia registrado" : "dias registrados"} nesta semana, dos ${openDays.length} em que seu negócio abre.`,
-          })}
-      </p>
       {picking && (
         <div role="group" aria-label={tr({ en: "Choose your icon", pt: "Escolha o seu ícone" })} className="grid grid-cols-5 gap-2">
           {PROGRESS_ICONS.map((i) => (
