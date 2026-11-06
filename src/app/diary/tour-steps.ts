@@ -30,6 +30,14 @@ export const TOUR: TourStep[] = [
     },
   },
   {
+    route: HOJE, target: "month", interactive: true,
+    title: { en: "Your month: when there is profit", pt: "Seu mês: quando tem lucro" },
+    body: {
+      en: "Say how much you need to get through the month: it is your salary, and a cost of the business. Profit is what the sales leave after the expenses and your salary. The bar shows how much of those costs the sales already cover; a loss shows in red, with a minus sign.",
+      pt: "Diga quanto você precisa para passar o mês: é o seu salário, e é um custo do negócio. Lucro é o que sobra das vendas depois dos gastos e do seu salário. A barra mostra quanto desses custos as vendas já cobrem; prejuízo aparece em vermelho, com sinal de menos.",
+    },
+  },
+  {
     route: HOJE, target: "quiet",
     title: { en: "A day with no activity", pt: "Dia sem movimento" },
     body: {
@@ -49,16 +57,8 @@ export const TOUR: TourStep[] = [
     route: HOJE, target: "summary",
     title: { en: "Your day so far", pt: "O resumo do dia" },
     body: {
-      en: "Your sales, expenses and the day's profit add up here. Remembered something? Today and yesterday still take more, and each line can be corrected or removed.",
-      pt: "Aqui somam as vendas, os gastos e o lucro do dia. Lembrou de algo? Hoje e ontem ainda aceitam mais, e cada lançamento pode ser corrigido ou removido.",
-    },
-  },
-  {
-    route: HOJE, target: "month", interactive: true,
-    title: { en: "Your month and your break-even", pt: "Seu mês e o ponto de equilíbrio" },
-    body: {
-      en: "Say how much you need to get through the month: your pay is a cost of the business too. The bar shows how much of it the month's profit already covers. A loss shows in red, with a minus sign.",
-      pt: "Diga quanto você precisa para passar o mês: o seu pró-labore também é um custo do negócio. A barra mostra quanto o lucro do mês já cobre. Prejuízo aparece em vermelho, com sinal de menos.",
+      en: "Your sales, expenses, your salary for the day and the day's profit add up here. Remembered something? Today and yesterday still take more, and each line can be corrected or removed.",
+      pt: "Aqui somam as vendas, os gastos, o seu salário do dia e o lucro do dia. Lembrou de algo? Hoje e ontem ainda aceitam mais, e cada lançamento pode ser corrigido ou removido.",
     },
   },
   {

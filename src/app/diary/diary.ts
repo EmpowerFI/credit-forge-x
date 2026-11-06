@@ -330,40 +330,64 @@ export const methodLabel = (id: string) => PAYMENT_METHODS.find((m) => m.id === 
 export const categoryLabel = (id: string | null) => CATEGORIES.find((c) => c.id === id)?.label ?? "";
 
 /**
- * A day's sales, the business's expenses and the profit, as the diary says
- * them to her. Taking home ("Retirada para casa") is not a business expense:
- * it is her pay, out of the profit, and is reported apart.
+ * Her pay for one day: what she needs to get through the month, split over
+ * the days her business opens that month. A closed day carries none.
  */
-export function dayMoney(entries: { kind: "sale" | "expense"; category: string | null; amount_cents: number; voided?: boolean }[]) {
+export function payShare(need: number | null | undefined, day: string, openDays: number[]): number {
+  if (!need || !openDays.includes(isoWeekday(day))) return 0;
+  const [y, m] = day.split("-").map(Number);
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  let open = 0;
+  for (let d = 1; d <= last; d++) if (openDays.includes(isoWeekday(`${day.slice(0, 8)}${String(d).padStart(2, "0")}`))) open++;
+  return open ? Math.round(need / open) : 0;
+}
+
+/**
+ * A day as the diary says it to her: sales, the business's expenses, her pay
+ * for the day (a cost like the others), and the profit -- what is left after
+ * all of them. Taking home ("Retirada para casa") comes out of her pay, so it
+ * is reported apart, never added to the expenses.
+ */
+export function dayMoney(
+  entries: { kind: "sale" | "expense"; category: string | null; amount_cents: number; voided?: boolean }[],
+  pay = 0,
+) {
   const live = entries.filter((e) => !e.voided);
   const sum = (f: (e: (typeof live)[number]) => boolean) => live.filter(f).reduce((t, e) => t + e.amount_cents, 0);
   const sales = sum((e) => e.kind === "sale");
   const expenses = sum((e) => e.kind === "expense" && e.category !== "withdrawal");
-  return { sales, expenses, profit: sales - expenses, takenHome: sum((e) => e.kind === "expense" && e.category === "withdrawal") };
+  return { sales, expenses, pay, profit: sales - expenses - pay, takenHome: sum((e) => e.kind === "expense" && e.category === "withdrawal") };
 }
 
 /**
- * Where the month stands against what she needs: how much of it the profit
- * covers, what is missing, and the profit each open day still has to bring.
+ * The month against its whole cost -- the business's expenses so far plus
+ * what she needs to get through it: how much of that the sales cover, what
+ * is still missing, and the sales each open day still has to bring. Past
+ * the cost, what is left is profit.
  */
-export function breakEven(m: Pick<MonthSoFar, "profit_cents" | "monthly_need_cents" | "today">, openDays: number[], todayKept: boolean) {
+export function breakEven(
+  m: Pick<MonthSoFar, "sales_cents" | "expenses_cents" | "monthly_need_cents" | "today">,
+  openDays: number[],
+  todayKept: boolean,
+) {
   const need = m.monthly_need_cents;
   if (!need) return null;
-  const covered = Math.min(1, Math.max(0, m.profit_cents / need));
-  const missing = Math.max(0, need - m.profit_cents);
+  const cost = m.expenses_cents + need;
+  const profit = m.sales_cents - cost;
+  const missing = Math.max(0, -profit);
   // Open days still ahead this month: from tomorrow, and today too if not yet recorded.
   const [y, mo] = m.today.split("-").map(Number);
   const last = new Date(Date.UTC(y, mo, 0)).getUTCDate();
   let left = 0;
   for (let d = Number(m.today.slice(8)) + (todayKept ? 1 : 0); d <= last; d++) {
-    const day = `${m.today.slice(0, 8)}${String(d).padStart(2, "0")}`;
-    if (openDays.includes(isoWeekday(day))) left++;
+    if (openDays.includes(isoWeekday(`${m.today.slice(0, 8)}${String(d).padStart(2, "0")}`))) left++;
   }
   return {
     need,
-    covered,
+    cost,
+    profit,
+    covered: cost > 0 ? Math.min(1, m.sales_cents / cost) : 1,
     missing,
-    surplus: Math.max(0, m.profit_cents - need),
     openDaysLeft: left,
     perOpenDay: missing > 0 && left > 0 ? Math.ceil(missing / left) : null,
   };
