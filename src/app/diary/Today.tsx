@@ -261,27 +261,27 @@ export default function Today() {
             </div>
             {need !== null && (
               <div className="col-span-2 space-y-2 rounded-xl border border-border bg-card p-4">
-                <div className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="text-muted-foreground">
-                    <span aria-hidden="true">− </span>{tr({ en: "Your salary for the day", pt: "Seu salário do dia" })}
-                  </span>
-                  <span className="tabular-nums">{brl(money.pay)}</span>
-                </div>
-                <div className="flex items-baseline justify-between gap-3 border-t border-border pt-2">
+                {money.pay > 0 && (
+                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="text-muted-foreground">
+                      <span aria-hidden="true">− </span>{tr({ en: "Your salary for the day", pt: "Seu salário do dia" })}
+                    </span>
+                    <span className="tabular-nums">{brl(money.pay)}</span>
+                  </div>
+                )}
+                <div className={`flex items-baseline justify-between gap-3 ${money.pay > 0 ? "border-t border-border pt-2" : ""}`}>
                   <p className="font-semibold">{tr({ en: `${profitLabel(money.profit)} of the day`, pt: `${profitLabel(money.profit)} do dia` })}</p>
                   <ProfitValue cents={money.profit} className="font-heading text-2xl font-semibold" />
                 </div>
               </div>
             )}
           </div>
-          {need !== null && (
+          {money.pay > 0 && (
             <p className="text-sm text-muted-foreground">
-              {money.pay > 0
-                ? tr({
-                  en: "Your salary for the day is what you need for the month, split over the days your business opens.",
-                  pt: "O seu salário do dia é o que você precisa no mês, dividido pelos dias em que o negócio abre.",
-                })
-                : tr({ en: "Your business does not open on this day, so it carries no salary.", pt: "O seu negócio não abre neste dia, por isso ele não tem salário." })}
+              {tr({
+                en: "Your salary for the day is what you need for the month, split over the days your business opens.",
+                pt: "O seu salário do dia é o que você precisa no mês, dividido pelos dias em que o negócio abre.",
+              })}
             </p>
           )}
           {money.takenHome > 0 && (
