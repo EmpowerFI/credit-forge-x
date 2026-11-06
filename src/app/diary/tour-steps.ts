@@ -49,8 +49,16 @@ export const TOUR: TourStep[] = [
     route: HOJE, target: "summary",
     title: { en: "Your day so far", pt: "O resumo do dia" },
     body: {
-      en: "Your sales and expenses add up here. Remembered something? Today and yesterday still take more, and each line can be corrected or removed.",
-      pt: "Aqui somam as vendas e os gastos registrados. Lembrou de algo? Hoje e ontem ainda aceitam mais, e cada lançamento pode ser corrigido ou removido.",
+      en: "Your sales, expenses and the day's profit add up here. Remembered something? Today and yesterday still take more, and each line can be corrected or removed.",
+      pt: "Aqui somam as vendas, os gastos e o lucro do dia. Lembrou de algo? Hoje e ontem ainda aceitam mais, e cada lançamento pode ser corrigido ou removido.",
+    },
+  },
+  {
+    route: HOJE, target: "month", interactive: true,
+    title: { en: "Your month and your break-even", pt: "Seu mês e o ponto de equilíbrio" },
+    body: {
+      en: "Say how much you need to get through the month: your pay is a cost of the business too. The bar shows how much of it the month's profit already covers. A loss shows in red, with a minus sign.",
+      pt: "Diga quanto você precisa para passar o mês: o seu pró-labore também é um custo do negócio. A barra mostra quanto o lucro do mês já cobre. Prejuízo aparece em vermelho, com sinal de menos.",
     },
   },
   {

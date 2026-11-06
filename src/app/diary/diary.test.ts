@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, brl, cachedToday, dayName, diaryErrorText, mondayOf, parseReais, progressIcon, PROGRESS_ICONS, spToday, weekSpan } from "./diary";
+import { addDays, breakEven, brl, cachedToday, dayMoney, dayName, diaryErrorText, mondayOf, parseReais, progressIcon, PROGRESS_ICONS, signedBrl, spToday, weekSpan } from "./diary";
 import { setCurrentLocale } from "../i18n";
 
 describe("parseReais", () => {
@@ -85,5 +85,39 @@ describe("weekSpan", () => {
     setCurrentLocale("pt");
     expect(weekSpan("2026-11-02")).toBe("2 a 8/11");
     expect(weekSpan("2026-12-28")).toBe("28/12 a 3/1");
+  });
+});
+
+describe("profit and the month's break-even", () => {
+  const e = (kind: "sale" | "expense", amount_cents: number, category: string | null = null, voided = false) => ({ kind, amount_cents, category, voided });
+
+  it("takes home apart from the business's expenses", () => {
+    const m = dayMoney([e("sale", 50_000), e("expense", 20_000, "stock"), e("expense", 10_000, "withdrawal"), e("sale", 9_999, null, true)]);
+    expect(m).toEqual({ sales: 50_000, expenses: 20_000, profit: 30_000, takenHome: 10_000 });
+    expect(dayMoney([e("sale", 1_000), e("expense", 3_000, "rent_utilities")]).profit).toBe(-2_000);
+  });
+
+  it("says a loss with a real minus sign", () => {
+    expect(signedBrl(-30_000)).toBe("−R$ 300,00");
+    expect(signedBrl(30_000)).toBe("R$ 300,00");
+  });
+
+  it("measures the month against what she needs, per open day left", () => {
+    // Wednesday 4 Nov 2026, open Mon–Fri, today not recorded yet: 4..30 Nov has 19 weekdays.
+    const be = breakEven({ profit_cents: 120_000, monthly_need_cents: 200_000, today: "2026-11-04" }, [1, 2, 3, 4, 5], false)!;
+    expect(be.covered).toBeCloseTo(0.6);
+    expect(be.missing).toBe(80_000);
+    expect(be.openDaysLeft).toBe(19);
+    expect(be.perOpenDay).toBe(Math.ceil(80_000 / 19));
+    // Today recorded: from tomorrow.
+    expect(breakEven({ profit_cents: 0, monthly_need_cents: 100, today: "2026-11-04" }, [1, 2, 3, 4, 5], true)!.openDaysLeft).toBe(18);
+  });
+
+  it("is covered, with what is left over, and never below nothing", () => {
+    const over = breakEven({ profit_cents: 250_000, monthly_need_cents: 200_000, today: "2026-11-30" }, [1, 2, 3, 4, 5, 6, 7], true)!;
+    expect([over.covered, over.missing, over.surplus, over.perOpenDay]).toEqual([1, 0, 50_000, null]);
+    const loss = breakEven({ profit_cents: -20_000, monthly_need_cents: 200_000, today: "2026-11-04" }, [1, 2, 3, 4, 5, 6, 7], false)!;
+    expect([loss.covered, loss.missing]).toEqual([0, 220_000]);
+    expect(breakEven({ profit_cents: 1, monthly_need_cents: null, today: "2026-11-04" }, [1], false)).toBeNull();
   });
 });

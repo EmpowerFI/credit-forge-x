@@ -9,11 +9,12 @@ import { OpenCampaigns, RewardCard } from "./Campaigns";
 import { AiNotice } from "./BusinessWeek";
 import { ImpactAsk } from "./ImpactChoice";
 import { InstallInvite } from "./Install";
+import { MonthCard, ProfitValue } from "./Month";
 import { LatestReading } from "./Reading";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
-  addDays, type AfterRecord, brl, cachedToday, openDaysOf, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
+  addDays, type AfterRecord, brl, cachedToday, dayMoney, openDaysOf, profitLabel, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
   type GoalAfter, type HistoryEntry, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
 } from "./diary";
 
@@ -180,8 +181,7 @@ export default function Today() {
 
   if (mode === "done" && result) return <Done result={result} today={today} onMore={restart} />;
 
-  const daySales = keptDay?.entries.filter((e) => !e.voided && e.kind === "sale").reduce((t, e) => t + e.amount_cents, 0) ?? 0;
-  const dayExpenses = keptDay?.entries.filter((e) => !e.voided && e.kind === "expense").reduce((t, e) => t + e.amount_cents, 0) ?? 0;
+  const money = dayMoney(keptDay?.entries ?? []);
   const isToday = day === today;
   const liveEntries = keptDay?.entries.filter((e) => !e.voided) ?? [];
   const recorded = liveEntries.length > 0;
@@ -248,13 +248,25 @@ export default function Today() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-muted-foreground">{tr({ en: "Sales", pt: "Vendas" })}</p>
-              <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">{brl(daySales)}</p>
+              <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">{brl(money.sales)}</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4">
               <p className="text-muted-foreground">{tr({ en: "Expenses", pt: "Gastos" })}</p>
-              <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">{brl(dayExpenses)}</p>
+              <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">{brl(money.expenses)}</p>
+            </div>
+            <div className="col-span-2 flex items-baseline justify-between gap-3 rounded-xl border border-border bg-card p-4">
+              <p className="text-muted-foreground">{tr({ en: `${profitLabel(money.profit)} of the day`, pt: `${profitLabel(money.profit)} do dia` })}</p>
+              <ProfitValue cents={money.profit} className="font-heading text-2xl font-semibold" />
             </div>
           </div>
+          {money.takenHome > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {tr({
+                en: `Taken home: ${brl(money.takenHome)}. It is your pay, so it is not in the expenses.`,
+                pt: `Retirada para casa: ${brl(money.takenHome)}. É o seu pró-labore, por isso não entra nos gastos.`,
+              })}
+            </p>
+          )}
           <p className="text-muted-foreground">
             {!keptDay
               ? isToday ? tr({ en: "Nothing recorded yet today.", pt: "Nada anotado ainda hoje." }) : tr({ en: "Nothing recorded for yesterday.", pt: "Nada anotado para ontem." })
@@ -265,6 +277,7 @@ export default function Today() {
           {recorded && <Recorded key={day} day={day} entries={liveEntries} />}
         </section>
       )}
+      {mode === "ask" && isToday && <MonthCard openDays={openDaysOf(me.data)} todayKept={Boolean(keptDay)} />}
       {mode === "ask" && <LatestReading today={today} />}
       {mode === "ask" && me.data && <WeekProgress icon={progressIcon(me.data.progress_emoji)} openDays={openDaysOf(me.data)} today={today} days={week.data ?? []} />}
       {mode === "ask" && me.data && <OpenCampaigns profile={me.data} />}

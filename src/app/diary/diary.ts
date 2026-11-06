@@ -234,6 +234,8 @@ export const diary = {
   openCampaigns: () => call<OpenCampaign[]>("diary_campaigns"),
   joinCampaign: (id: string) => call<{ starts_on: string; until: string }>("diary_campaign_join", { p_program_id: id }),
   leaveCampaign: () => call<{ ends_on: string }>("diary_campaign_leave"),
+  month: () => call<MonthSoFar>("diary_month"),
+  setMonthlyNeed: (cents: number | null) => call<number | null>("diary_monthly_need_set", { p_cents: cents }),
   setOpenDays: (days: number[]) => call<number[]>("diary_open_days_set", { p_days: days }),
   setAiReading: (on: boolean) => call<boolean>("diary_ai_reading_set", { p_on: on }),
   readings: (limit = 12) => call<WeekReading[]>("diary_readings", { p_limit: limit }),
@@ -245,6 +247,20 @@ export const diary = {
     return data;
   },
 };
+
+/** The month so far (diary_month): profit is sales less the business's expenses; taking home is apart. */
+export interface MonthSoFar {
+  period: string;
+  first_day: string;
+  today: string;
+  sales_cents: number;
+  expenses_cents: number;
+  profit_cents: number;
+  taken_home_cents: number;
+  days_kept: number;
+  /** "Quanto você precisa para passar o mês?": her pay, the month's break-even. Null until she says. */
+  monthly_need_cents: number | null;
+}
 
 /** A week's reading: what the model wrote (checked) or the fixed-sentence fallback, in Portuguese. */
 export interface WeekReading {
@@ -313,10 +329,59 @@ export const CATEGORIES: { id: Category; label: string }[] = localized([
 export const methodLabel = (id: string) => PAYMENT_METHODS.find((m) => m.id === id)?.label ?? id;
 export const categoryLabel = (id: string | null) => CATEGORIES.find((c) => c.id === id)?.label ?? "";
 
+/**
+ * A day's sales, the business's expenses and the profit, as the diary says
+ * them to her. Taking home ("Retirada para casa") is not a business expense:
+ * it is her pay, out of the profit, and is reported apart.
+ */
+export function dayMoney(entries: { kind: "sale" | "expense"; category: string | null; amount_cents: number; voided?: boolean }[]) {
+  const live = entries.filter((e) => !e.voided);
+  const sum = (f: (e: (typeof live)[number]) => boolean) => live.filter(f).reduce((t, e) => t + e.amount_cents, 0);
+  const sales = sum((e) => e.kind === "sale");
+  const expenses = sum((e) => e.kind === "expense" && e.category !== "withdrawal");
+  return { sales, expenses, profit: sales - expenses, takenHome: sum((e) => e.kind === "expense" && e.category === "withdrawal") };
+}
+
+/**
+ * Where the month stands against what she needs: how much of it the profit
+ * covers, what is missing, and the profit each open day still has to bring.
+ */
+export function breakEven(m: Pick<MonthSoFar, "profit_cents" | "monthly_need_cents" | "today">, openDays: number[], todayKept: boolean) {
+  const need = m.monthly_need_cents;
+  if (!need) return null;
+  const covered = Math.min(1, Math.max(0, m.profit_cents / need));
+  const missing = Math.max(0, need - m.profit_cents);
+  // Open days still ahead this month: from tomorrow, and today too if not yet recorded.
+  const [y, mo] = m.today.split("-").map(Number);
+  const last = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+  let left = 0;
+  for (let d = Number(m.today.slice(8)) + (todayKept ? 1 : 0); d <= last; d++) {
+    const day = `${m.today.slice(0, 8)}${String(d).padStart(2, "0")}`;
+    if (openDays.includes(isoWeekday(day))) left++;
+  }
+  return {
+    need,
+    covered,
+    missing,
+    surplus: Math.max(0, m.profit_cents - need),
+    openDaysLeft: left,
+    perOpenDay: missing > 0 && left > 0 ? Math.ceil(missing / left) : null,
+  };
+}
+
 /** R$ 1.234,56 in both languages: reais are written the Brazilian way. */
 export function brl(cents: number): string {
   return `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+
+/** "Lucro" or "Prejuízo", by the sign. */
+export const profitLabel = (cents: number) => (cents < 0 ? tr({ en: "Loss", pt: "Prejuízo" }) : tr({ en: "Profit", pt: "Lucro" }));
+
+/** The month's query: under ["diary", "history"], so whatever refreshes her days after a record or a correction refreshes it too. */
+export const MONTH_KEY = ["diary", "history", "month"] as const;
+
+/** A profit or a loss: "R$ 300,00", or "−R$ 300,00" with a real minus sign. */
+export const signedBrl = (cents: number) => (cents < 0 ? `−${brl(-cents)}` : brl(cents));
 
 /**
  * What she typed in a money field, in centavos; null when it is not an amount.
@@ -366,6 +431,7 @@ export function diaryErrorText(error: unknown): string {
     ["too_old_to_correct", { en: "Only today's and yesterday's lines can be corrected.", pt: "Só dá para corrigir lançamentos de hoje e de ontem." }],
     ["month_closed", { en: "That month is already closed.", pt: "Esse mês já foi fechado." }],
     ["no_such_line", { en: "That line was not found.", pt: "Esse lançamento não foi encontrado." }],
+    ["monthly_need_out_of_range", { en: "Write an amount between R$ 1 and R$ 1,000,000.", pt: "Escreva um valor entre R$ 1 e R$ 1.000.000." }],
     ["open_days_invalid", { en: "Choose at least one day.", pt: "Escolha pelo menos um dia." }],
     ["already_voided", { en: "That line was already taken back.", pt: "Esse lançamento já tinha sido desfeito." }],
     ["not_a_push_service", { en: "This browser cannot receive the reminder. Try Chrome or Safari.", pt: "Este navegador não recebe o lembrete. Tente o Chrome ou o Safari." }],
