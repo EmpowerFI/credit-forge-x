@@ -292,13 +292,13 @@ export default function Today() {
               })}
             </p>
           )}
-          <p className="text-muted-foreground">
-            {!keptDay
-              ? isToday ? tr({ en: "Nothing recorded yet today.", pt: "Nada anotado ainda hoje." }) : tr({ en: "Nothing recorded for yesterday.", pt: "Nada anotado para ontem." })
-              : keptDay.no_activity
+          {!recorded && (
+            <p className="text-muted-foreground">
+              {keptDay?.no_activity
                 ? tr({ en: "Recorded: no activity.", pt: "Registrado: sem movimento." })
-                : tr({ en: "Recorded. Anything you add now adds up, and you can change or remove what is below.", pt: "Registrado. O que você incluir agora soma, e dá para corrigir ou remover o que está abaixo." })}
-          </p>
+                : isToday ? tr({ en: "Nothing recorded yet today.", pt: "Nada anotado ainda hoje." }) : tr({ en: "Nothing recorded for yesterday.", pt: "Nada anotado para ontem." })}
+            </p>
+          )}
           {recorded && <Recorded key={day} day={day} entries={liveEntries} />}
         </section>
       )}
