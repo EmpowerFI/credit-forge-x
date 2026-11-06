@@ -284,3 +284,36 @@ Deno.test("a week is counted on the days she opens", () => {
 Deno.test("open days outside a week are refused", () => {
   assertThrows(() => weekOf({ open_days: 8 }), Error, "open_days out of range");
 });
+
+Deno.test("her pay is a cost: profit is what the sales leave after it", () => {
+  // Week: sales 900, costs 350 -> result 550; pay 400 -> profit 150.
+  const i = weekOf({ pay_cents: 40_000 });
+  assertEquals([i.result_cents, i.pay_cents, i.profit_cents], [55_000, 40_000, 15_000]);
+  assertEquals(i.flags.includes("PROFIT_NEGATIVE"), false);
+  const short = weekOf({ pay_cents: 70_000 });
+  assertEquals(short.profit_cents, -15_000);
+  assertEquals(short.flags.includes("PROFIT_NEGATIVE"), true);
+  // Not said: no profit, and the old words.
+  assertEquals(weekOf().profit_cents, null);
+
+  const facts = factsFor(i);
+  assertEquals(facts.profitWords, true);
+  assertEquals(facts.lines.some((l) => l.startsWith("Lucro (") && l.endsWith("R$ 150,00")), true);
+  assertEquals(factsFor(short).lines.some((l) => l.startsWith("Prejuízo (") && l.endsWith("R$ 150,00")), true);
+  assertEquals(promptFor(i).system.includes("nunca de pró-labore"), true);
+
+  const said = {
+    summary: "Depois dos gastos e do seu salário de R$ 400,00, sobrou um lucro de R$ 150,00.",
+    observations: [],
+    action: "Nos próximos dias, anote cada venda.",
+    limits: "Os números vêm das suas anotações.",
+  };
+  assertEquals(validateReport(said, facts.allowedNumbers, true).ok, true);
+  // Without her pay, "lucro" is still refused; "pró-labore" always is.
+  assertEquals(validateReport(said, facts.allowedNumbers, false).ok, false);
+  assertEquals(validateReport({ ...said, summary: "O seu pró-labore foi de R$ 400,00." }, facts.allowedNumbers, true).ok, false);
+
+  const fallback = fallbackReport(short);
+  assertEquals(fallback.summary.includes("faltaram R$ 150,00"), true);
+  assertEquals(fallbackReport(i).summary.includes("sobrou um lucro de R$ 150,00"), true);
+});

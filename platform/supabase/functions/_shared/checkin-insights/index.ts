@@ -31,7 +31,7 @@
 // named by its Monday, "YYYY-MM-DD". Months are computed exactly as in v0.1.0;
 // only the version moved, because the formula now answers a second question.
 
-export const INSIGHTS_FORMULA_VERSION = "insights-v0.3.0";
+export const INSIGHTS_FORMULA_VERSION = "insights-v0.4.0";
 
 /** A month is "YYYY-MM"; a week is its Monday, "YYYY-MM-DD". */
 export type Span = "month" | "week";
@@ -68,6 +68,11 @@ export interface MonthFigures {
   active_days: number;
   /** Weeks only: the days a week her business opens (1–7), the week's base. Absent: seven. */
   open_days?: number | null;
+  /**
+   * Her pay for the period: her share of what she needs to get through the
+   * month. A cost like the others; null until she has said it.
+   */
+  pay_cents?: number | null;
 }
 
 export interface InsightsInput {
@@ -91,6 +96,7 @@ export type InsightFlag =
   | "COST_UNKNOWN" // a cost category was "não sei", so the result cannot be computed
   | "FIGURES_ESTIMATED" // she does not keep records, so every figure is her estimate
   | "RESULT_NEGATIVE" // business cost exceeded revenue
+  | "PROFIT_NEGATIVE" // sales did not cover the business's costs and her pay
   | "HOUSEHOLD_OVER_RESULT" // she drew more for the home than the business made
   | "HOUSEHOLD_OVER_REVENUE" // the household draw is larger than all sales — likely money mixed
   | "FEW_ACTIVE_DAYS" // the business ran very few days this month
@@ -111,6 +117,10 @@ export interface Insights {
   active_days: number;
   /** Weeks only: the days a week her business opens. Null for a month or when not said. */
   open_days: number | null;
+  /** Her pay for the period, a cost. Null when she has not said what she needs. */
+  pay_cents: number | null;
+  /** What the sales leave after the business's costs and her pay. Null without both. */
+  profit_cents: number | null;
 
   /** cogs + opex. Null when either category is unknown. */
   business_cost_cents: number | null;
@@ -196,6 +206,9 @@ export function computeInsights(input: InsightsInput): Insights {
   // A result rests on estimates when she keeps no records. A null result is
   // not estimated — it is simply not there.
   const result_is_estimated = result_cents !== null && !m.keeps_records;
+  const pay_cents = m.pay_cents ?? null;
+  if (pay_cents !== null) assertCents("pay", pay_cents);
+  const profit_cents = result_cents !== null && pay_cents !== null ? result_cents - pay_cents : null;
   const margin_bps =
     result_cents !== null && m.revenue_cents > 0 ? bps(result_cents, m.revenue_cents) : null;
 
@@ -216,6 +229,7 @@ export function computeInsights(input: InsightsInput): Insights {
   if (!costKnown) flags.push("COST_UNKNOWN");
   if (result_is_estimated) flags.push("FIGURES_ESTIMATED");
   if (result_cents !== null && result_cents < 0) flags.push("RESULT_NEGATIVE");
+  if (profit_cents !== null && profit_cents < 0) flags.push("PROFIT_NEGATIVE");
   if (result_cents !== null && result_cents >= 0 && m.household_cents > result_cents) {
     flags.push("HOUSEHOLD_OVER_RESULT");
   }
@@ -237,6 +251,8 @@ export function computeInsights(input: InsightsInput): Insights {
     household_cents: m.household_cents,
     active_days: m.active_days,
     open_days,
+    pay_cents,
+    profit_cents,
     business_cost_cents,
     result_cents,
     result_is_estimated,

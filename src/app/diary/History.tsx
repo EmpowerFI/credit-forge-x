@@ -11,7 +11,7 @@ import { tr } from "../i18n";
 import { MyRewards } from "./Campaigns";
 import { ProfitValue } from "./Month";
 import { AllReadings } from "./Reading";
-import { addDays, brl, cachedToday, categoryLabel, dayMoney, dayName, diary, diaryErrorText, type HistoryEntry, methodLabel, PROFILE_KEY, profitLabel } from "./diary";
+import { addDays, brl, cachedToday, categoryLabel, dayMoney, dayName, diary, diaryErrorText, type HistoryEntry, methodLabel, MONTH_KEY, openDaysOf, payShare, PROFILE_KEY, profitLabel } from "./diary";
 
 /** The last 31 days she kept, newest first. Today's and yesterday's lines can be taken back. */
 export default function History() {
@@ -39,6 +39,10 @@ export default function History() {
   };
 
   const kept = history.data ?? [];
+  // Each day carries its share of her salary, as on Hoje, once she has said what she needs.
+  const month = useQuery({ queryKey: MONTH_KEY, queryFn: diary.month });
+  const need = month.data?.monthly_need_cents ?? null;
+  const openDays = openDaysOf(me.data);
 
   return (
     <div className="space-y-4">
@@ -69,15 +73,23 @@ export default function History() {
       <ul className="space-y-3">
         {kept.map((d) => {
           const correctable = d.day === today || d.day === addDays(today, -1);
-          const money = dayMoney(d.entries);
+          const money = dayMoney(d.entries, payShare(need, d.day, openDays));
           return (
             <li key={d.day} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-baseline justify-between gap-2">
                 <h2 className="font-semibold capitalize">{dayName(d.day, today)}</h2>
                 {!d.no_activity && (
                   <span className="text-sm">
-                    <span className="text-muted-foreground">{profitLabel(money.profit).toLowerCase()}</span>{" "}
-                    <ProfitValue cents={money.profit} className="font-semibold [&>svg]:h-4 [&>svg]:w-4" />
+                    {need !== null ? (
+                      <>
+                        <span className="text-muted-foreground">{profitLabel(money.profit).toLowerCase()}</span>{" "}
+                        <ProfitValue cents={money.profit} className="font-semibold [&>svg]:h-4 [&>svg]:w-4" />
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground">{tr({ en: "sold", pt: "vendeu" })}</span> {brl(money.sales)}
+                      </>
+                    )}
                   </span>
                 )}
               </div>
@@ -86,6 +98,7 @@ export default function History() {
                   {tr({ en: "sold", pt: "vendeu" })} {brl(money.sales)}
                   {" · "}
                   {tr({ en: "spent", pt: "gastou" })} {brl(money.expenses)}
+                  {money.pay > 0 && <>{" · "}{tr({ en: "salary", pt: "salário" })} {brl(money.pay)}</>}
                   {money.takenHome > 0 && <>{" · "}{tr({ en: "took home", pt: "retirou" })} {brl(money.takenHome)}</>}
                 </p>
               )}

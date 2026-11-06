@@ -14,7 +14,7 @@ import { LatestReading } from "./Reading";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
-  addDays, type AfterRecord, brl, cachedToday, dayMoney, openDaysOf, profitLabel, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
+  addDays, type AfterRecord, brl, cachedToday, dayMoney, MONTH_KEY, openDaysOf, payShare, profitLabel, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
   type GoalAfter, type HistoryEntry, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
 } from "./diary";
 
@@ -124,6 +124,7 @@ export default function Today() {
   }, [params, setParams]);
 
   const week = useQuery({ queryKey: ["diary", "history", 7], queryFn: () => diary.history(7) });
+  const month = useQuery({ queryKey: MONTH_KEY, queryFn: diary.month });
   const keptDay = week.data?.find((d) => d.day === day);
 
   const keep = (list: Noted[]) => {
@@ -181,7 +182,10 @@ export default function Today() {
 
   if (mode === "done" && result) return <Done result={result} today={today} onMore={restart} />;
 
-  const money = dayMoney(keptDay?.entries ?? []);
+  const openDays = openDaysOf(me.data);
+  const need = month.data?.monthly_need_cents ?? null;
+  const todayKept = week.data?.some((d) => d.day === today);
+  const money = dayMoney(keptDay?.entries ?? [], payShare(need, day, openDays));
   const isToday = day === today;
   const liveEntries = keptDay?.entries.filter((e) => !e.voided) ?? [];
   const recorded = liveEntries.length > 0;
@@ -226,6 +230,7 @@ export default function Today() {
           )}
         </div>
       )}
+      {mode === "ask" && <MonthCard openDays={openDays} todayKept={Boolean(todayKept)} />}
       {mode === "ask" && !recorded && (
         <div data-tour="quiet" className="space-y-3">
           <p className="pt-3 text-muted-foreground">{tr({ en: "No activity?", pt: "Não teve movimento?" })}</p>
@@ -254,16 +259,36 @@ export default function Today() {
               <p className="text-muted-foreground">{tr({ en: "Expenses", pt: "Gastos" })}</p>
               <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">{brl(money.expenses)}</p>
             </div>
-            <div className="col-span-2 flex items-baseline justify-between gap-3 rounded-xl border border-border bg-card p-4">
-              <p className="text-muted-foreground">{tr({ en: `${profitLabel(money.profit)} of the day`, pt: `${profitLabel(money.profit)} do dia` })}</p>
-              <ProfitValue cents={money.profit} className="font-heading text-2xl font-semibold" />
-            </div>
+            {need !== null && (
+              <div className="col-span-2 space-y-2 rounded-xl border border-border bg-card p-4">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="text-muted-foreground">
+                    <span aria-hidden="true">− </span>{tr({ en: "Your salary for the day", pt: "Seu salário do dia" })}
+                  </span>
+                  <span className="tabular-nums">{brl(money.pay)}</span>
+                </div>
+                <div className="flex items-baseline justify-between gap-3 border-t border-border pt-2">
+                  <p className="font-semibold">{tr({ en: `${profitLabel(money.profit)} of the day`, pt: `${profitLabel(money.profit)} do dia` })}</p>
+                  <ProfitValue cents={money.profit} className="font-heading text-2xl font-semibold" />
+                </div>
+              </div>
+            )}
           </div>
+          {need !== null && (
+            <p className="text-sm text-muted-foreground">
+              {money.pay > 0
+                ? tr({
+                  en: "Your salary for the day is what you need for the month, split over the days your business opens.",
+                  pt: "O seu salário do dia é o que você precisa no mês, dividido pelos dias em que o negócio abre.",
+                })
+                : tr({ en: "Your business does not open on this day, so it carries no salary.", pt: "O seu negócio não abre neste dia, por isso ele não tem salário." })}
+            </p>
+          )}
           {money.takenHome > 0 && (
             <p className="text-sm text-muted-foreground">
               {tr({
-                en: `Taken home: ${brl(money.takenHome)}. It is your pay, so it is not in the expenses.`,
-                pt: `Retirada para casa: ${brl(money.takenHome)}. É o seu pró-labore, por isso não entra nos gastos.`,
+                en: `Taken home: ${brl(money.takenHome)}. It comes out of your salary, so it is not an expense.`,
+                pt: `Retirada para casa: ${brl(money.takenHome)}. Ela sai do seu salário, por isso não entra nos gastos.`,
               })}
             </p>
           )}
@@ -277,7 +302,6 @@ export default function Today() {
           {recorded && <Recorded key={day} day={day} entries={liveEntries} />}
         </section>
       )}
-      {mode === "ask" && isToday && <MonthCard openDays={openDaysOf(me.data)} todayKept={Boolean(keptDay)} />}
       {mode === "ask" && <LatestReading today={today} />}
       {mode === "ask" && me.data && <WeekProgress icon={progressIcon(me.data.progress_emoji)} openDays={openDaysOf(me.data)} today={today} days={week.data ?? []} />}
       {mode === "ask" && me.data && <OpenCampaigns profile={me.data} />}

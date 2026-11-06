@@ -149,7 +149,7 @@ export async function writeReading(db: SupabaseClient, target: Target): Promise<
         inputTokens = parsed.inputTokens;
         outputTokens = parsed.outputTokens;
 
-        const checked = validateReport(parsed.input, facts.allowedNumbers);
+        const checked = validateReport(parsed.input, facts.allowedNumbers, facts.profitWords);
         if (checked.ok) {
           report = checked.report;
           source = "model";

@@ -78,10 +78,21 @@ function NeedForm({ current, onDone, onLater }: { current: number | null; onDone
   );
 }
 
+/** One line of the month's sum: a label and an amount, with the sign it carries in the sum. */
+function SumLine({ label, cents, sign }: { label: string; cents: number; sign?: "−" }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 text-sm">
+      <span className="text-muted-foreground">{sign && <span aria-hidden="true">{sign} </span>}{label}</span>
+      <span className="tabular-nums">{brl(cents)}</span>
+    </div>
+  );
+}
+
 /**
- * The month on Hoje: its profit (or loss), and how far it has come towards
- * what she needs to get through the month -- her pay, which the business has
- * to earn. Until she says that amount, the card asks for it.
+ * The month on Hoje, as a sum she can follow: sales, less the business's
+ * expenses, less her pay (what she needs to get through the month), and what
+ * is left -- profit, or a loss in red. A bar shows how much of that whole
+ * cost the sales already cover. Until she says what she needs, the card asks.
  */
 export function MonthCard({ openDays, todayKept }: { openDays: number[]; todayKept: boolean }) {
   const month = useQuery({ queryKey: MONTH_KEY, queryFn: diary.month });
@@ -93,18 +104,18 @@ export function MonthCard({ openDays, todayKept }: { openDays: number[]; todayKe
   const monthName = new Date(`${m.first_day}T12:00:00Z`).toLocaleDateString(tr({ en: "en-GB", pt: "pt-BR" }), { month: "long", timeZone: "UTC" });
   const be = breakEven(m, openDays, todayKept);
   const askNow = m.monthly_need_cents === null && !later;
-  const explain = tr({
-    en: "It is what you take from the business for the household bills: your pay. It is a cost of the business too, and the profit has to cover it.",
-    pt: "É o que você tira do negócio para as contas da casa: o seu pró-labore. Ele também é um custo do negócio, e o lucro precisa cobrir esse valor.",
-  });
+  const question = tr({ en: "How much do you need to get through the month?", pt: "Quanto você precisa para passar o mês?" });
 
   if (askNow || editing) {
     return (
       <section data-tour="month" className="space-y-3 rounded-2xl border-2 border-primary/30 bg-card p-5" aria-labelledby="need-title">
-        <h2 id="need-title" className="font-heading text-xl font-semibold">
-          {tr({ en: "How much do you need to get through the month?", pt: "Quanto você precisa para passar o mês?" })}
-        </h2>
-        <p className="text-sm text-muted-foreground">{explain}</p>
+        <h2 id="need-title" className="font-heading text-xl font-semibold">{question}</h2>
+        <p className="text-sm text-muted-foreground">
+          {tr({
+            en: "The money you need to take from the business for the household bills, like a salary. It is a cost of the business: only what is left after the expenses and this amount is profit.",
+            pt: "É o dinheiro que você precisa tirar do negócio para as contas da casa, como se fosse o seu salário. Ele é um custo do negócio: só é lucro o que sobrar depois dos gastos e desse valor.",
+          })}
+        </p>
         <NeedForm current={m.monthly_need_cents} onDone={() => setEditing(false)}
           onLater={askNow ? () => {
             try {
@@ -118,6 +129,8 @@ export function MonthCard({ openDays, todayKept }: { openDays: number[]; todayKe
     );
   }
 
+  const leftBeforePay = m.sales_cents - m.expenses_cents;
+
   return (
     <section data-tour="month" className="space-y-4 rounded-2xl border border-border bg-card p-5" aria-labelledby="month-title">
       <div className="flex items-baseline justify-between gap-2">
@@ -125,44 +138,49 @@ export function MonthCard({ openDays, todayKept }: { openDays: number[]; todayKe
         <span className="text-sm capitalize text-muted-foreground">{monthName}</span>
       </div>
 
-      <div>
-        <p className="text-sm text-muted-foreground">{tr({ en: `${profitLabel(m.profit_cents)} so far`, pt: `${profitLabel(m.profit_cents)} do mês até agora` })}</p>
-        <ProfitValue cents={m.profit_cents} className="font-heading text-3xl font-semibold" />
-        <p className="mt-1 text-sm text-muted-foreground">
-          {tr({ en: "Sales", pt: "Vendas" })} {brl(m.sales_cents)} − {tr({ en: "business expenses", pt: "gastos do negócio" })} {brl(m.expenses_cents)}
-        </p>
+      <div className="space-y-1.5">
+        <SumLine label={tr({ en: "Sales", pt: "Vendas" })} cents={m.sales_cents} />
+        <SumLine sign="−" label={tr({ en: "Business expenses", pt: "Gastos do negócio" })} cents={m.expenses_cents} />
+        {be && <SumLine sign="−" label={tr({ en: "Your salary for the month", pt: "Seu salário do mês" })} cents={be.need} />}
+        <div className="flex items-baseline justify-between gap-3 border-t border-border pt-2">
+          <span className="font-semibold">
+            {be
+              ? tr({ en: `${profitLabel(be.profit)} so far`, pt: `${profitLabel(be.profit)} até agora` })
+              : tr({ en: "Left before your salary", pt: "Sobra antes do seu salário" })}
+          </span>
+          {be
+            ? <ProfitValue cents={be.profit} className="font-heading text-2xl font-semibold" />
+            : <span className="font-heading text-2xl font-semibold tabular-nums">{signedBrl(leftBeforePay)}</span>}
+        </div>
       </div>
 
       {be ? (
         <div className="space-y-2">
-          <div className="flex items-baseline justify-between gap-2 text-sm">
-            <span>{tr({ en: "What you need for the month", pt: "O que você precisa no mês" })}</span>
-            <span className="font-semibold tabular-nums">{brl(be.need)}</span>
-          </div>
           <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(be.covered * 100)}
-            aria-label={tr({ en: "Profit towards what you need", pt: "Lucro rumo ao que você precisa" })}
+            aria-label={tr({ en: "Sales towards the month's costs", pt: "Vendas rumo aos custos do mês" })}
             className="h-3 overflow-hidden rounded-full bg-secondary">
-            <div className={`h-full rounded-full ${be.covered >= 1 ? "bg-positive" : "bg-primary"}`} style={{ width: `${be.covered * 100}%` }} />
+            <div className={`h-full rounded-full ${be.missing === 0 ? "bg-positive" : "bg-primary"}`} style={{ width: `${be.covered * 100}%` }} />
           </div>
           <p className="text-sm">
             {be.missing === 0
               ? <span className="font-medium text-positive">
-                {be.surplus > 0
-                  ? tr({ en: `You have covered what you need, with ${brl(be.surplus)} to spare.`, pt: `Você já cobriu o que precisa, e tem ${brl(be.surplus)} a mais.` })
-                  : tr({ en: "You have covered exactly what you need.", pt: "Você cobriu exatamente o que precisa." })}
+                {tr({
+                  en: "The sales already cover the expenses and your salary. What is left is profit.",
+                  pt: "As vendas já cobrem os gastos e o seu salário. O que sobra é lucro.",
+                })}
               </span>
               : tr({
-                en: `${brl(be.missing)} of profit still to go (${Math.round(be.covered * 100)}% covered).`,
-                pt: `Faltam ${brl(be.missing)} de lucro (${Math.round(be.covered * 100)}% coberto).`,
+                en: `The sales cover ${Math.round(be.covered * 100)}% of the month's costs. ${brl(be.missing)} more in sales covers the expenses and your salary; after that, it is profit.`,
+                pt: `As vendas cobrem ${Math.round(be.covered * 100)}% dos custos do mês. Faltam ${brl(be.missing)} em vendas para cobrir os gastos e o seu salário; daí em diante, é lucro.`,
               })}
           </p>
           {be.perOpenDay !== null && (
             <p className="text-sm text-muted-foreground">
               {be.openDaysLeft === 1
-                ? tr({ en: `To get there: ${brl(be.perOpenDay)} of profit on the 1 open day left.`, pt: `Para chegar lá: ${brl(be.perOpenDay)} de lucro no 1 dia aberto que falta.` })
+                ? tr({ en: `To get there: ${brl(be.perOpenDay)} in sales on the 1 open day left, with no new expenses.`, pt: `Para chegar lá: ${brl(be.perOpenDay)} em vendas no 1 dia aberto que falta, sem gastos novos.` })
                 : tr({
-                  en: `To get there: ${brl(be.perOpenDay)} of profit a day, on the ${be.openDaysLeft} open days left.`,
-                  pt: `Para chegar lá: ${brl(be.perOpenDay)} de lucro por dia, nos ${be.openDaysLeft} dias abertos que faltam.`,
+                  en: `To get there: ${brl(be.perOpenDay)} in sales a day, on the ${be.openDaysLeft} open days left, with no new expenses.`,
+                  pt: `Para chegar lá: ${brl(be.perOpenDay)} em vendas por dia, nos ${be.openDaysLeft} dias abertos que faltam, sem gastos novos.`,
                 })}
             </p>
           )}
@@ -170,31 +188,33 @@ export function MonthCard({ openDays, todayKept }: { openDays: number[]; todayKe
       ) : (
         <button type="button" onClick={() => setEditing(true)}
           className="min-h-11 text-left font-semibold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          {tr({ en: "How much do you need to get through the month?", pt: "Quanto você precisa para passar o mês?" })}
+          {tr({ en: `To see your profit: ${question.toLowerCase()}`, pt: `Para ver o seu lucro: ${question.charAt(0).toLowerCase()}${question.slice(1)}` })}
         </button>
       )}
 
       {m.taken_home_cents > 0 && (
-        <p className={`rounded-md p-3 text-sm ${m.taken_home_cents > Math.max(0, m.profit_cents) ? "tone-alert border" : "bg-muted"}`}>
-          {tr({ en: `Taken home this month: ${brl(m.taken_home_cents)}.`, pt: `Retirado para casa no mês: ${brl(m.taken_home_cents)}.` })}
-          {m.taken_home_cents > Math.max(0, m.profit_cents) && tr({
-            en: " That is more than the business has made in profit so far.",
-            pt: " É mais do que o negócio lucrou até agora.",
+        <p className={`rounded-md p-3 text-sm ${m.taken_home_cents > Math.max(0, leftBeforePay) ? "tone-alert border" : "bg-muted"}`}>
+          {be
+            ? tr({ en: `You have taken ${brl(m.taken_home_cents)} home so far, of your ${brl(be.need)} salary.`, pt: `Você já tirou ${brl(m.taken_home_cents)} para casa, do seu salário de ${brl(be.need)}.` })
+            : tr({ en: `You have taken ${brl(m.taken_home_cents)} home so far.`, pt: `Você já tirou ${brl(m.taken_home_cents)} para casa.` })}
+          {m.taken_home_cents > Math.max(0, leftBeforePay) && tr({
+            en: " That is more than the sales have left after the expenses.",
+            pt: " É mais do que as vendas deixaram depois dos gastos.",
           })}
         </p>
       )}
 
       <p className="border-t border-border pt-3 text-xs text-muted-foreground">
         {tr({
-          en: "Profit = sales − business expenses. Taking home does not count: it is your pay, and it comes out of the profit.",
-          pt: "Lucro = vendas − gastos do negócio. A retirada para casa não entra: ela é o seu pró-labore, que sai do lucro.",
+          en: "Profit is what the sales leave after the business's expenses and your salary. What you take home comes out of your salary, so it is not an expense.",
+          pt: "Lucro é o que sobra das vendas depois dos gastos do negócio e do seu salário. O que você tira para casa sai do seu salário, por isso não entra nos gastos.",
         })}
         {be && (
           <>
             {" "}
             <button type="button" onClick={() => setEditing(true)}
               className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              {tr({ en: "Change what you need", pt: "Alterar quanto preciso" })}
+              {tr({ en: "Change your salary", pt: "Alterar o seu salário" })}
             </button>
           </>
         )}

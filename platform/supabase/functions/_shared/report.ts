@@ -28,7 +28,7 @@
 
 import { type InsightFlag, type Insights, type Span, spanOf } from "./checkin-insights/index.ts";
 
-export const PROMPT_VERSION = "report-prompt-v0.3.0";
+export const PROMPT_VERSION = "report-prompt-v0.4.0";
 export const DEFAULT_MODEL = "claude-haiku-5-5";
 
 /** The reading, as the model must return it and as the fallback builds it. */
@@ -110,6 +110,8 @@ const WORDS: Record<Span, {
 export interface Facts {
   lines: string[];
   allowedNumbers: Set<string>;
+  /** Her pay is known, so profit can be said: "lucro" and "prejuízo" are allowed. */
+  profitWords: boolean;
 }
 
 export function factsFor(i: Insights): Facts {
@@ -142,6 +144,11 @@ export function factsFor(i: Insights): Facts {
     lines.push(`Margem: ${p}%`);
     allowed.add(p.replace(/^-/, ""));
   }
+  if (i.pay_cents !== null) money("Salário dela no período (o que ela precisa para viver, um custo do negócio)", i.pay_cents);
+  if (i.profit_cents !== null) {
+    if (i.profit_cents >= 0) money("Lucro (o que sobrou das vendas depois dos gastos e do salário dela)", i.profit_cents);
+    else money("Prejuízo (o que faltou nas vendas para cobrir os gastos e o salário dela)", -i.profit_cents);
+  }
   money("Retirado para casa", i.household_cents);
   lines.push(`${WORDS[span].activeDays}: ${i.active_days}`);
   allowed.add(String(i.active_days));
@@ -166,7 +173,7 @@ export function factsFor(i: Insights): Facts {
 
   lines.push(`Qualidade dos dados: ${QUALITY_PT[i.data_quality]}`);
   if (i.flags.length) lines.push(`Sinais: ${i.flags.join(", ")}`);
-  return { lines, allowedNumbers: allowed };
+  return { lines, allowedNumbers: allowed, profitWords: i.profit_cents !== null };
 }
 
 const QUALITY_PT = {
@@ -177,7 +184,7 @@ const QUALITY_PT = {
 
 // ------------------------------------------------------------------- prompt
 
-function systemFor(span: Span): string {
+function systemFor(span: Span, profitWords = false): string {
   const w = WORDS[span];
   return [
     `Você escreve, em português do Brasil, a leitura ${span === "week" ? "semanal" : "mensal"} do negócio de uma microempreendedora.`,
@@ -185,13 +192,15 @@ function systemFor(span: Span): string {
     "",
     "Regras que não podem ser quebradas:",
     "1. Use apenas os números da lista de fatos, escritos exatamente como estão lá. Não arredonde, não some, não calcule, não crie nenhum número novo.",
-    "2. Nunca use a palavra lucro. Fale em resultado. Se o resultado for estimado, diga que é uma estimativa.",
+    profitWords
+      ? "2. Lucro é só o que sobrou das vendas depois dos gastos do negócio e do salário dela, o valor de Lucro da lista. Se a lista traz Prejuízo, diga prejuízo. Chame o salário de \"o seu salário\" ou \"o que você precisa para passar o mês\", nunca de pró-labore. Se os valores forem estimados, diga que é uma estimativa."
+      : "2. Nunca use a palavra lucro nem prejuízo, nem pró-labore. Fale em resultado. Se o resultado for estimado, diga que é uma estimativa.",
     "3. Nunca fale de crédito, empréstimo, financiamento, score ou risco de inadimplência.",
     `4. Nunca culpe ou acuse. ${span === "week" ? "Uma semana difícil" : "Um mês difícil"} é um fato, não um erro dela. Se algum número parecer inconsistente, peça com gentileza que ela confira.`,
     `5. A ação prática deve ser uma só, pequena e possível de fazer ${span === "week" ? "nesta semana que começa" : "nas próximas duas semanas"}, sem gastar dinheiro.`,
     "6. Não dê conselho contábil, jurídico ou de investimento.",
     "",
-    `Sobre os sinais: RESULT_NEGATIVE quer dizer que os custos passaram das vendas. HOUSEHOLD_OVER_RESULT quer dizer que ela retirou para casa mais do que o negócio gerou. HOUSEHOLD_OVER_REVENUE sugere que o dinheiro da casa e do negócio estão misturados. FIGURES_ESTIMATED e COST_UNKNOWN pedem cuidado ao tirar conclusões. REVENUE_UP e REVENUE_DOWN são mudanças grandes em relação ${w.previous}. FEW_ACTIVE_DAYS quer dizer que o negócio vendeu em poucos dias ${w.this}.`,
+    `Sobre os sinais: RESULT_NEGATIVE quer dizer que os custos passaram das vendas. HOUSEHOLD_OVER_RESULT quer dizer que ela retirou para casa mais do que o negócio gerou. HOUSEHOLD_OVER_REVENUE sugere que o dinheiro da casa e do negócio estão misturados. FIGURES_ESTIMATED e COST_UNKNOWN pedem cuidado ao tirar conclusões. REVENUE_UP e REVENUE_DOWN são mudanças grandes em relação ${w.previous}. FEW_ACTIVE_DAYS quer dizer que o negócio vendeu em poucos dias ${w.this}. PROFIT_NEGATIVE quer dizer que as vendas não cobriram os gastos e o salário dela.`,
     ...(span === "week"
       ? ["Os dias em que o negócio não abre não são falta: nunca diga que ela deixou de vender ou de anotar nesses dias."]
       : []),
@@ -210,7 +219,7 @@ export function promptFor(i: Insights, sector?: string | null): { system: string
     "",
     "Escreva a leitura usando a ferramenta write_report.",
   ].join("\n");
-  return { system: systemFor(span), user, facts };
+  return { system: systemFor(span, facts.profitWords), user, facts };
 }
 
 /** Forces a JSON object of exactly this shape out of the model. */
@@ -290,7 +299,9 @@ const strip = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerC
  * Words that, anywhere in the reading, mean it has stepped outside what this
  * product may say. Matched without accents so "crédito" and "credito" are one.
  */
-const FORBIDDEN = ["lucro", "credito", "emprestimo", "financiamento", "inadimpl", "score"];
+const FORBIDDEN = ["credito", "emprestimo", "financiamento", "inadimpl", "score", "pro-labore", "pro labore", "prolabore"];
+/** Said only when her pay is known, so that profit means what is left after it. */
+const PROFIT_WORDS = ["lucro", "prejuizo"];
 
 const LIMITS = { summary: 320, observation: 240, action: 240, limits: 240 } as const;
 
@@ -307,7 +318,7 @@ export function numbersIn(text: string): string[] {
  * may send. Returns the reasons it was refused, never a corrected version:
  * a reading that needed fixing is a reading nobody checked.
  */
-export function validateReport(raw: unknown, allowedNumbers: Set<string>): { ok: true; report: Report } | { ok: false; reasons: string[] } {
+export function validateReport(raw: unknown, allowedNumbers: Set<string>, profitWords = false): { ok: true; report: Report } | { ok: false; reasons: string[] } {
   const reasons: string[] = [];
   const r = raw as Partial<Report> | null;
   if (r === null || typeof r !== "object") return { ok: false, reasons: ["not an object"] };
@@ -334,7 +345,9 @@ export function validateReport(raw: unknown, allowedNumbers: Set<string>): { ok:
 
   const all = [summary, action, limits, ...observations].filter((s): s is string => s !== null).join(" ");
   const plain = strip(all);
-  for (const word of FORBIDDEN) if (plain.includes(word)) reasons.push(`uses the forbidden word "${word}"`);
+  for (const word of profitWords ? FORBIDDEN : [...FORBIDDEN, ...PROFIT_WORDS]) {
+    if (plain.includes(word)) reasons.push(`uses the forbidden word "${word}"`);
+  }
 
   // Every figure in the prose must be one we computed. Single digits are let
   // through as counting words -- "uma ação", "2 semanas" -- because a single
@@ -360,6 +373,7 @@ function observationsFor(span: Span): Partial<Record<InsightFlag, string>> {
   return {
     HOUSEHOLD_OVER_REVENUE: "O que foi retirado para casa passou do total das vendas. Isso costuma acontecer quando o dinheiro da casa e o do negócio ficam juntos.",
     RESULT_NEGATIVE: `${span === "week" ? "Na semana," : "Neste mês"} os custos do negócio passaram das vendas. ${span === "week" ? "Uma semana assim" : "Um mês assim"} acontece, e vale entender o que pesou mais.`,
+    PROFIT_NEGATIVE: `${span === "week" ? "Na semana," : "Neste mês,"} as vendas ainda não cobriram os gastos e o seu salário. Vale ver o que dá para vender a mais ou gastar a menos.`,
     HOUSEHOLD_OVER_RESULT: `O que foi retirado para casa foi maior do que o resultado do negócio ${w.this}.`,
     REVENUE_DOWN: `As vendas caíram em relação ${w.previous}.`,
     REVENUE_UP: `As vendas subiram em relação ${w.previous}.`,
@@ -373,6 +387,7 @@ function actionsFor(span: Span): Partial<Record<InsightFlag, string>> {
   return {
     HOUSEHOLD_OVER_REVENUE: `${next}, tente guardar o dinheiro do negócio num lugar separado do dinheiro da casa, nem que seja um envelope.`,
     RESULT_NEGATIVE: `${next}, anote cada compra de material com o valor. Assim fica mais fácil ver onde o custo está pesando.`,
+    PROFIT_NEGATIVE: `${next}, olhe em Seu mês quanto falta vender por dia para cobrir os gastos e o seu salário.`,
     FIGURES_ESTIMATED: `${next}, experimente anotar cada venda no caderno ou no celular, mesmo as pequenas.`,
     COST_UNKNOWN: `${next}, guarde as notas ou anote o valor de cada compra do negócio.`,
   };
@@ -385,7 +400,12 @@ export function fallbackReport(i: Insights): Report {
       ? `Na ${periodName(i.period)}, as vendas foram de R$ ${formatBRL(i.revenue_cents)}.`
       : `Em ${monthName(i.period)}, as vendas foram de R$ ${formatBRL(i.revenue_cents)}.`,
   ];
-  if (i.result_cents !== null && i.result_cents < 0) {
+  if (i.profit_cents !== null && i.pay_cents !== null) {
+    // Her pay is a cost: profit is what the sales leave after the expenses and it.
+    summaryParts.push(i.profit_cents >= 0
+      ? `Depois de pagar os gastos do negócio e o seu salário de R$ ${formatBRL(i.pay_cents)}, sobrou um lucro de R$ ${formatBRL(i.profit_cents)}.`
+      : `As vendas não cobriram os gastos do negócio e o seu salário de R$ ${formatBRL(i.pay_cents)}: faltaram R$ ${formatBRL(-i.profit_cents)}.`);
+  } else if (i.result_cents !== null && i.result_cents < 0) {
     // Said in words rather than as "R$ -300,00", which nobody reads well.
     summaryParts.push(
       `${i.result_is_estimated ? "Pela estimativa, os" : "Os"} custos do negócio passaram das vendas em R$ ${formatBRL(-i.result_cents)}.`,
