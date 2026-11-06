@@ -28,7 +28,7 @@
 
 import { type InsightFlag, type Insights, type Span, spanOf } from "./checkin-insights/index.ts";
 
-export const PROMPT_VERSION = "report-prompt-v0.4.0";
+export const PROMPT_VERSION = "report-prompt-v0.5.0";
 export const DEFAULT_MODEL = "claude-haiku-5-5";
 
 /** The reading, as the model must return it and as the fallback builds it. */
@@ -131,6 +131,9 @@ export function factsFor(i: Insights): Facts {
   // Every number in the period's name may be repeated: its days and years.
   for (const n of numbersIn(name)) allowed.add(n);
 
+  // The diary counts a week's money when it moves (20261221): an instalment
+  // in the week it falls due, not the whole sale on the day it was made.
+  if (span === "week") lines.push("Os valores são o dinheiro que entrou e saiu na semana: de uma venda ou compra parcelada, só conta a parcela que caiu nela");
   money("Vendas", i.revenue_cents);
   if (i.business_cost_cents !== null) money("Custos do negócio", i.business_cost_cents);
   else lines.push("Custos do negócio: ela não soube informar uma parte deles");
