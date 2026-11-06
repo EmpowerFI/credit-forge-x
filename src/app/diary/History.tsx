@@ -73,7 +73,7 @@ export default function History() {
       <ul className="space-y-3">
         {kept.map((d) => {
           const correctable = d.day === today || d.day === addDays(today, -1);
-          const money = dayMoney(d.entries, payShare(need, d.day, openDays));
+          const money = dayMoney(d, payShare(need, d.day, openDays));
           return (
             <li key={d.day} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-baseline justify-between gap-2">

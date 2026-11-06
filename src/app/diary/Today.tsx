@@ -185,7 +185,7 @@ export default function Today() {
   const openDays = openDaysOf(me.data);
   const need = month.data?.monthly_need_cents ?? null;
   const todayKept = week.data?.some((d) => d.day === today);
-  const money = dayMoney(keptDay?.entries ?? [], payShare(need, day, openDays));
+  const money = dayMoney(keptDay, payShare(need, day, openDays));
   const isToday = day === today;
   const liveEntries = keptDay?.entries.filter((e) => !e.voided) ?? [];
   const recorded = liveEntries.length > 0;

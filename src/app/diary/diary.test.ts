@@ -99,9 +99,16 @@ describe("profit, with her salary as a cost", () => {
   });
 
   it("takes home apart, and the salary as a cost", () => {
-    const m = dayMoney([e("sale", 50_000), e("expense", 20_000, "stock"), e("expense", 10_000, "withdrawal"), e("sale", 9_999, null, true)], 10_000);
+    const money = { sales_cents: 50_000, expenses_cents: 20_000, taken_home_cents: 10_000 };
+    expect(dayMoney({ entries: [], money }, 10_000)).toEqual({ sales: 50_000, expenses: 20_000, pay: 10_000, profit: 20_000, takenHome: 10_000 });
+    expect(dayMoney(undefined).profit).toBe(0);
+  });
+
+  it("counts only what was paid on the spot when the server does not say", () => {
+    const later = { ...e("sale", 60_000), due_on: "2026-12-05" };
+    const m = dayMoney({ entries: [e("sale", 50_000), later, e("expense", 20_000, "stock"), e("expense", 10_000, "withdrawal"), e("sale", 9_999, null, true)] }, 10_000);
     expect(m).toEqual({ sales: 50_000, expenses: 20_000, pay: 10_000, profit: 20_000, takenHome: 10_000 });
-    expect(dayMoney([e("sale", 1_000), e("expense", 3_000, "rent_utilities")]).profit).toBe(-2_000);
+    expect(dayMoney({ entries: [e("sale", 1_000), e("expense", 3_000, "rent_utilities")] }).profit).toBe(-2_000);
   });
 
   it("says a loss with a real minus sign", () => {

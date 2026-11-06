@@ -183,10 +183,19 @@ export interface HistoryEntry {
   voided: boolean;
 }
 
+/** The money that moved on a day: lines paid on the spot, and instalments falling due that day. */
+export interface DayCash {
+  sales_cents: number;
+  expenses_cents: number;
+  taken_home_cents: number;
+}
+
 export interface HistoryDay {
   day: string;
   no_activity: boolean;
   quiet_reason: "closed" | "no_sales" | null;
+  /** What moved that day; absent from a database older than 20261221. */
+  money?: DayCash;
   entries: HistoryEntry[];
 }
 
@@ -248,7 +257,7 @@ export const diary = {
   },
 };
 
-/** The month so far (diary_month): profit is sales less the business's expenses; taking home is apart. */
+/** The month so far (diary_month), as money that moved: each instalment in the month it falls due. Taking home is apart. */
 export interface MonthSoFar {
   period: string;
   first_day: string;
@@ -343,20 +352,33 @@ export function payShare(need: number | null | undefined, day: string, openDays:
 }
 
 /**
- * A day as the diary says it to her: sales, the business's expenses, her pay
- * for the day (a cost like the others), and the profit -- what is left after
- * all of them. Taking home ("Retirada para casa") comes out of her pay, so it
- * is reported apart, never added to the expenses.
+ * A day as the diary says it to her: what came in from sales, the business's
+ * expenses, her pay for the day (a cost like the others), and the profit --
+ * what is left after all of them. Money counts on the day it moves: a sale or
+ * a purchase paid later counts each instalment on its own due date, so the
+ * day's figures come from the server ("money"), which knows the instalments
+ * of earlier days too. Taking home ("Retirada para casa") comes out of her
+ * pay, so it is reported apart, never added to the expenses.
  */
 export function dayMoney(
-  entries: { kind: "sale" | "expense"; category: string | null; amount_cents: number; voided?: boolean }[],
+  day: { entries: { kind: "sale" | "expense"; category: string | null; amount_cents: number; due_on?: string | null; voided?: boolean }[]; money?: DayCash } | undefined,
   pay = 0,
 ) {
-  const live = entries.filter((e) => !e.voided);
-  const sum = (f: (e: (typeof live)[number]) => boolean) => live.filter(f).reduce((t, e) => t + e.amount_cents, 0);
-  const sales = sum((e) => e.kind === "sale");
-  const expenses = sum((e) => e.kind === "expense" && e.category !== "withdrawal");
-  return { sales, expenses, pay, profit: sales - expenses - pay, takenHome: sum((e) => e.kind === "expense" && e.category === "withdrawal") };
+  // Before the server says (an older database), only the lines paid on the spot.
+  const paidNow = (day?.entries ?? []).filter((e) => !e.voided && !e.due_on);
+  const sum = (f: (e: (typeof paidNow)[number]) => boolean) => paidNow.filter(f).reduce((t, e) => t + e.amount_cents, 0);
+  const m = day?.money ?? {
+    sales_cents: sum((e) => e.kind === "sale"),
+    expenses_cents: sum((e) => e.kind === "expense" && e.category !== "withdrawal"),
+    taken_home_cents: sum((e) => e.kind === "expense" && e.category === "withdrawal"),
+  };
+  return {
+    sales: m.sales_cents,
+    expenses: m.expenses_cents,
+    pay,
+    profit: m.sales_cents - m.expenses_cents - pay,
+    takenHome: m.taken_home_cents,
+  };
 }
 
 /**
