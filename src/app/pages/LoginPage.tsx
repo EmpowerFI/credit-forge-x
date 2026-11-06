@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, Loader2, Wallet } from "lucide-react";
+import { ArrowRight, Loader2, Lock, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DataLegend from "../components/product/DataLegend";
 import NetworkBadge from "../components/product/NetworkBadge";
@@ -107,6 +107,24 @@ function ShowroomDoor() {
             })}
           </p>
         )}
+
+        {/* Missions open without a persona: they read the diary's real
+            figures, not this showroom's, so they sit apart from the views. */}
+        <Link to="/app/missions"
+          className="group flex items-center gap-4 rounded-[3px] border border-gold bg-card p-5 transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-background" aria-hidden>
+            <Lock size={20} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-medium uppercase tracking-[0.2em] text-accent">
+              EmpowerFI Missions · {tr({ en: "live on Solana devnet", pt: "no ar na Solana devnet" })}
+            </span>
+            <span className="mt-1 block font-heading text-xl">
+              {tr({ en: "Engagement that rewards: campaign vaults with real diary data", pt: "Engajamento que recompensa: cofres de campanha com dados reais do diário" })}
+            </span>
+          </span>
+          <ArrowRight size={18} className="shrink-0 text-accent transition-transform group-hover:translate-x-0.5" aria-hidden />
+        </Link>
 
         <div className="space-y-8">
           <ViewChoice value={view.id} onChange={choose} />

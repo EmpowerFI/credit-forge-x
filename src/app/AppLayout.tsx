@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { Activity, ArrowUpRight, Check, ChevronDown, ChevronRight, Eye, Gauge, Layers, Loader2, LogOut, Menu, Route as RouteIcon, Sprout, Users, Wrench, type LucideIcon } from "lucide-react";
+import { Activity, ArrowUpRight, Check, Lock, ChevronDown, ChevronRight, Eye, Gauge, Layers, Loader2, LogOut, Menu, Route as RouteIcon, Sprout, Users, Wrench, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -288,6 +288,10 @@ export default function AppLayout() {
                 {tr({ en: "Simulated data", pt: "Dados simulados" })}
               </span>
             )}
+            <Link to="/app/missions"
+              className="hidden items-center gap-1.5 rounded-full border border-gold px-2.5 py-1 text-xs font-medium text-accent hover:bg-secondary/60 md:inline-flex">
+              <Lock size={12} aria-hidden /> Missions
+            </Link>
             <NetworkBadge />
             <WalletChip />
             {/* On smaller screens the switch sits in the navigation sheet, where the header has no room. */}
