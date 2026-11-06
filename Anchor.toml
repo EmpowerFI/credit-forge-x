@@ -9,9 +9,11 @@ skip-lint = false
 # Its keypair lives outside the repo; copy it to target/deploy/ before building.
 [programs.localnet]
 empowerfi_audit = "4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR"
+empowerfi_rewards = "J4CmsvBGgAgeUDHPBUrV1TkZCiuptCMJUUh7WnPKi9Pv"
 
 [programs.devnet]
 empowerfi_audit = "4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR"
+empowerfi_rewards = "J4CmsvBGgAgeUDHPBUrV1TkZCiuptCMJUUh7WnPKi9Pv"
 
 # Localnet by default so no command reaches devnet by accident; deploy with
 # --provider.cluster devnet, and upgrade — never redeploy fresh.
@@ -20,6 +22,6 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "cargo test -p empowerfi-audit"
+test = "cargo test -p empowerfi-audit -p empowerfi-rewards"
 
 [hooks]

@@ -94,7 +94,9 @@ jobs:
       # It also writes a throwaway keypair there, which nothing uses: the
       # program ID the tests run under comes from declare_id! in the source.
       - run: cargo-build-sbf --manifest-path programs/empowerfi-audit/Cargo.toml --sbf-out-dir target/deploy
+      - run: cargo-build-sbf --manifest-path programs/empowerfi-rewards/Cargo.toml --sbf-out-dir target/deploy
 
       # LiteSVM runs the program in-process: no validator and no cluster.
       # 28 tests, about a second once the dependencies are cached.
       - run: cargo test -p empowerfi-audit
+      - run: cargo test -p empowerfi-rewards

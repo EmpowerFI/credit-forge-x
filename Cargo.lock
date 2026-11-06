@@ -1216,6 +1216,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "empowerfi-rewards"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "litesvm",
+ "solana-account",
+ "solana-keypair",
+ "solana-message",
+ "solana-signer",
+ "solana-transaction",
+]
+
+[[package]]
 name = "enum-iterator"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
