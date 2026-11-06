@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, TrendingDown, TrendingUp } from "lucide-react";
+import { Loader2, Pencil, TrendingDown, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -155,70 +155,22 @@ export function MonthCard({ openDays, todayKept }: { openDays: number[]; todayKe
       </div>
 
       {be ? (
-        <div className="space-y-2">
+        <>
           <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(be.covered * 100)}
             aria-label={tr({ en: "Sales towards the month's costs", pt: "Vendas rumo aos custos do mês" })}
             className="h-3 overflow-hidden rounded-full bg-secondary">
             <div className={`h-full rounded-full ${be.missing === 0 ? "bg-positive" : "bg-primary"}`} style={{ width: `${be.covered * 100}%` }} />
           </div>
-          <p className="text-sm">
-            {be.missing === 0
-              ? <span className="font-medium text-positive">
-                {tr({
-                  en: "The sales already cover the expenses and your salary. What is left is profit.",
-                  pt: "As vendas já cobrem os gastos e o seu salário. O que sobra é lucro.",
-                })}
-              </span>
-              : tr({
-                en: `The sales cover ${Math.round(be.covered * 100)}% of the month's costs. ${brl(be.missing)} more in sales covers the expenses and your salary; after that, it is profit.`,
-                pt: `As vendas cobrem ${Math.round(be.covered * 100)}% dos custos do mês. Faltam ${brl(be.missing)} em vendas para cobrir os gastos e o seu salário; daí em diante, é lucro.`,
-              })}
-          </p>
-          {be.perOpenDay !== null && (
-            <p className="text-sm text-muted-foreground">
-              {be.openDaysLeft === 1
-                ? tr({ en: `To get there: ${brl(be.perOpenDay)} in sales on the 1 open day left, with no new expenses.`, pt: `Para chegar lá: ${brl(be.perOpenDay)} em vendas no 1 dia aberto que falta, sem gastos novos.` })
-                : tr({
-                  en: `To get there: ${brl(be.perOpenDay)} in sales a day, on the ${be.openDaysLeft} open days left, with no new expenses.`,
-                  pt: `Para chegar lá: ${brl(be.perOpenDay)} em vendas por dia, nos ${be.openDaysLeft} dias abertos que faltam, sem gastos novos.`,
-                })}
-            </p>
-          )}
-        </div>
+          <Button variant="outline" className="h-12 w-full text-base" onClick={() => setEditing(true)}>
+            <Pencil aria-hidden="true" />
+            {tr({ en: "Change your salary", pt: "Alterar o seu salário" })}
+          </Button>
+        </>
       ) : (
-        <button type="button" onClick={() => setEditing(true)}
-          className="min-h-11 text-left font-semibold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Button variant="outline" className="h-auto min-h-12 w-full whitespace-normal py-3 text-base" onClick={() => setEditing(true)}>
           {tr({ en: `To see your profit: ${question.toLowerCase()}`, pt: `Para ver o seu lucro: ${question.charAt(0).toLowerCase()}${question.slice(1)}` })}
-        </button>
+        </Button>
       )}
-
-      {m.taken_home_cents > 0 && (
-        <p className={`rounded-md p-3 text-sm ${m.taken_home_cents > Math.max(0, leftBeforePay) ? "tone-alert border" : "bg-muted"}`}>
-          {be
-            ? tr({ en: `You have taken ${brl(m.taken_home_cents)} home so far, of your ${brl(be.need)} salary.`, pt: `Você já tirou ${brl(m.taken_home_cents)} para casa, do seu salário de ${brl(be.need)}.` })
-            : tr({ en: `You have taken ${brl(m.taken_home_cents)} home so far.`, pt: `Você já tirou ${brl(m.taken_home_cents)} para casa.` })}
-          {m.taken_home_cents > Math.max(0, leftBeforePay) && tr({
-            en: " That is more than the sales have left after the expenses.",
-            pt: " É mais do que as vendas deixaram depois dos gastos.",
-          })}
-        </p>
-      )}
-
-      <p className="border-t border-border pt-3 text-xs text-muted-foreground">
-        {tr({
-          en: "Profit is what the sales leave after the business's expenses and your salary. What you take home comes out of your salary, so it is not an expense.",
-          pt: "Lucro é o que sobra das vendas depois dos gastos do negócio e do seu salário. O que você tira para casa sai do seu salário, por isso não entra nos gastos.",
-        })}
-        {be && (
-          <>
-            {" "}
-            <button type="button" onClick={() => setEditing(true)}
-              className="inline-flex min-h-11 items-center font-semibold underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              {tr({ en: "Change your salary", pt: "Alterar o seu salário" })}
-            </button>
-          </>
-        )}
-      </p>
     </section>
   );
 }
