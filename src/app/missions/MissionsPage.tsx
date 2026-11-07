@@ -7,6 +7,7 @@ import LanguageSwitch from "../i18n/LanguageSwitch";
 import ExplorerLink from "../components/product/ExplorerLink";
 import NetworkBadge from "../components/product/NetworkBadge";
 import { diaryClosed } from "../diary/db";
+import SponsorPanel from "./SponsorPanel";
 import { checks, missions, type PublicCampaign, readOnChain, units } from "./chain";
 
 /** A calendar day (YYYY-MM-DD) as a date, read at noon so no time zone moves it. */
@@ -48,12 +49,20 @@ export default function MissionsPage() {
                   pt: "Campanhas de 30 dias · 100+ empreendedoras · Recompensas programáveis",
                 })}
               </p>
+              {!diaryClosed && (
+                <a href="#sponsor" className="inline-flex items-center gap-1.5 pt-2 text-sm font-medium text-accent underline-offset-4 hover:underline">
+                  {tr({ en: "Sponsor a campaign with your wallet", pt: "Patrocine uma campanha com a sua carteira" })} →
+                </a>
+              )}
             </header>
           </div>
           {diaryClosed ? (
             <p className="mt-12 text-muted-foreground">{tr({ en: "Missions are not open here yet.", pt: "As missões ainda não estão abertas aqui." })}</p>
           ) : (
-            <Campaigns />
+            <>
+              <Campaigns />
+              <div className="mt-16"><SponsorPanel /></div>
+            </>
           )}
           <Models />
           <p className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
@@ -89,7 +98,7 @@ function Campaigns() {
   if (!list.data?.length) {
     return (
       <p className="mt-12 text-muted-foreground">
-        {tr({ en: "The first campaign is being prepared.", pt: "A primeira campanha está sendo preparada." })}
+        {tr({ en: "No campaign is published yet. Sponsor the first one below.", pt: "Nenhuma campanha publicada ainda. Patrocine a primeira logo abaixo." })}
       </p>
     );
   }

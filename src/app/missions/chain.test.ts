@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getAddressEncoder } from "@solana/kit";
-import { decodeCampaign, units } from "./chain";
+import { decodeCampaign } from "@empowerfi/campaign-vault";
+import { priceUnits, units } from "./chain";
 
 const A = "E4UiFfUtByFETn4ntvcUrSMFsrN5CSPQRvbMBRUkeSiw";
 
@@ -46,5 +47,14 @@ describe("the campaign account", () => {
     expect(units(10_000_000n, 6)).toBe("10");
     expect(units(5_000_000n, 6)).toBe("5");
     expect(units(1_234_567, 6)).toBe("1.234567");
+  });
+});
+
+describe("a price she types", () => {
+  it("reads both decimal marks", () => {
+    expect(priceUnits("0,10")).toBe(100_000n);
+    expect(priceUnits("0.1")).toBe(100_000n);
+    expect(priceUnits("2")).toBe(2_000_000n);
+    expect(priceUnits("1,5x")).toBeNull();
   });
 });

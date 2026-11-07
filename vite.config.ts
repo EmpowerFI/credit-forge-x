@@ -28,6 +28,7 @@ export default defineConfig(({ mode }) => ({
       "@empowerfi/capital-allocation": path.resolve(__dirname, "./packages/capital-allocation/src/index.ts"),
       "@empowerfi/settlement-route": path.resolve(__dirname, "./packages/settlement-route/src/index.ts"),
       "@empowerfi/passport": path.resolve(__dirname, "./packages/passport/src/index.ts"),
+      "@empowerfi/campaign-vault": path.resolve(__dirname, "./packages/campaign-vault/src/index.ts"),
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
   },

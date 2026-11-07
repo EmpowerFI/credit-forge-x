@@ -12,6 +12,7 @@ const pairs: [string, string][] = [
   ["packages/readiness-engine/src/index.ts", "platform/supabase/functions/_shared/readiness-engine/index.ts"],
   ["packages/eligibility-engine/src/index.ts", "platform/supabase/functions/_shared/eligibility-engine/index.ts"],
   ["packages/passport/src/index.ts", "platform/supabase/functions/_shared/passport/index.ts"],
+  ["packages/campaign-vault/src/index.ts", "platform/supabase/functions/_shared/campaign-vault/index.ts"],
 ];
 
 const files = (path: string): string[] =>
