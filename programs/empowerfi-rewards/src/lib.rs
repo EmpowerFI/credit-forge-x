@@ -21,7 +21,7 @@ use anchor_lang::{
     },
 };
 
-declare_id!("J4CmsvBGgAgeUDHPBUrV1TkZCiuptCMJUUh7WnPKi9Pv");
+declare_id!("5cWTf64kSqVQSKJW3DoSCs6uyrcXXWXppCMd15yrjAgT");
 
 /// SPL Token, the program USDC lives under.
 pub const TOKEN_PROGRAM_ID: Pubkey = pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
