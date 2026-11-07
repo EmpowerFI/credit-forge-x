@@ -35,6 +35,10 @@ const DIR = "platform/supabase/migrations";
 const ANON_CALLABLE_ALLOWLIST: Record<string, string> = {
   // 192-bit unguessable token, returns aggregate-only data, revocable.
   shared_audit_report: "share-token gated, aggregate-only",
+  // The open Missions page (/app/missions): campaign terms and addresses that
+  // are public on chain anyway, and counts only from five women up. Names no
+  // one; reads no row of hers. (20261222)
+  campaign_vaults_public: "public campaign terms, counts under the five-woman floor",
 };
 
 const DB_URL = process.env.DB_URL;
@@ -217,7 +221,7 @@ function run() {
   if (findings.length === 0) {
     console.log("no findings: nothing this repo creates is reachable by an anonymous visitor,");
     console.log("every table of ours has row level security, no policy opens one to the public,");
-    console.log("and no function of ours is anon-callable except the allowlisted share report.");
+    console.log("and no function of ours is anon-callable except the allowlisted ones (share report, campaign vaults).");
     process.exit(0);
   }
 
