@@ -1,4 +1,5 @@
-import { type Address, address, getAddressDecoder } from "@solana/kit";
+import { address } from "@solana/kit";
+import { type CampaignAccount, decodeCampaign, USDC_DECIMALS } from "@empowerfi/campaign-vault";
 import { diaryDb } from "../diary/db";
 import { rpc } from "../lib/solana";
 
@@ -58,70 +59,7 @@ export const missions = {
   },
 };
 
-/** The Campaign account, as the program writes it (Anchor: 8-byte discriminator, then Borsh). */
-export interface CampaignAccount {
-  campaignRef: string;
-  sponsor: Address;
-  operator: Address;
-  house: Address;
-  mint: Address;
-  vault: Address;
-  kind: "impact" | "activation";
-  pricePerSeat: bigint;
-  seats: number;
-  houseShareBps: number;
-  unlockDays: number;
-  startsAt: number;
-  endsAt: number;
-  termsCommitment: string;
-  status: "created" | "funded";
-  funded: bigint;
-  fundedAt: number;
-  enrolled: number;
-  engaged: number;
-  engagementRoot: string;
-  attestedAt: number;
-  attestations: number;
-}
-
-const hex = (b: Uint8Array) => Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
-
-export function decodeCampaign(data: Uint8Array): CampaignAccount {
-  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-  const keys = getAddressDecoder();
-  let o = 8;
-  const bytes = (n: number) => data.subarray(o, (o += n));
-  const key = () => keys.decode(bytes(32));
-  const u8 = () => data[o++];
-  const u16 = () => { const v = view.getUint16(o, true); o += 2; return v; };
-  const u32 = () => { const v = view.getUint32(o, true); o += 4; return v; };
-  const u64 = () => { const v = view.getBigUint64(o, true); o += 8; return v; };
-  const i64 = () => { const v = Number(view.getBigInt64(o, true)); o += 8; return v; };
-  return {
-    campaignRef: hex(bytes(16)),
-    sponsor: key(),
-    operator: key(),
-    house: key(),
-    mint: key(),
-    vault: key(),
-    kind: u8() === 0 ? "impact" : "activation",
-    pricePerSeat: u64(),
-    seats: u32(),
-    houseShareBps: u16(),
-    unlockDays: u16(),
-    startsAt: i64(),
-    endsAt: i64(),
-    termsCommitment: hex(bytes(32)),
-    status: u8() === 0 ? "created" : "funded",
-    funded: u64(),
-    fundedAt: i64(),
-    enrolled: u32(),
-    engaged: u32(),
-    engagementRoot: hex(bytes(32)),
-    attestedAt: i64(),
-    attestations: u32(),
-  };
-}
+export type { CampaignAccount };
 
 /** What the chain says now: the campaign's account and the vault's balance. */
 export async function readOnChain(c: PublicCampaign): Promise<{ account: CampaignAccount; vaultUnits: bigint }> {
@@ -153,4 +91,12 @@ export function units(n: bigint | number, decimals: number): string {
   const whole = v / 10n ** BigInt(decimals);
   const frac = (v % 10n ** BigInt(decimals)).toString().padStart(decimals, "0").replace(/0+$/, "");
   return `${whole}${frac ? `.${frac.length < 2 ? frac.padEnd(2, "0") : frac}` : ""}`;
+}
+
+/** "0,10", "0.10" or "1" as USDC base units; null when it is not an amount. */
+export function priceUnits(text: string): bigint | null {
+  const t = text.trim().replace(",", ".");
+  if (!/^\d+(\.\d{1,6})?$/.test(t)) return null;
+  const [whole, frac = ""] = t.split(".");
+  return BigInt(whole) * 10n ** BigInt(USDC_DECIMALS) + BigInt((frac + "000000").slice(0, USDC_DECIMALS));
 }

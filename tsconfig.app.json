@@ -41,6 +41,9 @@
       "@empowerfi/passport": [
         "./packages/passport/src/index.ts"
       ],
+      "@empowerfi/campaign-vault": [
+        "./packages/campaign-vault/src/index.ts"
+      ],
       "@empowerfi/settlement-route": [
         "./packages/settlement-route/src/index.ts"
       ]

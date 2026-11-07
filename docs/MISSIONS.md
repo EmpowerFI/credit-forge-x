@@ -16,8 +16,9 @@ The page at **`/app/missions`**, inside the platform (Explore the platform), is 
 | Program `empowerfi_rewards` | `programs/empowerfi-rewards`: `create_campaign`, `fund_campaign`, `attest_engagement`. LiteSVM tests in `tests/rewards.rs`. |
 | Database | Migration `20261222000000_a_campaign_paid_into_a_vault_on_solana.sql`: `campaign_vaults`, `campaign_attestations`, `private.campaign_leaf_salts`. |
 | Daily proof | Edge Function `campaign-attest`, called by the `campaign-attest` cron at 23:40 São Paulo. |
+| Registration | Edge Function `campaign-register`, called by the page after the sponsor's transaction. |
 | Open page | `src/app/missions/` (route `/app/missions`; a card on the platform entrance and a link in its header). |
-| Scripts | `scripts/rewards/generate-keys.mts` and `scripts/rewards/create-campaign.mts`. |
+| Scripts | `scripts/rewards/generate-keys.mts`. |
 
 ## Privacy
 
@@ -36,56 +37,62 @@ No name, e-mail or business figure goes on chain. The database keeps the salts a
 - **This version only takes money in.** There is no instruction that pays rewards out.
 - The operator key, which sits in the Edge Function, can only attest. It cannot move funds.
 
+## Who sponsors
+
+The sponsor is whoever connects a wallet on `/app/missions`. The steps:
+
+1. **Sign one transaction.** Under *Sponsor a campaign* the sponsor fills in its name, the campaign's name, the start date (30 days from it), the seats (at least 100) and the price per entrepreneur (at least 0.01 USDC). It then signs one transaction. That transaction creates the campaign with `create_campaign`, creates the campaign's own USDC account, and pays price × seats into it with `fund_campaign`. The connected wallet is the sponsor on chain.
+2. **The chain is checked.** The page then calls `campaign-register`, which is open and has no sign-in. It trusts only the chain:
+   - the transaction landed and touched the campaign;
+   - the account belongs to the program;
+   - the account carries EmpowerFI's terms: its operator, its house wallet, devnet USDC, at least 100 seats, 30 days, funded in full;
+   - the terms commitment matches;
+   - the vault holds the funds.
+3. **It is recorded, unlisted.** `campaign_register` writes the sponsor, the campaign and its vault. The campaign starts **unlisted and invited**: the names a wallet typed show nowhere until EmpowerFI reviews them. A wallet can reuse only a sponsor name it registered itself, never the house's or a dashboard sponsor's.
+4. **EmpowerFI approves it.** Someone who manages campaigns lists it. Listing shows it on the page and opens it in the diary.
+
+   ```sql
+   select public.campaign_vault_list('<campaign id>', true);   -- false takes it back
+   ```
+
+Shared code lives in `packages/campaign-vault`: addresses, terms, instruction bytes and the account layout. The Edge Functions use a copy in `_shared/campaign-vault`, kept in sync with `npm run platform:sync-shared`.
+
 ## Setting it up, once
 
 All keys go to `~/.config/empowerfi/rewards/`, outside the repo. Nothing secret is printed.
 
-1. **Apply the migration**, dev first and then prod. Deploy the function:
-
-   ```
-   npx supabase functions deploy campaign-attest --project-ref <ref> --workdir platform
-   ```
-
-2. **Generate the keys.** This also writes the new program id into `lib.rs` and `Anchor.toml`. Commit that change.
+1. **Generate the keys.** This also writes the program id into `lib.rs` and `Anchor.toml`.
 
    ```
    npx tsx scripts/rewards/generate-keys.mts ~/.config/empowerfi/rewards <prod-ref>
    ```
 
-3. **Fund the wallets:**
-   - The deploy wallet (`~/.config/solana/id.json`) needs about 3 SOL for the deploy (≈200 KB).
-   - The sponsor and the operator need a little SOL each: https://faucet.solana.com.
-   - The sponsor also needs devnet USDC for price × seats: https://faucet.circle.com (Solana, Devnet).
-
-4. **Build and deploy.** Use the Helius RPC and the fixed buffer, so a failed upload resumes instead of stranding rent:
+   The script also writes a sponsor key, which is EmpowerFI's own wallet. Its address is `HOUSE_WALLET` in the package: EmpowerFI's half belongs to it, and it never sponsors by default.
+2. **Build and deploy** the program, with the Helius RPC and the fixed buffer:
 
    ```
    cargo-build-sbf --manifest-path programs/empowerfi-rewards/Cargo.toml --sbf-out-dir target/deploy
-   RPC=$(cat ~/empowerfi-hackathon-keys/helius-devnet-rpc.url)
-   solana program deploy target/deploy/empowerfi_rewards.so \
-     --program-id ~/.config/empowerfi/rewards/program-keypair.json \
-     --buffer ~/.config/empowerfi/rewards/buffer-keypair.json \
-     -u "$RPC" --use-rpc --with-compute-unit-price 50000 --max-sign-attempts 300
+   solana program deploy target/deploy/empowerfi_rewards.so --program-id <keys>/program-keypair.json \
+     --buffer <keys>/buffer-keypair.json -u "$RPC" --use-rpc --with-compute-unit-price 50000 --max-sign-attempts 300
    ```
 
-5. **Set the operator secrets.** Then run `operator-vault.sql` once in the SQL Editor and delete it.
+3. **Apply the migrations and deploy the functions.** Migrations are `20261222…` and `20261223…`; functions are `campaign-attest` and `campaign-register`.
+4. **Set the operator secrets.** Then run `operator-vault.sql` once and delete it.
 
    ```
-   npx supabase secrets set --env-file ~/.config/empowerfi/rewards/operator.env --project-ref <prod-ref> --workdir platform
+   npx supabase secrets set --env-file <keys>/operator.env --project-ref <prod-ref> --workdir platform
    ```
-
-6. **Create and fund a campaign.** This creates the campaign on chain and in one transaction prints the SQL that records it. That SQL creates the campaign row (sponsor EmpowerFI, open for women to join from the diary) and its vault row. Run it in the SQL Editor.
-
-   ```
-   REWARDS_KEYS=~/.config/empowerfi/rewards SOLANA_RPC_URL="$RPC" npx tsx scripts/rewards/create-campaign.mts \
-     --name "Missão 30 dias" --starts 2026-11-10 --ends 2026-12-09 --seats 100 --price 0.10 \
-     --operator <attesting operator address>
-   ```
-
-The dashboard keeps the name EmpowerFI for the house programme, so a campaign sponsored by EmpowerFI is created here and cannot be edited in the dashboard.
 
 ## Tested
 
 - **Program:** 14 LiteSVM tests covering the terms, the 100-seat floor, the 30-day minimum, Activation refused, funding once, only the sponsor funds, the vault owned by the campaign, only the operator attests, and the counts adding up.
-- **On a local validator:** `create-campaign.mts` created and funded a campaign (10 test USDC into the vault), then an attestation encoded by `_shared/campaign.ts` landed and was read back.
+- **On a local validator, with a test mint at the devnet USDC address:**
+  - the sponsor transaction, built as the page builds it from `packages/campaign-vault`, created and funded a campaign with 10 USDC in the vault;
+  - every check `campaign-register` runs passed;
+  - an attestation encoded by `_shared/campaign.ts` landed and was read back.
+- **Registration on a fresh database:**
+  - a campaign registers unlisted and invited, and registering it again is a no-op;
+  - the same wallet may reuse its sponsor name, but another wallet, or the house name, is refused;
+  - only staff can list, and listing opens it and puts it on the page;
+  - anon cannot register.
 - **Database:** on a fresh database, four women produce no attestation and no counts. Six women, two of whom kept 31 days, produce counts of 6 and 2 and two leaves. The anon role reads only the public function.
