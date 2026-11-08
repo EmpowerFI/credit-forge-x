@@ -450,7 +450,7 @@ fn only_a_leaf_of_the_attested_root_is_paid() {
     let mut env = setup();
     let (vault, c, tokens) = attested(&mut env);
     // Another salt, another index, a stranger's wallet: none is in the root.
-    let ix = pay_ix(&env, &env.operator.pubkey(), vault, c.refs[0], tokens[0], [1; 32], 0, path(&c.hashed, 0));
+    let ix = pay_ix(&env, &env.operator.pubkey(), vault, c.refs[0], tokens[0], Pubkey::new_unique().to_bytes(), 0, path(&c.hashed, 0));
     assert_error(send(&mut env.svm, ix, &[&env.operator]), RewardsError::NotInTheRoot);
     let ix = pay_ix(&env, &env.operator.pubkey(), vault, c.refs[0], tokens[0], c.salts[0], 2, path(&c.hashed, 0));
     assert_error(send(&mut env.svm, ix, &[&env.operator]), RewardsError::NotInTheRoot);
