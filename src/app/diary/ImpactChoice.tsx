@@ -45,15 +45,9 @@ export function ImpactAsk({ profile }: { profile: DiaryProfile }) {
   const { set, busy, error } = useSetImpact();
   if (!profile.impact_consent || IMPACT_ASKED_IN.includes(profile.impact_consent.text_version)) return null;
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
-      <h2 className="font-heading text-xl font-semibold">{tr({ en: "A question, once", pt: "Uma pergunta, só uma vez" })}</h2>
+    <section className="space-y-3 rounded-xl border border-border bg-card p-4 text-sm">
+      <h2 className="font-heading text-lg font-semibold">{tr({ en: "A question, once", pt: "Uma pergunta, só uma vez" })}</h2>
       <p><ImpactChoiceText /></p>
-      <p className="text-muted-foreground">
-        {tr({
-          en: "The diary works the same either way, and you can change your answer under Reminders.",
-          pt: "O diário funciona igual nos dois casos, e você pode mudar a resposta em Lembretes.",
-        })}
-      </p>
       <div className="flex flex-wrap gap-2">
         <Button className="h-11" disabled={busy} onClick={() => void set(true)}>
           {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
@@ -75,8 +69,8 @@ export function YourData({ profile }: { profile: DiaryProfile }) {
   const share = profile.impact_consent?.share ?? false;
   const until = c?.until ? c.until.split("-").reverse().join("/") : null;
   return (
-    <section data-tour="your-data" className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
-      <h2 className="font-heading text-xl font-semibold">{tr({ en: "Your participation and your data", pt: "Sua participação e seus dados" })}</h2>
+    <section data-tour="your-data" className="space-y-3 rounded-xl border border-border bg-card p-4 text-sm">
+      <h2 className="font-heading text-lg font-semibold">{tr({ en: "Your participation and your data", pt: "Sua participação e seus dados" })}</h2>
       {c && (
         <p>
           {c.is_default
@@ -88,9 +82,15 @@ export function YourData({ profile }: { profile: DiaryProfile }) {
         </p>
       )}
       <LeaveCampaign profile={profile} />
-      <div className="flex items-start justify-between gap-4">
-        <Label htmlFor="impact-share" className="text-sm font-normal leading-relaxed"><ImpactChoiceText /></Label>
-        <Switch id="impact-share" checked={share} disabled={busy} onCheckedChange={(v) => void set(v)} className="mt-1 shrink-0" />
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-4">
+          <Label htmlFor="impact-share" className="text-sm font-medium">{tr({ en: "Count my business in the impact figures", pt: "Incluir meu negócio nos números de impacto" })}</Label>
+          <Switch id="impact-share" checked={share} disabled={busy} onCheckedChange={(v) => void set(v)} className="shrink-0" />
+        </div>
+        <details className="text-muted-foreground">
+          <summary className="min-h-8 cursor-pointer underline underline-offset-4">{tr({ en: "What this means", pt: "O que isso significa" })}</summary>
+          <p className="pt-1 leading-relaxed"><ImpactChoiceText /></p>
+        </details>
       </div>
       <AiReadingSwitch profile={profile} />
       {error && <p role="alert" className="font-medium text-destructive">{error}</p>}

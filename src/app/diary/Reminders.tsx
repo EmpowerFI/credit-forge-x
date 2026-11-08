@@ -53,26 +53,18 @@ export default function Reminders() {
     }
   };
 
-  const card = "space-y-4 rounded-2xl border border-border bg-card p-5";
+  const card = "space-y-3 rounded-xl border border-border bg-card p-4";
   return (
-    <div className="space-y-5">
-      <div className="space-y-2">
-        <h1 className="font-heading text-[2.25rem] font-semibold leading-tight">{tr({ en: "Reminders", pt: "Lembretes" })}</h1>
-        <p className="text-lg text-muted-foreground">
-          {tr({
-            en: "One nudge a day to note your day. If you go days without recording, they pause until you are back.",
-            pt: "Um aviso por dia para anotar. Se você ficar dias sem registrar, eles pausam até você voltar.",
-          })}
-        </p>
-      </div>
+    <div className="space-y-4">
+      <h1 className="font-heading text-2xl font-semibold leading-tight">{tr({ en: "Reminders", pt: "Lembretes" })}</h1>
 
       {profile.data && <OpenDays profile={profile.data} />}
 
       <section data-tour="reminder" className={card} aria-labelledby="reminder-title">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 id="reminder-title" className="font-heading text-xl font-semibold">{tr({ en: "Daily reminder", pt: "Lembrete diário" })}</h2>
-            <p className="text-muted-foreground">
+            <h2 id="reminder-title" className="font-heading text-lg font-semibold">{tr({ en: "Daily reminder", pt: "Lembrete diário" })}</h2>
+            <p className="text-sm text-muted-foreground">
               {on
                 ? tr({ en: `On · every day at ${at}`, pt: `Ligado · todo dia às ${at}` })
                 : tr({ en: "Off", pt: "Desligado" })}
@@ -81,17 +73,17 @@ export default function Reminders() {
           <Switch id="reminders-on" aria-labelledby="reminder-title" checked={on} disabled={busy || profile.isLoading}
             onCheckedChange={(v) => void save(v, at)} />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="reminders-time" className="text-base">{tr({ en: "Time", pt: "Horário" })}</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor="reminders-time">{tr({ en: "Time", pt: "Horário" })}</Label>
           <select id="reminders-time" value={at} disabled={!on || busy} onChange={(e) => void save(on, e.target.value)}
-            className="h-14 w-full rounded-xl border-2 border-input bg-card px-4 text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">
+            className="h-11 w-full rounded-lg border border-input bg-card px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50">
             {(TIMES.includes(at) ? TIMES : [at, ...TIMES]).map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
-        <p role="status" className="text-muted-foreground">
+        <p role="status" className="text-sm text-muted-foreground empty:hidden">
           {busy
             ? <span className="inline-flex items-center gap-2"><Loader2 className="animate-spin" size={16} aria-hidden="true" />{tr({ en: "Saving…", pt: "Salvando…" })}</span>
-            : saved ? tr({ en: "Saved ✅", pt: "Salvo ✅" }) : tr({ en: "Saved automatically.", pt: "Salvo automaticamente." })}
+            : saved ? tr({ en: "Saved ✅", pt: "Salvo ✅" }) : null}
         </p>
         {error && <p role="alert" className="font-medium text-destructive">{error}</p>}
       </section>
@@ -99,11 +91,11 @@ export default function Reminders() {
       <Notifications remindersOn={on} />
 
       <section className={card} aria-labelledby="shortcut-title">
-        <div className="flex items-start gap-4">
-          <Smartphone size={26} className="mt-0.5 shrink-0" aria-hidden="true" />
-          <div className="min-w-0 flex-1 space-y-3">
+        <div className="flex items-start gap-3">
+          <Smartphone size={22} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <div className="min-w-0 flex-1 space-y-2 text-sm">
             <div>
-              <h2 id="shortcut-title" className="font-heading text-xl font-semibold">{tr({ en: "Home-screen shortcut", pt: "Atalho na tela de início" })}</h2>
+              <h2 id="shortcut-title" className="font-heading text-lg font-semibold">{tr({ en: "Home-screen shortcut", pt: "Atalho na tela de início" })}</h2>
               {installed && <p className="text-muted-foreground">{tr({ en: "Already on this phone.", pt: "Já instalado neste celular." })}</p>}
             </div>
             {!installed && <InstallSteps />}
@@ -113,7 +105,7 @@ export default function Reminders() {
 
       {profile.data && <YourData profile={profile.data} />}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-sm">
         <p className="min-w-0 text-muted-foreground">
           {tr({ en: "Account: ", pt: "Conta: " })}<span className="break-all text-foreground">{session?.user.email}</span>
         </p>
@@ -123,12 +115,12 @@ export default function Reminders() {
         </button>
       </div>
       <button type="button" data-tour="tour-link" onClick={tour.start}
-        className="flex min-h-11 items-center gap-2 font-semibold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        className="flex min-h-11 items-center gap-2 text-sm font-semibold underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <GraduationCap size={18} aria-hidden="true" />
         {tr({ en: "See the tutorial again", pt: "Ver o tutorial de novo" })}
       </button>
       <div className="flex items-center justify-between gap-3">
-        <span className="text-muted-foreground">{tr({ en: "Language", pt: "Idioma" })}</span>
+        <span className="text-sm text-muted-foreground">{tr({ en: "Language", pt: "Idioma" })}</span>
         <LanguageSwitch variant="pill" />
       </div>
 

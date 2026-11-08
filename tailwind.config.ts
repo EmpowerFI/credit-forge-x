@@ -63,6 +63,8 @@ export default {
         alert: "hsl(var(--alert))",
         caution: "hsl(var(--caution))",
         info: "hsl(var(--info))",
+        sales: "hsl(var(--sales))",
+        expense: "hsl(var(--expense))",
         sidebar: "hsl(var(--sidebar, var(--card)))",
       },
       borderRadius: {

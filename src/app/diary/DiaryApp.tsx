@@ -119,14 +119,14 @@ function Layout({ name, campaign, userId }: { name: string; campaign: DiaryProfi
       end={end}
       data-tour={tourName}
       className={({ isActive }) =>
-        `group flex min-h-16 flex-1 flex-col items-center justify-center gap-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
+        `group flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
           isActive ? "font-semibold text-foreground" : "text-muted-foreground"
         }`}
     >
       {({ isActive }) => (
         <>
-          <span className={`flex h-8 w-14 items-center justify-center rounded-full transition-colors ${isActive ? "bg-secondary" : ""}`}>
-            <Icon size={20} aria-hidden="true" />
+          <span className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors ${isActive ? "bg-secondary" : ""}`}>
+            <Icon size={18} aria-hidden="true" />
           </span>
           {label}
         </>
@@ -136,14 +136,14 @@ function Layout({ name, campaign, userId }: { name: string; campaign: DiaryProfi
   return (
     <TourContext.Provider value={tour}>
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-md items-center justify-between gap-3 px-4">
+        <div className="mx-auto flex h-14 max-w-md items-center justify-between gap-3 px-4">
           <DiaryLogo />
           <div className="flex min-w-0 items-center gap-3">
             {campaign && !campaign.is_default && campaign.logo_path && (
               <SponsorLogo sponsor={campaign.sponsor_name} logoPath={campaign.logo_path} linkUrl={campaign.link_url} />
             )}
             {/* With a sponsor's logo there is no room for her name on a phone. */}
-            <span className={`max-w-[8rem] truncate text-base ${campaign?.logo_path && !campaign.is_default ? "hidden sm:inline" : ""}`}>{name}</span>
+            <span className={`max-w-[8rem] truncate text-sm ${campaign?.logo_path && !campaign.is_default ? "hidden sm:inline" : ""}`}>{name}</span>
             <Avatar name={name} />
           </div>
         </div>
@@ -161,7 +161,7 @@ function Layout({ name, campaign, userId }: { name: string; campaign: DiaryProfi
           </div>
         )}
       </div>
-      <main className="mx-auto max-w-md px-4 pb-28 pt-4">
+      <main className="mx-auto max-w-md px-4 pb-24 pt-3">
         <Outlet />
       </main>
       <nav

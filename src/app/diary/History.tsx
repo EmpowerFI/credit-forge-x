@@ -46,7 +46,7 @@ export default function History() {
 
   return (
     <div className="space-y-4">
-      <h1 className="font-heading text-[2.25rem] font-semibold leading-tight">{tr({ en: "History", pt: "Histórico" })}</h1>
+      <h1 className="font-heading text-2xl font-semibold leading-tight">{tr({ en: "History", pt: "Histórico" })}</h1>
       <p className="text-sm text-muted-foreground">
         {tr({
           en: `${kept.length} of the last 31 days recorded.`,
@@ -75,7 +75,7 @@ export default function History() {
           const correctable = d.day === today || d.day === addDays(today, -1);
           const money = dayMoney(d, payShare(need, d.day, openDays));
           return (
-            <li key={d.day} className="rounded-xl border border-border bg-card p-4">
+            <li key={d.day} className="rounded-lg border border-border bg-card px-3 py-2">
               <div className="flex items-baseline justify-between gap-2">
                 <h2 className="font-semibold capitalize">{dayName(d.day, today)}</h2>
                 {!d.no_activity && (
@@ -95,9 +95,9 @@ export default function History() {
               </div>
               {!d.no_activity && (
                 <p className="text-sm text-muted-foreground">
-                  {tr({ en: "sold", pt: "vendeu" })} {brl(money.sales)}
+                  <span className="text-sales">{tr({ en: "sold", pt: "vendeu" })} {brl(money.sales)}</span>
                   {" · "}
-                  {tr({ en: "spent", pt: "gastou" })} {brl(money.expenses)}
+                  <span className="text-expense">{tr({ en: "spent", pt: "gastou" })} {brl(money.expenses)}</span>
                   {money.pay > 0 && <>{" · "}{tr({ en: "salary", pt: "salário" })} {brl(money.pay)}</>}
                   {money.takenHome > 0 && <>{" · "}{tr({ en: "took home", pt: "retirou" })} {brl(money.takenHome)}</>}
                 </p>
@@ -111,7 +111,7 @@ export default function History() {
                       : tr({ en: "No activity.", pt: "Sem movimento." })}
                 </p>
               ) : (
-                <ul className="mt-2 space-y-1">
+                <ul className="mt-1 space-y-0.5">
                   {d.entries.map((e) => (
                     <li key={e.id} className={`flex items-center justify-between gap-2 text-sm ${e.voided ? "text-muted-foreground line-through" : ""}`}>
                       <span>
@@ -140,11 +140,7 @@ export default function History() {
           <AlertDialogHeader>
             <AlertDialogTitle>{tr({ en: "Take this line back?", pt: "Desfazer este lançamento?" })}</AlertDialogTitle>
             <AlertDialogDescription>
-              {toVoid && `${toVoid.kind === "sale" ? methodLabel(toVoid.payment_method) : categoryLabel(toVoid.category)}: ${brl(toVoid.amount_cents)}. `}
-              {tr({
-                en: "It stops counting in your totals. If it was wrong, record it again with the right amount.",
-                pt: "Ele deixa de contar nos seus totais. Se estava errado, registre de novo com o valor certo.",
-              })}
+              {toVoid && `${toVoid.kind === "sale" ? methodLabel(toVoid.payment_method) : categoryLabel(toVoid.category)}: ${brl(toVoid.amount_cents)}`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

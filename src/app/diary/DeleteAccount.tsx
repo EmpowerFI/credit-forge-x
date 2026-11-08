@@ -62,8 +62,8 @@ export default function DeleteAccount() {
   }
 
   return (
-    <section className="space-y-3 rounded-2xl border border-destructive/40 bg-card p-5 text-sm" aria-labelledby="delete-title">
-      <h2 id="delete-title" className="font-heading text-xl font-semibold">{tr({ en: "Delete account", pt: "Excluir conta" })}</h2>
+    <section className="space-y-3 rounded-xl border border-destructive/40 bg-card p-4 text-sm" aria-labelledby="delete-title">
+      <h2 id="delete-title" className="font-heading text-lg font-semibold">{tr({ en: "Delete account", pt: "Excluir conta" })}</h2>
       {!open ? (
         <Button variant="outline" className="h-11 border-destructive/50 text-destructive" onClick={() => setOpen(true)}>
           {tr({ en: "Delete my account", pt: "Excluir minha conta" })}
@@ -79,7 +79,7 @@ export default function DeleteAccount() {
           <div className="space-y-1">
             <Label htmlFor="delete-word">{tr({ en: `Type ${WORD} to confirm`, pt: `Digite ${WORD} para confirmar` })}</Label>
             <Input id="delete-word" value={typed} autoComplete="off" autoCapitalize="characters" spellCheck={false}
-              onChange={(e) => setTyped(e.target.value.trim().toUpperCase())} className="h-12 text-base" />
+              onChange={(e) => setTyped(e.target.value.trim().toUpperCase())} className="h-11 text-base" />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Button type="submit" variant="destructive" className="h-11" disabled={busy || typed !== WORD}>

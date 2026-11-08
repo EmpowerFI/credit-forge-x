@@ -37,15 +37,15 @@ export function OpenCampaigns({ profile }: { profile: DiaryProfile }) {
 
   return (
     <section className="space-y-3" aria-labelledby="open-campaigns">
-      <h2 id="open-campaigns" className="font-heading text-xl font-semibold">
+      <h2 id="open-campaigns" className="font-heading text-lg font-semibold">
         {tr({ en: "Campaigns you can join", pt: "Campanhas abertas para você" })}
       </h2>
       {list.data.map((c) => (
-        <article key={c.id} className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
+        <article key={c.id} className="space-y-2 rounded-xl border border-border bg-card p-4 text-sm">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-muted-foreground">{c.sponsor_name}</p>
-              <h3 className="font-heading text-xl font-semibold">{c.name}</h3>
+              <h3 className="font-heading text-lg font-semibold">{c.name}</h3>
             </div>
             {c.logo_path && <SponsorLogo sponsor={c.sponsor_name} logoPath={c.logo_path} linkUrl={c.link_url} />}
           </div>
@@ -65,11 +65,11 @@ export function OpenCampaigns({ profile }: { profile: DiaryProfile }) {
             <>
               <p className="text-muted-foreground">
                 {tr({
-                  en: `From today your days count for this campaign. ${c.sponsor_name} sees only totals of groups of at least 5 women, never your name. You can leave whenever you like, but not come back to it.`,
-                  pt: `A partir de hoje, os seus dias contam para esta campanha. ${c.sponsor_name} vê só números somados de grupos de pelo menos 5 empreendedoras, nunca o seu nome. Você pode sair quando quiser, mas não volta para ela.`,
+                  en: `${c.sponsor_name} sees only group totals, never your name. If you leave, you cannot come back.`,
+                  pt: `${c.sponsor_name} vê só totais do grupo, nunca o seu nome. Se sair, não dá para voltar.`,
                 })}
               </p>
-              <Button className="h-12 w-full" disabled={busy !== null} onClick={() => void join(c)}>
+              <Button className="h-11 w-full" disabled={busy !== null} onClick={() => void join(c)}>
                 {busy === c.id && <Loader2 className="animate-spin" aria-hidden="true" />}
                 {tr({ en: "Join", pt: "Participar" })}
               </Button>
@@ -150,8 +150,8 @@ export function LeaveCampaign({ profile }: { profile: DiaryProfile }) {
 export function RewardCard({ reward }: { reward: Reward }) {
   const link = reward.redeem_url && /^https:\/\/\S+$/.test(reward.redeem_url) ? reward.redeem_url : null;
   return (
-    <section className="space-y-2 rounded-2xl border border-primary/40 bg-primary/5 p-5 text-sm">
-      <p className="font-heading text-xl font-semibold">
+    <section className="space-y-2 rounded-xl border border-primary/40 bg-primary/5 p-4 text-sm">
+      <p className="font-heading text-lg font-semibold">
         🎁 {reward.title}
         {reward.sponsor_name && (
           <span className="font-normal text-muted-foreground">{tr({ en: `, from ${reward.sponsor_name}`, pt: `, de ${reward.sponsor_name}` })}</span>
@@ -182,7 +182,7 @@ export function MyRewards({ profile }: { profile: DiaryProfile }) {
   if (!rewards.length) return null;
   return (
     <section className="space-y-3" aria-labelledby="my-rewards">
-      <h2 id="my-rewards" className="font-heading text-xl font-semibold">{tr({ en: "Your rewards", pt: "Seus prêmios" })}</h2>
+      <h2 id="my-rewards" className="font-heading text-lg font-semibold">{tr({ en: "Your rewards", pt: "Seus prêmios" })}</h2>
       {rewards.map((r, i) => <RewardCard key={`${r.title}-${r.granted_at ?? i}`} reward={r} />)}
     </section>
   );

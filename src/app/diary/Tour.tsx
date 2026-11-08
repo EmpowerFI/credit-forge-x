@@ -1,182 +1,98 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { tr } from "../i18n";
 import type { TourStep } from "./tour-steps";
 
-const PAD = 8;
-const GAP = 14;
-const FIND_FOR_MS = 4000;
-
-const reduceMotion = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-const find = (target: string) => document.querySelector<HTMLElement>(`[data-tour="${target}"]`);
-
-interface Hole { top: number; left: number; width: number; height: number }
+const SWIPE = 40;
 
 /**
- * The guided tour: the screen dims, the real element is lit, and a card
- * beside it says what it is for. Steps move across Hoje and Lembretes; a
- * step whose element is not on the screen (the quiet buttons, on a day
- * already recorded) is skipped. Nothing behind the dim can be tapped,
- * except the lit element of an interactive step.
+ * The tutorial, as a carousel: one picture of the real screen per slide, a
+ * title and one sentence. Next and Back, a swipe, or the arrow keys move it;
+ * the dots say where she is and take her to any slide; Escape or the cross
+ * closes it.
  */
 export function Tour({ steps, onClose }: { steps: TourStep[]; onClose: () => void }) {
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
   const [i, setI] = useState(0);
-  const [dir, setDir] = useState<1 | -1>(1);
-  const [hole, setHole] = useState<Hole | null>(null);
-  const card = useRef<HTMLDivElement>(null);
+  const from = useRef<number | null>(null);
   const step = steps[i];
+  const last = i === steps.length - 1;
+  const go = (n: number) => setI(Math.max(0, Math.min(steps.length - 1, n)));
 
-  const finish = useCallback(() => {
-    onClose();
-    navigate("/app/diario");
-  }, [onClose, navigate]);
-
-  const go = useCallback((d: 1 | -1) => {
-    setDir(d);
-    setHole(null);
-    setI((n) => n + d);
-  }, []);
-
-  // Past either end: done (forwards) or back on the first step.
+  // The next picture, fetched ahead so it is there when she swipes.
   useEffect(() => {
-    if (i >= steps.length) finish();
-    else if (i < 0) setI(0);
-  }, [i, steps.length, finish]);
+    const next = steps[i + 1];
+    if (next) new Image().src = tr(next.image);
+  }, [i, steps]);
 
-  // The step's page.
-  useEffect(() => {
-    if (step && pathname !== step.route) navigate(step.route);
-  }, [step, pathname, navigate]);
-
-  // The step's element: wait for it (pages load lazily), bring it into view,
-  // and follow it as the page scrolls or turns.
-  useLayoutEffect(() => {
-    if (!step || pathname !== step.route) return;
-    let timer = 0;
-    let stopped = false;
-    const started = Date.now();
-    const measure = () => {
-      const el = find(step.target);
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      setHole({ top: r.top - PAD, left: r.left - PAD, width: r.width + PAD * 2, height: r.height + PAD * 2 });
-    };
-    const look = () => {
-      if (stopped) return;
-      const el = find(step.target);
-      if (el) {
-        // A tall element shows from its top, under the header, leaving the
-        // card room below; a short one sits in the middle.
-        const r = el.getBoundingClientRect();
-        const behavior = reduceMotion() ? "auto" : "smooth";
-        if (r.height > window.innerHeight * 0.4) window.scrollTo({ top: window.scrollY + r.top - 80, behavior });
-        else el.scrollIntoView({ block: "center", behavior });
-        timer = window.setTimeout(measure, reduceMotion() ? 0 : 380);
-      } else if (Date.now() - started < FIND_FOR_MS) {
-        timer = window.setTimeout(look, 80);
-      } else {
-        go(dir);
-      }
-    };
-    look();
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
-    return () => {
-      stopped = true;
-      window.clearTimeout(timer);
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
-    };
-  }, [step, pathname, dir, go]);
-
-  // The card takes the focus at each step, so a screen reader reads it.
-  useEffect(() => {
-    if (hole) card.current?.focus();
-  }, [hole, i]);
-
-  if (!step) return null;
-
-  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      finish();
-      return;
-    }
-    if (e.key !== "Tab" || !card.current) return;
-    // Focus stays in the card; an interactive step hands it to the lit element too.
-    const inCard = [...card.current.querySelectorAll<HTMLElement>("button")];
-    const lit = step.interactive ? [...(find(step.target)?.querySelectorAll<HTMLElement>("button, [role=switch], select") ?? [])] : [];
-    const ring = [...inCard, ...lit].filter((el) => !el.hasAttribute("disabled"));
-    const at = ring.indexOf(document.activeElement as HTMLElement);
-    e.preventDefault();
-    ring[(at + (e.shiftKey ? -1 : 1) + ring.length) % ring.length]?.focus();
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "ArrowRight") go(i + 1);
+    else if (e.key === "ArrowLeft") go(i - 1);
+  };
+  const down = (e: PointerEvent) => { from.current = e.clientX; };
+  const up = (e: PointerEvent) => {
+    if (from.current === null) return;
+    const dx = e.clientX - from.current;
+    from.current = null;
+    if (dx <= -SWIPE) go(i + 1);
+    else if (dx >= SWIPE) go(i - 1);
   };
 
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const width = Math.min(360, vw - 32);
-  // Below when there is room, above when there is room there; otherwise at
-  // the foot of the screen, over the end of a tall element.
-  const roomBelow = hole ? vh - (hole.top + hole.height) > 230 : true;
-  const roomAbove = hole ? hole.top > 230 : false;
-  const below = roomBelow || !roomAbove;
-  const left = hole ? Math.min(Math.max(16, hole.left + hole.width / 2 - width / 2), vw - width - 16) : 16;
-  const last = i === steps.length - 1;
-  const moving = reduceMotion() ? "" : "transition-all duration-300 ease-out";
-
-  // The dim, with a window cut where the element is. On an interactive step
-  // four panes surround the window, so the element itself takes taps.
-  const panes = hole && step.interactive
-    ? [
-      { top: 0, left: 0, width: vw, height: Math.max(0, hole.top) },
-      { top: hole.top + hole.height, left: 0, width: vw, height: Math.max(0, vh - hole.top - hole.height) },
-      { top: hole.top, left: 0, width: Math.max(0, hole.left), height: hole.height },
-      { top: hole.top, left: hole.left + hole.width, width: Math.max(0, vw - hole.left - hole.width), height: hole.height },
-    ]
-    : [{ top: 0, left: 0, width: vw, height: vh }];
-
   return (
-    <div className="diary pointer-events-none fixed inset-0 z-[60]" onKeyDown={onKey}>
-      {panes.map((p, n) => <div key={n} className="pointer-events-auto fixed" style={p} aria-hidden="true" />)}
-      <div aria-hidden="true"
-        className={`pointer-events-none fixed rounded-2xl ring-2 ring-gold ${moving}`}
-        style={hole
-          ? { ...hole, boxShadow: "0 0 0 9999px rgb(10 15 30 / 0.62)" }
-          : { top: vh / 2, left: vw / 2, width: 0, height: 0, boxShadow: "0 0 0 9999px rgb(10 15 30 / 0.62)" }} />
-
-      {hole && (
-        <div ref={card} role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-body" tabIndex={-1}
-          className={`pointer-events-auto fixed space-y-3 rounded-2xl border border-border bg-card p-5 text-foreground shadow-xl focus-visible:outline-none ${moving}`}
-          style={below
-            ? roomBelow ? { top: hole.top + hole.height + GAP, left, width } : { bottom: 16, left, width }
-            : { bottom: Math.max(16, vh - hole.top + GAP), left, width }}>
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
+    <DialogPrimitive.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[60] bg-[rgb(10_15_30/0.62)]" />
+        <DialogPrimitive.Content
+          onKeyDown={onKey}
+          // The slide is read first; the cross is not where she starts.
+          onOpenAutoFocus={(e) => { e.preventDefault(); (e.currentTarget as HTMLElement | null)?.focus(); }}
+          aria-describedby="tour-body"
+          className="diary fixed left-1/2 top-1/2 z-[60] flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-xl border border-border bg-card p-4 text-foreground shadow-xl focus-visible:outline-none">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground" aria-live="polite">
               {tr({ en: `${i + 1} of ${steps.length}`, pt: `${i + 1} de ${steps.length}` })}
             </p>
-            <button type="button" onClick={finish} aria-label={tr({ en: "Close the tour", pt: "Fechar o tutorial" })}
+            <DialogPrimitive.Close aria-label={tr({ en: "Close the tutorial", pt: "Fechar o tutorial" })}
               className="-m-2 flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <X size={18} aria-hidden="true" />
-            </button>
+            </DialogPrimitive.Close>
           </div>
-          <h2 id="tour-title" className="font-heading text-xl font-semibold leading-snug">{tr(step.title)}</h2>
-          <p id="tour-body" className="leading-relaxed">{tr(step.body)}</p>
-          <div className="flex items-center justify-between gap-3 pt-1">
+
+          <div className="min-h-0 flex-1 touch-pan-y select-none" onPointerDown={down} onPointerUp={up} onPointerCancel={() => { from.current = null; }}>
+            <div className="flex h-[min(52dvh,26rem)] items-center justify-center overflow-hidden rounded-lg border border-border bg-background">
+              <img key={i} src={tr(step.image)} alt={tr(step.alt)} draggable={false}
+                className="h-full w-full object-contain motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-200" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <DialogPrimitive.Title className="font-heading text-lg font-semibold leading-snug">{tr(step.title)}</DialogPrimitive.Title>
+            <p id="tour-body" className="min-h-10 text-sm leading-relaxed">{tr(step.body)}</p>
+          </div>
+
+          <div className="flex justify-center gap-1" role="group" aria-label={tr({ en: "Slides", pt: "Telas" })}>
+            {steps.map((s, n) => (
+              <button key={n} type="button" onClick={() => go(n)} aria-current={n === i ? "step" : undefined}
+                aria-label={tr({ en: `Slide ${n + 1}: ${s.title.en}`, pt: `Tela ${n + 1}: ${s.title.pt}` })}
+                className="flex h-6 w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <span aria-hidden="true" className={`h-2 rounded-full transition-all ${n === i ? "w-4 bg-primary" : "w-2 bg-border"}`} />
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
             {i === 0 ? (
-              <Button variant="ghost" className="h-11" onClick={finish}>{tr({ en: "Skip", pt: "Pular" })}</Button>
+              <Button variant="ghost" className="h-10" onClick={onClose}>{tr({ en: "Skip", pt: "Pular" })}</Button>
             ) : (
-              <Button variant="outline" className="h-11" onClick={() => go(-1)}>{tr({ en: "Back", pt: "Voltar" })}</Button>
+              <Button variant="outline" className="h-10" onClick={() => go(i - 1)}>{tr({ en: "Back", pt: "Voltar" })}</Button>
             )}
-            <Button className="h-11 min-w-28" onClick={() => (last ? finish() : go(1))}>
+            <Button className="h-10" onClick={() => (last ? onClose() : go(i + 1))}>
               {last ? tr({ en: "Start", pt: "Começar" }) : tr({ en: "Next", pt: "Próximo" })}
             </Button>
           </div>
-        </div>
-      )}
-    </div>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

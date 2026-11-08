@@ -1,112 +1,77 @@
 import { createContext, useContext } from "react";
 
-/** Starts the guided tour from anywhere in the diary (Layout provides it). */
+/** Starts the tutorial from anywhere in the diary (Layout provides it). */
 export const TourContext = createContext<{ start: () => void }>({ start: () => undefined });
 
 export const useTour = () => useContext(TourContext);
 
-/** One stop of the tour: a page, the element on it, and what to say about it. */
+/** One slide of the tutorial: a picture of the real screen, a title, one sentence. */
 export interface TourStep {
-  route: string;
-  /** The element's data-tour name. A step whose element is not on the screen is skipped. */
-  target: string;
+  image: { en: string; pt: string };
+  /** What the picture shows, for a screen reader. */
+  alt: { en: string; pt: string };
   title: { en: string; pt: string };
   body: { en: string; pt: string };
-  /** She may tap the highlighted element during this step (a toggle, a switch). */
-  interactive?: boolean;
 }
 
-const HOJE = "/app/diario";
-const LEMBRETES = "/app/diario/lembretes";
+// The pictures are screenshots of the diary itself, retaken whenever its
+// screens change (scripts/diary/tour-shots.mjs).
+const pic = (name: string) => ({ en: `/app/diario-tour/${name}-en.jpg`, pt: `/app/diario-tour/${name}-pt.jpg` });
 
-/** The diary's features, in the order she meets them, named as the screens name them. */
+/** The diary, slide by slide, in the order she uses it. */
 export const TOUR: TourStep[] = [
   {
-    route: HOJE, target: "add",
-    title: { en: "Note a sale or an expense", pt: "Anote uma venda ou um gasto" },
+    image: pic("1-today"),
+    alt: { en: "The Today screen", pt: "A tela Hoje" },
+    title: { en: "Note your day", pt: "Anote o seu dia" },
     body: {
-      en: "Tap here and note one item at a time: the amount and how it was paid. Received later or in instalments? Tick it on the item. When you are done, tap Review and save the day.",
-      pt: "Toque aqui e anote um item por vez: o valor e como foi pago. Recebe depois ou parcelou? Marque no próprio item. No fim, toque em Revisar e registrar o dia.",
+      en: "Tap I sold or spent. No activity? One tap records the day.",
+      pt: "Toque em Vendi ou gastei. Sem movimento? Um toque registra o dia.",
     },
   },
   {
-    route: HOJE, target: "month", interactive: true,
-    title: { en: "Your month: when there is profit", pt: "Seu mês: quando tem lucro" },
+    image: pic("2-entry"),
+    alt: { en: "The form for a sale or an expense", pt: "O formulário de venda ou gasto" },
+    title: { en: "One item at a time", pt: "Um item por vez" },
     body: {
-      en: "Say how much you need to get through the month: it is your salary, and a cost of the business. Profit is what the sales leave after the expenses and your salary. The bar shows how much of those costs the sales already cover; a loss shows in red, with a minus sign.",
-      pt: "Diga quanto você precisa para passar o mês: é o seu salário, e é um custo do negócio. Lucro é o que sobra das vendas depois dos gastos e do seu salário. A barra mostra quanto desses custos as vendas já cobrem; prejuízo aparece em vermelho, com sinal de menos.",
+      en: "The amount and how it was paid. Paid later or in instalments? Tick it on the item.",
+      pt: "Valor e forma de pagamento. Recebe depois ou parcelou? Marque no item.",
     },
   },
   {
-    route: HOJE, target: "quiet",
-    title: { en: "A day with no activity", pt: "Dia sem movimento" },
+    image: pic("3-review"),
+    alt: { en: "The list of the day, before saving", pt: "A lista do dia, antes de registrar" },
+    title: { en: "Review and save", pt: "Revise e registre" },
     body: {
-      en: "Opened and sold nothing, or did not open? One tap records the day.",
-      pt: "Abriu e não vendeu, ou não abriu? Um toque registra o dia.",
+      en: "Check the list, then tap Confirm and save.",
+      pt: "Confira a lista e toque em Confirmar e registrar.",
     },
   },
   {
-    route: HOJE, target: "day",
-    title: { en: "Today or yesterday", pt: "Hoje ou ontem" },
+    image: pic("4-month"),
+    alt: { en: "The Your month card", pt: "O card Seu mês" },
+    title: { en: "Your month", pt: "Seu mês" },
     body: {
-      en: "Forgot to note yesterday? Switch here and record it.",
-      pt: "Esqueceu de anotar ontem? Troque aqui e registre.",
+      en: "Sales in blue, expenses in orange. Profit is what is left after the expenses and your salary.",
+      pt: "Vendas em azul, gastos em laranja. Lucro é o que sobra depois dos gastos e do seu salário.",
     },
   },
   {
-    route: HOJE, target: "summary",
-    title: { en: "Your day so far", pt: "O resumo do dia" },
+    image: pic("5-reading"),
+    alt: { en: "A weekly reading", pt: "Uma leitura da semana" },
+    title: { en: "Your week, read", pt: "A leitura da semana" },
     body: {
-      en: "Your sales, expenses, your salary for the day and the day's profit add up here. Remembered something? Today and yesterday still take more, and each line can be corrected or removed.",
-      pt: "Aqui somam as vendas, os gastos, o seu salário do dia e o lucro do dia. Lembrou de algo? Hoje e ontem ainda aceitam mais, e cada lançamento pode ser corrigido ou removido.",
+      en: "Record 3 days in a week and, from Sunday, a reading of your business is waiting when you open the diary.",
+      pt: "Registre 3 dias na semana e, a partir de domingo, a leitura do seu negócio aparece quando você abrir o diário.",
     },
   },
   {
-    route: HOJE, target: "week",
-    title: { en: "Your week", pt: "A sua semana" },
+    image: pic("6-reminders"),
+    alt: { en: "The Reminders screen", pt: "A tela Lembretes" },
+    title: { en: "Reminders", pt: "Lembretes" },
     body: {
-      en: "Each day you record gets your icon. Tap Change icon to pick yours.",
-      pt: "Cada dia registrado ganha o seu ícone. Toque em Trocar ícone para escolher o seu.",
-    },
-  },
-  {
-    route: HOJE, target: "tab-history",
-    title: { en: "History", pt: "Histórico" },
-    body: {
-      en: "Your days, your weekly readings and your rewards. After a week with 3 days recorded, a short reading of your business arrives, written by AI from your figures, never with your name.",
-      pt: "Os seus dias, as leituras da semana e os prêmios. Depois de uma semana com 3 dias registrados, chega uma leitura curta do seu negócio, escrita por IA a partir dos seus números, nunca com o seu nome.",
-    },
-  },
-  {
-    route: LEMBRETES, target: "open-days", interactive: true,
-    title: { en: "The days your business opens", pt: "Os dias em que seu negócio abre" },
-    body: {
-      en: "Tap to mark them, now if you like. A closed day is never a missed one, and no reminder comes on it.",
-      pt: "Toque para marcar, se quiser já agora. Dia fechado não é falta, e não chega lembrete nele.",
-    },
-  },
-  {
-    route: LEMBRETES, target: "reminder", interactive: true,
-    title: { en: "The daily reminder", pt: "O lembrete diário" },
-    body: {
-      en: "Turn it on and choose the time: one nudge a day, only on days you have not recorded yet.",
-      pt: "Ligue e escolha o horário: um aviso por dia, só nos dias em que você ainda não registrou.",
-    },
-  },
-  {
-    route: LEMBRETES, target: "your-data",
-    title: { en: "Your data, your choices", pt: "Seus dados, suas escolhas" },
-    body: {
-      en: "Here you choose whether your business counts in the impact figures, and whether the weekly reading is written by AI.",
-      pt: "Aqui você escolhe se o seu negócio entra nos números de impacto e se a leitura da semana é escrita por IA.",
-    },
-  },
-  {
-    route: LEMBRETES, target: "tour-link",
-    title: { en: "That's it!", pt: "Pronto!" },
-    body: {
-      en: "To see this tour again, tap here whenever you like.",
-      pt: "Para ver este tutorial de novo, toque aqui quando quiser.",
+      en: "Mark the days you open and the time of the reminder. The tutorial is here too.",
+      pt: "Marque os dias em que abre e o horário do aviso. O tutorial também fica aqui.",
     },
   },
 ];
