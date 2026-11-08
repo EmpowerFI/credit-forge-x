@@ -279,6 +279,14 @@ export interface WeekReading {
   days_kept: number;
   /** The days a week her business opened, the week's base. */
   open_days: number;
+  /** The figures the reading was written from (20261225); null where a cost was unknown or her salary not set. */
+  figures?: {
+    sales_cents: number;
+    expenses_cents: number | null;
+    result_cents: number | null;
+    pay_cents: number | null;
+    profit_cents: number | null;
+  };
   completed_at: string;
 }
 

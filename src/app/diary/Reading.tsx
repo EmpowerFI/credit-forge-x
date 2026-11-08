@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { Fragment, useEffect, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles } from "lucide-react";
 import { tr } from "../i18n";
-import { addDays, diary, mondayOf, type WeekReading, weekSpan } from "./diary";
+import { addDays, brl, diary, mondayOf, type WeekReading, weekSpan } from "./diary";
+import { ProfitValue } from "./Month";
 
 const READINGS_KEY = ["diary", "readings"] as const;
 
@@ -30,19 +31,83 @@ function useCheckReading(today: string) {
   }, [written, queryClient]);
 }
 
+/** "1.240,00", and "1.240" when the centavos are zero: the two ways the reading may write an amount. */
+const amountForms = (cents: number) => {
+  const full = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.abs(cents) / 100);
+  return full.endsWith(",00") ? [full, full.slice(0, -3)] : [full];
+};
+
+/**
+ * Which colour each amount in the reading takes, from the figures it was
+ * written from: profit green and a loss red, sales blue, expenses orange.
+ * An amount that is none of them (her salary, last week's sales) stays ink.
+ */
+function amountColours(f: WeekReading["figures"]): Map<string, string> {
+  const colours = new Map<string, string>();
+  if (!f) return colours;
+  const put = (cents: number | null, colour: string) => {
+    if (cents === null || cents === 0) return;
+    for (const form of amountForms(cents)) if (!colours.has(form)) colours.set(form, colour);
+  };
+  const bottom = f.profit_cents ?? f.result_cents;
+  put(bottom, bottom !== null && bottom < 0 ? "text-alert" : "text-positive");
+  put(f.sales_cents, "text-sales");
+  put(f.expenses_cents, "text-expense");
+  return colours;
+}
+
+/** The reading's sentence, with each amount it knows in its colour and in bold. */
+function painted(text: string, colours: Map<string, string>): ReactNode {
+  if (!colours.size) return text;
+  const parts = text.split(/(R\$\s?-?\d[\d.]*(?:,\d{2})?)/);
+  return parts.map((part, n) => {
+    const amount = part.match(/^R\$\s?-?(\d[\d.]*(?:,\d{2})?)$/)?.[1];
+    const colour = amount ? colours.get(amount) : undefined;
+    return colour ? <strong key={n} className={`whitespace-nowrap ${colour}`}>{part}</strong> : <Fragment key={n}>{part}</Fragment>;
+  });
+}
+
+/** The week's money at a glance: sales, expenses, and what was left. */
+function Figures({ f }: { f: NonNullable<WeekReading["figures"]> }) {
+  const bottom = f.profit_cents ?? f.result_cents;
+  const bottomLabel = f.profit_cents !== null
+    ? (f.profit_cents < 0 ? tr({ en: "Loss", pt: "Prejuízo" }) : tr({ en: "Profit", pt: "Lucro" }))
+    : tr({ en: "Result", pt: "Resultado" });
+  const cell = "min-w-0 rounded-lg bg-secondary/60 px-2 py-1.5";
+  return (
+    <div className="grid grid-cols-3 gap-1.5 text-xs">
+      <div className={cell}>
+        <p className="font-medium text-sales">{tr({ en: "Sales", pt: "Vendas" })}</p>
+        <p className="truncate text-sm font-semibold tabular-nums text-sales">{brl(f.sales_cents)}</p>
+      </div>
+      <div className={cell}>
+        <p className="font-medium text-expense">{tr({ en: "Expenses", pt: "Gastos" })}</p>
+        <p className="truncate text-sm font-semibold tabular-nums text-expense">{f.expenses_cents === null ? "—" : brl(f.expenses_cents)}</p>
+      </div>
+      <div className={cell}>
+        <p className="font-medium text-muted-foreground">{bottomLabel}</p>
+        {bottom === null
+          ? <p className="text-sm font-semibold">—</p>
+          : <ProfitValue cents={bottom} className="whitespace-nowrap text-sm font-semibold [&>svg]:hidden" />}
+      </div>
+    </div>
+  );
+}
+
 /** One reading, as she reads it. */
 export function ReadingCard({ reading, open = true }: { reading: WeekReading; open?: boolean }) {
   const r = reading.report;
+  const colours = amountColours(reading.figures);
   const body = (
     <div className="space-y-2 text-sm leading-relaxed">
-      <p>{r.summary}</p>
+      {reading.figures && <Figures f={reading.figures} />}
+      <p>{painted(r.summary, colours)}</p>
       {r.observations.length > 0 && (
         <ul className="list-disc space-y-1 pl-5">
-          {r.observations.map((o) => <li key={o}>{o}</li>)}
+          {r.observations.map((o) => <li key={o}>{painted(o, colours)}</li>)}
         </ul>
       )}
-      <p><strong>{tr({ en: "For this week:", pt: "Para esta semana:" })}</strong> {r.action}</p>
-      <p className="text-sm italic text-muted-foreground">{r.limits}</p>
+      <p><strong>{tr({ en: "For this week:", pt: "Para esta semana:" })}</strong> {painted(r.action, colours)}</p>
       <p className="text-sm text-muted-foreground">
         {reading.days_kept > (reading.open_days ?? 7)
           // She recorded on a day she usually closes: it counts, and the sentence says so.
