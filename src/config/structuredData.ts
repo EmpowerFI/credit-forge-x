@@ -15,11 +15,9 @@ import {
   SITE_URL,
 } from "@/config/company";
 import {
-  APP_STORE_URL,
   CONTACT_EMAIL,
   INSTAGRAM_URL,
   LINKEDIN_URL,
-  PLAY_STORE_URL,
   X_URL,
 } from "@/config/links";
 
@@ -67,17 +65,14 @@ export const softwareApplicationSchema = (): Record<string, unknown> => ({
   "@id": `${SITE_URL}/#app`,
   name: "EmpowerFI",
   applicationCategory: "FinanceApplication",
-  operatingSystem: "Android, iOS",
-  url: PLAY_STORE_URL,
-  installUrl: PLAY_STORE_URL,
-  sameAs: [PLAY_STORE_URL, APP_STORE_URL],
+  // The diary on the web; the store apps are being retired.
+  operatingSystem: "Web",
+  url: `${SITE_URL}/app/diario`,
   inLanguage: "pt-BR",
   description:
-    "App da EmpowerFI para mulheres que empreendem: organize o negócio e participe de oportunidades patrocinadas.",
+    "Diário da EmpowerFI para mulheres que empreendem, no navegador do celular: organize o negócio e participe de oportunidades patrocinadas.",
   publisher: { "@id": `${SITE_URL}/#organization` },
-  // Free to download and sign up for. The product is freemium, so revisit this
-  // once paid subscription plans ship — the install stays free, but the listing
-  // should then also declare the in-app purchase range.
+  // Free to use. Revisit this if paid plans ever ship.
   offers: {
     "@type": "Offer",
     price: "0",

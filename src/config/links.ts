@@ -1,9 +1,5 @@
 // Single source of truth for external links, shared by the PT (/) and EN (/en)
 // pages so both languages stay in sync.
-export const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=com.empowerfi.app";
-export const APP_STORE_URL = "https://apps.apple.com/br/app/empowerfi/id6795292900";
-
 // Founder replies personally — used for the investor / deck request CTA.
 export const INVESTOR_EMAIL = "daniele@empowerfi.io";
 export const CONTACT_EMAIL = "contato@empowerfi.io";

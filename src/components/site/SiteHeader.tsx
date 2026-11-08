@@ -44,12 +44,13 @@ const SiteHeader = ({ home, lang, links, language, primary, appLabel, menuLabel 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-foreground/15 bg-background/95 backdrop-blur-sm">
       <div className="container mx-auto flex h-[4.25rem] items-center justify-between gap-4 px-4 md:px-8 lg:gap-6 xl:h-24">
-        <Link to={home} className="flex items-center gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background">
+        <Link to={home} aria-label="EmpowerFI" className="flex shrink-0 items-center gap-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-4 focus-visible:ring-offset-background">
           <Mark size={30} className="shrink-0" />
-          <span className="font-heading text-2xl tracking-[0.01em] xl:text-[1.75rem]">EmpowerFI</span>
+          {/* On a phone the mark alone: the platform needs the room in the bar. */}
+          <span className="hidden font-heading text-2xl tracking-[0.01em] sm:inline xl:text-[1.75rem]">EmpowerFI</span>
         </Link>
 
-        <div className="flex items-center gap-3 lg:gap-6">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-6">
           <nav aria-label={menuLabel} className="hidden items-center gap-6 lg:flex">
             {top.map((l) => (
               <Link key={l.to} to={l.to} aria-current={pathname === l.to ? "page" : undefined}
@@ -57,15 +58,21 @@ const SiteHeader = ({ home, lang, links, language, primary, appLabel, menuLabel 
                 {l.label}
               </Link>
             ))}
-            {/* The app link waits for xl: at lg it is the piece the row can
-                spare, and the panel still carries it. */}
-            <Link to={`/app?lang=${lang}`} className="btn-site !hidden !min-h-[2.875rem] !px-5 !text-[1.0625rem] xl:!inline-flex">
+            {/* The platform, at every width (founder, 8 Nov: hidden below xl,
+                nobody found the showroom). */}
+            <Link to={`/app?lang=${lang}`} className="btn-site !min-h-[2.75rem] !px-4 !text-base xl:!min-h-[2.875rem] xl:!px-5 xl:!text-[1.0625rem]">
               {appLabel} <ArrowUpRight size={15} className="text-accent" aria-hidden />
             </Link>
             <Link to={primary.to} className="btn-site btn-site-primary !min-h-[2.75rem] !px-5 !text-base xl:!min-h-[2.875rem] xl:!text-[1.0625rem]">
               {primary.label}
             </Link>
           </nav>
+
+          {/* Below lg the row has no nav: the platform still sits in the bar. */}
+          <Link to={`/app?lang=${lang}`}
+            className="btn-site !min-h-[2.75rem] !gap-1 !px-3 !text-[0.9375rem] lg:!hidden">
+            {appLabel} <ArrowUpRight size={14} className="text-accent" aria-hidden />
+          </Link>
 
           <LanguageToggle language={language} />
 

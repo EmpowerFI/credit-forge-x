@@ -136,8 +136,6 @@ export interface AboutContent {
       desc: string;
       href?: string;
       linkLabel?: string;
-      /** The app card links to both stores instead of a single one. */
-      stores?: boolean;
       /** Third-party mark evidencing institutional backing, from /public. */
       logo?: { src: string; alt: string; label: string; large?: boolean };
     }[];
@@ -210,7 +208,7 @@ export const aboutPt: AboutContent = {
     subtitle:
       "A EmpowerFI ajuda mulheres que empreendem a conhecer seus números e a participar de campanhas patrocinadas com recompensas. Ao longo do tempo, essa atividade vira uma reputação financeira que ela controla.",
     primaryCta: "Falar com a gente",
-    secondaryCta: "Ver o aplicativo",
+    secondaryCta: "Abrir o diário",
   },
   story: {
     eyebrow: "Nossa história",
@@ -406,9 +404,10 @@ export const aboutPt: AboutContent = {
     items: [
       {
         icon: Smartphone,
-        title: "Aplicativo disponível na Google Play e na App Store",
-        desc: "O aplicativo está publicado e em funcionamento no Android e no iPhone. Não é demonstração: dá para baixar e usar hoje.",
-        stores: true,
+        title: "Diário EmpowerFI no ar, na web",
+        desc: "O diário está publicado e em uso, no navegador do celular. Não é demonstração: dá para usar hoje, sem instalar nada.",
+        href: "/app/diario",
+        linkLabel: "empowerfi.io/app/diario",
       },
       {
         icon: BarChart3,
@@ -450,8 +449,8 @@ export const aboutPt: AboutContent = {
         a: "Não. Usar o diário é gratuito. Se um dia houver planos pagos, preço e condições serão mostrados antes, e nada será cobrado sem você contratar.",
       },
       {
-        q: "O aplicativo já está disponível?",
-        a: "Sim. O diário funciona no navegador, e o aplicativo EmpowerFI está na Google Play e na App Store, gratuito nas duas.",
+        q: "O diário já está disponível?",
+        a: "Sim, e é gratuito. Ele funciona no navegador, em empowerfi.io/app/diario. Para uma experiência melhor, use no celular.",
       },
       {
         q: "O que são as Missões?",
@@ -536,7 +535,7 @@ export const aboutEn: AboutContent = {
     subtitle:
       "EmpowerFI helps women entrepreneurs know their numbers and join sponsored campaigns with conditional rewards. Over time, that activity becomes a financial reputation she controls.",
     primaryCta: "Get in touch",
-    secondaryCta: "See the app",
+    secondaryCta: "Open the diary",
   },
   story: {
     eyebrow: "Our story",
@@ -733,9 +732,10 @@ export const aboutEn: AboutContent = {
     items: [
       {
         icon: Smartphone,
-        title: "App available on Google Play and the App Store",
-        desc: "The app is published and running on Android and iPhone. It is not a demo: you can download and use it today.",
-        stores: true,
+        title: "The EmpowerFI diary, live on the web",
+        desc: "The diary is published and in use, in the phone's browser. It is not a demo: you can use it today, with nothing to install.",
+        href: "/app/diario",
+        linkLabel: "empowerfi.io/app/diario",
       },
       {
         icon: BarChart3,
@@ -777,8 +777,8 @@ export const aboutEn: AboutContent = {
         a: "No. The diary is free. If paid plans ever exist, the price and conditions will be shown up front, and nothing is charged unless you sign up for it.",
       },
       {
-        q: "Is the app already available?",
-        a: "Yes. The diary works in the browser, and the EmpowerFI app is on Google Play and the App Store, free on both.",
+        q: "Is the diary already available?",
+        a: "Yes, and it is free. It works in the browser, at empowerfi.io/app/diario. For the best experience, use it on your phone.",
       },
       {
         q: "What are Missions?",
