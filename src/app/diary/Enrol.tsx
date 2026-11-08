@@ -182,18 +182,18 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
     <div className="space-y-2">
       <Label htmlFor="enrol-age">{tr({ en: "Age range", pt: "Faixa etária" })}</Label>
       <select id="enrol-age" value={age} onChange={(e) => setAge(e.target.value)} required
-        className="h-12 w-full rounded-md border border-input bg-background px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        className="h-11 w-full rounded-md border border-input bg-background px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <option value="">{tr({ en: "Choose", pt: "Escolha" })}</option>
         {AGE_RANGES.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
       </select>
     </div>
   );
 
-  const box = "flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border-2 border-input bg-card p-4";
+  const box = "flex min-h-12 cursor-pointer items-start gap-3 rounded-lg border-2 border-input bg-card p-3";
   const agree = (
     <>
       <section className="space-y-4" aria-labelledby="enrol-care">
-        <h2 id="enrol-care" className="font-heading text-xl font-semibold">
+        <h2 id="enrol-care" className="font-heading text-lg font-semibold">
           {tr({ en: "How we look after what you record", pt: "Como cuidamos do que você registra" })}
         </h2>
         <ConsentText />
@@ -206,17 +206,17 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
       )}
       <label htmlFor="enrol-consent" className={box}>
         <Checkbox id="enrol-consent" checked={consented} onCheckedChange={(v) => setConsented(v === true)} className="mt-0.5 h-6 w-6" />
-        <span className="text-lg">{tr({ en: "I have read and agree.", pt: "Li e concordo." })}</span>
+        <span className="font-medium">{tr({ en: "I have read and agree.", pt: "Li e concordo." })}</span>
       </label>
       <label htmlFor="enrol-impact" className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 text-sm">
         <Checkbox id="enrol-impact" checked={shareImpact} onCheckedChange={(v) => setShareImpact(v === true)} className="mt-0.5 h-5 w-5" />
         <span>
           <ImpactChoiceText />
-          <span className="block text-muted-foreground">{tr({ en: "Optional. You can change it any time.", pt: "Opcional. Você pode mudar quando quiser." })}</span>
+          <span className="block text-muted-foreground">{tr({ en: "Optional.", pt: "Opcional." })}</span>
         </span>
       </label>
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
-      <Button type="submit" className="h-14 w-full rounded-xl text-lg" disabled={busy || !consented}>
+      <Button type="submit" className="h-12 w-full text-base" disabled={busy || !consented}>
         {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
         {tr({ en: "Start my diary", pt: "Começar meu diário" })}
       </Button>
@@ -238,13 +238,7 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
           <DiaryLogo />
           <span className="text-muted-foreground">{tr({ en: "Last step", pt: "Último passo" })}</span>
         </div>
-        <h1 className="mt-8 font-heading text-[2.25rem] font-semibold leading-tight">{tr({ en: "Before you start.", pt: "Antes de começar." })}</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          {tr({
-            en: "Your EmpowerFI app account brings you in. Check your details and how we look after them.",
-            pt: "A sua conta do app EmpowerFI já traz você. Confira seus dados e como cuidamos deles.",
-          })}
-        </p>
+        <h1 className="mt-8 font-heading text-2xl font-semibold leading-tight">{tr({ en: "Before you start.", pt: "Antes de começar." })}</h1>
 
         <form onSubmit={submit} className="mt-8 space-y-7" noValidate>
           {fromApp.name ? (
@@ -262,7 +256,7 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
           ) : (
             <div className="space-y-2">
               <Label htmlFor="enrol-name">{tr({ en: "What should we call you?", pt: "Como você prefere ser chamada?" })}</Label>
-              <Input id="enrol-name" autoComplete="given-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} className="h-12 text-base" />
+              <Input id="enrol-name" autoComplete="given-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} className="h-11 text-base" />
             </div>
           )}
           {!fromApp.age_range && ageField}
@@ -278,24 +272,23 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
         <DiaryLogo />
         <LanguageSwitch variant="pill" />
       </div>
-      <h1 className="mt-8 font-heading text-[2.25rem] font-semibold leading-tight">{tr({ en: "Welcome!", pt: "Boas-vindas!" })}</h1>
-      <p className="mt-2 text-lg text-muted-foreground">{tr({ en: "A few questions to start. It takes two minutes.", pt: "Algumas perguntas para começar. Leva dois minutos." })}</p>
+      <h1 className="mt-8 font-heading text-2xl font-semibold leading-tight">{tr({ en: "Welcome!", pt: "Boas-vindas!" })}</h1>
 
       <form onSubmit={submit} className="mt-6 space-y-6" noValidate>
         <div className="space-y-2">
           <Label htmlFor="enrol-name">{tr({ en: "What should we call you?", pt: "Como você prefere ser chamada?" })}</Label>
-          <Input id="enrol-name" autoComplete="given-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} className="h-12 text-base" />
+          <Input id="enrol-name" autoComplete="given-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} className="h-11 text-base" />
         </div>
 
         <div className="grid grid-cols-[1fr_6rem] gap-3">
           <div className="space-y-2">
             <Label htmlFor="enrol-city">{tr({ en: "City of your business", pt: "Cidade do seu negócio" })}</Label>
-            <Input id="enrol-city" autoComplete="address-level2" value={city} onChange={(e) => setCity(e.target.value)} maxLength={80} className="h-12 text-base" />
+            <Input id="enrol-city" autoComplete="address-level2" value={city} onChange={(e) => setCity(e.target.value)} maxLength={80} className="h-11 text-base" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="enrol-uf">{tr({ en: "State", pt: "Estado" })}</Label>
             <select id="enrol-uf" value={uf} onChange={(e) => setUf(e.target.value)}
-              className="h-12 w-full rounded-md border border-input bg-background px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              className="h-11 w-full rounded-md border border-input bg-background px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <option value="">—</option>
               {UFS.map((u) => <option key={u} value={u}>{u}</option>)}
             </select>
@@ -309,12 +302,13 @@ export default function Enrol({ fromApp }: { fromApp: FromApp | null }) {
           {listed.length > 0 ? (
             // The app's own categories: one name for one kind of business.
             <select id="enrol-sector" value={listed.some((c) => c.label === sector) ? sector : ""} onChange={(e) => setSector(e.target.value)}
-              className="h-12 w-full rounded-md border border-input bg-background px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              className="h-11 w-full rounded-md border border-input bg-background px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <option value="">{tr({ en: "Choose a category", pt: "Escolha uma categoria" })}</option>
-              {listed.map((c) => <option key={c.slug} value={c.label}>{c.icon ? `${c.icon} ` : ""}{c.label}</option>)}
+              {/* The app's icon column names a drawing (e.g. "utensils"), not text to show. */}
+              {listed.map((c) => <option key={c.slug} value={c.label}>{c.label}</option>)}
             </select>
           ) : (
-            <Input id="enrol-sector" value={sector} onChange={(e) => setSector(e.target.value)} maxLength={80} className="h-12 text-base"
+            <Input id="enrol-sector" value={sector} onChange={(e) => setSector(e.target.value)} maxLength={80} className="h-11 text-base"
               disabled={categories.isLoading}
               placeholder={tr({ en: "e.g. cakes to order, hair salon", pt: "ex.: bolo por encomenda, salão de beleza" })} />
           )}

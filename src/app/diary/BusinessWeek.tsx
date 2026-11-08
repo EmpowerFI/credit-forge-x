@@ -39,9 +39,9 @@ export function OpenDays({ profile }: { profile: DiaryProfile }) {
   };
 
   return (
-    <section data-tour="open-days" className="space-y-3 rounded-2xl border border-border bg-card p-5" aria-labelledby="open-days-title">
+    <section data-tour="open-days" className="space-y-3 rounded-xl border border-border bg-card p-4" aria-labelledby="open-days-title">
       <div className="flex items-center justify-between gap-2">
-        <h2 id="open-days-title" className="font-heading text-xl font-semibold">
+        <h2 id="open-days-title" className="font-heading text-lg font-semibold">
           {tr({ en: "Days your business opens", pt: "Dias em que seu negócio abre" })}
         </h2>
         {busy && <Loader2 className="animate-spin text-muted-foreground" aria-label={tr({ en: "Saving", pt: "Salvando" })} />}
@@ -52,7 +52,7 @@ export function OpenDays({ profile }: { profile: DiaryProfile }) {
           return (
             <button key={d} type="button" aria-pressed={on} aria-label={names[d - 1]} title={names[d - 1]}
               disabled={busy || (on && open.size === 1)} onClick={() => void toggle(d)}
-              className={`flex h-12 items-center justify-center rounded-xl border-2 text-base font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed ${
+              className={`flex h-10 items-center justify-center rounded-lg border-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed ${
                 on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground"}`}>
               {letters[d - 1]}
             </button>
@@ -108,8 +108,8 @@ export function AiNotice({ profile }: { profile: DiaryProfile }) {
   // Not while the impact question, which comes first, is still to be asked.
   if (!version || !IMPACT_ASKED_IN.includes(version) || AI_TOLD_IN.includes(version)) return null;
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card p-5 text-sm">
-      <h2 className="font-heading text-xl font-semibold">{tr({ en: "New: your week, read", pt: "Novidade: a leitura da sua semana" })}</h2>
+    <section className="space-y-3 rounded-xl border border-border bg-card p-4 text-sm">
+      <h2 className="font-heading text-lg font-semibold">{tr({ en: "New: your week, read", pt: "Novidade: a leitura da sua semana" })}</h2>
       <p>
         {tr({
           en: "After each week with at least 3 days recorded, the diary writes a short reading of your business.",
@@ -131,15 +131,19 @@ export function AiNotice({ profile }: { profile: DiaryProfile }) {
   );
 }
 
-/** Under Lembretes: the AI switch. */
+/** Under Lembretes: the AI switch, a short label, and the whole wording a tap away. */
 export function AiReadingSwitch({ profile }: { profile: DiaryProfile }) {
   const { choose, busy, error } = useAiChoice(profile);
   return (
-    <div className="space-y-2">
-      <div className="flex items-start justify-between gap-4">
-        <Label htmlFor="ai-reading" className="text-sm font-normal leading-relaxed"><AiReadingText /></Label>
-        <Switch id="ai-reading" checked={profile.ai_reading ?? true} disabled={busy} onCheckedChange={(v) => void choose(v)} className="mt-1 shrink-0" />
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-4">
+        <Label htmlFor="ai-reading" className="text-sm font-medium">{tr({ en: "Weekly reading written by AI", pt: "Leitura da semana escrita por IA" })}</Label>
+        <Switch id="ai-reading" checked={profile.ai_reading ?? true} disabled={busy} onCheckedChange={(v) => void choose(v)} className="shrink-0" />
       </div>
+      <details className="text-sm text-muted-foreground">
+        <summary className="min-h-8 cursor-pointer underline underline-offset-4">{tr({ en: "What this means", pt: "O que isso significa" })}</summary>
+        <p className="pt-1 leading-relaxed"><AiReadingText /></p>
+      </details>
       {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
     </div>
   );

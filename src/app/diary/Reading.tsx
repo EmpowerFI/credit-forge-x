@@ -34,7 +34,7 @@ function useCheckReading(today: string) {
 export function ReadingCard({ reading, open = true }: { reading: WeekReading; open?: boolean }) {
   const r = reading.report;
   const body = (
-    <div className="space-y-3 text-[0.9375rem] leading-relaxed">
+    <div className="space-y-2 text-sm leading-relaxed">
       <p>{r.summary}</p>
       {r.observations.length > 0 && (
         <ul className="list-disc space-y-1 pl-5">
@@ -52,34 +52,29 @@ export function ReadingCard({ reading, open = true }: { reading: WeekReading; op
             pt: `Você registrou ${reading.days_kept} dos ${reading.open_days ?? 7} dias em que seu negócio abre nessa semana.`,
           })}
       </p>
-      <p className="border-t border-border pt-3 text-xs text-muted-foreground">
-        {reading.source === "model"
-          ? tr({
-            en: "Written by AI from your figures, and every number checked against them. Your name is never sent.",
-            pt: "Escrita por IA a partir dos seus números, e cada número conferido com eles. Seu nome nunca é enviado.",
-          })
-          : tr({ en: "Written from your figures.", pt: "Feita a partir dos seus números." })}
-      </p>
+      {reading.source === "model" && (
+        <p className="border-t border-border pt-2 text-xs text-muted-foreground">{tr({ en: "Written by AI.", pt: "Escrita por IA." })}</p>
+      )}
     </div>
   );
   const title = tr({ en: `Week of ${weekSpan(reading.week_start)}`, pt: `Semana de ${weekSpan(reading.week_start)}` });
 
   if (open) {
     return (
-      <section className="space-y-3 rounded-2xl border-2 border-primary/30 bg-card p-5" aria-labelledby={`reading-${reading.week_start}`}>
+      <section className="space-y-2 rounded-xl border-2 border-primary/30 bg-card p-4" aria-labelledby={`reading-${reading.week_start}`}>
         <div>
           <p className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
             <Sparkles size={16} aria-hidden="true" />{tr({ en: "Your week, read", pt: "Sua leitura da semana" })}
           </p>
-          <h2 id={`reading-${reading.week_start}`} className="font-heading text-xl font-semibold">{title}</h2>
+          <h2 id={`reading-${reading.week_start}`} className="font-heading text-lg font-semibold">{title}</h2>
         </div>
         {body}
       </section>
     );
   }
   return (
-    <details className="group rounded-2xl border border-border bg-card p-4">
-      <summary className="flex min-h-11 cursor-pointer items-center font-heading text-lg font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+    <details className="group rounded-xl border border-border bg-card px-4 py-2">
+      <summary className="flex min-h-10 cursor-pointer items-center font-heading text-base font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
         {title}
       </summary>
       <div className="pt-3">{body}</div>
@@ -106,7 +101,7 @@ export function AllReadings() {
   if (!list.length) return null;
   return (
     <section className="space-y-3" aria-labelledby="all-readings">
-      <h2 id="all-readings" className="font-heading text-xl font-semibold">{tr({ en: "Your weekly readings", pt: "Suas leituras da semana" })}</h2>
+      <h2 id="all-readings" className="font-heading text-lg font-semibold">{tr({ en: "Your weekly readings", pt: "Suas leituras da semana" })}</h2>
       {list.map((r, i) => <ReadingCard key={r.week_start} reading={r} open={i === 0} />)}
     </section>
   );

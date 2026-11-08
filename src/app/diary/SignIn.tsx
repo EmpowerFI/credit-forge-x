@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
-import { ChevronLeft, Loader2, Lock, Timer } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { DiaryLogo } from "./Brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,53 +100,33 @@ export default function SignIn({ home = "/app/diario", title, intro }: {
 
       {sentTo === null ? (
         <>
-          <div className="mt-14 space-y-3">
-            <h1 className="font-heading text-[2.5rem] font-semibold leading-[1.1]">
+          <div className="mt-12 space-y-2">
+            <h1 className="font-heading text-[1.75rem] font-semibold leading-tight">
               {title ?? tr({ en: "Your business diary.", pt: "O diário do seu negócio." })}
             </h1>
-            <p className="text-lg text-muted-foreground">
-              {intro ?? tr({
-                en: "Note what you sold and spent in under a minute a day.",
-                pt: "Anote o que vendeu e gastou em menos de um minuto por dia.",
-              })}
-            </p>
+            {intro && <p className="text-muted-foreground">{intro}</p>}
           </div>
-          <form onSubmit={send} className="mt-10 space-y-4" noValidate>
-            <div className="space-y-2">
-              <Label htmlFor="diary-email" className="text-base">{tr({ en: "Your e-mail", pt: "Seu e-mail" })}</Label>
+          <form onSubmit={send} className="mt-8 space-y-3" noValidate>
+            <div className="space-y-1.5">
+              <Label htmlFor="diary-email">{tr({ en: "Your e-mail", pt: "Seu e-mail" })}</Label>
               <Input id="diary-email" type="email" inputMode="email" autoComplete="email" autoCapitalize="none"
                 placeholder={tr({ en: "you@example.com", pt: "voce@exemplo.com" })}
-                value={email} onChange={(e) => setEmail(e.target.value)} className="h-14 rounded-xl bg-card text-lg" required />
+                value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-card text-base" required />
             </div>
-            <Button type="submit" className="h-14 w-full rounded-xl text-lg" disabled={busy}>
+            <Button type="submit" className="h-11 w-full text-base" disabled={busy}>
               {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
               {tr({ en: "Send me a code", pt: "Receber código" })}
             </Button>
-            <p className="text-muted-foreground">
-              {tr({
-                en: "We send a 6-digit code. No password to remember.",
-                pt: "Vamos mandar um código de 6 números. Sem senha para lembrar.",
-              })}
-            </p>
           </form>
-          <ul className="mt-auto space-y-3 border-t border-border pt-5 text-muted-foreground">
-            <li className="flex items-center gap-3"><Lock size={20} className="shrink-0 text-foreground" aria-hidden="true" />
-              {tr({ en: "Your figures are yours alone.", pt: "Seus números são só seus." })}</li>
-            <li className="flex items-center gap-3"><Timer size={20} className="shrink-0 text-foreground" aria-hidden="true" />
-              {tr({ en: "Note it with a few taps, in under a minute.", pt: "Anote em poucos toques, em menos de um minuto." })}</li>
-          </ul>
         </>
       ) : (
         <>
-          <div className="mt-10 space-y-2">
-            <h1 className="font-heading text-[2.25rem] font-semibold leading-tight">{tr({ en: "Check your e-mail.", pt: "Confira seu e-mail." })}</h1>
-            <p className="text-lg text-muted-foreground">
-              {tr({ en: "We sent a 6-digit code to", pt: "Mandamos um código de 6 números para" })}
-            </p>
-            <p className="break-all text-lg font-semibold">{sentTo}</p>
+          <div className="mt-10 space-y-1">
+            <h1 className="font-heading text-[1.75rem] font-semibold leading-tight">{tr({ en: "Check your e-mail.", pt: "Confira seu e-mail." })}</h1>
+            <p className="break-all text-muted-foreground">{sentTo}</p>
           </div>
-          <div className="mt-8 space-y-3">
-            <Label htmlFor="diary-code" className="text-base">{tr({ en: "Code", pt: "Código" })}</Label>
+          <div className="mt-6 space-y-2">
+            <Label htmlFor="diary-code">{tr({ en: "6-digit code", pt: "Código de 6 números" })}</Label>
             <InputOTP id="diary-code" maxLength={CODE_LENGTH} value={code} inputMode="numeric" autoComplete="one-time-code" disabled={busy}
               containerClassName="w-full"
               onChange={(v) => {
@@ -156,23 +136,19 @@ export default function SignIn({ home = "/app/diario", title, intro }: {
               <InputOTPGroup className="grid w-full grid-cols-6 gap-2">
                 {Array.from({ length: CODE_LENGTH }, (_, i) => (
                   <InputOTPSlot key={i} index={i}
-                    className="h-16 w-full rounded-xl border-2 border-input bg-card font-heading text-2xl first:rounded-xl first:border-l-2 last:rounded-xl" />
+                    className="h-12 w-full rounded-lg border-2 border-input bg-card font-heading text-xl first:rounded-lg first:border-l-2 last:rounded-lg" />
                 ))}
               </InputOTPGroup>
             </InputOTP>
-            <p className="text-muted-foreground">
-              {busy
-                ? <span className="inline-flex items-center gap-2"><Loader2 className="animate-spin" size={16} aria-hidden="true" />{tr({ en: "Checking…", pt: "Conferindo…" })}</span>
-                : tr({ en: "Once the 6 digits are in, you are in.", pt: "Ao completar os 6 números, você entra sozinha." })}
-            </p>
+            {busy && (
+              <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="animate-spin" size={16} aria-hidden="true" />{tr({ en: "Checking…", pt: "Conferindo…" })}
+              </p>
+            )}
           </div>
-          <div className="mt-6 space-y-3 rounded-xl bg-secondary p-4">
-            <p>
-              {tr({ en: "Not there? It can take up to 1 minute.", pt: "Não chegou? Pode levar até 1 minuto." })}
-              <br />
-              {tr({ en: "Check spam and Promotions too.", pt: "Olhe também no spam e em Promoções." })}
-            </p>
-            <Button variant="outline" className="h-12 w-full rounded-xl text-base" disabled={busy || wait > 0} onClick={() => void send()}>
+          <div className="mt-6 space-y-2">
+            <p className="text-sm text-muted-foreground">{tr({ en: "Not there? Check spam.", pt: "Não chegou? Veja no spam." })}</p>
+            <Button variant="outline" className="h-11 w-full text-base" disabled={busy || wait > 0} onClick={() => void send()}>
               {wait > 0
                 ? tr({ en: `Send another code in 0:${String(wait).padStart(2, "0")}`, pt: `Enviar outro código em 0:${String(wait).padStart(2, "0")}` })
                 : tr({ en: "Send another code", pt: "Enviar outro código" })}

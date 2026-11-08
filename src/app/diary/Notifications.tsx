@@ -35,11 +35,11 @@ export default function Notifications({ remindersOn }: { remindersOn: boolean })
   const spinner = busy && <Loader2 className="animate-spin" aria-hidden="true" />;
 
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card p-5" aria-live="polite">
+    <section className="space-y-3 rounded-xl border border-border bg-card p-4 text-sm" aria-live="polite">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-heading text-xl font-semibold">{tr({ en: "Notifications", pt: "Notificações" })}</h2>
+        <h2 className="font-heading text-lg font-semibold">{tr({ en: "Notifications", pt: "Notificações" })}</h2>
         {status === "on" && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-sm text-emerald-900">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-sm text-emerald-900">
             <Check size={16} aria-hidden="true" />{tr({ en: "On", pt: "Ativadas" })}
           </span>
         )}
@@ -50,8 +50,8 @@ export default function Notifications({ remindersOn }: { remindersOn: boolean })
       {status === "needs-install" && (
         <p>
           {tr({
-            en: "On iPhone, notifications only work with the diary on the home screen. Install it (steps below), open it from the icon, and come back here.",
-            pt: "No iPhone, as notificações só funcionam com o diário na tela de início. Instale (passos abaixo), abra pelo ícone e volte aqui.",
+            en: "On iPhone: install the diary on the home screen (below) and open it from the icon.",
+            pt: "No iPhone: instale o diário na tela de início (abaixo) e abra pelo ícone.",
           })}
         </p>
       )}
@@ -85,14 +85,8 @@ export default function Notifications({ remindersOn }: { remindersOn: boolean })
       )}
 
       {status === "off" && (
-        <div className="space-y-3">
-          <p className="text-muted-foreground">
-            {tr({
-              en: "Get the daily reminder here, even with the diary closed. Only on days you have not recorded yet, never with your figures.",
-              pt: "Receba o lembrete diário aqui, mesmo com o diário fechado. Só nos dias em que você ainda não registrou, e nunca com os seus valores.",
-            })}
-          </p>
-          <Button className="h-12 w-full rounded-xl text-base" disabled={busy || !ready} onClick={() => void run(async () => {
+        <div className="space-y-2">
+          <Button className="h-11 w-full text-base" disabled={busy || !ready} onClick={() => void run(async () => {
             await enable();
             return null;
           })}>
@@ -109,15 +103,12 @@ export default function Notifications({ remindersOn }: { remindersOn: boolean })
       )}
 
       {status === "on" && (
-        <div className="space-y-3">
-          <p className="text-muted-foreground">{tr({ en: "On this phone.", pt: "Neste celular." })}</p>
+        <div className="space-y-2">
           {!remindersOn && (
-            <p className="text-muted-foreground">
-              {tr({ en: "The daily reminder is off above, so nothing will come until you turn it on.", pt: "O lembrete diário está desligado acima, então nada vai chegar até você ligar." })}
-            </p>
+            <p className="text-muted-foreground">{tr({ en: "The daily reminder is off.", pt: "O lembrete diário está desligado." })}</p>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="h-12 rounded-xl border-2 border-primary text-base" disabled={busy} onClick={() => void run(async () => {
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" className="h-10 border-2 border-primary" disabled={busy} onClick={() => void run(async () => {
               const r = await test();
               return r.accepted > 0
                 ? tr({ en: "Sent. It should arrive in a few seconds.", pt: "Enviada. Deve chegar em alguns segundos." })
@@ -126,7 +117,7 @@ export default function Notifications({ remindersOn }: { remindersOn: boolean })
               {spinner}
               {tr({ en: "Send a test", pt: "Enviar teste" })}
             </Button>
-            <Button variant="outline" className="h-12 rounded-xl text-base text-muted-foreground" disabled={busy} onClick={() => void run(async () => {
+            <Button variant="outline" className="h-10 text-muted-foreground" disabled={busy} onClick={() => void run(async () => {
               await disable();
               return null;
             })}>

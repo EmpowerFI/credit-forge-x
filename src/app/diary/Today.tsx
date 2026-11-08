@@ -38,7 +38,7 @@ const blank = (kind: "sale" | "expense"): LineDraft => ({
 });
 
 const selectClass =
-  "h-12 w-full rounded-md border border-input bg-background px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "h-11 w-full rounded-md border border-input bg-background px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 const MAX_LINES = 20;
 
@@ -150,6 +150,8 @@ export default function Today() {
     setMode("done");
     await queryClient.invalidateQueries({ queryKey: ["diary", "history"] });
     await queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
+    // A Sunday's third day can make the week due a reading: ask again.
+    await queryClient.invalidateQueries({ queryKey: ["diary", "reading-check"] });
   };
 
   const recordQuiet = async (reason: "closed" | "no_sales") => {
@@ -191,54 +193,51 @@ export default function Today() {
   const recorded = liveEntries.length > 0;
 
   return (
-    <div className="space-y-6">
-      <div data-tour="day" role="group" aria-label={tr({ en: "Which day", pt: "Qual dia" })} className="grid grid-cols-2 gap-1 rounded-xl bg-secondary p-1">
+    <div className="space-y-4">
+      <div data-tour="day" role="group" aria-label={tr({ en: "Which day", pt: "Qual dia" })} className="grid grid-cols-2 gap-1 rounded-lg bg-secondary p-1">
         {[today, addDays(today, -1)].map((d) => (
           <button key={d} type="button" aria-pressed={d === day} disabled={busy} onClick={() => pickDay(d)}
-            className={`min-h-12 rounded-lg px-2 text-base transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            className={`min-h-10 rounded-md px-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               d === day ? "bg-card font-semibold shadow-sm" : "text-muted-foreground"}`}>
             {d === today ? `${tr({ en: "Today", pt: "Hoje" })} · ${shortDay(d)}` : tr({ en: "Yesterday", pt: "Ontem" })}
           </button>
         ))}
       </div>
 
-      <h1 className="font-heading text-[2.25rem] font-semibold leading-tight">
+      <h1 className="font-heading text-2xl font-semibold leading-tight">
         {isToday ? tr({ en: "How did today go?", pt: "Como foi hoje?" }) : tr({ en: "How did yesterday go?", pt: "Como foi ontem?" })}
       </h1>
 
       {mode === "ask" && me.data && <ImpactAsk profile={me.data} />}
       {mode === "ask" && me.data && <AiNotice profile={me.data} />}
       {mode === "ask" && (
-        <div data-tour="add" className="space-y-3">
+        <div data-tour="add" className="space-y-2">
           {noted.length > 0 ? (
             <>
               <BigAction primary icon={ClipboardCheck} onClick={() => setMode("review")}
                 title={tr({ en: "Review and save the day", pt: "Revisar e registrar o dia" })}
                 hint={noted.length === 1 ? tr({ en: "1 item noted", pt: "1 item anotado" }) : tr({ en: `${noted.length} items noted`, pt: `${noted.length} itens anotados` })} />
               <BigAction icon={Plus} onClick={() => setMode("entry")}
-                title={tr({ en: "Note another one", pt: "Anotar mais um" })}
-                hint={tr({ en: "A sale or an expense", pt: "Uma venda ou um gasto" })} />
+                title={tr({ en: "Note another one", pt: "Anotar mais um" })} />
             </>
           ) : recorded ? (
             <BigAction primary icon={Plus} onClick={() => setMode("entry")}
-              title={tr({ en: "Add more", pt: "Incluir mais" })}
-              hint={tr({ en: "Remembered something? Note a sale or an expense", pt: "Lembrou de algo? Anote uma venda ou um gasto" })} />
+              title={tr({ en: "Add more", pt: "Incluir mais" })} />
           ) : (
             <BigAction primary icon={Plus} onClick={() => setMode("entry")}
-              title={tr({ en: "I sold or spent", pt: "Vendi ou gastei" })}
-              hint={tr({ en: "Note the amount and what it was", pt: "Anotar valor e o que foi" })} />
+              title={tr({ en: "I sold or spent", pt: "Vendi ou gastei" })} />
           )}
         </div>
       )}
       {mode === "ask" && <MonthCard openDays={openDays} todayKept={Boolean(todayKept)} />}
       {mode === "ask" && !recorded && (
-        <div data-tour="quiet" className="space-y-3">
-          <p className="pt-3 text-muted-foreground">{tr({ en: "No activity?", pt: "Não teve movimento?" })}</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" className="h-14 rounded-xl text-base" disabled={busy} onClick={() => void recordQuiet("no_sales")}>
+        <div data-tour="quiet" className="space-y-2">
+          <p className="text-sm text-muted-foreground">{tr({ en: "No activity?", pt: "Não teve movimento?" })}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" className="h-11" disabled={busy} onClick={() => void recordQuiet("no_sales")}>
               {tr({ en: "Open, no sales", pt: "Abri e não vendi" })}
             </Button>
-            <Button variant="outline" className="h-14 rounded-xl text-base" disabled={busy} onClick={() => void recordQuiet("closed")}>
+            <Button variant="outline" className="h-11" disabled={busy} onClick={() => void recordQuiet("closed")}>
               {tr({ en: "Did not open", pt: "Não abri" })}
             </Button>
           </div>
@@ -246,21 +245,21 @@ export default function Today() {
       )}
 
       {mode === "ask" && (
-        <section data-tour="summary" className="space-y-3 border-t border-border pt-6" aria-labelledby="day-summary">
-          <h2 id="day-summary" className="font-heading text-xl font-semibold">
+        <section data-tour="summary" className="space-y-2 border-t border-border pt-4" aria-labelledby="day-summary">
+          <h2 id="day-summary" className="font-heading text-lg font-semibold">
             {isToday ? tr({ en: "Today so far", pt: "Resumo de hoje" }) : tr({ en: "Yesterday", pt: "Resumo de ontem" })}
           </h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-muted-foreground">{tr({ en: "Sales", pt: "Vendas" })}</p>
-              <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">{brl(money.sales)}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-border bg-card px-3 py-2">
+              <p className="text-sm font-medium text-sales">{tr({ en: "Sales", pt: "Vendas" })}</p>
+              <p className="font-heading text-lg font-semibold tabular-nums text-sales">{brl(money.sales)}</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-muted-foreground">{tr({ en: "Expenses", pt: "Gastos" })}</p>
-              <p className="mt-1 font-heading text-2xl font-semibold tabular-nums">{brl(money.expenses)}</p>
+            <div className="rounded-lg border border-border bg-card px-3 py-2">
+              <p className="text-sm font-medium text-expense">{tr({ en: "Expenses", pt: "Gastos" })}</p>
+              <p className="font-heading text-lg font-semibold tabular-nums text-expense">{brl(money.expenses)}</p>
             </div>
             {need !== null && (
-              <div className="col-span-2 space-y-2 rounded-xl border border-border bg-card p-4">
+              <div className="col-span-2 space-y-1.5 rounded-lg border border-border bg-card px-3 py-2">
                 {money.pay > 0 && (
                   <div className="flex items-baseline justify-between gap-3 text-sm">
                     <span className="text-muted-foreground">
@@ -269,35 +268,20 @@ export default function Today() {
                     <span className="tabular-nums">{brl(money.pay)}</span>
                   </div>
                 )}
-                <div className={`flex items-baseline justify-between gap-3 ${money.pay > 0 ? "border-t border-border pt-2" : ""}`}>
+                <div className={`flex items-baseline justify-between gap-3 ${money.pay > 0 ? "border-t border-border pt-1.5" : ""}`}>
                   <p className="font-semibold">{tr({ en: `${profitLabel(money.profit)} of the day`, pt: `${profitLabel(money.profit)} do dia` })}</p>
-                  <ProfitValue cents={money.profit} className="font-heading text-2xl font-semibold" />
+                  <ProfitValue cents={money.profit} className="font-heading text-lg font-semibold" />
                 </div>
               </div>
             )}
           </div>
-          {money.pay > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {tr({
-                en: "Your salary for the day is what you need for the month, split over the days your business opens.",
-                pt: "O seu salário do dia é o que você precisa no mês, dividido pelos dias em que o negócio abre.",
-              })}
-            </p>
-          )}
           {money.takenHome > 0 && (
             <p className="text-sm text-muted-foreground">
-              {tr({
-                en: `Taken home: ${brl(money.takenHome)}. It comes out of your salary, so it is not an expense.`,
-                pt: `Retirada para casa: ${brl(money.takenHome)}. Ela sai do seu salário, por isso não entra nos gastos.`,
-              })}
+              {tr({ en: `Taken home: ${brl(money.takenHome)}`, pt: `Retirada para casa: ${brl(money.takenHome)}` })}
             </p>
           )}
-          {!recorded && (
-            <p className="text-muted-foreground">
-              {keptDay?.no_activity
-                ? tr({ en: "Recorded: no activity.", pt: "Registrado: sem movimento." })
-                : isToday ? tr({ en: "Nothing recorded yet today.", pt: "Nada anotado ainda hoje." }) : tr({ en: "Nothing recorded for yesterday.", pt: "Nada anotado para ontem." })}
-            </p>
+          {!recorded && keptDay?.no_activity && (
+            <p className="text-sm text-muted-foreground">{tr({ en: "Recorded: no activity.", pt: "Registrado: sem movimento." })}</p>
           )}
           {recorded && <Recorded key={day} day={day} entries={liveEntries} />}
         </section>
@@ -325,24 +309,24 @@ export default function Today() {
   );
 }
 
-/** The screen's big choices: an icon in a circle, a title and what it does. */
+/** The screen's main choices: an icon in a circle and a title; a count, when there is one. */
 function BigAction({ icon: Icon, title, hint, onClick, primary = false }: {
   icon: typeof Plus;
   title: string;
-  hint: string;
+  hint?: string;
   onClick: () => void;
   primary?: boolean;
 }) {
   return (
     <button type="button" onClick={onClick}
-      className={`flex min-h-[5.5rem] w-full items-center gap-4 rounded-2xl px-5 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+      className={`flex min-h-14 w-full items-center gap-3 rounded-xl px-4 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
         primary ? "bg-primary text-primary-foreground hover:bg-primary/90" : "border-2 border-primary bg-card hover:bg-secondary"}`}>
-      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${primary ? "bg-primary-foreground/15" : "bg-secondary"}`}>
-        <Icon size={24} aria-hidden="true" />
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${primary ? "bg-primary-foreground/15" : "bg-secondary"}`}>
+        <Icon size={20} aria-hidden="true" />
       </span>
       <span className="min-w-0">
-        <span className="block font-heading text-xl font-semibold">{title}</span>
-        <span className={`block ${primary ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{hint}</span>
+        <span className="block font-heading text-base font-semibold">{title}</span>
+        {hint && <span className={`block text-sm ${primary ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{hint}</span>}
       </span>
     </button>
   );
@@ -387,7 +371,7 @@ function LineFields({ draft, set, day }: { draft: LineDraft; set: (patch: Partia
     <>
       <div role="group" aria-label={tr({ en: "Sale or expense", pt: "Venda ou gasto" })} className="grid grid-cols-2 gap-2">
         {(["sale", "expense"] as const).map((k) => (
-          <Button key={k} type="button" variant={draft.kind === k ? "default" : "outline"} className="h-12 text-base" aria-pressed={draft.kind === k}
+          <Button key={k} type="button" variant={draft.kind === k ? "default" : "outline"} className="h-11 text-base" aria-pressed={draft.kind === k}
             onClick={() => set({ kind: k, category: k === "sale" ? "" : draft.category, installments: 1 })}>
             {k === "sale" ? tr({ en: "💰 Sale", pt: "💰 Venda" }) : tr({ en: "💸 Expense", pt: "💸 Gasto" })}
           </Button>
@@ -396,7 +380,7 @@ function LineFields({ draft, set, day }: { draft: LineDraft; set: (patch: Partia
       <div className="space-y-1">
         <Label htmlFor="line-amount">{tr({ en: "Amount (R$)", pt: "Valor (R$)" })}</Label>
         <Input id="line-amount" inputMode="decimal" autoComplete="off" placeholder="0,00" value={draft.amount}
-          onChange={(e) => set({ amount: e.target.value })} className="h-12 text-lg" autoFocus />
+          onChange={(e) => set({ amount: e.target.value })} className="h-11 text-base" autoFocus />
       </div>
       {draft.kind === "expense" && (
         <div className="space-y-1">
@@ -426,7 +410,7 @@ function LineFields({ draft, set, day }: { draft: LineDraft; set: (patch: Partia
                 ? draft.installments > 1 ? tr({ en: "First receipt", pt: "1º recebimento" }) : tr({ en: "Receive on", pt: "Recebe em" })
                 : tr({ en: "First payment", pt: "1º pagamento" })}</Label>
             <Input id="line-due" type="date" min={addDays(day, 1)} value={draft.due}
-              onChange={(e) => set({ due: e.target.value })} className="h-12" />
+              onChange={(e) => set({ due: e.target.value })} className="h-11" />
           </div>
           <div className="space-y-1">
             <Label htmlFor="line-inst">{tr({ en: "Instalments", pt: "Parcelas" })}</Label>
@@ -467,10 +451,10 @@ function Entry({ day, count, onAdd, onReview, onBack }: {
   };
 
   return (
-    <form className="space-y-4" noValidate onSubmit={(e) => { e.preventDefault(); add(); }}>
+    <form className="space-y-3" noValidate onSubmit={(e) => { e.preventDefault(); add(); }}>
       <LineFields draft={draft} day={day} set={(patch) => { setAdded(null); setDraft((d) => ({ ...d, ...patch })); }} />
       {problem && <p role="alert" className="text-sm font-medium text-destructive">{problem}</p>}
-      <Button type="submit" variant="outline" className="h-12 w-full text-base" disabled={full}>
+      <Button type="submit" variant="outline" className="h-11 w-full text-base" disabled={full}>
         {tr({ en: "Add", pt: "Adicionar" })}
       </Button>
       <p role="status" aria-live="polite" className="min-h-5 text-center text-sm">
@@ -482,7 +466,7 @@ function Entry({ day, count, onAdd, onReview, onBack }: {
         )}
         {full && <span className="block text-muted-foreground">{tr({ en: "That is the most for one day.", pt: "Esse é o máximo para um dia." })}</span>}
       </p>
-      <Button type="button" className="h-14 w-full text-base" disabled={count === 0} onClick={onReview}>
+      <Button type="button" className="h-11 w-full text-base" disabled={count === 0} onClick={onReview}>
         {tr({ en: "Save the day", pt: "Registrar o dia" })}
       </Button>
       <Button type="button" variant="ghost" className="w-full" onClick={onBack}>{tr({ en: "Back", pt: "Voltar" })}</Button>
@@ -514,13 +498,13 @@ function Review({ day, today, noted, busy, onChange, onMore, onConfirm }: {
       setProblem(null);
     };
     return (
-      <form className="space-y-4" noValidate onSubmit={(e) => { e.preventDefault(); save(); }}>
+      <form className="space-y-3" noValidate onSubmit={(e) => { e.preventDefault(); save(); }}>
         <h2 className="text-lg font-semibold">{tr({ en: "Change this item", pt: "Alterar este item" })}</h2>
         <LineFields draft={editing.draft} day={day} set={(patch) => setEditing({ ...editing, draft: { ...editing.draft, ...patch } })} />
         {problem && <p role="alert" className="text-sm font-medium text-destructive">{problem}</p>}
-        <div className="grid grid-cols-2 gap-3">
-          <Button type="submit" className="h-12">{tr({ en: "Save change", pt: "Salvar alteração" })}</Button>
-          <Button type="button" variant="outline" className="h-12" onClick={() => { setEditing(null); setProblem(null); }}>
+        <div className="grid grid-cols-2 gap-2">
+          <Button type="submit" className="h-11">{tr({ en: "Save change", pt: "Salvar alteração" })}</Button>
+          <Button type="button" variant="outline" className="h-11" onClick={() => { setEditing(null); setProblem(null); }}>
             {tr({ en: "Cancel", pt: "Cancelar" })}
           </Button>
         </div>
@@ -529,7 +513,7 @@ function Review({ day, today, noted, busy, onChange, onMore, onConfirm }: {
   }
 
   return (
-    <section className="space-y-4" aria-labelledby="review-title">
+    <section className="space-y-3" aria-labelledby="review-title">
       <h2 id="review-title" className="text-lg font-semibold">
         {tr({ en: `Check ${dayName(day, today)} before saving`, pt: `Confira ${dayName(day, today)} antes de registrar` })}
       </h2>
@@ -554,14 +538,15 @@ function Review({ day, today, noted, busy, onChange, onMore, onConfirm }: {
       )}
       {noted.length > 0 && (
         <p className="text-sm">
-          {tr({ en: "Sales", pt: "Vendas" })}: <strong>{brl(sales)}</strong>{" · "}{tr({ en: "Expenses", pt: "Gastos" })}: <strong>{brl(expenses)}</strong>
+          <span className="text-sales">{tr({ en: "Sales", pt: "Vendas" })}: <strong>{brl(sales)}</strong></span>{" · "}
+          <span className="text-expense">{tr({ en: "Expenses", pt: "Gastos" })}: <strong>{brl(expenses)}</strong></span>
         </p>
       )}
-      <Button className="h-14 w-full text-base" disabled={busy || noted.length === 0} onClick={onConfirm}>
+      <Button className="h-11 w-full text-base" disabled={busy || noted.length === 0} onClick={onConfirm}>
         {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
         {tr({ en: "Confirm and save", pt: "Confirmar e registrar" })}
       </Button>
-      <Button variant="outline" className="h-12 w-full" disabled={busy || noted.length >= MAX_LINES} onClick={onMore}>
+      <Button variant="outline" className="h-11 w-full" disabled={busy || noted.length >= MAX_LINES} onClick={onMore}>
         {tr({ en: "Note more", pt: "Anotar mais" })}
       </Button>
     </section>
@@ -604,16 +589,16 @@ function Recorded({ day, entries }: { day: string; entries: HistoryEntry[] }) {
       void run(() => diary.correctEntry(editing.id, line, editing.requestId));
     };
     return (
-      <form className="space-y-4 rounded-2xl border border-border bg-card p-4" noValidate onSubmit={(e) => { e.preventDefault(); save(); }}>
+      <form className="space-y-3 rounded-xl border border-border bg-card p-4" noValidate onSubmit={(e) => { e.preventDefault(); save(); }}>
         <h3 className="font-heading text-lg font-semibold">{tr({ en: "Correct this line", pt: "Corrigir este lançamento" })}</h3>
         <LineFields draft={editing.draft} day={day} set={(patch) => setEditing({ ...editing, draft: { ...editing.draft, ...patch } })} />
         {problem && <p role="alert" className="text-sm font-medium text-destructive">{problem}</p>}
-        <div className="grid grid-cols-2 gap-3">
-          <Button type="submit" className="h-12" disabled={busy}>
+        <div className="grid grid-cols-2 gap-2">
+          <Button type="submit" className="h-11" disabled={busy}>
             {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
             {tr({ en: "Save", pt: "Salvar" })}
           </Button>
-          <Button type="button" variant="outline" className="h-12" disabled={busy} onClick={() => { setEditing(null); setProblem(null); }}>
+          <Button type="button" variant="outline" className="h-11" disabled={busy} onClick={() => { setEditing(null); setProblem(null); }}>
             {tr({ en: "Cancel", pt: "Cancelar" })}
           </Button>
         </div>
@@ -623,9 +608,9 @@ function Recorded({ day, entries }: { day: string; entries: HistoryEntry[] }) {
 
   return (
     <div className="space-y-2">
-      <ul className="divide-y divide-border rounded-2xl border border-border bg-card" aria-label={tr({ en: "Recorded lines", pt: "Lançamentos registrados" })}>
+      <ul className="divide-y divide-border rounded-xl border border-border bg-card" aria-label={tr({ en: "Recorded lines", pt: "Lançamentos registrados" })}>
         {entries.map((e) => (
-          <li key={e.id} className="p-3">
+          <li key={e.id} className="px-3 py-1.5">
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 text-sm">{lineText(fromEntry(e))}</span>
               <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" disabled={busy}
@@ -640,7 +625,7 @@ function Recorded({ day, entries }: { day: string; entries: HistoryEntry[] }) {
             </div>
             {removing === e.id && (
               <div className="mt-2 space-y-2 rounded-md bg-muted p-3 text-sm" role="group" aria-label={tr({ en: "Remove this line?", pt: "Remover este lançamento?" })}>
-                <p>{tr({ en: "Remove this line? It stays struck through in your history.", pt: "Remover este lançamento? Ele fica riscado no seu histórico." })}</p>
+                <p>{tr({ en: "Remove this line?", pt: "Remover este lançamento?" })}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="destructive" className="h-11" disabled={busy} onClick={() => void run(() => diary.voidEntry(e.id))}>
                     {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
@@ -668,7 +653,7 @@ function Done({ result, today, onMore }: { result: AfterRecord; today: string; o
   return (
     <div className="space-y-4" aria-live="polite">
       <section className="space-y-2 rounded-md border border-border p-4">
-        <h1 className="text-xl font-semibold">
+        <h1 className="text-lg font-semibold">
           {result.recorded.status === "duplicate"
             ? tr({ en: "This was already recorded ✅", pt: "Isso já estava registrado ✅" })
             : s.quiet
@@ -709,9 +694,9 @@ function Done({ result, today, onMore }: { result: AfterRecord; today: string; o
 
       <InstallInvite />
 
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="outline" className="h-12" onClick={onMore}>{tr({ en: "Add or correct", pt: "Incluir ou corrigir" })}</Button>
-        <Button asChild variant="outline" className="h-12">
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="outline" className="h-11" onClick={onMore}>{tr({ en: "Add or correct", pt: "Incluir ou corrigir" })}</Button>
+        <Button asChild variant="outline" className="h-11">
           <Link to="/app/diario/historico">{tr({ en: "See history", pt: "Ver histórico" })}</Link>
         </Button>
       </div>
@@ -794,8 +779,8 @@ function GoalAsk() {
             </p>
           )}
           <div className="grid gap-2">
-            <Button variant="outline" className="h-12" disabled={maxDays < 3} onClick={() => setStep("days")}>{tr({ en: "Days recorded", pt: "Dias de registro" })}</Button>
-            <Button variant="outline" className="h-12" onClick={() => setStep("sales")}>{tr({ en: "Sales goal", pt: "Meta de vendas" })}</Button>
+            <Button variant="outline" className="h-11" disabled={maxDays < 3} onClick={() => setStep("days")}>{tr({ en: "Days recorded", pt: "Dias de registro" })}</Button>
+            <Button variant="outline" className="h-11" onClick={() => setStep("sales")}>{tr({ en: "Sales goal", pt: "Meta de vendas" })}</Button>
             <Button variant="ghost" onClick={() => void answer("skip")}>{tr({ en: "Not now", pt: "Agora não" })}</Button>
           </div>
         </>
@@ -805,7 +790,7 @@ function GoalAsk() {
           <p className="font-semibold">{tr({ en: "How many days will you record this week?", pt: "Quantos dias desta semana você vai registrar?" })}</p>
           <div className="flex flex-wrap gap-2">
             {Array.from({ length: Math.max(0, maxDays - 2) }, (_, i) => i + 3).map((n) => (
-              <Button key={n} variant="outline" className="h-12 min-w-14" onClick={() => void answer("days", n)}>{n}</Button>
+              <Button key={n} variant="outline" className="h-11 min-w-12" onClick={() => void answer("days", n)}>{n}</Button>
             ))}
           </div>
         </>
@@ -818,8 +803,8 @@ function GoalAsk() {
           void answer("sales", cents);
         }}>
           <Label htmlFor="goal-amount">{tr({ en: "How much do you want to sell this week? (R$)", pt: "Quanto você quer vender nesta semana? (R$)" })}</Label>
-          <Input id="goal-amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-12 text-lg" />
-          <Button type="submit" className="h-12 w-full">{tr({ en: "Set goal", pt: "Combinar meta" })}</Button>
+          <Input id="goal-amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-11 text-base" />
+          <Button type="submit" className="h-11 w-full">{tr({ en: "Set goal", pt: "Combinar meta" })}</Button>
         </form>
       )}
       {step === "done" && set && <p>{set}</p>}

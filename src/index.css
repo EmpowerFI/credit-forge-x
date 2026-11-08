@@ -72,6 +72,10 @@
     --alert: 3 60% 45%;
     --caution: 32 80% 36%;
     --info: 213 70% 40%;
+    /* Money in and money out, wherever the two stand side by side: sales
+       blue, expenses orange. Both pass AA on cream and on white. */
+    --sales: 213 75% 40%;
+    --expense: 22 90% 38%;
   }
 
   /* The product surface (/app): the same brand, in a dark financial workspace.
@@ -122,6 +126,8 @@
     --alert: 356 75% 66%;
     --caution: 39 86% 62%;
     --info: 213 90% 68%;
+    --sales: 213 90% 68%;
+    --expense: 26 90% 62%;
 
     --shadow-card: 0 1px 0 hsl(222 32% 21%);
     --gold: 39 86% 62%;

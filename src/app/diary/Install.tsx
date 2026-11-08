@@ -26,8 +26,7 @@ export function InstallSteps() {
   if (canPrompt) {
     return (
       <div className="space-y-3">
-        <p>{tr({ en: "Open the diary from an icon, like an app.", pt: "Abra o diário por um ícone, como um aplicativo." })}</p>
-        <Button className="h-11" onClick={() => void prompt()}>{tr({ en: "Install", pt: "Instalar" })}</Button>
+        <Button className="h-10" onClick={() => void prompt()}>{tr({ en: "Install", pt: "Instalar" })}</Button>
       </div>
     );
   }
@@ -95,14 +94,8 @@ export function InstallInvite() {
   return (
     <section className="space-y-3 rounded-md border border-border p-4 text-sm">
       <h2 className="text-base font-semibold">
-        {tr({ en: "Tomorrow, open it faster", pt: "Amanhã, abra mais rápido" })}
+        {tr({ en: "Put the diary on your home screen", pt: "Coloque o diário na tela de início" })}
       </h2>
-      <p className="text-muted-foreground">
-        {tr({
-          en: "Put the diary on your home screen. It opens like an app, even with a weak signal.",
-          pt: "Coloque o diário na tela de início do celular. Ele abre como um aplicativo, mesmo com internet fraca.",
-        })}
-      </p>
       <InstallSteps />
       <Button variant="ghost" className="h-10 px-2" onClick={dismiss}>{tr({ en: "Not now", pt: "Agora não" })}</Button>
     </section>

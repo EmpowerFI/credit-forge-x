@@ -41,11 +41,11 @@ export function WeekProgress({ icon, today, days, openDays }: { icon: ProgressIc
   };
 
   return (
-    <section data-tour="week" className="space-y-3 rounded-2xl border border-border bg-card p-5" aria-labelledby="week-title">
+    <section data-tour="week" className="space-y-2 rounded-xl border border-border bg-card p-4" aria-labelledby="week-title">
       <div className="flex items-center justify-between gap-2">
-        <h2 id="week-title" className="font-heading text-xl font-semibold">{tr({ en: "Your week", pt: "Sua semana" })}</h2>
+        <h2 id="week-title" className="font-heading text-lg font-semibold">{tr({ en: "Your week", pt: "Sua semana" })}</h2>
         <Button variant="ghost" size="sm" className="h-10 gap-2" aria-expanded={picking} onClick={() => setPicking(!picking)}>
-          <ProgressImg code={icon} size={24} />
+          <ProgressImg code={icon} size={20} />
           {tr({ en: "Change icon", pt: "Trocar ícone" })}
         </Button>
       </div>
@@ -64,11 +64,11 @@ export function WeekProgress({ icon, today, days, openDays }: { icon: ProgressIc
               <span className="text-xs text-muted-foreground" aria-hidden="true">{letters[i]}</span>
               <span
                 aria-label={`${names[i]}: ${state}`}
-                className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                className={`flex h-9 w-9 items-center justify-center rounded-full ${
                   done ? "bg-primary/10"
                     : closed ? "bg-muted text-xs text-muted-foreground"
                       : d === today ? "border-2 border-dashed border-primary/50" : future ? "opacity-40" : "border border-border"}`}>
-                {done ? <ProgressImg code={icon} size={30} /> : closed ? <span aria-hidden="true">—</span> : null}
+                {done ? <ProgressImg code={icon} size={26} /> : closed ? <span aria-hidden="true">—</span> : null}
               </span>
             </li>
           );
@@ -79,9 +79,9 @@ export function WeekProgress({ icon, today, days, openDays }: { icon: ProgressIc
           {PROGRESS_ICONS.map((i) => (
             <button key={i.code} type="button" onClick={() => void pick(i.code)} aria-pressed={i.code === icon}
               aria-label={tr(i.label)} title={tr(i.label)}
-              className={`flex h-16 items-center justify-center rounded-xl border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`flex h-12 items-center justify-center rounded-lg border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 i.code === icon ? "border-primary bg-primary/10" : "border-border"}`}>
-              <ProgressImg code={i.code} size={44} />
+              <ProgressImg code={i.code} size={34} />
             </button>
           ))}
         </div>
