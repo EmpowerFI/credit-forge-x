@@ -1,11 +1,10 @@
 import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import SectionHeading from "@/components/SectionHeading";
-import StoreLinks from "@/components/StoreLinks";
 import SupportLogo from "@/components/SupportLogo";
 import { GradedRule, SiteLinkButton } from "@/components/site/editorial";
 import { SEBRAE_LOGO_SRC, UNICAMP_SEAL_SRC } from "@/config/links";
 import { DIARY_PATH, type Lang, type Maturity, MISSIONS_DEMO_PATH, PATHS, SITE } from "./content";
-import { CampaignFlow, ContactForm, MaturityTag, MoreLink, Section, Shot, SitePage } from "./parts";
+import { CampaignFlow, ContactForm, DiaryAccess, MaturityTag, MoreLink, Section, Shot, SitePage } from "./parts";
 
 const shot = (name: "month" | "day", lang: Lang) => `/site/diary-${name}-${lang}.png`;
 
@@ -123,14 +122,14 @@ export function HomePage({ lang }: { lang: Lang }) {
       {/* 6 · What is real, and the two ways in again. */}
       <Section id="traction" className="border-t border-foreground/10">
         <SectionHeading eyebrow={t.traction.eyebrow} title={t.traction.title} accent={t.traction.accent} />
-        <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-5 lg:gap-7">
+        <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-7">
           {t.traction.items.map((it, i) => (
             <div key={it.title} className="flex flex-col">
               <GradedRule index={i} />
               <p className="label-ui mt-4 text-foreground/85">{it.tag}</p>
               <h3 className="mt-2 font-heading text-[1.25rem] leading-tight">{it.title}</h3>
               <p className="mt-2 leading-relaxed text-foreground/80">{it.body}</p>
-              {"stores" in it && it.stores && <StoreLinks />}
+              {"diary" in it && it.diary && <DiaryAccess lang={lang} stack className="mt-4" />}
               {"logo" in it && it.logo === "sebrae" && <SupportLogo src={SEBRAE_LOGO_SRC} alt="Sebrae" />}
               {"logo" in it && it.logo === "unicamp" && (
                 <SupportLogo large src={UNICAMP_SEAL_SRC} alt={lang === "pt" ? "Selo Empresa-filha da Unicamp" : "Unicamp empresa-filha seal"} />
@@ -170,8 +169,7 @@ export function EntrepreneursPage({ lang }: { lang: Lang }) {
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-foreground/85 md:text-xl">{t.hero.body}</p>
             <div className="mt-9">{start}</div>
-            <p className="mt-5 text-[1.0625rem] text-foreground/80">{t.hero.stores}</p>
-            <StoreLinks className="!mt-1" />
+            <DiaryAccess lang={lang} className="mt-7" />
           </div>
           <Shot src={shot("month", lang)} alt={SITE[lang].home.hero.shotAlt} note={SITE[lang].home.hero.shotNote}
             className="justify-self-center lg:justify-self-end" />
@@ -225,7 +223,7 @@ export function EntrepreneursPage({ lang }: { lang: Lang }) {
       <Section className="border-t border-foreground/10">
         <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
           <h2 className="section-title">{t.cta.title}</h2>
-          <div>{start}<StoreLinks /></div>
+          <div className="space-y-6">{start}<DiaryAccess lang={lang} /></div>
         </div>
       </Section>
     </SitePage>

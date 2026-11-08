@@ -32,8 +32,13 @@ const en = {
       { label: "About", key: "about" },
     ],
     primary: "Partner With Us",
-    app: "Platform · Devnet",
+    app: "Platform",
     menu: "Menu",
+  },
+  diaryAccess: {
+    scan: "Point your phone's camera",
+    note: "For the best experience, use it on your phone.",
+    qr: "QR code that opens the EmpowerFI diary",
   },
   footer: {
     tagline: "Simple financial tools and sponsored opportunities for women entrepreneurs.",
@@ -119,8 +124,7 @@ const en = {
       title: "Building with",
       accent: "real entrepreneurs.",
       items: [
-        { tag: "Live", title: "Apps on Google Play and the App Store", body: "Published in Brazil.", stores: true },
-        { tag: "Live", title: "The EmpowerFI diary on the web", body: "Daily records, the month's profit and a weekly reading." },
+        { tag: "Live", title: "The EmpowerFI diary on the web", body: "Daily records, the month's profit and a weekly reading.", diary: true },
         { tag: "Devnet", title: "Campaign vaults on Solana", body: "Built and tested; demonstrated on devnet with test tokens." },
         { tag: "Sebrae", title: "Built and refined with Sebrae", body: "Ginga Prototipa and PIER.", logo: "sebrae" },
         { tag: "Unicamp", title: "An empresa-filha of Unicamp", body: "Registered in Unicamp Ventures.", logo: "unicamp" },
@@ -141,7 +145,6 @@ const en = {
       accent: "deserves to grow.",
       body: "Organize your finances, join opportunities and follow how your business evolves.",
       primary: "Start your diary",
-      stores: "Or get the app:",
     },
     tools: {
       eyebrow: "What you can use today",
@@ -279,7 +282,7 @@ const en = {
       title: "Now, next,",
       accent: "later.",
       phases: [
-        { when: "Now", items: ["Financial diary on the web and in the apps", "Campaign vaults on Solana devnet"] },
+        { when: "Now", items: ["Financial diary on the web", "Campaign vaults on Solana devnet"] },
         { when: "Next", items: ["First sponsored campaigns", "Reward settlement", "Activation verification", "Business passport"] },
         { when: "Later", items: ["Repayment probability models", "Identity-bound credentials", "Verifiable institutional risk policies"] },
       ],
@@ -331,8 +334,13 @@ const pt: SiteContent = {
       { label: "Sobre", key: "about" },
     ],
     primary: "Seja parceiro",
-    app: "Plataforma · Devnet",
+    app: "Plataforma",
     menu: "Menu",
+  },
+  diaryAccess: {
+    scan: "Aponte a câmera do celular",
+    note: "Para uma experiência melhor, use no celular.",
+    qr: "QR code que abre o diário EmpowerFI",
   },
   footer: {
     tagline: "Ferramentas financeiras simples e oportunidades patrocinadas para mulheres que empreendem.",
@@ -418,8 +426,7 @@ const pt: SiteContent = {
       title: "Construindo com",
       accent: "empreendedoras de verdade.",
       items: [
-        { tag: "No ar", title: "Apps no Google Play e na App Store", body: "Publicados no Brasil.", stores: true },
-        { tag: "No ar", title: "O diário EmpowerFI na web", body: "Registro do dia, lucro do mês e leitura da semana." },
+        { tag: "No ar", title: "O diário EmpowerFI na web", body: "Registro do dia, lucro do mês e leitura da semana.", diary: true },
         { tag: "Devnet", title: "Cofres de campanha na Solana", body: "Construídos e testados; demonstrados na devnet com tokens de teste." },
         { tag: "Sebrae", title: "Construída e refinada com o Sebrae", body: "Ginga Prototipa e PIER.", logo: "sebrae" },
         { tag: "Unicamp", title: "Uma empresa-filha da Unicamp", body: "Registrada na Unicamp Ventures.", logo: "unicamp" },
@@ -440,7 +447,6 @@ const pt: SiteContent = {
       accent: "merece crescer.",
       body: "Organize suas finanças, participe de oportunidades e acompanhe a evolução do seu negócio.",
       primary: "Começar meu diário",
-      stores: "Ou baixe o app:",
     },
     tools: {
       eyebrow: "Para usar hoje",
@@ -578,7 +584,7 @@ const pt: SiteContent = {
       title: "Agora, a seguir,",
       accent: "depois.",
       phases: [
-        { when: "Agora", items: ["Diário financeiro na web e nos apps", "Cofres de campanha na devnet da Solana"] },
+        { when: "Agora", items: ["Diário financeiro na web", "Cofres de campanha na devnet da Solana"] },
         { when: "A seguir", items: ["Primeiras campanhas patrocinadas", "Pagamento das recompensas", "Verificação de ativação", "Passaporte do negócio"] },
         { when: "Depois", items: ["Modelos de probabilidade de pagamento", "Credenciais ligadas à identidade", "Políticas de risco verificáveis"] },
       ],

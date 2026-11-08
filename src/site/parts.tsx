@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ArrowRight, Send } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Smartphone, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -8,11 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTACT_EMAIL } from "@/config/links";
+import { SITE_URL } from "@/config/company";
+import QrCode from "@/app/components/QrCode";
 import Seo from "@/components/Seo";
 import SiteHeader, { type HeaderLink } from "@/components/site/SiteHeader";
 import SiteFooter, { type FooterColumn } from "@/components/site/SiteFooter";
 import { organizationSchema } from "@/config/structuredData";
-import { type Lang, MATURITY, type Maturity, MISSIONS_DEMO_PATH, PATHS, SITE } from "./content";
+import { DIARY_PATH, type Lang, MATURITY, type Maturity, MISSIONS_DEMO_PATH, PATHS, SITE } from "./content";
 
 export type PageKey = keyof (typeof PATHS)["en"];
 
@@ -268,6 +270,30 @@ export function ContactForm({ lang, initial }: { lang: Lang; initial: Objective 
         </span>
       </div>
     </form>
+  );
+}
+
+/**
+ * The way into the diary from a computer: a QR code her phone's camera opens,
+ * the address written out, and the reminder that the diary is made for the
+ * phone. On a phone the code is no use, so the link and the note stand alone.
+ */
+export function DiaryAccess({ lang, stack = false, className = "" }: { lang: Lang; stack?: boolean; className?: string }) {
+  const t = SITE[lang].diaryAccess;
+  const url = `${SITE_URL}${DIARY_PATH}`;
+  return (
+    <div className={`flex gap-4 ${stack ? "flex-col items-start gap-3" : "items-center"} ${className}`}>
+      <QrCode value={url} label={t.qr} className="hidden h-28 w-28 shrink-0 border border-foreground/15 sm:block" />
+      <div className="min-w-0 space-y-1">
+        <p className="hidden text-sm text-foreground/70 sm:block">{t.scan}</p>
+        <a href={DIARY_PATH} className="inline-flex items-center gap-1.5 break-all text-[1.0625rem] text-accent underline-offset-4 hover:underline">
+          {url.replace(/^https:\/\//, "")} <ArrowUpRight size={15} aria-hidden className="shrink-0" />
+        </a>
+        <p className="flex items-start gap-1.5 text-[0.95rem] leading-snug text-foreground/80">
+          <Smartphone size={16} aria-hidden className="mt-0.5 shrink-0 text-accent" />{t.note}
+        </p>
+      </div>
+    </div>
   );
 }
 
