@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import {
   base58, campaignWindow, checkCampaign, createCampaignData, decodeCampaign, discriminator, HOUSE_WALLET, OPERATOR_WALLET,
-  spDay, termsJson, USDC_DEVNET_MINT, uuidBytes,
+  leafCommitment, payRewardData, rewardPerSeat, spDay, termsJson, USDC_DEVNET_MINT, uuidBytes,
 } from "./index";
 
 const ID = "0f0e0d0c-0b0a-4908-8706-050403020100";
@@ -86,5 +86,27 @@ describe("the campaign account", () => {
     expect(checkCampaign(decodeCampaign(account({ operator: HOUSE_WALLET })), ID)).toBe("another operator");
     expect(checkCampaign(decodeCampaign(account({ price: 9_999n })), ID)).toBe("price below 0.01 USDC");
     expect(checkCampaign(decodeCampaign(account({ funded: 1n })), ID)).toBe("not funded in full");
+  });
+});
+
+describe("rewards", () => {
+  // The same vector is checked by the program's tests and the database's (20261226).
+  const LEAF = "da525a5476b8fc4de752bd0bc3a0b682bc0c7e22c5351c3500052670bc24588c";
+  it("hashes her leaf as the program and the database do", async () => {
+    expect(await leafCommitment("11111111-2222-3333-4444-555555555555", "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "07".repeat(32))).toBe(LEAF);
+  });
+  it("lays pay_reward out as the program reads it", async () => {
+    const d = await payRewardData("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", "07".repeat(32), 3, ["01".repeat(32), "02".repeat(32)]);
+    expect(Array.from(d.slice(0, 8), (b) => b.toString(16).padStart(2, "0")).join("")).toBe("6b2ac6ba32610da5");
+    expect(d.length).toBe(8 + 16 + 32 + 4 + 4 + 64);
+    const v = new DataView(d.buffer);
+    expect(v.getUint32(56, true)).toBe(3);
+    expect(v.getUint32(60, true)).toBe(2);
+    expect(d[64]).toBe(1);
+    expect(d[96]).toBe(2);
+  });
+  it("pays half the seat, rounded down, as the program does", () => {
+    expect(rewardPerSeat(1_000_000_000n, 100)).toBe(5_000_000n);
+    expect(rewardPerSeat(1_000_001n, 100)).toBe(5_000n);
   });
 });

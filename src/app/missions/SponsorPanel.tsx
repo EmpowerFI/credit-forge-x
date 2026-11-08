@@ -35,6 +35,8 @@ import { priceUnits } from "./chain";
 
 const SYSTEM_PROGRAM = address("11111111111111111111111111111111");
 const today = () => spDay(Math.floor(Date.now() / 1000));
+/** The earliest first day whose 30 days still include today. */
+const earliest = () => addDays(today(), -(CAMPAIGN_DAYS - 1));
 
 const REGISTER_ERRORS: Record<string, { en: string; pt: string }> = {
   sponsor_name_taken: { en: "That sponsor name is already in use. Choose another.", pt: "Esse nome de patrocinador já está em uso. Escolha outro." },
@@ -101,7 +103,8 @@ function SponsorForm({ account }: { account: UiWalletAccount }) {
     : form.name.trim().length < 3 ? tr({ en: "Write the campaign's name.", pt: "Escreva o nome da campanha." })
     : !Number.isInteger(seats) || seats < MIN_SEATS ? tr({ en: `At least ${MIN_SEATS} entrepreneurs.`, pt: `No mínimo ${MIN_SEATS} empreendedoras.` })
     : price === null || price < BigInt(MIN_PRICE_UNITS) ? tr({ en: "At least 0.01 USDC per entrepreneur.", pt: "No mínimo 0,01 USDC por empreendedora." })
-    : form.starts < today() ? tr({ en: "The campaign cannot start in the past.", pt: "A campanha não pode começar no passado." })
+    // Up to 29 days back, so the diary's history counts and the campaign still runs today.
+    : form.starts < earliest() ? tr({ en: "A campaign can start at most 29 days ago.", pt: "A campanha pode começar no máximo 29 dias atrás." })
     : balances.data && total !== null && BigInt(balances.data.microUsdc) < total
       ? tr({ en: "Not enough test USDC in this wallet.", pt: "Esta carteira não tem USDC de teste suficiente." })
     : null;
@@ -209,7 +212,7 @@ function SponsorForm({ account }: { account: UiWalletAccount }) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="sp-starts">{tr({ en: "Starts on", pt: "Começa em" })}</Label>
-              <Input id="sp-starts" type="date" min={today()} value={form.starts} onChange={set("starts")} className={field} />
+              <Input id="sp-starts" type="date" min={earliest()} value={form.starts} onChange={set("starts")} className={field} />
               <p className="text-xs text-muted-foreground">{tr({ en: `${CAMPAIGN_DAYS} days, until ${ends}`, pt: `${CAMPAIGN_DAYS} dias, até ${ends.split("-").reverse().join("/")}` })}</p>
             </div>
             <div className="space-y-1.5">

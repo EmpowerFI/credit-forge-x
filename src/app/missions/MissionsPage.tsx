@@ -1,7 +1,7 @@
 import { useLayoutEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Building2, CheckCircle2, CircleAlert, Loader2, Lock, Users } from "lucide-react";
+import { Building2, CheckCircle2, CircleAlert, Loader2, Lock, Users, Wallet } from "lucide-react";
 import { formatDate, tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
 import ExplorerLink from "../components/product/ExplorerLink";
@@ -67,8 +67,8 @@ export default function MissionsPage() {
           <Models />
           <p className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
             {tr({
-              en: "Solana devnet: test tokens with no value. Rewards are not paid out yet; the vault only receives. Figures come from EmpowerFI's diary in production, counted only from five entrepreneurs up, and nothing here identifies anyone.",
-              pt: "Solana devnet: tokens de teste, sem valor. As recompensas ainda não são pagas; o cofre só recebe. Os números vêm do diário da EmpowerFI em produção, contados só a partir de cinco empreendedoras, e nada aqui identifica ninguém.",
+              en: "Solana devnet: test tokens with no value. Every diary entrepreneur who shares her impact figures takes part, and the figures are her real days in the diary, counted only from five entrepreneurs up. Each one has a reward wallet: an address of the program, with no private key, that nothing here links to her. Rewards will move from it to a wallet of her choice later.",
+              pt: "Solana devnet: tokens de teste, sem valor. Toda empreendedora do diário que autoriza os números de impacto participa, e os números são os dias reais dela no diário, contados só a partir de cinco empreendedoras. Cada uma tem uma carteira de recompensas: um endereço do programa, sem chave privada, que nada aqui liga a ela. Mais tarde, as recompensas passam dela para uma carteira que ela escolher.",
             })}
           </p>
         </div>
@@ -102,7 +102,34 @@ function Campaigns() {
       </p>
     );
   }
-  return <div className="mt-12 space-y-16">{list.data.map((c) => <Campaign key={c.program_id} c={c} />)}</div>;
+  return (
+    <>
+      <Totals list={list.data} />
+      <div className="mt-12 space-y-16">{list.data.map((c) => <Campaign key={c.program_id} c={c} />)}</div>
+    </>
+  );
+}
+
+/** Across the published campaigns: what sponsors put in the vaults, and what reached the entrepreneurs. */
+function Totals({ list }: { list: PublicCampaign[] }) {
+  const d = list[0]?.mint_decimals ?? 6;
+  const funded = list.reduce((n, c) => n + BigInt(c.chain.funded_units), 0n);
+  const paid = list.reduce((n, c) => n + BigInt(c.paid.units), 0n);
+  const rewards = list.reduce((n, c) => n + c.paid.count, 0);
+  return (
+    <dl className="mt-10 grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-3">
+      {[
+        { k: tr({ en: "Sent to the vaults", pt: "Enviado aos cofres" }), v: `${units(funded, d)} USDC` },
+        { k: tr({ en: "Campaigns", pt: "Campanhas" }), v: String(list.length) },
+        { k: tr({ en: "Rewards paid", pt: "Recompensas pagas" }), v: `${units(paid, d)} USDC · ${rewards}` },
+      ].map((x) => (
+        <div key={x.k} className="bg-card px-4 py-3">
+          <dt className="text-xs uppercase tracking-wide text-muted-foreground">{x.k}</dt>
+          <dd className="mt-1 font-heading text-2xl tabular-nums">{x.v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
 }
 
 function Campaign({ c }: { c: PublicCampaign }) {
@@ -204,13 +231,15 @@ function Participation({ c }: { c: PublicCampaign }) {
       </div>
     );
   }
-  const unlocked = BigInt(c.engaged ?? 0) * ((BigInt(c.chain.funded_units) - (BigInt(c.chain.funded_units) * BigInt(c.house_share_bps)) / 10_000n) / BigInt(c.seats));
+  const avg = c.avg_days === null ? "—" : new Intl.NumberFormat(tr({ en: "en-GB", pt: "pt-BR" }), { maximumFractionDigits: 1 }).format(c.avg_days);
   return (
-    <dl className="grid grid-cols-3 gap-px border border-border bg-border text-center">
+    <dl className="grid grid-cols-2 gap-px border border-border bg-border text-center sm:grid-cols-5">
       {[
-        { k: tr({ en: "In the campaign", pt: "Na campanha" }), v: String(c.enrolled) },
-        { k: tr({ en: `Kept ${c.unlock_days} days`, pt: `Cumpriram ${c.unlock_days} dias` }), v: String(c.engaged) },
-        { k: tr({ en: "Unlocked", pt: "Desbloqueado" }), v: `${units(unlocked, c.mint_decimals)} USDC` },
+        { k: tr({ en: "Taking part", pt: "Participantes" }), v: String(c.enrolled) },
+        { k: tr({ en: "Active", pt: "Em atividade" }), v: String(c.active) },
+        { k: tr({ en: `Completed ${c.unlock_days} days`, pt: `Completaram ${c.unlock_days} dias` }), v: String(c.engaged) },
+        { k: tr({ en: "Mean days kept", pt: "Média de dias" }), v: avg },
+        { k: tr({ en: "Paid", pt: "Pago" }), v: `${units(c.paid.units, c.mint_decimals)} USDC` },
       ].map((x) => (
         <div key={x.k} className="bg-card p-3">
           <dt className="text-xs text-muted-foreground">{x.k}</dt>
@@ -226,7 +255,8 @@ const CHECK_LABELS = {
   terms: { en: "Terms match the published commitment", pt: "Os termos batem com o compromisso publicado" },
   seats: { en: "Seats and price per entrepreneur", pt: "Vagas e preço por empreendedora" },
   split: { en: "50/50 split and 30 days to unlock", pt: "Divisão 50/50 e 30 dias para desbloquear" },
-  funded: { en: "Funded in full, and the vault holds it", pt: "Financiada por inteiro, e o cofre guarda o valor" },
+  funded: { en: "Funded in full; the vault holds it, less the rewards paid", pt: "Financiada por inteiro; o cofre guarda o valor, menos as recompensas pagas" },
+  house: { en: "EmpowerFI's half is still in the vault", pt: "A metade da EmpowerFI segue no cofre" },
   proof: { en: "Latest engagement proof", pt: "Última prova de engajamento" },
 } as const;
 
@@ -267,6 +297,21 @@ function Proofs({ c }: { c: PublicCampaign }) {
     <section aria-labelledby={`p-${c.program_id}`} className="space-y-3">
       <h3 id={`p-${c.program_id}`} className="text-sm font-semibold">{tr({ en: "On-chain record", pt: "Registro na blockchain" })}</h3>
       <ol className="space-y-3 border-l border-gold pl-4 text-sm">
+        {c.payments.map((p) => (
+          <li key={p.signature}>
+            <p className="flex items-center gap-1.5">
+              <Wallet size={14} className="shrink-0 text-accent" aria-hidden />
+              {p.block_time && <>{day(p.block_time)} · </>}
+              {tr({
+                en: `Reward paid: ${units(p.amount_units, c.mint_decimals)} USDC`,
+                pt: `Recompensa paga: ${units(p.amount_units, c.mint_decimals)} USDC`,
+              })}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {tr({ en: "Reward wallet", pt: "Carteira de recompensas" })} <ExplorerLink address={p.recipient} /> · <ExplorerLink tx={p.signature} />
+            </p>
+          </li>
+        ))}
         {c.attestations.map((a) => (
           <li key={a.as_of}>
             <p>

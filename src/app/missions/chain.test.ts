@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getAddressEncoder } from "@solana/kit";
 import { decodeCampaign } from "@empowerfi/campaign-vault";
-import { priceUnits, units } from "./chain";
+import { checks, priceUnits, type PublicCampaign, units } from "./chain";
 
 const A = "E4UiFfUtByFETn4ntvcUrSMFsrN5CSPQRvbMBRUkeSiw";
 
@@ -56,5 +56,21 @@ describe("a price she types", () => {
     expect(priceUnits("0.1")).toBe(100_000n);
     expect(priceUnits("2")).toBe(2_000_000n);
     expect(priceUnits("1,5x")).toBeNull();
+  });
+});
+
+describe("what the page checks against the chain", () => {
+  const c = {
+    program_id: "07070707-0707-0707-0707-070707070707", seats: 100, price_per_seat_units: 100_000, house_share_bps: 5000, unlock_days: 30,
+    paid: { count: 2, units: 100_000 }, attestations: [],
+    chain: { terms_commitment: "ab".repeat(32), funded_units: 10_000_000 },
+  } as unknown as PublicCampaign;
+  const ok = (vault: bigint) => Object.fromEntries(checks(c, { ...decodeCampaign(account()), attestations: 0 }, vault).map((x) => [x.key, x.ok]));
+  it("a vault less the rewards paid is still funded in full", () => {
+    expect(ok(9_900_000n)).toMatchObject({ funded: true, house: true });
+    expect(ok(9_800_000n).funded).toBe(false);
+  });
+  it("says so if EmpowerFI's half has left the vault", () => {
+    expect(ok(4_999_999n).house).toBe(false);
   });
 });
