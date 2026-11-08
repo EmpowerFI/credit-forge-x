@@ -8,14 +8,20 @@
 // the Merkle root of their salted leaves. The database opens one only for a
 // campaign with at least five women.
 //
+// Then it pays (pay_reward): each woman of a campaign's latest confirmed root
+// who is not paid yet gets her share into her reward wallet -- the program's
+// address [recipient, her wallet ref], whose token account the same
+// transaction creates if it is missing. And it writes the address of every
+// new wallet beside its ref, so the database can name it.
+//
 // As in passport-anchor, the signature is recorded before the transaction is
 // sent: a run that dies in between leaves a signature the next one looks up.
 //
 // Secrets: CAMPAIGN_OPERATOR_KEYPAIR (Solana keypair, JSON byte array),
 // CAMPAIGN_OPERATOR_AUTHORITY (its public address), CAMPAIGN_ATTEST_SECRET;
 // optional SOLANA_RPC_URL. All from scripts/rewards/generate-keys.mts. The
-// operator can only attest: the program has no instruction that moves money
-// out of a vault.
+// operator attests and pays, and the program pays only a leaf of the attested
+// root, once, into that leaf's own wallet, never from EmpowerFI's half.
 
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -36,6 +42,7 @@ import {
   type Signature,
 } from "@solana/kit";
 import { attestEngagementData, engagementRoot } from "../_shared/campaign.ts";
+import { payRewardInstructions, walletOf } from "../_shared/campaign-pay.ts";
 
 const env = (name: string): string => {
   const value = Deno.env.get(name);
@@ -177,6 +184,144 @@ async function drive(a: Attestation): Promise<string> {
   return "retry";
 }
 
+// ------------------------------------------------------------ wallets
+
+/** Writes the address of each wallet created since the last run. */
+async function addressWallets(): Promise<number> {
+  const refs = await call<string[]>("reward_wallets_unaddressed", { p_limit: 500 });
+  for (const ref of refs) {
+    await call("reward_wallet_addressed", { p_ref: ref, p_address: await walletOf(ref) });
+  }
+  return refs.length;
+}
+
+// ------------------------------------------------------------ paying
+
+interface Payment {
+  id: string;
+  program_id: string;
+  wallet_ref: string;
+  recipient_address: string;
+  amount_units: number;
+  leaf: string;
+  status: "pending" | "sent" | "confirmed";
+  signature: string | null;
+  last_valid_block_height: number | null;
+}
+
+interface PaymentDue {
+  program_id: string;
+  program_address: string;
+  campaign_address: string;
+  vault_address: string;
+  mint: string;
+  operator_wallet: string;
+  wallet_ref: string;
+  recipient_address: string;
+  salt: string;
+  leaf: string;
+  index: number;
+  leaves: string[];
+  amount_units: number;
+}
+
+/** What a payment's transaction needs, kept with it until it lands. */
+const plans = new Map<string, PaymentDue>();
+
+async function openPayment(): Promise<Payment | null> {
+  const due = await call<PaymentDue | null>("campaign_payment_due");
+  if (!due) return null;
+  const p = await call<Payment>("campaign_payment_create", {
+    p_program_id: due.program_id,
+    p_wallet_ref: due.wallet_ref,
+    p_recipient_address: due.recipient_address,
+    p_amount_units: due.amount_units,
+    p_leaf: due.leaf,
+  });
+  plans.set(p.id, due);
+  return p;
+}
+
+async function sendPayment(p: Payment): Promise<void> {
+  const due = plans.get(p.id);
+  // A payment left pending by a run that died: given up, so the next due is rebuilt from the latest root.
+  if (!due) {
+    await call("campaign_payment_failed", { p_id: p.id, p_error: "left pending by an earlier run; rebuilt" });
+    throw new Error("stale pending payment");
+  }
+  const key = await operator();
+  if (key.address !== due.operator_wallet) throw new Error(`campaign ${due.campaign_address} is paid by ${due.operator_wallet}`);
+  if (due.recipient_address !== await walletOf(due.wallet_ref)) throw new Error("the recorded address is not the wallet's");
+  const [createTokens, pay] = await payRewardInstructions(key, due);
+  const { value: blockhash } = await rpc.getLatestBlockhash({ commitment: "confirmed" }).send();
+  const transaction = await signTransactionMessageWithSigners(
+    pipe(
+      createTransactionMessage({ version: 0 }),
+      (m) => setTransactionMessageFeePayerSigner(key, m),
+      (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
+      (m) => appendTransactionMessageInstruction(createTokens, m),
+      (m) => appendTransactionMessageInstruction(pay, m),
+    ),
+  );
+  const signature = getSignatureFromTransaction(transaction);
+  await call("campaign_payment_sent", {
+    p_id: p.id,
+    p_signature: signature,
+    p_last_valid_block_height: Number(blockhash.lastValidBlockHeight),
+  });
+  p.status = "sent";
+  p.signature = signature;
+  p.last_valid_block_height = Number(blockhash.lastValidBlockHeight);
+  try {
+    await rpc.sendTransaction(getBase64EncodedWireTransaction(transaction), {
+      encoding: "base64",
+      preflightCommitment: "confirmed",
+    }).send();
+  } catch (error) {
+    // Refused at preflight: the program said no (a newer root, say). The next run rebuilds it.
+    await call("campaign_payment_failed", { p_id: p.id, p_error: `send: ${String(error)}` });
+    throw error;
+  }
+}
+
+async function settlePayment(p: Payment): Promise<"confirmed" | "retry" | "failed" | "waiting"> {
+  const signature = p.signature as Signature;
+  for (let i = 0; i < 20; i++) {
+    const { value: [status] } = await rpc.getSignatureStatuses([signature], { searchTransactionHistory: true }).send();
+    if (status?.err) {
+      await call("campaign_payment_failed", { p_id: p.id, p_error: `transaction failed: ${JSON.stringify(status.err)}` });
+      return "failed";
+    }
+    if (status?.confirmationStatus === "confirmed" || status?.confirmationStatus === "finalized") {
+      const tx = await rpc.getTransaction(signature, { maxSupportedTransactionVersion: 0, encoding: "json" }).send();
+      const blockTime = tx?.blockTime ? new Date(Number(tx.blockTime) * 1000).toISOString() : null;
+      await call("campaign_payment_confirmed", { p_id: p.id, p_slot: Number(status.slot), p_block_time: blockTime });
+      return "confirmed";
+    }
+    if (!status) {
+      const height = Number(await rpc.getBlockHeight({ commitment: "confirmed" }).send());
+      if (height > Number(p.last_valid_block_height)) {
+        await call("campaign_payment_retry", { p_id: p.id, p_error: "expired without landing" });
+        return "retry";
+      }
+    }
+    await sleep(2_000);
+  }
+  await call("campaign_payment_note", { p_id: p.id, p_error: "not confirmed yet; checked again next run" });
+  return "waiting";
+}
+
+async function drivePayment(p: Payment): Promise<string> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (p.status === "pending") await sendPayment(p);
+    const outcome = await settlePayment(p);
+    if (outcome !== "retry") return outcome;
+    p.status = "pending";
+    p.signature = null;
+  }
+  return "retry";
+}
+
 Deno.serve(async (req) => {
   if (!secretMatches(req.headers.get("x-campaign-attest-secret"), env("CAMPAIGN_ATTEST_SECRET"))) {
     return new Response(JSON.stringify({ error: "forbidden" }), { status: 403 });
@@ -191,7 +336,25 @@ Deno.serve(async (req) => {
       done.push({ campaign: a.campaign_address, outcome });
       if (outcome !== "confirmed") break;
     }
-    return new Response(JSON.stringify({ done }), { headers: { "Content-Type": "application/json" } });
+    const addressed = await addressWallets();
+    // Then the rewards: the one in flight first, then each woman due, one transaction each.
+    const paid: { recipient: string; outcome: string }[] = [];
+    for (let n = 0; n < 25; n++) {
+      const p = (await call<Payment | null>("campaign_payment_open")) ?? (await openPayment());
+      if (!p) break;
+      let outcome: string;
+      try {
+        outcome = await drivePayment(p);
+      } catch (error) {
+        console.error("payment failed", p.recipient_address, String(error));
+        outcome = "failed";
+      }
+      paid.push({ recipient: p.recipient_address, outcome });
+      // Anything but a landed payment waits for the next run: a refusal usually
+      // means the root moved, and every payment of that campaign would fail too.
+      if (outcome !== "confirmed") break;
+    }
+    return new Response(JSON.stringify({ done, addressed, paid }), { headers: { "Content-Type": "application/json" } });
   } catch (error) {
     console.error("campaign-attest failed", String(error));
     return new Response(JSON.stringify({ error: String(error) }), { status: 500 });

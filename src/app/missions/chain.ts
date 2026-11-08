@@ -15,6 +15,14 @@ export interface Attestation {
   block_time: string | null;
 }
 
+/** One reward paid: into a wallet that is an address of the program, never a person's name. */
+export interface Payment {
+  recipient: string;
+  amount_units: number;
+  signature: string;
+  block_time: string | null;
+}
+
 /** campaign_vaults_public(): counts are null below `min_group` women. */
 export interface PublicCampaign {
   program_id: string;
@@ -31,8 +39,17 @@ export interface PublicCampaign {
   house_share_bps: number;
   unlock_days: number;
   min_group: number;
+  /** The diary's entrepreneurs who share their impact figures: all of them take part. */
   enrolled: number | null;
+  /** Those who recorded at least one day in the campaign's window. */
+  active: number | null;
+  /** Those who kept the campaign's days. */
   engaged: number | null;
+  /** The mean of days kept, by those who recorded. */
+  avg_days: number | null;
+  /** Rewards paid into the entrepreneurs' wallets, confirmed on chain. */
+  paid: { count: number; units: number };
+  payments: Payment[];
   chain: {
     cluster: "devnet";
     program: string;
@@ -80,7 +97,10 @@ export function checks(c: PublicCampaign, a: CampaignAccount, vaultUnits: bigint
     { key: "terms", ok: a.termsCommitment === c.chain.terms_commitment },
     { key: "seats", ok: a.seats === c.seats && a.pricePerSeat === BigInt(c.price_per_seat_units) },
     { key: "split", ok: a.houseShareBps === c.house_share_bps && a.unlockDays === c.unlock_days },
-    { key: "funded", ok: a.status === "funded" && a.funded === BigInt(c.chain.funded_units) && vaultUnits >= a.funded },
+    // What the vault holds: what was funded, less the rewards paid out of it.
+    { key: "funded", ok: a.status === "funded" && a.funded === BigInt(c.chain.funded_units) && vaultUnits >= a.funded - BigInt(c.paid.units) },
+    // EmpowerFI's half never leaves the vault by a reward.
+    { key: "house", ok: vaultUnits >= (a.funded * BigInt(a.houseShareBps)) / 10_000n },
     { key: "proof", ok: last ? a.engagementRoot === last.root && a.engaged === last.engaged : a.attestations === 0 },
   ] as const;
 }

@@ -8,18 +8,23 @@
 //! over opaque commitments, plus the counts -- never a name, an e-mail or a
 //! figure of her business.
 //!
-//! This version takes money in and proves engagement. It moves nothing out:
-//! releasing the rewards (her half to the women who kept the 30 days, the rest
-//! by the campaign's rule) is a later version of this program, and until then
-//! the vault only fills.
+//! Rewards go out one woman at a time: the operator proves her leaf is in the
+//! attested root, and the program pays her share into her reward wallet -- an
+//! address of this program, [RECIPIENT_SEED, her opaque reference], with no
+//! private key anywhere. Only this program can ever move what it holds, which
+//! is what a later version will do to hand it to the wallet she chooses. A
+//! receipt per campaign and wallet pays her once; EmpowerFI's half never
+//! leaves the vault here.
 
 use anchor_lang::{
     prelude::*,
     solana_program::{
         instruction::{AccountMeta, Instruction},
-        program::invoke,
+        program::{invoke, invoke_signed},
     },
 };
+
+use solana_sha256_hasher::hashv;
 
 declare_id!("5cWTf64kSqVQSKJW3DoSCs6uyrcXXWXppCMd15yrjAgT");
 
@@ -44,6 +49,16 @@ pub const HOUSE_SHARE_BPS: u16 = 5_000;
 #[constant]
 pub const UNLOCK_DAYS: u16 = 30;
 const DAY: i64 = 86_400;
+/// Her reward wallet: [RECIPIENT_SEED, recipient_ref]. Frozen for the life of the program ID.
+#[constant]
+pub const RECIPIENT_SEED: &[u8] = b"recipient";
+/// One receipt per campaign and wallet: [RECEIPT_SEED, campaign, recipient_ref].
+#[constant]
+pub const RECEIPT_SEED: &[u8] = b"paid";
+/// What a leaf commits to: this prefix, the campaign, her wallet, her salt.
+pub const LEAF_DOMAIN: &[u8] = b"EMPOWERFI:CAMPAIGN_LEAF:v2";
+/// The longest inclusion proof accepted: a tree of up to 2^24 leaves.
+const MAX_PROOF: usize = 24;
 
 #[program]
 pub mod empowerfi_rewards {
@@ -175,6 +190,124 @@ pub mod empowerfi_rewards {
         emit!(EngagementAttested { campaign: c.key(), enrolled, engaged, engagement_root, attestation: c.attestations });
         Ok(())
     }
+
+    /// Pays one woman who kept the days: her leaf -- the campaign, her wallet's
+    /// reference and her salt -- must sit at `index` of the root attested
+    /// last, a tree of exactly `engaged` leaves. Her share goes to a token
+    /// account her reward wallet owns; the receipt makes it once. What
+    /// EmpowerFI is owed stays: a payment that would dig into it fails.
+    pub fn pay_reward(
+        ctx: Context<PayReward>,
+        recipient_ref: [u8; 16],
+        salt: [u8; 32],
+        index: u32,
+        proof: Vec<[u8; 32]>,
+    ) -> Result<()> {
+        let a = &ctx.accounts;
+        let c = &a.campaign;
+        require!(c.status == CampaignStatus::Funded, RewardsError::NotFunded);
+        require!(c.engaged > 0, RewardsError::NobodyEngaged);
+        require!(proof.len() <= MAX_PROOF, RewardsError::NotInTheRoot);
+        let commitment = leaf_commitment(&c.campaign_ref, &recipient_ref, &salt);
+        let leaf = hashv(&[&[0u8][..], &commitment[..]]).to_bytes();
+        require!(
+            verify_inclusion(leaf, index as u64, c.engaged as u64, &proof, c.engagement_root),
+            RewardsError::NotInTheRoot
+        );
+        {
+            let t = a.recipient_tokens.try_borrow_data()?;
+            require!(t.len() == TOKEN_ACCOUNT_LEN, RewardsError::NotHerTokenAccount);
+            require!(t[0..32] == c.mint.to_bytes(), RewardsError::NotHerTokenAccount);
+            require!(t[32..64] == a.recipient.key().to_bytes(), RewardsError::NotHerTokenAccount);
+        }
+        let amount = c.reward_per_seat();
+        require!(amount > 0, RewardsError::ZeroAmount);
+        let in_vault = {
+            let v = a.vault.try_borrow_data()?;
+            require!(v.len() == TOKEN_ACCOUNT_LEN, RewardsError::NotTheVault);
+            u64::from_le_bytes(v[64..72].try_into().unwrap())
+        };
+        require!(in_vault >= amount && in_vault - amount >= c.house_share(), RewardsError::EntrepreneursShareSpent);
+
+        let decimals = *a.mint.try_borrow_data()?.get(MINT_DECIMALS_OFFSET).ok_or(RewardsError::NotAMint)?;
+        let mut data = Vec::with_capacity(10);
+        data.push(TRANSFER_CHECKED);
+        data.extend_from_slice(&amount.to_le_bytes());
+        data.push(decimals);
+        let bump = [c.bump];
+        let seeds: &[&[u8]] = &[CAMPAIGN_SEED, c.campaign_ref.as_ref(), &bump];
+        invoke_signed(
+            &Instruction {
+                program_id: TOKEN_PROGRAM_ID,
+                accounts: vec![
+                    AccountMeta::new(a.vault.key(), false),
+                    AccountMeta::new_readonly(a.mint.key(), false),
+                    AccountMeta::new(a.recipient_tokens.key(), false),
+                    AccountMeta::new_readonly(c.key(), true),
+                ],
+                data,
+            },
+            &[
+                a.vault.to_account_info(),
+                a.mint.to_account_info(),
+                a.recipient_tokens.to_account_info(),
+                c.to_account_info(),
+            ],
+            &[seeds],
+        )?;
+
+        let now = Clock::get()?.unix_timestamp;
+        let campaign = c.key();
+        let recipient = a.recipient.key();
+        let r = &mut ctx.accounts.receipt;
+        r.campaign = campaign;
+        r.recipient = recipient;
+        r.amount = amount;
+        r.paid_at = now;
+        r.bump = ctx.bumps.receipt;
+        emit!(RewardPaid { campaign, recipient, amount, leaf: commitment });
+        Ok(())
+    }
+}
+
+/// sha256(LEAF_DOMAIN | campaign_ref | recipient_ref | salt): what the
+/// database puts in the tree for her (20261226).
+pub fn leaf_commitment(campaign_ref: &[u8; 16], recipient_ref: &[u8; 16], salt: &[u8; 32]) -> [u8; 32] {
+    hashv(&[LEAF_DOMAIN, &campaign_ref[..], &recipient_ref[..], &salt[..]]).to_bytes()
+}
+
+fn node(left: &[u8; 32], right: &[u8; 32]) -> [u8; 32] {
+    hashv(&[&[1u8][..], &left[..], &right[..]]).to_bytes()
+}
+
+/// RFC 9162 section 2.1.3.2: whether the (already hashed) leaf at `index`
+/// sits in a tree of `size` leaves with this root. The same algorithm the
+/// database's trees are built for (_shared/passport verifyInclusion).
+pub fn verify_inclusion(leaf: [u8; 32], index: u64, size: u64, proof: &[[u8; 32]], root: [u8; 32]) -> bool {
+    if index >= size {
+        return false;
+    }
+    let (mut fnode, mut snode) = (index, size - 1);
+    let mut r = leaf;
+    for p in proof {
+        if snode == 0 {
+            return false;
+        }
+        if fnode & 1 == 1 || fnode == snode {
+            r = node(p, &r);
+            if fnode & 1 == 0 {
+                while fnode & 1 == 0 && fnode != 0 {
+                    fnode >>= 1;
+                    snode >>= 1;
+                }
+            }
+        } else {
+            r = node(&r, p);
+        }
+        fnode >>= 1;
+        snode >>= 1;
+    }
+    snode == 0 && r == root
 }
 
 // ------------------------------------------------------------------ accounts
@@ -240,6 +373,45 @@ pub struct AttestEngagement<'info> {
     pub campaign: Account<'info, Campaign>,
 }
 
+#[derive(Accounts)]
+#[instruction(recipient_ref: [u8; 16])]
+pub struct PayReward<'info> {
+    #[account(mut)]
+    pub operator: Signer<'info>,
+    #[account(
+        seeds = [CAMPAIGN_SEED, campaign.campaign_ref.as_ref()],
+        bump = campaign.bump,
+        has_one = operator @ RewardsError::NotTheOperator,
+        has_one = mint @ RewardsError::NotAMint,
+        has_one = vault @ RewardsError::NotTheVault,
+    )]
+    pub campaign: Account<'info, Campaign>,
+    /// CHECK: the campaign's mint (has_one above).
+    #[account(owner = TOKEN_PROGRAM_ID)]
+    pub mint: UncheckedAccount<'info>,
+    /// CHECK: the campaign's vault (has_one above); SPL Token debits it on the campaign's signature.
+    #[account(mut, owner = TOKEN_PROGRAM_ID)]
+    pub vault: UncheckedAccount<'info>,
+    /// CHECK: her reward wallet: an address of this program, never an account it writes.
+    #[account(seeds = [RECIPIENT_SEED, recipient_ref.as_ref()], bump)]
+    pub recipient: UncheckedAccount<'info>,
+    /// CHECK: a token account of the campaign's mint owned by her wallet, checked in the handler.
+    #[account(mut, owner = TOKEN_PROGRAM_ID)]
+    pub recipient_tokens: UncheckedAccount<'info>,
+    #[account(
+        init,
+        payer = operator,
+        space = 8 + Receipt::INIT_SPACE,
+        seeds = [RECEIPT_SEED, campaign.key().as_ref(), recipient_ref.as_ref()],
+        bump,
+    )]
+    pub receipt: Account<'info, Receipt>,
+    /// CHECK: pinned to SPL Token.
+    #[account(address = TOKEN_PROGRAM_ID)]
+    pub token_program: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
+}
+
 // ------------------------------------------------------------------ state
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq, InitSpace, Debug)]
@@ -291,6 +463,17 @@ pub struct Campaign {
     pub bump: u8,
 }
 
+/// That one wallet was paid by one campaign, and how much.
+#[account]
+#[derive(InitSpace)]
+pub struct Receipt {
+    pub campaign: Pubkey,
+    pub recipient: Pubkey,
+    pub amount: u64,
+    pub paid_at: i64,
+    pub bump: u8,
+}
+
 impl Campaign {
     /// What the sponsor pays: price times seats (checked at creation).
     pub fn total(&self) -> u64 {
@@ -338,6 +521,14 @@ pub struct EngagementAttested {
     pub attestation: u32,
 }
 
+#[event]
+pub struct RewardPaid {
+    pub campaign: Pubkey,
+    pub recipient: Pubkey,
+    pub amount: u64,
+    pub leaf: [u8; 32],
+}
+
 // ------------------------------------------------------------------ errors
 
 #[error_code]
@@ -378,4 +569,12 @@ pub enum RewardsError {
     MoreEngagedThanSeats,
     #[msg("A root is given exactly when someone is engaged")]
     RootDoesNotFit,
+    #[msg("No one has kept the days yet")]
+    NobodyEngaged,
+    #[msg("This leaf is not in the root attested last")]
+    NotInTheRoot,
+    #[msg("Not a token account of the campaign's mint owned by her reward wallet")]
+    NotHerTokenAccount,
+    #[msg("The entrepreneurs' half is spent")]
+    EntrepreneursShareSpent,
 }

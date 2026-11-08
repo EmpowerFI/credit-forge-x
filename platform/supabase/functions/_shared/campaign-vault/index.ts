@@ -122,6 +122,66 @@ export async function createCampaignData(t: Terms): Promise<Uint8Array> {
 /** fund_campaign(). Accounts: sponsor (signer), campaign (writable), mint, sponsor's USDC (writable), vault (writable), token program. */
 export const fundCampaignData = () => discriminator("fund_campaign");
 
+// ------------------------------------------------------------------ rewards
+
+/** Her reward wallet is the program address [RECIPIENT_SEED, her wallet ref]; no key exists for it. */
+export const RECIPIENT_SEED = "recipient";
+/** One receipt per campaign and wallet: [RECEIPT_SEED, campaign, wallet ref]. */
+export const RECEIPT_SEED = "paid";
+const LEAF_DOMAIN = "EMPOWERFI:CAMPAIGN_LEAF:v2";
+
+/**
+ * Her leaf in a campaign's tree: sha256(LEAF_DOMAIN | campaign id | wallet ref
+ * | salt), the same bytes the database (20261226) and the program
+ * (leaf_commitment) hash. Hex.
+ */
+export async function leafCommitment(campaign: string, walletRef: string, saltHex: string): Promise<string> {
+  const salt = fromHex(saltHex);
+  if (salt.length !== 32) throw new Error("a salt is 32 bytes");
+  const domain = new TextEncoder().encode(LEAF_DOMAIN);
+  const bytes = new Uint8Array(domain.length + 16 + 16 + 32);
+  bytes.set(domain, 0);
+  bytes.set(uuidBytes(campaign), domain.length);
+  bytes.set(uuidBytes(walletRef), domain.length + 16);
+  bytes.set(salt, domain.length + 32);
+  return hex(await sha256(bytes));
+}
+
+const fromHex = (h: string) => {
+  if (!/^([0-9a-f]{2})*$/.test(h)) throw new Error("not lowercase hex");
+  return Uint8Array.from(h.match(/../g) ?? [], (x) => parseInt(x, 16));
+};
+
+/**
+ * pay_reward(recipient_ref: [u8; 16], salt: [u8; 32], index: u32, proof: Vec<[u8; 32]>).
+ * Accounts: operator (signer, writable), campaign, mint, vault (writable), her
+ * wallet, her wallet's token account (writable), receipt (writable), token
+ * program, system program.
+ */
+export async function payRewardData(walletRef: string, saltHex: string, index: number, proofHex: string[]): Promise<Uint8Array> {
+  const out = new Uint8Array(8 + 16 + 32 + 4 + 4 + 32 * proofHex.length);
+  const v = new DataView(out.buffer);
+  out.set(await discriminator("pay_reward"), 0);
+  out.set(uuidBytes(walletRef), 8);
+  const salt = fromHex(saltHex);
+  if (salt.length !== 32) throw new Error("a salt is 32 bytes");
+  out.set(salt, 24);
+  v.setUint32(56, index, true);
+  v.setUint32(60, proofHex.length, true);
+  proofHex.forEach((p, i) => {
+    const node = fromHex(p);
+    if (node.length !== 32) throw new Error("a proof node is 32 bytes");
+    out.set(node, 64 + 32 * i);
+  });
+  return out;
+}
+
+/** One woman's reward, as the program pays it: the entrepreneurs' half, split by seats, rounded down. */
+export function rewardPerSeat(fundedUnits: bigint, seats: number, houseShareBps = HOUSE_SHARE_BPS): bigint {
+  const house = (fundedUnits * BigInt(houseShareBps)) / 10_000n;
+  return (fundedUnits - house) / BigInt(seats);
+}
+
 // ------------------------------------------------------------------ the account
 
 export interface CampaignAccount {

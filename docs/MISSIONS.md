@@ -13,29 +13,57 @@ The page at **`/app/missions`**, inside the platform (Explore the platform), is 
 
 | Piece | Where |
 |---|---|
-| Program `empowerfi_rewards` | `programs/empowerfi-rewards`: `create_campaign`, `fund_campaign`, `attest_engagement`. LiteSVM tests in `tests/rewards.rs`. |
-| Database | Migration `20261222000000_a_campaign_paid_into_a_vault_on_solana.sql`: `campaign_vaults`, `campaign_attestations`, `private.campaign_leaf_salts`. |
-| Daily proof | Edge Function `campaign-attest`, called by the `campaign-attest` cron at 23:40 São Paulo. |
+| Program `empowerfi_rewards` | `programs/empowerfi-rewards`: `create_campaign`, `fund_campaign`, `attest_engagement`, `pay_reward`. LiteSVM tests in `tests/rewards.rs`. |
+| Database | Migrations `20261222000000_a_campaign_paid_into_a_vault_on_solana.sql` (`campaign_vaults`, `campaign_attestations`, `private.campaign_leaf_salts`) and `20261226000000_her_reward_wallet_and_the_campaigns_she_is_in.sql` (`private.reward_wallets`, `campaign_payments`, `private.vault_cohort`). |
+| Daily proof and payments | Edge Function `campaign-attest`, called by the `campaign-attest` cron at 23:40 São Paulo: it attests, writes new wallets' addresses, then pays. |
 | Registration | Edge Function `campaign-register`, called by the page after the sponsor's transaction. |
 | Open page | `src/app/missions/` (route `/app/missions`; a card on the platform entrance and a link in its header). |
 | Scripts | `scripts/rewards/generate-keys.mts`. |
 
+## Who takes part
+
+Every entrepreneur of the diary whose latest consent says yes to the impact figures takes part in every listed campaign. She does not join one from the diary. Her days are the ones she really recorded in the diary within the campaign's window, which may start up to 29 days ago, so the diary's history counts.
+
+The page shows, for each campaign:
+
+- **Participants:** everyone who shares her impact figures.
+- **Active:** those who recorded at least one day in the window.
+- **Completed 30 days:** those who kept the campaign's days.
+- **Mean days:** the average of days kept by those who recorded.
+- **Paid:** the rewards confirmed on chain.
+
+At the top, the page adds up what the sponsors sent to the vaults and the rewards paid.
+
+## Her reward wallet
+
+Every entrepreneur gets a reward wallet: the program's address at `["recipient", her wallet ref]`.
+
+- **No key exists.** Nothing anywhere holds a key for it, and only the program moves what it holds.
+- **Opaque.** The ref is a random uuid in `private.reward_wallets`, created when she enters the diary (a trigger on `entrepreneurs`), so the address says nothing of who she is.
+- **On-chain accounts.** Her token account is created by the first reward paid into it.
+- **Later.** A later version of the program will move rewards from it to a wallet she chooses, for example a partner app. That is not built yet.
+
 ## Privacy
 
-Every count obeys the five-woman floor that sponsors already have. Below five women in a campaign, the page shows no count and nothing is attested on chain.
+Every count obeys the five-woman floor that sponsors already have. Below five women in a campaign, the page shows no count, and nothing is attested or paid on chain.
 
 What does go on chain:
 
 - the counts: how many women are in the campaign, and how many kept the 30 days;
-- a Merkle root over salted leaves (`sha256("EMPOWERFI:CAMPAIGN_LEAF:v1:<campaign>:" || salt)`), one leaf per woman who kept the 30 days.
+- a Merkle root over salted leaves (`sha256("EMPOWERFI:CAMPAIGN_LEAF:v2" || campaign uuid || wallet ref || salt)`), one leaf per woman who kept the 30 days;
+- each reward paid: her wallet's address, the amount, and her leaf.
 
-No name, e-mail or business figure goes on chain. The database keeps the salts and the leaves.
+No name, e-mail or business figure goes on chain. The database keeps the salts, the leaves, and which wallet is whose.
 
 ## Money
 
 - The vault is the associated USDC account of the campaign PDA (`["campaign", campaign uuid]`), so only the program can sign for it.
-- **This version only takes money in.** There is no instruction that pays rewards out.
-- The operator key, which sits in the Edge Function, can only attest. It cannot move funds.
+- **`pay_reward` pays one woman at a time.** The operator, whose key sits in the Edge Function, gives her wallet ref, her salt and her leaf's RFC 9162 inclusion proof against the root attested last.
+  - The program rebuilds her leaf and checks the proof.
+  - It pays her share (the entrepreneurs' half split by seats) into a token account her wallet owns.
+  - It writes a receipt at `["paid", campaign, wallet ref]`, so she is paid once.
+  - It refuses any payment that would dig into EmpowerFI's half.
+- **The operator cannot pay anyone else.** It cannot pay a leaf outside the root, send money to a wallet other than the leaf's own, or touch the house's half.
 
 ## Who sponsors
 
@@ -49,7 +77,7 @@ The sponsor is whoever connects a wallet on `/app/missions`. The steps:
    - the terms commitment matches;
    - the vault holds the funds.
 3. **It is recorded, unlisted.** `campaign_register` writes the sponsor, the campaign and its vault. The campaign starts **unlisted and invited**: the names a wallet typed show nowhere until EmpowerFI reviews them. A wallet can reuse only a sponsor name it registered itself, never the house's or a dashboard sponsor's.
-4. **EmpowerFI approves it.** Someone who manages campaigns lists it. Listing shows it on the page and opens it in the diary.
+4. **EmpowerFI approves it.** Someone who manages campaigns lists it. Listing shows it on the page, and from then on it is attested and paid. The diary no longer offers it to join, because everyone who shares her figures is already in it.
 
    ```sql
    select public.campaign_vault_list('<campaign id>', true);   -- false takes it back

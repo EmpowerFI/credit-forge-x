@@ -1,10 +1,24 @@
 {
   "version": "5",
   "specifiers": {
+    "npm:@solana-program/token@0.16.1": "0.16.1_@solana+kit@8.3.0",
     "npm:@solana/kit@8.3.0": "8.3.0",
     "npm:@supabase/supabase-js@2.116.0": "2.116.0"
   },
   "npm": {
+    "@solana-program/system@0.14.1_@solana+kit@8.3.0": {
+      "integrity": "sha512-K6ZiIrAKoJAfcwfUdsoFvfSAxeRJaRrV7BPFTJvUVRS4m3zszN+nLcdaNMMe2F1/zTriZqC+xh+Kgw6ziGUqpQ==",
+      "dependencies": [
+        "@solana/kit"
+      ]
+    },
+    "@solana-program/token@0.16.1_@solana+kit@8.3.0": {
+      "integrity": "sha512-X9dsvbh+VDq4SuCfvxn95P1DCvtBYHJOBiVmgBJMfW8l/lp8uSwEhy9IurpcdltnGi5kNIkCm4sk4YOXKAMiCw==",
+      "dependencies": [
+        "@solana-program/system",
+        "@solana/kit"
+      ]
+    },
     "@solana/accounts@8.3.0": {
       "integrity": "sha512-HNVCs4yyE5kTRHVD3ApuKuByuO85GHE6Ns7I/yMB9vXhFgZjGzFhOGi/YCjlWpIk3RqTyX7wGniHyEb49R3ELQ==",
       "dependencies": [
@@ -503,6 +517,7 @@
   },
   "workspace": {
     "dependencies": [
+      "npm:@solana-program/token@0.16.1",
       "npm:@solana/kit@8.3.0",
       "npm:@supabase/supabase-js@2.116.0"
     ]
