@@ -34,7 +34,8 @@ const history = [
 ];
 const month = { period: "2026-11", first_day: "2026-11-01", today: TODAY, sales_cents: 312_000, expenses_cents: 118_000, profit_cents: 194_000,
   taken_home_cents: 0, days_kept: 3, monthly_need_cents: 150_000 };
-const readings = (pt) => [{ week_start: "2026-10-26", source: "model", days_kept: 5, open_days: 6, completed_at: "2026-11-02T10:00:00Z", report: pt
+const figures = { sales_cents: 124_000, expenses_cents: 61_000, result_cents: 63_000, pay_cents: null, profit_cents: null };
+const readings = (pt) => [{ week_start: "2026-10-26", source: "model", days_kept: 5, open_days: 6, figures, completed_at: "2026-11-02T10:00:00Z", report: pt
   ? { summary: "Na semana, as vendas somaram R$ 1.240,00 e os gastos do negócio R$ 610,00. Sobraram R$ 630,00.",
       observations: ["O Pix foi a forma de pagamento mais usada.", "Sábado foi o dia com mais vendas."],
       action: "anote também as compras pequenas de mercadoria; elas somam no fim da semana.",

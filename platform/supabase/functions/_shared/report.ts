@@ -28,7 +28,7 @@
 
 import { type InsightFlag, type Insights, type Span, spanOf } from "./checkin-insights/index.ts";
 
-export const PROMPT_VERSION = "report-prompt-v0.5.0";
+export const PROMPT_VERSION = "report-prompt-v0.6.0";
 export const DEFAULT_MODEL = "claude-haiku-5-5";
 
 /** The reading, as the model must return it and as the fallback builds it. */
@@ -201,6 +201,7 @@ function systemFor(span: Span, profitWords = false): string {
     "3. Nunca fale de crédito, empréstimo, financiamento, score ou risco de inadimplência.",
     `4. Nunca culpe ou acuse. ${span === "week" ? "Uma semana difícil" : "Um mês difícil"} é um fato, não um erro dela. Se algum número parecer inconsistente, peça com gentileza que ela confira.`,
     `5. A ação prática deve ser uma só, pequena e possível de fazer ${span === "week" ? "nesta semana que começa" : "nas próximas duas semanas"}, sem gastar dinheiro.`,
+    "   Ela usa o diário da EmpowerFI justamente para não precisar de papel: nunca sugira papel, caderno, caderneta, planilha, bloco de notas nem outro aplicativo. Se a ação for anotar ou acompanhar algo, é no próprio diário: registrar no diário cada gasto no dia em que paga, anotar as vendas pequenas também, olhar em Seu mês quanto falta vender, marcar os dias em que o negócio abre.",
     "6. Não dê conselho contábil, jurídico ou de investimento.",
     "",
     `Sobre os sinais: RESULT_NEGATIVE quer dizer que os custos passaram das vendas. HOUSEHOLD_OVER_RESULT quer dizer que ela retirou para casa mais do que o negócio gerou. HOUSEHOLD_OVER_REVENUE sugere que o dinheiro da casa e do negócio estão misturados. FIGURES_ESTIMATED e COST_UNKNOWN pedem cuidado ao tirar conclusões. REVENUE_UP e REVENUE_DOWN são mudanças grandes em relação ${w.previous}. FEW_ACTIVE_DAYS quer dizer que o negócio vendeu em poucos dias ${w.this}. PROFIT_NEGATIVE quer dizer que as vendas não cobriram os gastos e o salário dela.`,
@@ -305,6 +306,12 @@ const strip = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerC
 const FORBIDDEN = ["credito", "emprestimo", "financiamento", "inadimpl", "score", "pro-labore", "pro labore", "prolabore"];
 /** Said only when her pay is known, so that profit means what is left after it. */
 const PROFIT_WORDS = ["lucro", "prejuizo"];
+/**
+ * The diary is what replaces her notebook: a reading never sends her back to
+ * paper or to another tool to keep her figures. Whole words, so "papelaria",
+ * a business she may run, is not one.
+ */
+const PAPER = /\b(papel|papeis|papeizinhos|caderno|cadernos|caderneta|planilha|planilhas|bloco de notas|excel)\b/;
 
 const LIMITS = { summary: 320, observation: 240, action: 240, limits: 240 } as const;
 
@@ -351,6 +358,8 @@ export function validateReport(raw: unknown, allowedNumbers: Set<string>, profit
   for (const word of profitWords ? FORBIDDEN : [...FORBIDDEN, ...PROFIT_WORDS]) {
     if (plain.includes(word)) reasons.push(`uses the forbidden word "${word}"`);
   }
+  const paper = plain.match(PAPER);
+  if (paper) reasons.push(`sends her to keep her figures outside the diary: "${paper[1]}"`);
 
   // Every figure in the prose must be one we computed. Single digits are let
   // through as counting words -- "uma ação", "2 semanas" -- because a single
@@ -389,10 +398,10 @@ function actionsFor(span: Span): Partial<Record<InsightFlag, string>> {
   const next = WORDS[span].next;
   return {
     HOUSEHOLD_OVER_REVENUE: `${next}, tente guardar o dinheiro do negócio num lugar separado do dinheiro da casa, nem que seja um envelope.`,
-    RESULT_NEGATIVE: `${next}, anote cada compra de material com o valor. Assim fica mais fácil ver onde o custo está pesando.`,
+    RESULT_NEGATIVE: `${next}, registre no diário cada compra de material com o valor. Assim fica mais fácil ver onde o custo está pesando.`,
     PROFIT_NEGATIVE: `${next}, olhe em Seu mês quanto falta vender por dia para cobrir os gastos e o seu salário.`,
-    FIGURES_ESTIMATED: `${next}, experimente anotar cada venda no caderno ou no celular, mesmo as pequenas.`,
-    COST_UNKNOWN: `${next}, guarde as notas ou anote o valor de cada compra do negócio.`,
+    FIGURES_ESTIMATED: `${next}, experimente anotar no diário cada venda no dia em que acontece, mesmo as pequenas.`,
+    COST_UNKNOWN: `${next}, registre no diário o valor de cada compra do negócio, no dia em que pagar.`,
   };
 }
 
@@ -432,7 +441,7 @@ export function fallbackReport(i: Insights): Report {
   const actionFlag = (Object.keys(ACTION_FOR) as InsightFlag[]).find((f) => i.flags.includes(f));
   const action = actionFlag
     ? ACTION_FOR[actionFlag]!
-    : `${WORDS[span].next}, continue anotando as vendas e as compras do negócio. É isso que deixa a próxima leitura mais precisa.`;
+    : `${WORDS[span].next}, continue registrando no diário as vendas e as compras do negócio. É isso que deixa a próxima leitura mais precisa.`;
 
   const limits =
     i.data_quality === "complete"

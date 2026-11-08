@@ -62,13 +62,34 @@ const allowed = () => factsFor(insights()).allowedNumbers;
 const good = {
   summary: "Em outubro de 2026 você vendeu R$ 3.450,00 e o resultado do negócio foi de R$ 1.950,00.",
   observations: ["Sua margem ficou em 56,5%, o que mostra cuidado com os custos."],
-  action: "Nas próximas 2 semanas, anote cada venda no caderno.",
+  action: "Nas próximas 2 semanas, anote cada venda no diário.",
   limits: "Os números vêm das suas anotações, então dá para confiar bem neles.",
 };
 
 Deno.test("a reading that uses only the computed figures is accepted", () => {
   const r = validateReport(good, allowed());
   assertEquals(r.ok, true);
+});
+
+Deno.test("a reading never sends her back to paper or another tool", () => {
+  for (const action of [
+    "Nesta semana, liste em papel os custos fixos.",
+    "Nesta semana, anote cada venda no caderno.",
+    "Nesta semana, monte uma planilha com os gastos.",
+    "Nesta semana, use um bloco de notas para as compras.",
+  ]) {
+    const r = validateReport({ ...good, action }, allowed());
+    assertEquals(r.ok, false, action);
+  }
+  // A business that sells paper goods is still named.
+  assertEquals(validateReport({ ...good, observations: ["A papelaria vendeu mais no sábado."] }, allowed()).ok, true);
+});
+
+Deno.test("the fallback's actions all happen in the diary", () => {
+  for (const flags of [["FIGURES_ESTIMATED"], ["COST_UNKNOWN"], ["RESULT_NEGATIVE"], []] as const) {
+    const r = fallbackReport({ ...insights(), flags: [...flags] });
+    assertEquals(/papel|caderno|planilha/.test(r.action), false, r.action);
+  }
 });
 
 Deno.test("whole-real amounts may drop the centavos", () => {
