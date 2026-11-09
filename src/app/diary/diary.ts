@@ -129,6 +129,14 @@ export interface Reward {
   granted_at?: string;
 }
 
+/** A sponsor of a real campaign she is in today: its logo opens the page it named. */
+export interface DiarySponsor {
+  name: string;
+  logo_path: string | null;
+  link_url: string | null;
+  campaigns: string[];
+}
+
 /** An open campaign she can join with one tap. blocked_by: the campaign she is already named in for later. */
 export interface OpenCampaign {
   id: string;
@@ -241,6 +249,7 @@ export const diary = {
   setEmoji: (emoji: string) => call<string>("diary_emoji_set", { p_emoji: emoji }),
   forget: () => call<{ erased: boolean }>("diary_account_forget", { p_confirmation: "EXCLUIR" }),
   openCampaigns: () => call<OpenCampaign[]>("diary_campaigns"),
+  sponsors: () => call<DiarySponsor[]>("diary_sponsors"),
   joinCampaign: (id: string) => call<{ starts_on: string; until: string }>("diary_campaign_join", { p_program_id: id }),
   leaveCampaign: () => call<{ ends_on: string }>("diary_campaign_leave"),
   month: () => call<MonthSoFar>("diary_month"),

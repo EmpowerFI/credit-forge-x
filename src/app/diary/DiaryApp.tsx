@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, BookOpen, Loader2, PenLine, RefreshCw } from "lucide-react";
+import { Bell, BookOpen, Handshake, Loader2, PenLine, RefreshCw } from "lucide-react";
 import { tr } from "../i18n";
 import { Button } from "@/components/ui/button";
 import { diaryClosed, useDiarySession } from "./db";
@@ -10,7 +10,6 @@ import { Tour } from "./Tour";
 import { TOUR, TourContext } from "./tour-steps";
 import { useDiaryUpdate } from "./update";
 import { Avatar, DiaryLogo } from "./Brand";
-import SponsorLogo from "./SponsorLogo";
 import { resyncPush } from "./push";
 import { useDiaryPwa } from "./pwa";
 import SignIn from "./SignIn";
@@ -19,6 +18,7 @@ const Enrol = lazy(() => import("./Enrol"));
 const Today = lazy(() => import("./Today"));
 const History = lazy(() => import("./History"));
 const Reminders = lazy(() => import("./Reminders"));
+const Sponsors = lazy(() => import("./Sponsors"));
 
 const waiting = (
   <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
@@ -52,6 +52,7 @@ export default function DiaryApp() {
             <Route index element={<Today />} />
             <Route path="historico" element={<History />} />
             <Route path="lembretes" element={<Reminders />} />
+            <Route path="patrocinadores" element={<Sponsors />} />
             <Route path="*" element={<Navigate to="/app/diario" replace />} />
           </Route>
         </Routes>
@@ -84,10 +85,10 @@ function Gate() {
     );
   }
   if (!profile.data.enrolled) return <Enrol fromApp={profile.data.from_app ?? null} />;
-  return <Layout name={profile.data.name ?? ""} campaign={profile.data.campaign ?? null} userId={session.user.id} />;
+  return <Layout name={profile.data.name ?? ""} userId={session.user.id} />;
 }
 
-function Layout({ name, campaign, userId }: { name: string; campaign: DiaryProfile["campaign"]; userId: string }) {
+function Layout({ name, userId }: { name: string; userId: string }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   // The guided tour: once for whoever starts, on Hoje; again from Lembretes.
@@ -139,11 +140,8 @@ function Layout({ name, campaign, userId }: { name: string; campaign: DiaryProfi
         <div className="mx-auto flex h-14 max-w-md items-center justify-between gap-3 px-4">
           <DiaryLogo />
           <div className="flex min-w-0 items-center gap-3">
-            {campaign && !campaign.is_default && campaign.logo_path && (
-              <SponsorLogo sponsor={campaign.sponsor_name} logoPath={campaign.logo_path} linkUrl={campaign.link_url} />
-            )}
-            {/* With a sponsor's logo there is no room for her name on a phone. */}
-            <span className={`max-w-[8rem] truncate text-sm ${campaign?.logo_path && !campaign.is_default ? "hidden sm:inline" : ""}`}>{name}</span>
+            {/* Sponsors' logos live in their own tab: with several sponsors, the header has no room for them. */}
+            <span className="max-w-[8rem] truncate text-sm">{name}</span>
             <Avatar name={name} />
           </div>
         </div>
@@ -171,6 +169,7 @@ function Layout({ name, campaign, userId }: { name: string; campaign: DiaryProfi
         <div className="mx-auto flex max-w-md">
           {tab("/app/diario", tr({ en: "Today", pt: "Hoje" }), PenLine, true)}
           {tab("/app/diario/historico", tr({ en: "History", pt: "Histórico" }), BookOpen, false, "tab-history")}
+          {tab("/app/diario/patrocinadores", tr({ en: "Sponsors", pt: "Patrocinadores" }), Handshake)}
           {tab("/app/diario/lembretes", tr({ en: "Reminders", pt: "Lembretes" }), Bell)}
         </div>
       </nav>
