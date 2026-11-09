@@ -276,7 +276,7 @@ export interface MonthSoFar {
   profit_cents: number;
   taken_home_cents: number;
   days_kept: number;
-  /** "Quanto você precisa para passar o mês?": her pay, the month's break-even. Null until she says. */
+  /** "Coloque aqui o seu salário mensal": her pay, the month's break-even. Null until she says. */
   monthly_need_cents: number | null;
 }
 

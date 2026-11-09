@@ -31,7 +31,7 @@ export function ProfitValue({ cents, className = "" }: { cents: number; classNam
   );
 }
 
-/** "Quanto você precisa para passar o mês?": asked once, changed whenever she likes. */
+/** "Coloque aqui o seu salário mensal": asked once, changed whenever she likes. */
 function NeedForm({ current, onDone, onLater }: { current: number | null; onDone: () => void; onLater?: () => void }) {
   const queryClient = useQueryClient();
   const [value, setValue] = useState(current ? (current / 100).toFixed(2).replace(".", ",") : "");
@@ -112,7 +112,7 @@ export function MonthCard({ openDays, todayKept }: { openDays: number[]; todayKe
   const monthName = new Date(`${m.first_day}T12:00:00Z`).toLocaleDateString(tr({ en: "en-GB", pt: "pt-BR" }), { month: "long", timeZone: "UTC" });
   const be = breakEven(m, openDays, todayKept);
   const askNow = m.monthly_need_cents === null && !later;
-  const question = tr({ en: "How much do you need to get through the month?", pt: "Quanto você precisa para passar o mês?" });
+  const question = tr({ en: "Enter your monthly salary here", pt: "Coloque aqui o seu salário mensal" });
 
   if (askNow || editing) {
     return (
