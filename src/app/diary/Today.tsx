@@ -286,8 +286,8 @@ export default function Today() {
           {recorded && <Recorded key={day} day={day} entries={liveEntries} />}
         </section>
       )}
-      {mode === "ask" && <LatestReading today={today} />}
       {mode === "ask" && me.data && <WeekProgress icon={progressIcon(me.data.progress_emoji)} openDays={openDaysOf(me.data)} today={today} days={week.data ?? []} />}
+      {mode === "ask" && <LatestReading today={today} />}
       {mode === "ask" && me.data && <OpenCampaigns profile={me.data} />}
 
       {mode === "entry" && (
