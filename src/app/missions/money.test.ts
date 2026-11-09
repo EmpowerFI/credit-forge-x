@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PublicCampaign } from "./chain";
-import { campaignMoney, campaignProgress, share } from "./money";
+import { campaignMoney, campaignProgress, groupCampaigns, groupMoney, share } from "./money";
 
 const c = {
   seats: 100,
@@ -42,5 +42,32 @@ describe("a campaign's days, in São Paulo", () => {
     expect(campaignProgress(c, at("2026-11-08T15:00:00Z"))).toMatchObject({ phase: "live", day: 7, percent: 23 });
     expect(campaignProgress(c, at("2026-12-01T23:00:00Z"))).toMatchObject({ phase: "live", day: 30, percent: 100 });
     expect(campaignProgress(c, at("2026-12-02T03:00:00Z"))).toMatchObject({ phase: "ended", day: 30, percent: 100 });
+  });
+});
+
+describe("a campaign with more than one sponsor", () => {
+  const vault = (id: string, joins: string | null, funded: number, paid: number, at: string) => ({
+    ...c, program_id: id, joins, paid: { count: 0, units: paid },
+    chain: { funded_units: funded, funded_at: at },
+  }) as unknown as PublicCampaign;
+  const lead = vault("L", null, 10_000_000, 150_000, "2026-11-02T10:00:00Z");
+  const late = vault("B", "L", 20_000_000, 0, "2026-11-08T10:00:00Z");
+  const early = vault("A", "L", 4_000_000, 0, "2026-11-05T10:00:00Z");
+  const orphan = vault("O", "gone", 1_000_000, 0, "2026-11-06T10:00:00Z");
+  const other = vault("M", null, 1_000_000, 0, "2026-11-01T10:00:00Z");
+
+  it("puts each co-sponsorship under its lead, in the order they joined, and drops one without a lead", () => {
+    const groups = groupCampaigns([late, lead, orphan, early, other]);
+    expect(groups.map((g) => g.lead.program_id)).toEqual(["L", "M"]);
+    expect(groups[0].vaults.map((v) => v.program_id)).toEqual(["L", "A", "B"]);
+    expect(groups[1].co).toEqual([]);
+  });
+  it("adds up the vaults: her reward is the sum of each sponsor's", () => {
+    const [g] = groupCampaigns([lead, early, late]);
+    const m = groupMoney(g, [9_850_000n, 4_000_000n, undefined]);
+    expect(m).toMatchObject({ funded: 34_000_000n, house: 17_000_000n, entrepreneurs: 17_000_000n });
+    // 0.05 + 0.02 + 0.10 USDC for 100 seats each.
+    expect(m.perSeat).toBe(170_000n);
+    expect(m).toMatchObject({ released: 150_000n, reserved: 16_850_000n, inVault: 33_850_000n, fromChain: false });
   });
 });

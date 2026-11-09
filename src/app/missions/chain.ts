@@ -26,6 +26,8 @@ export interface Payment {
 /** campaign_vaults_public(): counts are null below `min_group` women. */
 export interface PublicCampaign {
   program_id: string;
+  /** The lead campaign this one co-sponsors (its own vault, the same days), or null for a lead. */
+  joins: string | null;
   name: string;
   description: string | null;
   sponsor: string;

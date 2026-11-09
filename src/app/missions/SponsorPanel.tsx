@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Check, CircleDashed, ExternalLink, Loader2, Wallet, X } from "lucide-react";
 import {
   AccountRole,
@@ -16,7 +17,7 @@ import {
 import { findAssociatedTokenPda, getCreateAssociatedTokenIdempotentInstructionAsync, TOKEN_PROGRAM_ADDRESS } from "@solana-program/token";
 import { useSelectedWalletAccount, useWalletAccountTransactionSendingSigner } from "@solana/react";
 import type { UiWalletAccount } from "@wallet-standard/react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   addDays, CAMPAIGN_DAYS, createCampaignData, fundCampaignData, HOUSE_SHARE_BPS, HOUSE_WALLET, MIN_PRICE_UNITS, MIN_SEATS,
   OPERATOR_WALLET, REWARDS_PROGRAM_ID, spDay, UNLOCK_DAYS, USDC_DECIMALS, USDC_DEVNET_MINT, uuidBytes,
@@ -32,8 +33,8 @@ import { CLUSTER, confirmSignature, FAUCETS, rpc, shortAddress, usdc } from "../
 import ConnectWalletDialog from "../wallet/ConnectWallet";
 import { useBalances } from "../wallet/useBalances";
 import { diaryDb } from "../diary/db";
-import { priceUnits, units } from "./chain";
-import { day } from "./money";
+import { missions, priceUnits, units } from "./chain";
+import { campaignProgress, day, groupCampaigns } from "./money";
 import { DevnetNotice, SectionHeading } from "./ui";
 
 const SYSTEM_PROGRAM = address("11111111111111111111111111111111");
@@ -46,7 +47,14 @@ const REGISTER_ERRORS: Record<string, { en: string; pt: string }> = {
   campaign_name_taken: { en: "That campaign name is already in use. Choose another.", pt: "Esse nome de campanha já está em uso. Escolha outro." },
   campaign_name_length: { en: "The campaign name needs 3 to 80 characters.", pt: "O nome da campanha precisa ter de 3 a 80 caracteres." },
   sponsor_name_length: { en: "The sponsor name needs 2 to 80 characters.", pt: "O nome do patrocinador precisa ter de 2 a 80 caracteres." },
+  no_such_lead: { en: "That campaign is no longer published. Your vault is on chain: write to contato@empowerfi.io.", pt: "Essa campanha não está mais publicada. Seu cofre está na blockchain: escreva para contato@empowerfi.io." },
+  lead_ended: { en: "That campaign has ended. Your vault is on chain: write to contato@empowerfi.io.", pt: "Essa campanha terminou. Seu cofre está na blockchain: escreva para contato@empowerfi.io." },
+  dates_differ: { en: "The dates do not match the campaign's. Write to contato@empowerfi.io with the transaction link.", pt: "As datas não batem com as da campanha. Escreva para contato@empowerfi.io com o link da transação." },
+  already_sponsoring: { en: "This wallet already sponsors that campaign.", pt: "Esta carteira já patrocina essa campanha." },
 };
+
+/** The published campaign a co-sponsor joins: its own vault, these days and this name. */
+interface Lead { programId: string; name: string; starts: string; ends: string; sponsors: string[] }
 
 interface Form { sponsor: string; name: string; starts: string; seats: string; price: string }
 type Field = keyof Form;
@@ -62,11 +70,11 @@ function figures(form: Form) {
 }
 
 /** What is wrong with each field, in the order a sponsor fills them in. */
-function fieldErrors(form: Form): Partial<Record<Field, string>> {
+function fieldErrors(form: Form, joining = false): Partial<Record<Field, string>> {
   const { seats, price } = figures(form);
   const e: Partial<Record<Field, string>> = {};
   if (form.sponsor.trim().length < 2) e.sponsor = tr({ en: "Write your organization's name (2 characters or more).", pt: "Escreva o nome da sua organização (2 caracteres ou mais)." });
-  if (form.name.trim().length < 3) e.name = tr({ en: "Give the campaign a name (3 characters or more).", pt: "Dê um nome à campanha (3 caracteres ou mais)." });
+  if (!joining && form.name.trim().length < 3) e.name = tr({ en: "Give the campaign a name (3 characters or more).", pt: "Dê um nome à campanha (3 caracteres ou mais)." });
   // Up to 29 days back, so the diary's history counts and the campaign still runs today.
   if (!/^\d{4}-\d{2}-\d{2}$/.test(form.starts)) e.starts = tr({ en: "Pick a start date.", pt: "Escolha a data de início." });
   else if (form.starts < earliest()) e.starts = tr({ en: `The campaign can start at most ${CAMPAIGN_DAYS - 1} days ago.`, pt: `A campanha pode começar no máximo ${CAMPAIGN_DAYS - 1} dias atrás.` });
@@ -93,7 +101,27 @@ export default function SponsorPanel() {
   const [account] = useSelectedWalletAccount();
   const [connecting, setConnecting] = useState(false);
   const top = useRef<HTMLDivElement>(null);
-  const errors = fieldErrors(form);
+
+  // ?join=<lead program id>: co-sponsor a published campaign that is still running.
+  const [params, setParams] = useSearchParams();
+  const joinId = params.get("join");
+  const list = useQuery({ queryKey: ["missions"], queryFn: missions.campaigns, enabled: Boolean(joinId) });
+  const group = joinId ? groupCampaigns(list.data ?? []).find((g) => g.lead.program_id === joinId) : undefined;
+  const lead: Lead | null = group && campaignProgress(group.lead).phase !== "ended"
+    ? { programId: group.lead.program_id, name: group.lead.name, starts: group.lead.period_start.slice(0, 10),
+        ends: group.lead.period_end.slice(0, 10), sponsors: group.vaults.map((v) => v.sponsor) }
+    : null;
+  const errors = fieldErrors(form, Boolean(lead));
+
+  // Joining takes the campaign's days; leaving gives the form its own back.
+  useEffect(() => {
+    setForm((f) => (lead ? { ...f, starts: lead.starts } : { ...f, starts: f.starts === "" ? addDays(today(), 1) : f.starts }));
+    setStage(1);
+  }, [lead?.programId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const leave = () => {
+    setParams((p) => { p.delete("join"); return p; }, { replace: true });
+    setForm((f) => ({ ...f, starts: addDays(today(), 1) }));
+  };
 
   const go = (to: 1 | 2 | 3) => {
     setStage(to);
@@ -116,6 +144,7 @@ export default function SponsorPanel() {
     setForm({ sponsor: "", name: "", starts: addDays(today(), 1), seats: String(MIN_SEATS), price: "0,10" });
     setTouched({});
     setTried(false);
+    setParams((p) => { p.delete("join"); return p; }, { replace: true });
     go(1);
   };
 
@@ -124,20 +153,41 @@ export default function SponsorPanel() {
       <SectionHeading id="sponsor-title" eyebrow={tr({ en: "For sponsors", pt: "Para patrocinadores" })}
         title={tr({ en: "Sponsor a campaign", pt: "Patrocine uma campanha" })}
         lead={tr({
-          en: "Three steps, about two minutes. Your wallet becomes the sponsor, and one transaction creates the campaign and funds its vault.",
-          pt: "Três passos, cerca de dois minutos. A sua carteira passa a ser a patrocinadora, e uma transação cria a campanha e financia o cofre.",
+          en: "Three steps, about two minutes. Your wallet becomes the sponsor, and one transaction creates the campaign and funds its vault. You can also join a running campaign as a co-sponsor.",
+          pt: "Três passos, cerca de dois minutos. A sua carteira passa a ser a patrocinadora, e uma transação cria a campanha e financia o cofre. Você também pode entrar numa campanha em andamento como copatrocinador.",
         })} />
+
+      {joinId && !lead && !list.isLoading && (
+        <p role="status" className="rounded-md border border-border bg-card p-4 text-sm text-muted-foreground">
+          {tr({ en: "That campaign is not open to co-sponsors any more. You can sponsor a new one below.", pt: "Essa campanha não aceita mais copatrocinadores. Você pode patrocinar uma nova abaixo." })}{" "}
+          <button type="button" className="font-medium text-foreground underline" onClick={leave}>{tr({ en: "Start a new campaign", pt: "Criar uma nova campanha" })}</button>
+        </p>
+      )}
+      {lead && (
+        <div role="status" className="flex flex-col gap-3 rounded-md border-2 border-gold bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-0.5 text-sm">
+            <p className="font-medium">{tr({ en: `Co-sponsoring "${lead.name}"`, pt: `Copatrocinando "${lead.name}"` })}</p>
+            <p className="text-muted-foreground">
+              {day(lead.starts)} – {day(lead.ends)} · {tr({ en: "with", pt: "com" })} {lead.sponsors.join(", ")}
+            </p>
+          </div>
+          <button type="button" onClick={leave} disabled={stage === 3}
+            className="min-h-10 shrink-0 text-sm text-muted-foreground underline-offset-4 hover:underline disabled:opacity-50">
+            {tr({ en: "Start a new campaign instead", pt: "Criar uma campanha nova" })}
+          </button>
+        </div>
+      )}
 
       <div ref={top} tabIndex={-1} className="scroll-mt-24 rounded-lg border border-border bg-card outline-none">
         <Stepper stage={stage} />
         <div className="p-5 sm:p-7">
           {stage === 1 && (
-            <Configure form={form} setForm={setForm} errors={errors}
+            <Configure form={form} setForm={setForm} errors={errors} lead={lead}
               show={(f) => Boolean(tried || touched[f])} touch={(f) => setTouched((t) => ({ ...t, [f]: true }))} onNext={next} />
           )}
-          {stage === 2 && <Review form={form} account={account ?? null} onBack={() => go(1)} onNext={() => go(3)} />}
+          {stage === 2 && <Review form={form} lead={lead} account={account ?? null} onBack={() => go(1)} onNext={() => go(3)} />}
           {stage === 3 && (account
-            ? <Fund account={account} form={form} onBack={() => go(2)} onAgain={reset} />
+            ? <Fund account={account} form={form} lead={lead} onBack={() => go(2)} onAgain={reset} />
             : (
               <div className="space-y-5">
                 <h3 className="font-heading text-xl">{tr({ en: "Connect your wallet", pt: "Conecte a sua carteira" })}</h3>
@@ -188,8 +238,8 @@ function Stepper({ stage }: { stage: 1 | 2 | 3 }) {
   );
 }
 
-function Configure({ form, setForm, errors, show, touch, onNext }: {
-  form: Form; setForm: (f: Form) => void; errors: Partial<Record<Field, string>>;
+function Configure({ form, setForm, errors, lead, show, touch, onNext }: {
+  form: Form; setForm: (f: Form) => void; errors: Partial<Record<Field, string>>; lead: Lead | null;
   show: (f: Field) => boolean; touch: (f: Field) => void; onNext: () => void;
 }) {
   const { total, ends } = figures(form);
@@ -217,11 +267,20 @@ function Configure({ form, setForm, errors, show, touch, onNext }: {
           <Input {...bind("sponsor")} maxLength={80} autoComplete="organization" placeholder={tr({ en: "e.g. Rede Institute", pt: "ex.: Instituto Rede" })} />
           {help("sponsor", tr({ en: "Shown on the campaign once EmpowerFI publishes it.", pt: "Aparece na campanha depois que a EmpowerFI publicar." }))}
         </div>
+        {!lead && (
         <div className="space-y-1.5 sm:col-span-2">
           <Label htmlFor="sp-name">{tr({ en: "Campaign name", pt: "Nome da campanha" })}</Label>
           <Input {...bind("name")} maxLength={80} autoComplete="off" placeholder={tr({ en: "e.g. 30 days of good habits", pt: "ex.: 30 dias de bons hábitos" })} />
           {help("name")}
         </div>
+        )}
+        {lead ? (
+        <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+          <p className="text-sm font-medium">{tr({ en: "Dates", pt: "Datas" })}</p>
+          <p className="flex h-11 items-center rounded-md border border-border bg-muted/40 px-3 text-base">{day(lead.starts)} – {day(lead.ends)}</p>
+          <p className="text-xs text-muted-foreground">{tr({ en: "The campaign's own days. The days entrepreneurs already recorded count.", pt: "Os dias da própria campanha. Os dias que as empreendedoras já registraram contam." })}</p>
+        </div>
+        ) : (
         <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
           <Label htmlFor="sp-starts">{tr({ en: "Start date", pt: "Data de início" })}</Label>
           <Input {...bind("starts")} type="date" min={earliest()} />
@@ -229,6 +288,7 @@ function Configure({ form, setForm, errors, show, touch, onNext }: {
             ? tr({ en: `${CAMPAIGN_DAYS} days, until ${day(ends)}. It can start up to ${CAMPAIGN_DAYS - 1} days ago, so recent diary days count.`, pt: `${CAMPAIGN_DAYS} dias, até ${day(ends)}. Pode começar até ${CAMPAIGN_DAYS - 1} dias atrás, para os dias recentes do diário contarem.` })
             : undefined)}
         </div>
+        )}
         <div className="grid grid-cols-2 gap-4 sm:col-span-2 lg:col-span-1">
           <div className="space-y-1.5">
             <Label htmlFor="sp-seats">{tr({ en: "Entrepreneurs", pt: "Empreendedoras" })}</Label>
@@ -254,7 +314,7 @@ function Configure({ form, setForm, errors, show, touch, onNext }: {
   );
 }
 
-function Review({ form, account, onBack, onNext }: { form: Form; account: UiWalletAccount | null; onBack: () => void; onNext: () => void }) {
+function Review({ form, lead, account, onBack, onNext }: { form: Form; lead: Lead | null; account: UiWalletAccount | null; onBack: () => void; onNext: () => void }) {
   const { seats, price, total, house, entrepreneurs, ends } = figures(form);
   const balances = useBalances(account?.address);
   const short = balances.data && total !== null && BigInt(balances.data.microUsdc) < total;
@@ -262,8 +322,16 @@ function Review({ form, account, onBack, onNext }: { form: Form; account: UiWall
     <div className="space-y-6">
       <div className="space-y-1">
         <p className="text-sm text-muted-foreground">{form.sponsor.trim()}</p>
-        <h3 className="font-heading text-xl">{form.name.trim()}</h3>
+        <h3 className="font-heading text-xl">{lead ? lead.name : form.name.trim()}</h3>
         <p className="text-sm text-muted-foreground">{day(form.starts)} – {day(ends)} · {tr({ en: "Impact Marketing", pt: "Marketing de Impacto" })}</p>
+        {lead && (
+          <p className="text-sm">
+            {tr({
+              en: `As a co-sponsor, with ${lead.sponsors.join(", ")}. Your money goes into your own vault; entrepreneurs who complete the campaign receive your reward on top of the others'.`,
+              pt: `Como copatrocinador, com ${lead.sponsors.join(", ")}. Seu dinheiro vai para um cofre só seu; quem concluir a campanha recebe a sua recompensa somada às dos outros.`,
+            })}
+          </p>
+        )}
       </div>
 
       <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-3">
@@ -348,7 +416,7 @@ const STEPS: { key: Step; label: { en: string; pt: string } }[] = [
   { key: "record", label: { en: "Checked and recorded by EmpowerFI", pt: "Conferida e registrada pela EmpowerFI" } },
 ];
 
-function Fund({ account, form, onBack, onAgain }: { account: UiWalletAccount; form: Form; onBack: () => void; onAgain: () => void }) {
+function Fund({ account, form, lead, onBack, onAgain }: { account: UiWalletAccount; form: Form; lead: Lead | null; onBack: () => void; onAgain: () => void }) {
   const [, setAccount] = useSelectedWalletAccount();
   const signer = useWalletAccountTransactionSendingSigner(account, CLUSTER);
   const balances = useBalances(account.address);
@@ -358,7 +426,9 @@ function Fund({ account, form, onBack, onAgain }: { account: UiWalletAccount; fo
   const [signature, setSignature] = useState<string | null>(null);
 
   const { seats, price, total, ends } = figures(form);
-  const invalid = Object.keys(fieldErrors(form)).length > 0;
+  const invalid = Object.keys(fieldErrors(form, Boolean(lead))).length > 0
+    // A co-sponsorship carries the campaign's own days, or campaign_register refuses it.
+    || (lead !== null && (form.starts !== lead.starts || ends !== lead.ends));
   const shortUsdc = balances.data && total !== null && BigInt(balances.data.microUsdc) < total;
   const noSol = balances.data && balances.data.lamports === 0n;
   const blocked =
@@ -422,7 +492,7 @@ function Fund({ account, form, onBack, onAgain }: { account: UiWalletAccount; fo
       current = "record";
       setStep("record");
       const { data, error } = await diaryDb.functions.invoke<{ status: string }>("campaign-register", {
-        body: { signature: sent, program_id: id, name: form.name.trim(), sponsor_name: form.sponsor.trim() },
+        body: { signature: sent, program_id: id, name: lead ? lead.name : form.name.trim(), sponsor_name: form.sponsor.trim(), joins: lead?.programId ?? null },
       });
       if (error) {
         const body = await (error as { context?: Response }).context?.json?.().catch(() => null);
@@ -466,8 +536,12 @@ function Fund({ account, form, onBack, onAgain }: { account: UiWalletAccount; fo
           <h3 className="font-heading text-xl">{tr({ en: "Review the transaction", pt: "Revise a transação" })}</h3>
           <p className="max-w-2xl text-sm text-muted-foreground">
             {tr({
-              en: `Your wallet will ask you to sign one transaction. It creates "${form.name.trim()}" on Solana and moves ${usdc(total)} in test USDC from this wallet into the campaign's vault. A small test-SOL network fee applies.`,
-              pt: `Sua carteira vai pedir para assinar uma transação. Ela cria "${form.name.trim()}" na Solana e move ${usdc(total)} em USDC de teste desta carteira para o cofre da campanha. Há uma pequena taxa de rede em SOL de teste.`,
+              en: lead
+                ? `Your wallet will ask you to sign one transaction. It creates your vault for "${lead.name}" on Solana, with the campaign's days, and moves ${usdc(total)} in test USDC from this wallet into it. A small test-SOL network fee applies.`
+                : `Your wallet will ask you to sign one transaction. It creates "${form.name.trim()}" on Solana and moves ${usdc(total)} in test USDC from this wallet into the campaign's vault. A small test-SOL network fee applies.`,
+              pt: lead
+                ? `Sua carteira vai pedir para assinar uma transação. Ela cria o seu cofre para "${lead.name}" na Solana, com os dias da campanha, e move ${usdc(total)} em USDC de teste desta carteira para ele. Há uma pequena taxa de rede em SOL de teste.`
+                : `Sua carteira vai pedir para assinar uma transação. Ela cria "${form.name.trim()}" na Solana e move ${usdc(total)} em USDC de teste desta carteira para o cofre da campanha. Há uma pequena taxa de rede em SOL de teste.`,
             })}
           </p>
         </div>
@@ -502,7 +576,7 @@ function Fund({ account, form, onBack, onAgain }: { account: UiWalletAccount; fo
 
       {step === "done" ? (
         <div role="status" className="space-y-3 rounded-md border border-gold bg-background p-5">
-          <p className="flex items-center gap-2 font-heading text-lg"><Check size={18} className="text-positive" aria-hidden /> {tr({ en: "Your campaign is funded", pt: "Sua campanha está financiada" })}</p>
+          <p className="flex items-center gap-2 font-heading text-lg"><Check size={18} className="text-positive" aria-hidden /> {lead ? tr({ en: "Your co-sponsorship is funded", pt: "Seu copatrocínio está financiado" }) : tr({ en: "Your campaign is funded", pt: "Sua campanha está financiada" })}</p>
           <p className="text-sm text-muted-foreground">
             {tr({
               en: "It is recorded on Solana and with EmpowerFI. EmpowerFI reviews it before it appears on this page.",

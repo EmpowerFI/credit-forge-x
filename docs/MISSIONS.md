@@ -7,6 +7,8 @@ A sponsor buys a 30-day campaign, priced per entrepreneur, for at least 100 entr
 - **Impact Marketing** is the only sponsorship product. What is not claimed goes to EmpowerFI, under the campaign terms.
 - Product activations are not a campaign type: since 9 November 2026 they are handled as strategic partnerships, outside Missions. The program still has an `Activation` reward kind and refuses it; nothing on the site, the page or the dashboard offers it.
 
+**Co-sponsors** (since 9 November 2026, migration `20261228000000`): a published campaign that is still running can be joined by other sponsors. Each co-sponsor creates its own on-chain campaign and vault with the lead's exact days; the database links it (`campaign_vaults.joins`) and `campaign-register` checks the lead is published, running, with the same dates, and that the wallet is not in it already. The page shows one campaign with every sponsor and the sums; each vault is attested and pays on its own, so an entrepreneur who keeps the days is paid once by each sponsor. Each co-sponsorship is reviewed in the dashboard like any vault, and shows only while its lead is published. The program is unchanged.
+
 The page at **`/app/missions`**, inside the platform (Explore the platform), is open to anyone without a sign-in. It reads the app's production database (`campaign_vaults_public()`) and checks it against the chain's own account.
 
 ## What is where

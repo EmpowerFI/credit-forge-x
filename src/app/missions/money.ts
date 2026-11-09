@@ -62,3 +62,38 @@ export const share = (part: bigint, whole: bigint): number => (whole > 0n ? Numb
 
 /** A calendar day (YYYY-MM-DD) as a date, read at noon so no time zone moves it. */
 export const day = (d: string) => formatDate(`${d.slice(0, 10)}T12:00:00Z`, { day: "numeric", month: "short", year: "numeric" });
+
+/** A campaign as the page shows it: its lead and every published co-sponsorship, each its own vault. */
+export interface CampaignGroup {
+  lead: PublicCampaign;
+  co: PublicCampaign[];
+  /** The lead first, then the co-sponsors in the order they joined. */
+  vaults: PublicCampaign[];
+}
+
+/** Puts each co-sponsorship under its lead; one whose lead is not in the list is left out. */
+export function groupCampaigns(list: PublicCampaign[]): CampaignGroup[] {
+  const leads = list.filter((c) => !c.joins);
+  return leads.map((lead) => {
+    const co = list
+      .filter((c) => c.joins === lead.program_id)
+      .sort((a, b) => Date.parse(a.chain.funded_at) - Date.parse(b.chain.funded_at));
+    return { lead, co, vaults: [lead, ...co] };
+  });
+}
+
+/** The money of every vault in a campaign, added up; each vault's balance from the chain where it was read. */
+export function groupMoney(g: CampaignGroup, balances: (bigint | null | undefined)[]): CampaignMoney {
+  const parts = g.vaults.map((c, i) => campaignMoney(c, balances[i]));
+  const sum = (k: keyof Omit<CampaignMoney, "fromChain">) => parts.reduce((n, m) => n + m[k], 0n);
+  return {
+    funded: sum("funded"),
+    house: sum("house"),
+    entrepreneurs: sum("entrepreneurs"),
+    perSeat: sum("perSeat"),
+    released: sum("released"),
+    reserved: sum("reserved"),
+    inVault: sum("inVault"),
+    fromChain: parts.every((m) => m.fromChain),
+  };
+}

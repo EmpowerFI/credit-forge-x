@@ -1,5 +1,5 @@
 import { useLayoutEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CalendarCheck, Gift, Landmark, RefreshCw } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -13,6 +13,7 @@ import LanguageSwitch from "../i18n/LanguageSwitch";
 import NetworkBadge from "../components/product/NetworkBadge";
 import { diaryClosed } from "../diary/db";
 import CampaignCard from "./CampaignCard";
+import { groupCampaigns } from "./money";
 import SponsorPanel from "./SponsorPanel";
 import { missions, type PublicCampaign, units } from "./chain";
 import { DevnetNotice, SectionHeading } from "./ui";
@@ -36,17 +37,16 @@ export default function MissionsPage() {
     <div className="min-h-dvh bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-8">
-          <div className="flex min-w-0 items-center gap-6">
-            <Link to="/" className="font-heading text-xl font-bold text-gradient">EmpowerFI</Link>
-            <PlatformNav className="hidden lg:flex" />
-          </div>
+          <Link to="/" className="font-heading text-xl font-bold text-gradient">EmpowerFI</Link>
           <div className="flex items-center gap-2">
             <LanguageSwitch />
             <NetworkBadge />
           </div>
         </div>
-        {/* Below lg the links get their own row, scrolling sideways inside it rather than the page. */}
-        <PlatformNav className="flex overflow-x-auto border-t border-border px-4 py-2 sm:px-8 lg:hidden" />
+        {/* The platform's links get their own row, scrolling sideways inside it rather than the page. */}
+        <div className="border-t border-border">
+          <PlatformNav className="mx-auto flex max-w-6xl overflow-x-auto px-4 py-2 sm:px-8" />
+        </div>
       </header>
 
       <main className="mx-auto max-w-6xl space-y-24 px-4 pb-16 pt-12 sm:space-y-28 sm:px-8 sm:pt-16">
@@ -214,6 +214,12 @@ function SplitDiagram() {
 
 function LiveCampaigns() {
   const list = useQuery({ queryKey: ["missions"], queryFn: missions.campaigns, refetchInterval: 60_000 });
+  const [, setParams] = useSearchParams();
+  // Co-sponsoring opens the wizard below on that campaign.
+  const coSponsor = (programId: string) => {
+    setParams((p) => { p.set("join", programId); return p; }, { replace: true });
+    requestAnimationFrame(() => document.getElementById("sponsor")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
   return (
     <section id="campaigns" aria-labelledby="campaigns-title" aria-busy={list.isLoading} className="scroll-mt-24 space-y-8">
       <SectionHeading id="campaigns-title" eyebrow={tr({ en: "Live on Devnet", pt: "No ar na Devnet" })}
@@ -240,7 +246,9 @@ function LiveCampaigns() {
       ) : (
         <>
           <Totals list={list.data} />
-          <div className="space-y-8">{list.data.map((c) => <CampaignCard key={c.program_id} c={c} />)}</div>
+          <div className="space-y-8">
+            {groupCampaigns(list.data).map((g) => <CampaignCard key={g.lead.program_id} g={g} onCoSponsor={coSponsor} />)}
+          </div>
         </>
       )}
     </section>
@@ -257,7 +265,7 @@ function Totals({ list }: { list: PublicCampaign[] }) {
     <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
       {[
         { k: tr({ en: "Sent to the vaults", pt: "Enviado aos cofres" }), v: `${units(funded, d)} USDC` },
-        { k: tr({ en: "Campaigns", pt: "Campanhas" }), v: String(list.length) },
+        { k: tr({ en: "Campaigns", pt: "Campanhas" }), v: String(groupCampaigns(list).length) },
         { k: tr({ en: "Rewards paid", pt: "Recompensas pagas" }), v: `${units(paid, d)} USDC`, note: tr({ en: `to ${rewards} entrepreneurs`, pt: `para ${rewards} empreendedoras` }) },
       ].map((x) => (
         <div key={x.k} className="bg-card px-5 py-4">
