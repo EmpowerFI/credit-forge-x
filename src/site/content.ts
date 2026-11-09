@@ -157,7 +157,7 @@ const en = {
       accent: "in one minute a day.",
       items: [
         { maturity: "available", title: "Sales and expenses", body: "Note each sale and expense by voice or by typing, cash, Pix or card, paid now or in instalments." },
-        { maturity: "available", title: "Your month's profit", body: "Tell us the salary you need. You see what is left after expenses and after your salary." },
+        { maturity: "available", title: "Your month's profit", body: "Enter your monthly salary. You see what is left after expenses and after your salary." },
         { maturity: "available", title: "Daily check-ins and reminders", body: "A reminder at the time you choose, and only on the days your business opens." },
         { maturity: "available", title: "Your week, read", body: "A short reading of your week, with one thing to try. Written by AI only if you agree." },
       ],
@@ -451,7 +451,7 @@ const pt: SiteContent = {
       accent: "em um minuto por dia.",
       items: [
         { maturity: "available", title: "Vendas e gastos", body: "Anote cada venda e cada gasto falando ou digitando: dinheiro, Pix ou cartão, à vista ou parcelado." },
-        { maturity: "available", title: "O lucro do seu mês", body: "Diga quanto você precisa para passar o mês. Você vê o que sobra depois dos gastos e do seu salário." },
+        { maturity: "available", title: "O lucro do seu mês", body: "Coloque o seu salário mensal. Você vê o que sobra depois dos gastos e do seu salário." },
         { maturity: "available", title: "Registro do dia e lembretes", body: "Um lembrete na hora que você escolher, só nos dias em que o seu negócio abre." },
         { maturity: "available", title: "A leitura da sua semana", body: "Uma leitura curta da semana, com uma ideia para testar. Escrita por IA só se você aceitar." },
       ],

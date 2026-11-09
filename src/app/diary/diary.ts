@@ -276,7 +276,7 @@ export interface MonthSoFar {
   profit_cents: number;
   taken_home_cents: number;
   days_kept: number;
-  /** "Quanto você precisa para passar o mês?": her pay, the month's break-even. Null until she says. */
+  /** "Coloque aqui o seu salário mensal": her pay, the month's break-even. Null until she says. */
   monthly_need_cents: number | null;
 }
 
@@ -356,7 +356,7 @@ export const methodLabel = (id: string) => PAYMENT_METHODS.find((m) => m.id === 
 export const categoryLabel = (id: string | null) => CATEGORIES.find((c) => c.id === id)?.label ?? "";
 
 /**
- * Her pay for one day: what she needs to get through the month, split over
+ * Her pay for one day: her monthly salary, split over
  * the days her business opens that month. A closed day carries none.
  */
 export function payShare(need: number | null | undefined, day: string, openDays: number[]): number {

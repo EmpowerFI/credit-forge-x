@@ -31,7 +31,7 @@ export function ProfitValue({ cents, className = "" }: { cents: number; classNam
   );
 }
 
-/** "Quanto você precisa para passar o mês?": asked once, changed whenever she likes. */
+/** "Coloque aqui o seu salário mensal": asked once, changed whenever she likes. */
 function NeedForm({ current, onDone, onLater }: { current: number | null; onDone: () => void; onLater?: () => void }) {
   const queryClient = useQueryClient();
   const [value, setValue] = useState(current ? (current / 100).toFixed(2).replace(".", ",") : "");
@@ -98,7 +98,7 @@ function SumLine({ label, cents, sign, tone }: { label: string; cents: number; s
 
 /**
  * The month on Hoje, as a sum she can follow: sales, less the business's
- * expenses, less her pay (what she needs to get through the month), and what
+ * expenses, less her pay (her monthly salary), and what
  * is left -- profit, or a loss in red. A bar shows how much of that whole
  * cost the sales already cover. Until she says what she needs, the card asks.
  */
@@ -112,7 +112,7 @@ export function MonthCard({ openDays, todayKept }: { openDays: number[]; todayKe
   const monthName = new Date(`${m.first_day}T12:00:00Z`).toLocaleDateString(tr({ en: "en-GB", pt: "pt-BR" }), { month: "long", timeZone: "UTC" });
   const be = breakEven(m, openDays, todayKept);
   const askNow = m.monthly_need_cents === null && !later;
-  const question = tr({ en: "How much do you need to get through the month?", pt: "Quanto você precisa para passar o mês?" });
+  const question = tr({ en: "Enter your monthly salary here", pt: "Coloque aqui o seu salário mensal" });
 
   if (askNow || editing) {
     return (
