@@ -4,8 +4,8 @@ A sponsor buys a 30-day campaign, priced per entrepreneur, for at least 100 entr
 
 - 50% goes to EmpowerFI and 50% to the entrepreneurs.
 - An entrepreneur's reward unlocks after she keeps the diary for 30 days.
-- **Impact** campaigns only for now. What is not claimed goes to EmpowerFI.
-- **Activation** campaigns (30 days plus a verified activation, with unclaimed money going back to the sponsor) are refused by the program until an activation can be verified.
+- **Impact Marketing** is the only sponsorship product. What is not claimed goes to EmpowerFI, under the campaign terms.
+- Product activations are not a campaign type: since 9 November 2026 they are handled as strategic partnerships, outside Missions. The program still has an `Activation` reward kind and refuses it; nothing on the site, the page or the dashboard offers it.
 
 The page at **`/app/missions`**, inside the platform (Explore the platform), is open to anyone without a sign-in. It reads the app's production database (`campaign_vaults_public()`) and checks it against the chain's own account.
 

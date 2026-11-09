@@ -125,6 +125,28 @@ export interface AboutContent {
       note?: string;
     }[];
   };
+  /** Business model and strategic partnerships: one sponsorship product, partnerships kept apart. */
+  strategy: {
+    model: {
+      eyebrow: string;
+      titleLead: string;
+      titleAccent: string;
+      subtitle: string;
+      tiers: { horizon: string; title: string; desc: string; status: string }[];
+    };
+    partnerships: {
+      eyebrow: string;
+      titleLead: string;
+      titleAccent: string;
+      subtitle: string;
+      partnersLabel: string;
+      partners: string[];
+      usesLabel: string;
+      uses: string[];
+      note: string;
+      cta: string;
+    };
+  };
   recognitions: {
     eyebrow: string;
     titleLead: string;
@@ -195,6 +217,7 @@ export const aboutPt: AboutContent = {
       { label: "Solução", href: "#solucao" },
       { label: "Time", href: "#time" },
       { label: "Parceiros", href: "#parceiros" },
+      { label: "Parcerias", href: "#parcerias-estrategicas" },
       { label: "Mídia", href: "#midia" },
       { label: "Contato", href: "#contato" },
     ],
@@ -396,6 +419,47 @@ export const aboutPt: AboutContent = {
       },
     ],
   },
+  strategy: {
+    model: {
+      eyebrow: "Modelo de negócio",
+      titleLead: "Um produto, um ecossistema, ",
+      titleAccent: "uma visão",
+      subtitle: "Três relações diferentes, e só a primeira é um produto de receita recorrente.",
+      tiers: [
+        {
+          horizon: "Curto prazo · receita recorrente",
+          title: "Marketing de Impacto",
+          desc: "Organizações patrocinam campanhas de 30 dias de engajamento financeiro, com preço por empreendedora. É o principal motor de receita recorrente da EmpowerFI no curto prazo.",
+          status: "Demonstração na devnet",
+        },
+        {
+          horizon: "Desenvolvimento do ecossistema",
+          title: "Parcerias estratégicas",
+          desc: "Parcerias que levam às empreendedoras produtos e serviços financeiros relevantes. Complementam as campanhas e não são contadas como receita recorrente.",
+          status: "Complementar",
+        },
+        {
+          horizon: "Longo prazo · infraestrutura",
+          title: "Reputação financeira programável",
+          desc: "Serviços de verificação para instituições, inteligência financeira e infraestrutura de reputação programável. Uma oportunidade futura, não uma receita de hoje.",
+          status: "Em desenvolvimento e planejado",
+        },
+      ],
+    },
+    partnerships: {
+      eyebrow: "Parcerias estratégicas",
+      titleLead: "Conectando empreendedoras a ",
+      titleAccent: "oportunidades financeiras",
+      subtitle:
+        "A EmpowerFI colabora com organizações para ampliar o acesso a produtos, serviços e oportunidades financeiras que fazem sentido para quem empreende.",
+      partnersLabel: "Com quem",
+      partners: ["Fintechs", "Meios de pagamento", "Bancos digitais", "Protocolos Web3", "Instituições financeiras", "Organizações de apoio ao empreendedorismo"],
+      usesLabel: "Para quê",
+      uses: ["Acesso a produtos financeiros", "Ativação de produtos e serviços", "Distribuição", "Benefícios para as empreendedoras", "Desenvolvimento do ecossistema"],
+      note: "As parcerias complementam as campanhas patrocinadas de Marketing de Impacto. Não são um produto de patrocínio.",
+      cta: "Propor uma parceria",
+    },
+  },
   recognitions: {
     eyebrow: "Reconhecimentos",
     titleLead: "O que já é ",
@@ -522,6 +586,7 @@ export const aboutEn: AboutContent = {
       { label: "Solution", href: "#solucao" },
       { label: "Team", href: "#time" },
       { label: "Partners", href: "#parceiros" },
+      { label: "Partnerships", href: "#parcerias-estrategicas" },
       { label: "Media", href: "#midia" },
       { label: "Contact", href: "#contato" },
     ],
@@ -723,6 +788,47 @@ export const aboutEn: AboutContent = {
         note: "Translated from Portuguese.",
       },
     ],
+  },
+  strategy: {
+    model: {
+      eyebrow: "Business model",
+      titleLead: "One product, one ecosystem, ",
+      titleAccent: "one vision",
+      subtitle: "Three different relationships, and only the first is a recurring revenue product.",
+      tiers: [
+        {
+          horizon: "Near term · recurring revenue",
+          title: "Impact Marketing",
+          desc: "Organizations sponsor 30-day financial engagement campaigns, priced per entrepreneur. EmpowerFI's primary near-term recurring revenue engine.",
+          status: "Devnet demo",
+        },
+        {
+          horizon: "Ecosystem development",
+          title: "Strategic partnerships",
+          desc: "Partnerships that connect entrepreneurs to relevant financial products and services. They complement the campaigns and are not counted as recurring revenue.",
+          status: "Complementary",
+        },
+        {
+          horizon: "Long term · infrastructure",
+          title: "Programmable financial reputation",
+          desc: "Institutional verification services, financial intelligence and programmable reputation infrastructure. A future opportunity, not revenue today.",
+          status: "In development and planned",
+        },
+      ],
+    },
+    partnerships: {
+      eyebrow: "Strategic partnerships",
+      titleLead: "Connecting entrepreneurs to ",
+      titleAccent: "financial opportunities",
+      subtitle:
+        "EmpowerFI collaborates with organizations to expand access to relevant financial products, services and opportunities for women entrepreneurs.",
+      partnersLabel: "With whom",
+      partners: ["Fintechs", "Payment providers", "Neobanks", "Web3 protocols", "Financial institutions", "Entrepreneur support organizations"],
+      usesLabel: "What for",
+      uses: ["Access to financial products", "Product and service activation", "Distribution", "Entrepreneur benefits", "Ecosystem development"],
+      note: "Partnerships complement the sponsored Impact Marketing campaigns. They are not a sponsorship product.",
+      cta: "Explore a Partnership",
+    },
   },
   recognitions: {
     eyebrow: "Recognition",

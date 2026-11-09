@@ -22,8 +22,8 @@ import { DevnetNotice, SectionHeading } from "./ui";
  * this page names one. The platform's locale provider redraws it on a switch.
  *
  * The page reads top to bottom as a sponsor decides: what it is, how the
- * money moves, campaigns running now, sponsoring one, the two models, and
- * what the chain does and does not prove.
+ * money moves, campaigns running now, sponsoring one, and what the chain
+ * does and does not prove. Impact Marketing is the one sponsorship product.
  */
 export default function MissionsPage() {
   useLayoutEffect(() => {
@@ -52,7 +52,6 @@ export default function MissionsPage() {
             <SponsorPanel />
           </>
         )}
-        <Models />
         <Transparency />
         <footer className="border-t border-border pt-6 text-xs leading-relaxed text-muted-foreground">
           {tr({
@@ -226,58 +225,6 @@ function Totals({ list }: { list: PublicCampaign[] }) {
   );
 }
 
-/** The two kinds of campaign, as the model sets them. Only Impact Marketing exists today. */
-function Models() {
-  const rows = (a: string, b: string, c: string) => [
-    { k: tr({ en: "Reward condition", pt: "Condição da recompensa" }), v: a },
-    { k: tr({ en: "Unclaimed rewards", pt: "Recompensas não conquistadas" }), v: b },
-    { k: tr({ en: "Best for", pt: "Ideal para" }), v: c },
-  ];
-  return (
-    <section aria-labelledby="models-title" className="space-y-8">
-      <SectionHeading id="models-title" eyebrow={tr({ en: "Campaign models", pt: "Modelos de campanha" })}
-        title={tr({ en: "Choose how rewards unlock", pt: "Escolha como as recompensas desbloqueiam" })} />
-      <div className="grid gap-4 md:grid-cols-2">
-        <article className="space-y-4 rounded-lg border-2 border-gold bg-card p-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="font-heading text-2xl">{tr({ en: "Impact Marketing", pt: "Marketing de Impacto" })}</h3>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-positive/40 px-2.5 py-0.5 text-xs font-medium text-positive">
-              <span className="h-1.5 w-1.5 rounded-full bg-positive" aria-hidden />{tr({ en: "Available on Devnet", pt: "Disponível na Devnet" })}
-            </span>
-          </div>
-          <dl className="divide-y divide-border text-sm">
-            {rows(
-              tr({ en: "30 days recorded in the diary.", pt: "30 dias registrados no diário." }),
-              tr({ en: "Go to EmpowerFI.", pt: "Vão para a EmpowerFI." }),
-              tr({ en: "Building lasting financial habits.", pt: "Criar hábitos financeiros duradouros." }),
-            ).map((r) => (
-              <div key={r.k} className="grid gap-1 py-2.5 sm:grid-cols-[11rem_1fr]"><dt className="text-muted-foreground">{r.k}</dt><dd>{r.v}</dd></div>
-            ))}
-          </dl>
-        </article>
-        <article className="space-y-4 rounded-lg border border-dashed border-border bg-card p-6" aria-describedby="activation-soon">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="font-heading text-2xl text-muted-foreground">{tr({ en: "Activation Marketing", pt: "Marketing de Ativação" })}</h3>
-            <span id="activation-soon" className="rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-              {tr({ en: "Coming soon", pt: "Em breve" })}
-            </span>
-          </div>
-          <dl className="divide-y divide-border text-sm">
-            {rows(
-              tr({ en: "30 days recorded in the diary, plus a verified activation.", pt: "30 dias registrados no diário, mais uma ativação verificada." }),
-              tr({ en: "Return to the sponsor.", pt: "Voltam ao patrocinador." }),
-              tr({ en: "Adoption of a sponsor's product or service.", pt: "Adoção de um produto ou serviço do patrocinador." }),
-            ).map((r) => (
-              <div key={r.k} className="grid gap-1 py-2.5 sm:grid-cols-[11rem_1fr]"><dt className="text-muted-foreground">{r.k}</dt><dd className="text-muted-foreground">{r.v}</dd></div>
-            ))}
-          </dl>
-          <p className="text-xs text-muted-foreground">{tr({ en: "Not available to sponsor yet.", pt: "Ainda não disponível para patrocínio." })}</p>
-        </article>
-      </div>
-    </section>
-  );
-}
-
 function Transparency() {
   const items = [
     {
@@ -316,8 +263,8 @@ function Transparency() {
       key: "devnet",
       title: tr({ en: "Current Devnet limitations", pt: "Limitações atuais da Devnet" }),
       body: tr({
-        en: "This runs on Solana Devnet with test USDC that has no value. Devnet can be slow or reset. Rewards stay in each entrepreneur's reward wallet until moving them to a wallet of her choice is built. Activation Marketing is not available yet.",
-        pt: "Isto roda na Solana Devnet, com USDC de teste sem valor. A Devnet pode ficar lenta ou ser reiniciada. As recompensas ficam na carteira de recompensas de cada empreendedora até existir a transferência para uma carteira que ela escolher. O Marketing de Ativação ainda não está disponível.",
+        en: "This runs on Solana Devnet with test USDC that has no value. Devnet can be slow or reset. Rewards stay in each entrepreneur's reward wallet until moving them to a wallet of her choice is built.",
+        pt: "Isto roda na Solana Devnet, com USDC de teste sem valor. A Devnet pode ficar lenta ou ser reiniciada. As recompensas ficam na carteira de recompensas de cada empreendedora até existir a transferência para uma carteira que ela escolher.",
       }),
     },
   ];
