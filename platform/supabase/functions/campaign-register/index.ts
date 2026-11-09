@@ -11,6 +11,10 @@
 // (campaign_register): no one sees the names a wallet typed until EmpowerFI
 // reviews them.
 //
+// With `joins`, the campaign co-sponsors a published one: its own vault, the
+// lead's days and name (campaign_register checks the lead, the dates and that
+// the wallet is not in it already).
+//
 // Secrets: none of its own; optional SOLANA_RPC_URL.
 
 import { createClient } from "@supabase/supabase-js";
@@ -41,14 +45,15 @@ const SIGNATURE = /^[1-9A-HJ-NP-Za-km-z]{64,90}$/;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
-  let body: { signature?: string; program_id?: string; name?: string; sponsor_name?: string };
+  let body: { signature?: string; program_id?: string; name?: string; sponsor_name?: string; joins?: string | null };
   try {
     body = await req.json();
   } catch {
     return json({ error: "bad_request" }, 400);
   }
-  const { signature = "", program_id: id = "", name = "", sponsor_name: sponsorName = "" } = body;
+  const { signature = "", program_id: id = "", name = "", sponsor_name: sponsorName = "", joins = null } = body;
   if (!SIGNATURE.test(signature) || !UUID.test(id)) return json({ error: "bad_request" }, 400);
+  if (joins !== null && (typeof joins !== "string" || !UUID.test(joins) || joins === id)) return json({ error: "bad_request" }, 400);
 
   try {
     const [campaign] = await getProgramDerivedAddress({
@@ -88,10 +93,12 @@ Deno.serve(async (req) => {
         sponsor_wallet: a.sponsor, house_wallet: a.house, operator_wallet: a.operator,
         terms_commitment: a.termsCommitment, signature, funded_units: a.funded.toString(),
         funded_at: new Date((tx.blockTime ? Number(tx.blockTime) : a.fundedAt) * 1000).toISOString(),
+        joins,
       },
     });
     if (error) {
-      const known = ["campaign_name_length", "sponsor_name_length", "sponsor_name_taken", "campaign_name_taken"]
+      const known = ["campaign_name_length", "sponsor_name_length", "sponsor_name_taken", "campaign_name_taken",
+        "no_such_lead", "lead_ended", "dates_differ", "already_sponsoring"]
         .find((k) => error.message.includes(k));
       if (known) return json({ error: known }, 409);
       throw new Error(error.message);

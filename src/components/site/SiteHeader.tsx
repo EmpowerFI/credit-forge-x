@@ -60,7 +60,7 @@ const SiteHeader = ({ home, lang, links, language, primary, appLabel, menuLabel 
             ))}
             {/* The platform, at every width (founder, 8 Nov: hidden below xl,
                 nobody found the showroom). */}
-            <Link to={`/app?lang=${lang}`} className="btn-site !min-h-[2.75rem] !px-4 !text-base xl:!min-h-[2.875rem] xl:!px-5 xl:!text-[1.0625rem]">
+            <Link to={`/app/missions?lang=${lang}`} className="btn-site !min-h-[2.75rem] !px-4 !text-base xl:!min-h-[2.875rem] xl:!px-5 xl:!text-[1.0625rem]">
               {appLabel} <ArrowUpRight size={15} className="text-accent" aria-hidden />
             </Link>
             <Link to={primary.to} className="btn-site btn-site-primary !min-h-[2.75rem] !px-5 !text-base xl:!min-h-[2.875rem] xl:!text-[1.0625rem]">
@@ -69,7 +69,7 @@ const SiteHeader = ({ home, lang, links, language, primary, appLabel, menuLabel 
           </nav>
 
           {/* Below lg the row has no nav: the platform still sits in the bar. */}
-          <Link to={`/app?lang=${lang}`}
+          <Link to={`/app/missions?lang=${lang}`}
             className="btn-site !min-h-[2.75rem] !gap-1 !px-3 !text-[0.9375rem] lg:!hidden">
             {appLabel} <ArrowUpRight size={14} className="text-accent" aria-hidden />
           </Link>
@@ -100,7 +100,7 @@ const SiteHeader = ({ home, lang, links, language, primary, appLabel, menuLabel 
               </Link>
             ))}
             <div className="flex flex-col gap-3 pt-5">
-              <Link to={`/app?lang=${lang}`} onClick={close} className="btn-site w-full">
+              <Link to={`/app/missions?lang=${lang}`} onClick={close} className="btn-site w-full">
                 {appLabel} <ArrowUpRight size={15} className="text-accent" aria-hidden />
               </Link>
               <Link to={primary.to} onClick={close} className="btn-site btn-site-primary w-full lg:hidden">{primary.label}</Link>

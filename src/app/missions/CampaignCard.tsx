@@ -1,33 +1,45 @@
-import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, CircleAlert, Loader2, Wallet } from "lucide-react";
+import { useQueries, type UseQueryResult } from "@tanstack/react-query";
+import { HandCoins, CheckCircle2, CircleAlert, Loader2, Wallet } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 import { formatDate, tr } from "../i18n";
 import { checks, type PublicCampaign, readOnChain, units } from "./chain";
-import { campaignMoney, campaignProgress, day, share } from "./money";
+import { type CampaignGroup, type CampaignMoney, campaignMoney, campaignProgress, day, groupMoney, share } from "./money";
 import { ChainKey, InfoTip, Metric, PhaseBadge } from "./ui";
 
 const num = (n: number, digits = 0) => new Intl.NumberFormat(tr({ en: "en-GB", pt: "pt-BR" }), { maximumFractionDigits: digits }).format(n);
 
+type ChainState = UseQueryResult<Awaited<ReturnType<typeof readOnChain>>>;
+
 /**
- * One published campaign: where it is in its days, who takes part, where its
- * money is, and -- behind panels -- the conditions, the chain's checks and
- * the transactions. Counts of entrepreneurs show only from min_group up.
+ * One published campaign, with every sponsor in it: where it is in its days,
+ * who takes part, where the money is, and -- behind panels -- the
+ * conditions, each vault's checks and the transactions. Each sponsor's money
+ * is its own vault; the figures add them up. The entrepreneurs are the same
+ * in every vault (same days, same cohort), so their counts are the lead's,
+ * shown only from min_group up.
  */
-export default function CampaignCard({ c }: { c: PublicCampaign }) {
-  const chain = useQuery({ queryKey: ["missions", "chain", c.chain.campaign], queryFn: () => readOnChain(c), refetchInterval: 60_000 });
+export default function CampaignCard({ g, onCoSponsor }: { g: CampaignGroup; onCoSponsor?: (programId: string) => void }) {
+  const c = g.lead;
+  const chains = useQueries({
+    queries: g.vaults.map((v) => ({ queryKey: ["missions", "chain", v.chain.campaign], queryFn: () => readOnChain(v), refetchInterval: 60_000 })),
+  });
   const d = c.mint_decimals;
-  const money = campaignMoney(c, chain.data?.vaultUnits);
+  const money = groupMoney(g, chains.map((q) => q.data?.vaultUnits));
+  const paid = g.vaults.reduce((n, v) => ({ count: n.count + v.paid.count, units: n.units + v.paid.units }), { count: 0, units: 0 });
   const progress = campaignProgress(c);
   const counted = c.enrolled !== null;
   const usd = (n: bigint | number) => `${units(n, d)} USDC`;
+  const many = g.co.length > 0;
 
   return (
     <article aria-labelledby={`c-${c.program_id}`} className="overflow-hidden rounded-lg border border-border bg-card">
       <div className="space-y-5 p-5 sm:p-7">
         <header className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">{c.sponsor}</p>
+            <p className="text-sm text-muted-foreground">
+              {g.vaults.map((v) => v.sponsor).join(" · ")}
+            </p>
             <h3 id={`c-${c.program_id}`} className="font-heading text-2xl leading-snug">{c.name}</h3>
             <p className="text-sm text-muted-foreground">{day(c.period_start)} – {day(c.period_end)}</p>
           </div>
@@ -35,6 +47,11 @@ export default function CampaignCard({ c }: { c: PublicCampaign }) {
             <span className="rounded-full border border-gold/60 px-2.5 py-0.5 text-xs font-medium text-accent">
               {tr({ en: "Impact Marketing", pt: "Marketing de Impacto" })}
             </span>
+            {many && (
+              <span className="rounded-full border border-border px-2.5 py-0.5 text-xs font-medium">
+                {tr({ en: `${g.vaults.length} sponsors`, pt: `${g.vaults.length} patrocinadores` })}
+              </span>
+            )}
             <PhaseBadge phase={progress.phase} />
           </div>
         </header>
@@ -56,7 +73,9 @@ export default function CampaignCard({ c }: { c: PublicCampaign }) {
 
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-border bg-border lg:grid-cols-3">
           <Metric emphasis label={tr({ en: "Total funding", pt: "Financiamento total" })} value={usd(money.funded)}
-            note={tr({ en: `${usd(c.price_per_seat_units)} × ${c.seats} entrepreneurs`, pt: `${usd(c.price_per_seat_units)} × ${c.seats} empreendedoras` })} />
+            note={many
+              ? tr({ en: `From ${g.vaults.length} sponsors, each in its own vault`, pt: `De ${g.vaults.length} patrocinadores, cada um no seu cofre` })
+              : tr({ en: `${usd(c.price_per_seat_units)} × ${c.seats} entrepreneurs`, pt: `${usd(c.price_per_seat_units)} × ${c.seats} empreendedoras` })} />
           <Metric emphasis label={tr({ en: "Entrepreneurs taking part", pt: "Empreendedoras participando" })}
             value={counted ? <>{num(c.enrolled!)} <span className="text-base text-muted-foreground">/ {num(c.seats)}</span></> : "—"}
             note={counted ? tr({ en: "of the funded seats", pt: "das vagas financiadas" }) : tr({ en: `Shown from ${c.min_group} participants`, pt: `Aparece a partir de ${c.min_group} participantes` })}
@@ -65,18 +84,33 @@ export default function CampaignCard({ c }: { c: PublicCampaign }) {
               pt: `Empreendedoras do diário que autorizaram compartilhar os números de impacto. Todas participam. Os números só aparecem a partir de ${c.min_group}, para que ninguém seja identificada.`,
             })} />
           <Metric emphasis label={tr({ en: "In the vault now", pt: "No cofre agora" })} value={usd(money.inVault)}
-            note={chain.isLoading ? tr({ en: "Reading Solana…", pt: "Lendo a Solana…" })
+            note={chains.some((q) => q.isLoading) ? tr({ en: "Reading Solana…", pt: "Lendo a Solana…" })
               : money.fromChain ? tr({ en: "Balance read on Solana", pt: "Saldo lido na Solana" })
               : tr({ en: "From the record; Solana did not answer", pt: "Pelo registro; a Solana não respondeu" })} />
           <Metric label={tr({ en: "Active", pt: "Em atividade" })} value={counted ? num(c.active ?? 0) : "—"}
             tip={tr({ en: "Recorded at least one day in the diary during this campaign.", pt: "Registraram pelo menos um dia no diário durante esta campanha." })} />
           <Metric label={tr({ en: `Completed ${c.unlock_days} days`, pt: `Completaram ${c.unlock_days} dias` })} value={counted ? num(c.engaged ?? 0) : "—"}
             tip={tr({ en: `Recorded ${c.unlock_days} days in the diary during the campaign: the condition for a reward.`, pt: `Registraram ${c.unlock_days} dias no diário durante a campanha: a condição para a recompensa.` })} />
-          <Metric label={tr({ en: "Rewards paid", pt: "Recompensas pagas" })} value={usd(c.paid.units)}
-            note={tr({ en: `${c.paid.count} ${c.paid.count === 1 ? "entrepreneur" : "entrepreneurs"}`, pt: `${c.paid.count} ${c.paid.count === 1 ? "empreendedora" : "empreendedoras"}` })} />
+          <Metric label={tr({ en: "Rewards paid", pt: "Recompensas pagas" })} value={usd(paid.units)}
+            note={tr({ en: `${paid.count} ${paid.count === 1 ? "payment" : "payments"}`, pt: `${paid.count} ${paid.count === 1 ? "pagamento" : "pagamentos"}` })} />
         </dl>
 
         <Allocation money={money} usd={usd} />
+
+        {progress.phase !== "ended" && onCoSponsor && (
+          <div className="flex flex-col gap-3 rounded-md border border-dashed border-gold/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {tr({
+                en: "Add to this campaign: your own vault, the same 30 days. Each entrepreneur who completes it receives every sponsor's reward.",
+                pt: "Some-se a esta campanha: um cofre só seu, nos mesmos 30 dias. Cada empreendedora que concluir recebe a recompensa de todos os patrocinadores.",
+              })}
+            </p>
+            <button type="button" onClick={() => onCoSponsor(c.program_id)}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md border border-foreground/80 px-4 text-sm font-medium transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <HandCoins size={16} aria-hidden /> {tr({ en: "Co-sponsor this campaign", pt: "Copatrocinar esta campanha" })}
+            </button>
+          </div>
+        )}
       </div>
 
       <Accordion type="multiple" className="border-t border-border px-5 sm:px-7">
@@ -100,16 +134,25 @@ export default function CampaignCard({ c }: { c: PublicCampaign }) {
         </Panel>
 
         <Panel value="funding" title={tr({ en: "Funding allocation", pt: "Divisão do financiamento" })}>
+          {many && (
+            <dl className="mb-3 divide-y divide-border border-b border-border">
+              {g.vaults.map((v) => (
+                <Row key={v.program_id} k={v.sponsor}
+                  v={<>{usd(v.chain.funded_units)} <span className="text-xs text-muted-foreground">
+                    ({tr({ en: `${usd(campaignMoney(v).perSeat)} per entrepreneur`, pt: `${usd(campaignMoney(v).perSeat)} por empreendedora` })})</span></>} />
+              ))}
+            </dl>
+          )}
           <dl className="divide-y divide-border">
-            <Row k={tr({ en: "Paid by the sponsor", pt: "Pago pelo patrocinador" })} v={usd(money.funded)} />
+            <Row k={many ? tr({ en: "Paid by the sponsors", pt: "Pago pelos patrocinadores" }) : tr({ en: "Paid by the sponsor", pt: "Pago pelo patrocinador" })} v={usd(money.funded)} />
             <Row k={tr({ en: `EmpowerFI (${c.house_share_bps / 100}%)`, pt: `EmpowerFI (${c.house_share_bps / 100}%)` })} v={usd(money.house)} />
             <Row k={tr({ en: `Entrepreneurs (${100 - c.house_share_bps / 100}%)`, pt: `Empreendedoras (${100 - c.house_share_bps / 100}%)` })} v={usd(money.entrepreneurs)} />
-            <Row k={tr({ en: "Reward for each entrepreneur", pt: "Recompensa de cada empreendedora" })} v={usd(money.perSeat)} />
+            <Row k={many ? tr({ en: "Reward for each entrepreneur, all sponsors", pt: "Recompensa de cada empreendedora, somando todos" }) : tr({ en: "Reward for each entrepreneur", pt: "Recompensa de cada empreendedora" })} v={usd(money.perSeat)} />
           </dl>
           <p className="mt-3 text-muted-foreground">
             {tr({
-              en: "The whole amount sits in the campaign's vault on Solana. A reward leaves it only for an entrepreneur who met the condition, and the program never pays a reward out of EmpowerFI's half.",
-              pt: "O valor inteiro fica no cofre da campanha na Solana. Uma recompensa só sai dele para a empreendedora que cumpriu a condição, e o programa nunca paga recompensa com a metade da EmpowerFI.",
+              en: "Each sponsor's amount sits in its own vault on Solana. A reward leaves a vault only for an entrepreneur who met the condition, and the program never pays a reward out of EmpowerFI's half.",
+              pt: "O valor de cada patrocinador fica no próprio cofre, na Solana. Uma recompensa só sai de um cofre para a empreendedora que cumpriu a condição, e o programa nunca paga recompensa com a metade da EmpowerFI.",
             })}
           </p>
         </Panel>
@@ -118,17 +161,25 @@ export default function CampaignCard({ c }: { c: PublicCampaign }) {
           <ul className="list-disc space-y-1.5 pl-5">
             <li>{tr({ en: "Every diary entrepreneur who shares her impact figures takes part. She does not need to sign up.", pt: "Toda empreendedora do diário que autoriza os números de impacto participa. Ela não precisa se inscrever." })}</li>
             <li>{tr({ en: `She earns ${usd(money.perSeat)} after recording ${c.unlock_days} days in the diary during the campaign.`, pt: `Ela recebe ${usd(money.perSeat)} depois de registrar ${c.unlock_days} dias no diário durante a campanha.` })}</li>
+            {many && <li>{tr({ en: "With more than one sponsor, she is paid once by each sponsor's vault: the rewards add up.", pt: "Com mais de um patrocinador, ela recebe uma vez de cada cofre: as recompensas se somam." })}</li>}
             <li>{tr({ en: "The reward goes to her reward wallet: an address of the program, with no private key, that nothing on this page links to her.", pt: "A recompensa vai para a carteira de recompensas dela: um endereço do programa, sem chave privada, que nada nesta página liga a ela." })}</li>
             <li>{tr({ en: "Rewards that no one earns go to EmpowerFI (Impact Marketing).", pt: "As recompensas que ninguém conquistar vão para a EmpowerFI (Marketing de Impacto)." })}</li>
           </ul>
         </Panel>
 
         <Panel value="verification" title={tr({ en: "On-chain verification", pt: "Verificação na blockchain" })}>
-          <Verification c={c} state={chain} />
+          <div className="space-y-6">
+            {g.vaults.map((v, i) => (
+              <div key={v.program_id} className={cn(i > 0 && "border-t border-border pt-5")}>
+                {many && <p className="mb-2 font-heading text-base">{v.sponsor}</p>}
+                <Verification c={v} state={chains[i]} />
+              </div>
+            ))}
+          </div>
         </Panel>
 
         <Panel value="history" title={tr({ en: "Transaction history", pt: "Histórico de transações" })}>
-          <History c={c} usd={usd} />
+          <History g={g} usd={usd} />
         </Panel>
       </Accordion>
     </article>
@@ -136,7 +187,7 @@ export default function CampaignCard({ c }: { c: PublicCampaign }) {
 }
 
 /** Where the money is: EmpowerFI's half, rewards paid, rewards still reserved, and what goes back to the sponsor. */
-function Allocation({ money, usd }: { money: ReturnType<typeof campaignMoney>; usd: (n: bigint) => string }) {
+function Allocation({ money, usd }: { money: CampaignMoney; usd: (n: bigint) => string }) {
   const parts = [
     { key: "house", cls: "bg-primary", label: tr({ en: "EmpowerFI's half, held in the vault", pt: "Metade da EmpowerFI, guardada no cofre" }), v: money.house },
     { key: "released", cls: "bg-gold", label: tr({ en: "Released to entrepreneurs", pt: "Liberado às empreendedoras" }), v: money.released },
@@ -202,7 +253,7 @@ const CHECK_LABELS = {
   proof: { en: "Latest engagement proof", pt: "Última prova de engajamento" },
 } as const;
 
-function Verification({ c, state }: { c: PublicCampaign; state: ReturnType<typeof useQuery<Awaited<ReturnType<typeof readOnChain>>>> }) {
+function Verification({ c, state }: { c: PublicCampaign; state: ChainState }) {
   return (
     <div className="space-y-4">
       <div>
@@ -249,46 +300,51 @@ function Verification({ c, state }: { c: PublicCampaign; state: ReturnType<typeo
   );
 }
 
-function History({ c, usd }: { c: PublicCampaign; usd: (n: number) => string }) {
+interface Entry { at: string; key: string; text: string; signature: string; icon?: boolean }
+
+/** Every vault's transactions, newest first, each with the sponsor it belongs to when there is more than one. */
+function History({ g, usd }: { g: CampaignGroup; usd: (n: number) => string }) {
+  const many = g.co.length > 0;
+  const who = (v: PublicCampaign) => (many ? ` · ${v.sponsor}` : "");
+  const entries: Entry[] = g.vaults.flatMap((v) => [
+    ...v.payments.map((p) => ({
+      at: p.block_time ?? v.chain.funded_at, key: p.signature, signature: p.signature, icon: true,
+      text: tr({ en: `Reward paid: ${usd(p.amount_units)}`, pt: `Recompensa paga: ${usd(p.amount_units)}` }) + who(v),
+    })),
+    ...v.attestations.map((a) => ({
+      at: a.as_of, key: `${v.program_id}-${a.as_of}`, signature: a.signature,
+      text: tr({
+        en: `Engagement proof: ${a.engaged} of ${a.enrolled} kept ${v.unlock_days} days`,
+        pt: `Prova de engajamento: ${a.engaged} de ${a.enrolled} cumpriram ${v.unlock_days} dias`,
+      }) + who(v),
+    })),
+    {
+      at: v.chain.funded_at, key: v.chain.funded_signature, signature: v.chain.funded_signature,
+      text: (v.joins
+        ? tr({ en: `Co-sponsored: ${usd(v.chain.funded_units)}`, pt: `Copatrocinada: ${usd(v.chain.funded_units)}` })
+        : tr({ en: `Created and funded: ${usd(v.chain.funded_units)}`, pt: `Criada e financiada: ${usd(v.chain.funded_units)}` })) + who(v),
+    },
+  ]);
+  entries.sort((a, b) => Date.parse(b.at.length === 10 ? `${b.at}T12:00:00Z` : b.at) - Date.parse(a.at.length === 10 ? `${a.at}T12:00:00Z` : a.at));
+  const proofs = g.vaults.some((v) => v.attestations.length > 0);
   return (
     <div className="space-y-3">
       <ol className="space-y-3 border-l border-gold pl-4">
-        {c.payments.map((p) => (
-          <li key={p.signature} className="space-y-0.5">
+        {entries.map((e) => (
+          <li key={e.key} className="space-y-0.5">
             <p className="flex items-center gap-1.5">
-              <Wallet size={14} className="shrink-0 text-accent" aria-hidden />
-              {p.block_time && <>{day(p.block_time)} · </>}
-              {tr({ en: `Reward paid: ${usd(p.amount_units)}`, pt: `Recompensa paga: ${usd(p.amount_units)}` })}
+              {e.icon && <Wallet size={14} className="shrink-0 text-accent" aria-hidden />}
+              {e.at.length === 10 ? day(e.at) : formatDate(e.at, { day: "numeric", month: "short", year: "numeric" })} · {e.text}
             </p>
-            <dl><ChainKey label={tr({ en: "Transaction", pt: "Transação" })} value={p.signature} kind="tx" /></dl>
+            <dl><ChainKey label={tr({ en: "Transaction", pt: "Transação" })} value={e.signature} kind="tx" /></dl>
           </li>
         ))}
-        {c.attestations.map((a) => (
-          <li key={a.as_of} className="space-y-0.5">
-            <p>
-              {day(a.as_of)} · {tr({
-                en: `Engagement proof: ${a.engaged} of ${a.enrolled} kept ${c.unlock_days} days`,
-                pt: `Prova de engajamento: ${a.engaged} de ${a.enrolled} cumpriram ${c.unlock_days} dias`,
-              })}
-            </p>
-            <dl><ChainKey label={tr({ en: "Transaction", pt: "Transação" })} value={a.signature} kind="tx" /></dl>
-          </li>
-        ))}
-        <li className="space-y-0.5">
-          <p>
-            {formatDate(c.chain.funded_at, { day: "numeric", month: "short", year: "numeric" })} · {tr({
-              en: `Created and funded: ${usd(c.chain.funded_units)}`,
-              pt: `Criada e financiada: ${usd(c.chain.funded_units)}`,
-            })}
-          </p>
-          <dl><ChainKey label={tr({ en: "Transaction", pt: "Transação" })} value={c.chain.funded_signature} kind="tx" /></dl>
-        </li>
       </ol>
-      {c.attestations.length === 0 && (
+      {!proofs && (
         <p className="text-muted-foreground">
           {tr({
-            en: `An engagement proof is written here once a day, from the campaign's ${c.min_group}th entrepreneur on.`,
-            pt: `Uma prova de engajamento é gravada aqui uma vez por dia, a partir da ${c.min_group}ª empreendedora da campanha.`,
+            en: `An engagement proof is written here once a day, from the campaign's ${g.lead.min_group}th entrepreneur on.`,
+            pt: `Uma prova de engajamento é gravada aqui uma vez por dia, a partir da ${g.lead.min_group}ª empreendedora da campanha.`,
           })}
         </p>
       )}
