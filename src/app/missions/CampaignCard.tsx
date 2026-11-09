@@ -162,12 +162,12 @@ function Allocation({ money, usd }: { money: ReturnType<typeof campaignMoney>; u
             {tr({ en: "Returned to the sponsor", pt: "Devolvido ao patrocinador" })}
             <InfoTip label={tr({ en: "Returned to the sponsor", pt: "Devolvido ao patrocinador" })}>
               {tr({
-                en: "Impact Marketing returns nothing to the sponsor: rewards that no one earns go to EmpowerFI. Returns to the sponsor come with Activation Marketing.",
-                pt: "O Marketing de Impacto não devolve nada ao patrocinador: as recompensas que ninguém conquistar vão para a EmpowerFI. A devolução ao patrocinador vem com o Marketing de Ativação.",
+                en: "Nothing returns to the sponsor: under the campaign terms, rewards that no one earns are allocated to EmpowerFI.",
+                pt: "Nada volta ao patrocinador: pelos termos da campanha, as recompensas que ninguém conquistar ficam com a EmpowerFI.",
               })}
             </InfoTip>
           </dt>
-          <dd className="whitespace-nowrap tabular-nums text-muted-foreground">{tr({ en: "Not in this model", pt: "Não neste modelo" })}</dd>
+          <dd className="whitespace-nowrap tabular-nums text-muted-foreground">{tr({ en: "Not in the terms", pt: "Não previsto" })}</dd>
         </div>
       </dl>
     </section>

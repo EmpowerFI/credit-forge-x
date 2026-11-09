@@ -3,7 +3,7 @@ import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
 import { GradedRule, SiteLinkButton } from "@/components/site/editorial";
 import { SEBRAE_LOGO_SRC, UNICAMP_SEAL_SRC } from "@/config/links";
-import { DIARY_PATH, type Lang, type Maturity, MISSIONS_DEMO_PATH, PATHS, SITE } from "./content";
+import { DIARY_PATH, type Lang, type Maturity, MISSIONS_DEMO_PATH, PARTNERSHIPS_ANCHOR, PATHS, SITE } from "./content";
 import { CampaignFlow, ContactForm, DiaryAccess, MaturityTag, MoreLink, Section, Shot, SitePage } from "./parts";
 
 const shot = (name: "month" | "day", lang: Lang) => `/site/diary-${name}-${lang}.png`;
@@ -68,13 +68,14 @@ export function HomePage({ lang }: { lang: Lang }) {
         </div>
       </Section>
 
-      {/* 3 · Sponsored campaigns: the benefit, not the money split. */}
+      {/* 3 · Impact campaigns, the one sponsored product: the benefit, not the money split. */}
       <Section id="campaigns" className="border-t border-foreground/10">
         <SectionHeading eyebrow={t.campaigns.eyebrow} title={t.campaigns.title} accent={t.campaigns.accent} subtitle={t.campaigns.body} />
-        <div className="mt-12 grid gap-10 md:grid-cols-2 md:gap-14">
-          {t.campaigns.kinds.map((k, i) => <Item key={k.title} lang={lang} m={k.maturity as Maturity} title={k.title} body={k.body} index={i} />)}
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <p className="font-heading text-xl">{t.campaigns.product}</p>
+          <MaturityTag lang={lang} m={t.campaigns.maturity} />
         </div>
-        <ul className="mt-12 flex flex-wrap gap-3">
+        <ul className="mt-8 flex flex-wrap gap-3">
           {t.campaigns.facts.map((f) => (
             <li key={f} className="rounded-sm border border-foreground/20 px-4 py-2 text-[1.0625rem]">{f}</li>
           ))}
@@ -137,9 +138,16 @@ export function HomePage({ lang }: { lang: Lang }) {
             </div>
           ))}
         </div>
-        <div className="mt-14 flex flex-col gap-3 sm:flex-row">
-          <SiteLinkButton to={p.entrepreneurs} primary>{t.traction.join} <ArrowRight size={18} className="text-accent" aria-hidden /></SiteLinkButton>
-          <SiteLinkButton to={`${p.sponsors}#contact`}>{t.traction.partner} <ArrowRight size={18} className="text-accent" aria-hidden /></SiteLinkButton>
+        <div className="mt-14 grid gap-10 border-t border-foreground/15 pt-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="max-w-2xl">
+            <h3 className="font-heading text-2xl">{t.traction.partnerships.title}</h3>
+            <p className="mt-2 leading-relaxed text-foreground/80">{t.traction.partnerships.body}</p>
+            <div className="mt-3"><MoreLink to={`${p.about}#${PARTNERSHIPS_ANCHOR}`}>{t.traction.partnerships.cta}</MoreLink></div>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <SiteLinkButton to={p.entrepreneurs} primary>{t.traction.join} <ArrowRight size={18} className="text-accent" aria-hidden /></SiteLinkButton>
+            <SiteLinkButton to={`${p.sponsors}#contact`}>{t.traction.partner} <ArrowRight size={18} className="text-accent" aria-hidden /></SiteLinkButton>
+          </div>
         </div>
       </Section>
     </SitePage>
@@ -232,7 +240,7 @@ export function EntrepreneursPage({ lang }: { lang: Lang }) {
 
 // ------------------------------------------------------------------ sponsors
 
-/** For sponsors: the benefit, the two products, the format, then the vault. */
+/** For sponsors: the benefit, the one product (Impact Marketing), then the vault. */
 export function SponsorsPage({ lang }: { lang: Lang }) {
   const t = SITE[lang].sponsors;
   return (
@@ -251,32 +259,9 @@ export function SponsorsPage({ lang }: { lang: Lang }) {
         </div>
       </section>
 
-      <Section id="products" className="border-t border-foreground/10">
-        <SectionHeading eyebrow={t.products.eyebrow} title={t.products.title} accent={t.products.accent} />
-        <div className="mt-12 overflow-x-auto">
-          <table className="w-full min-w-[36rem] border-collapse text-left">
-            <thead>
-              <tr>
-                {t.products.columns.map((c, i) => (
-                  <th key={i} scope="col" className={`border-b-[1.5px] border-gold pb-3 font-heading text-xl font-normal ${i === 0 ? "w-1/4" : ""}`}>{c}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {t.products.rows.map((r) => (
-                <tr key={r[0]} className="border-b border-foreground/15">
-                  <th scope="row" className="py-4 pr-4 align-top text-[0.95rem] font-medium text-foreground/70">{r[0]}</th>
-                  <td className="py-4 pr-6 align-top leading-relaxed">{r[1]}</td>
-                  <td className="py-4 align-top leading-relaxed">{r[2]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Section>
-
       <Section id="format" className="border-t border-foreground/10">
-        <SectionHeading eyebrow={t.format.eyebrow} title={t.format.title} accent={t.format.accent} />
+        <SectionHeading eyebrow={t.format.eyebrow} title={t.format.title} accent={t.format.accent} subtitle={t.format.body} />
+        <div className="mt-6"><MaturityTag lang={lang} m={t.format.maturity} /></div>
         <ul className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
           {t.format.items.map((it) => (
             <li key={it.title} className="flex gap-3.5">

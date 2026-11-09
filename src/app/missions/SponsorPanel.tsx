@@ -243,25 +243,6 @@ function Configure({ form, setForm, errors, show, touch, onNext }: {
         </div>
       </div>
 
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">{tr({ en: "Campaign type", pt: "Tipo de campanha" })}</legend>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex cursor-pointer gap-3 rounded-md border-2 border-gold bg-background p-4">
-            <input type="radio" name="sp-type" value="impact" defaultChecked className="mt-1 h-4 w-4 accent-[hsl(var(--gold))]" />
-            <span className="space-y-0.5">
-              <span className="block text-sm font-medium">{tr({ en: "Impact Marketing", pt: "Marketing de Impacto" })}</span>
-              <span className="block text-xs text-muted-foreground">{tr({ en: `Rewards after ${UNLOCK_DAYS} days in the diary.`, pt: `Recompensa depois de ${UNLOCK_DAYS} dias no diário.` })}</span>
-            </span>
-          </label>
-          <label className="flex cursor-not-allowed gap-3 rounded-md border border-dashed border-border p-4 opacity-70">
-            <input type="radio" name="sp-type" value="activation" disabled aria-describedby="sp-type-soon" className="mt-1 h-4 w-4" />
-            <span className="space-y-0.5">
-              <span className="block text-sm font-medium">{tr({ en: "Activation Marketing", pt: "Marketing de Ativação" })}</span>
-              <span id="sp-type-soon" className="block text-xs text-muted-foreground">{tr({ en: "Coming soon — not available yet.", pt: "Em breve — ainda não disponível." })}</span>
-            </span>
-          </label>
-        </div>
-      </fieldset>
 
       <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground" aria-live="polite">
