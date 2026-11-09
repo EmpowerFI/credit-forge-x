@@ -356,7 +356,7 @@ export const methodLabel = (id: string) => PAYMENT_METHODS.find((m) => m.id === 
 export const categoryLabel = (id: string | null) => CATEGORIES.find((c) => c.id === id)?.label ?? "";
 
 /**
- * Her pay for one day: what she needs to get through the month, split over
+ * Her pay for one day: her monthly salary, split over
  * the days her business opens that month. A closed day carries none.
  */
 export function payShare(need: number | null | undefined, day: string, openDays: number[]): number {

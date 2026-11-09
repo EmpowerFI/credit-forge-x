@@ -98,7 +98,7 @@ function SumLine({ label, cents, sign, tone }: { label: string; cents: number; s
 
 /**
  * The month on Hoje, as a sum she can follow: sales, less the business's
- * expenses, less her pay (what she needs to get through the month), and what
+ * expenses, less her pay (her monthly salary), and what
  * is left -- profit, or a loss in red. A bar shows how much of that whole
  * cost the sales already cover. Until she says what she needs, the card asks.
  */
