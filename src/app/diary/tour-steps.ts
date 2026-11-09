@@ -66,7 +66,16 @@ export const TOUR: TourStep[] = [
     },
   },
   {
-    image: pic("6-reminders"),
+    image: pic("6-sponsors"),
+    alt: { en: "The Sponsors screen", pt: "A tela Patrocinadores" },
+    title: { en: "Who supports you", pt: "Quem apoia você" },
+    body: {
+      en: "The sponsors of your campaigns. Tap one to visit its page.",
+      pt: "Os patrocinadores das suas campanhas. Toque em um para conhecer.",
+    },
+  },
+  {
+    image: pic("7-reminders"),
     alt: { en: "The Reminders screen", pt: "A tela Lembretes" },
     title: { en: "Reminders", pt: "Lembretes" },
     body: {
