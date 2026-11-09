@@ -5,10 +5,7 @@ import { ArrowRight, CalendarCheck, Gift, Landmark, RefreshCw } from "lucide-rea
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { tr } from "../i18n";
-import { SHOWROOM } from "../lib/stories";
-import { offeredView } from "../lib/views";
 import LanguageSwitch from "../i18n/LanguageSwitch";
 import NetworkBadge from "../components/product/NetworkBadge";
 import { diaryClosed } from "../diary/db";
@@ -43,10 +40,6 @@ export default function MissionsPage() {
             <NetworkBadge />
           </div>
         </div>
-        {/* The platform's links get their own row, scrolling sideways inside it rather than the page. */}
-        <div className="border-t border-border">
-          <PlatformNav className="mx-auto flex max-w-6xl overflow-x-auto px-4 py-2 sm:px-8" />
-        </div>
       </header>
 
       <main className="mx-auto max-w-6xl space-y-24 px-4 pb-16 pt-12 sm:space-y-28 sm:px-8 sm:pt-16">
@@ -69,43 +62,6 @@ export default function MissionsPage() {
         </footer>
       </main>
     </div>
-  );
-}
-
-/**
- * The platform's main page is Missions, because it is what runs on real data
- * today. The rest of the platform -- the showroom's views, on simulated data
- * -- stays one click away in the header, each opening its demo sign-in.
- */
-const VIEW_LINKS = [
-  { id: "sponsor", label: { en: "Impact Intelligence", pt: "Inteligência de Impacto" } },
-  { id: "investor", label: { en: "Investor Console", pt: "Console do Investidor" } },
-  { id: "community", label: { en: "Communities", pt: "Comunidades" } },
-  { id: "entrepreneur", label: { en: "Entrepreneur", pt: "Empreendedora" } },
-] as const;
-
-function PlatformNav({ className }: { className?: string }) {
-  const views = SHOWROOM ? VIEW_LINKS.filter((v) => offeredView(v.id)) : [];
-  return (
-    <nav aria-label={tr({ en: "Platform", pt: "Plataforma" })} className={cn("items-center gap-1 whitespace-nowrap text-sm", className)}>
-      <span aria-current="page" className="rounded-full bg-secondary px-3 py-1.5 font-medium text-foreground">Missions</span>
-      {views.length > 0 && (
-        <span className="ml-2 mr-1 text-xs uppercase tracking-wide text-muted-foreground">
-          {tr({ en: "Demo", pt: "Demonstração" })}
-        </span>
-      )}
-      {views.map((v) => (
-        <Link key={v.id} to={`/app/login?as=${v.id}`}
-          className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          {tr(v.label)}
-        </Link>
-      ))}
-      {!SHOWROOM && (
-        <Link to="/app/login" className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground">
-          {tr({ en: "Sign in", pt: "Entrar" })}
-        </Link>
-      )}
-    </nav>
   );
 }
 
