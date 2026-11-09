@@ -24,6 +24,8 @@ export default function RequireAuth({ roles, children }: { roles?: Role[]; child
     );
   }
   if (!session) {
+    // The platform's main page, for anyone not signed in, is Missions: it runs on real data today.
+    if (location.pathname.replace(/\/+$/, "") === "/app") return <Navigate to={`/app/missions${location.search}`} replace />;
     return <Navigate to={`/app/login?next=${encodeURIComponent(location.pathname)}`} replace />;
   }
   if (!profile && profileError) {
