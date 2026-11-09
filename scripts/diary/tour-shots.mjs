@@ -50,6 +50,12 @@ const pending = [
   { key: "3", kind: "expense", amount_cents: 3_800, payment_method: "cash", category: "stock" },
 ];
 
+// Made-up sponsors with no logo: the tile shows the name.
+const sponsors = [
+  { name: "Café Aurora", logo_path: null, link_url: "https://example.com", campaigns: ["Mulheres que Empreendem"] },
+  { name: "Mercado Bom Dia", logo_path: null, link_url: "https://example.org", campaigns: ["Mulheres que Empreendem"] },
+];
+
 const browser = await chromium.launch();
 
 async function open(locale, path, { withPending = false } = {}) {
@@ -61,7 +67,7 @@ async function open(locale, path, { withPending = false } = {}) {
     localStorage.setItem("diary-install-dismissed", "1");
     if (list) localStorage.setItem(`empowerfi-diary-pending:${p}`, JSON.stringify(list));
   }, [session, TODAY, withPending ? pending : null]);
-  const answer = { diary_profile: profile, diary_history: history, diary_month: month, diary_readings: readings(pt), diary_campaigns: [], diary_open_campaigns: [] };
+  const answer = { diary_profile: profile, diary_history: history, diary_month: month, diary_readings: readings(pt), diary_campaigns: [], diary_open_campaigns: [], diary_sponsors: sponsors };
   await ctx.route("**/rest/v1/rpc/**", (route) => {
     const fn = route.request().url().split("/rpc/")[1].split("?")[0];
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(answer[fn] ?? null) });
@@ -118,8 +124,12 @@ for (const [locale, lang] of [["pt-BR", "pt"], ["en-GB", "en"]]) {
   await strip(page, f("3-review"), "section[aria-labelledby=review-title]", "section[aria-labelledby=review-title]");
   await ctx.close();
 
+  ({ page, ctx } = await open(locale, "/app/diario/patrocinadores"));
+  await strip(page, f("6-sponsors"), "main h1", "main section > p");
+  await ctx.close();
+
   ({ page, ctx } = await open(locale, "/app/diario/lembretes"));
-  await strip(page, f("6-reminders"), "main h1", "[data-tour=reminder]");
+  await strip(page, f("7-reminders"), "main h1", "[data-tour=reminder]");
   await ctx.close();
   console.log(lang, "done");
 }
