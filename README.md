@@ -6,17 +6,25 @@
 
 Capital is becoming programmable and small businesses remain invisible to it. In Brazil, **2.6% of women-owned micro and small enterprises reach a formal loan against 4.6% of men-owned ones**, across roughly **ten million** women-led businesses and an estimated **US$15.8 billion** financing gap (IFC and Sicredi 2025; MEMP 2026 — [sources, with their caveats](https://www.empowerfi.io/sources)). Not for want of economic activity: she has sales, clients and cash flow, and all of it is informal, while capital asks for history, revenue and collateral.
 
-So the missing piece is not another lender. It is the data a lender, a sponsor or a protocol would need before any of them can act, and for these businesses that data does not exist anywhere to be fetched. **EmpowerFI collects it at the source and makes it verifiable** — normalised, aggregated into privacy-preserving indicators, and committed to Solana so a stranger can check it without asking us. Two markets pay for that layer: **ESG sponsors** for impact intelligence about the cohorts they fund, and **Web3 protocols and financial networks** for market intelligence about businesses no existing dataset covers. Financial infrastructure — product matching, regulated lending — is an extension of the layer rather than a prerequisite for either stream, and waits on regulatory structure.
+So the missing piece is not another lender. It is the data a lender, a sponsor or a protocol would need before any of them can act, and for these businesses that data does not exist anywhere to be fetched. **EmpowerFI collects it at the source and makes it verifiable** — normalised, aggregated into privacy-preserving indicators, and committed to Solana so a stranger can check it without asking us. Today that layer is two products: **the EmpowerFI diary**, a free financial tool for her, and **EmpowerFI Missions**, 30-day engagement campaigns that organizations sponsor (*Impact Marketing*, the one sponsorship product). Programmable financial reputation — verification for institutions, product matching, regulated lending — is the long-term extension, and waits on regulatory structure.
 
 This repository demonstrates the layer by running the whole credit loop on it, end to end. Sponsors of ESG, impact and entrepreneurship programs pay for cohorts and struggle to prove what changed in the businesses they reached. Small loans fail on unit economics: preparing, originating and serving a R$3,000 loan costs nearly as much as a large one, so lenders don't make them. EmpowerFI takes on the part lenders can't afford. Communities prepare their members, members report their months, and a readiness engine tells each of them what is missing, in words she can act on. When a participant who is ready *chooses* to ask for capital, EmpowerFI qualifies the request and a Capital Allocation Engine chooses which pool of P2P capital funds it: Brazilian investors in reais, or international investors in USDC on Solana. She receives and repays in reais, by Pix, either way. EmpowerFI's P2P desk formalises and services the loan. Every fact along the way is recorded in a database and committed to Solana: auditable by anyone, with no personal data on chain. The same longitudinal evidence goes back to the sponsor as Impact Intelligence: what the program did, down to repayment and productive outcomes.
 
 Being ready and not asking is a complete outcome. Nothing in the product pushes anyone into debt.
 
-The marketplace app is live on Google Play; this repository is the Colosseum hackathon build of the credit platform and the public site.
+This repository holds the public site, the diary, Missions and the Colosseum hackathon build of the credit platform (the *showroom*, on simulated data).
 
-## Try it
+## What runs today
 
-The platform is live at **[www.empowerfi.io/app](https://www.empowerfi.io/app)** (or `http://localhost:8080/app` locally), and the site's **App - Devnet** button opens it. It reads in English or Portuguese: the Portuguese pages open it in Portuguese, and the EN | PT switch changes it. Sign in with one of the demo accounts: the login page lists them and enters each with one click. They share the password **`EmpowerFI-demo-2026`** (public on purpose; every demo record is simulated), which the page carries for you — the scripts in `scripts/platform` need it, people do not.
+| | Where | What |
+|---|---|---|
+| **The EmpowerFI diary** | [www.empowerfi.io/app/diario](https://www.empowerfi.io/app/diario), installable as an app (PWA) | Her daily record: sales and expenses by voice or by typing, the month's profit after her monthly salary, her week, a weekly reading (written by AI only if she agrees), reminders on the days her business opens, and a **Sponsors** tab with the sponsors of the real campaigns she is in. Sign-in by a code sent to her e-mail. Real data, on the app's production database. [docs/DIARY.md](docs/DIARY.md) |
+| **EmpowerFI Missions** | [www.empowerfi.io/app/missions](https://www.empowerfi.io/app/missions), the platform's main page, open without a sign-in | A sponsor funds a 30-day campaign from its own wallet into a vault on Solana devnet; one or more sponsors per campaign, each in its own vault. Entrepreneurs who keep the diary for 30 days are paid on chain, once by each vault. [docs/MISSIONS.md](docs/MISSIONS.md) |
+| **Campaign management** | the `empowerfi-dashboard` repository (EmpowerFI staff only) | Campaigns and sponsors, logos and links, reviewing and publishing a Missions campaign, and marking each campaign **real** or **devnet**. Only real campaigns show in the diary's Sponsors tab. |
+
+## Try the credit platform (showroom)
+
+The showroom is at **[www.empowerfi.io/app/login](https://www.empowerfi.io/app/login)** (or `http://localhost:8080/app/login` locally); `/app` itself opens Missions for anyone not signed in. It reads in English or Portuguese: the Portuguese pages open it in Portuguese, and the EN | PT switch changes it. Sign in with one of the demo accounts: the login page lists them and enters each with one click. They share the password **`EmpowerFI-demo-2026`** (public on purpose; every demo record is simulated), which the page carries for you — the scripts in `scripts/platform` need it, people do not.
 
 The app tells one loop in two stories: **1 Impact Intelligence** and **2 Investor Console**. The **Credit & Capital Engine** is not a third. It runs inside the database when an opportunity opens for funding, so the page that shows its work is reached from the money it decided — a position, an opportunity, or a sponsor drilling into a code — rather than from a menu, because an explanation offered before the thing it explains is a rehearsal of a decision already taken. The **P2P desk** is not a third either, and for the same reason: its six screens are the back office of a decision already taken, so they are reached from the stage of the Capital Journey that says *the desk pays her* rather than from a menu. Community operations, the entrepreneur's own journey, admin and the audit console sit under **Operations**. A demo account moves between them in one click, as the right demo persona. **View platform as** picks one of four views (program sponsor, investor or impact fund, community operator, entrepreneur) and says what each is for, without widening anyone's permissions. It lists no tools: every dashboard carries its own in its sidebar, and offering the same doors twice made the landing read as a second menu.
 
@@ -58,29 +66,31 @@ Program: [`4rqhxEwPiTd5CATztMfNmFfLaSntcmZPuzHKgmbESfRR`](https://explorer.solan
 - **Shared audit reports.** An auditor freezes the console's view into a public page that anyone can open and re-check against Solana from their own browser.
 - **A Capital Allocation Engine** with two routes only: Domestic P2P (a simulated BRL pool, Pix) and Global P2P (test USDC on Solana, a simulated regulated off-ramp, Pix). Feasibility first — liquidity, risk appetite, ticket, mandate — then her all-in cost; deterministic reason codes, the pool persisted on each opportunity, and the same engine re-run in the browser. Global capital earns its place by the availability, mandate or economics it adds, not by being on a blockchain.
 
-Read more: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/DEMO.md](docs/DEMO.md) (two numbered stories, the second in twenty steps) · [docs/I18N.md](docs/I18N.md) (English and Portuguese) · [platform/README.md](platform/README.md) (operations).
+Read more: [docs/DIARY.md](docs/DIARY.md) · [docs/MISSIONS.md](docs/MISSIONS.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/PRIVACY.md](docs/PRIVACY.md) · [docs/DEMO.md](docs/DEMO.md) (two numbered stories, the second in twenty steps) · [docs/I18N.md](docs/I18N.md) (English and Portuguese) · [platform/README.md](platform/README.md) (operations).
 
 The work plan that sequences all of it is [PLAN.md](docs/PLAN.md). Behind it, four studies on what changes for real use: [STUDY-WHATSAPP.md](docs/STUDY-WHATSAPP.md) (WhatsApp as the entry interface), [STUDY-SPLIT.md](docs/STUDY-SPLIT.md) (what stays public when real data arrives), [STUDY-CONTRACTS.md](docs/STUDY-CONTRACTS.md) (the proof layer reviewed, and how much of it needs to be on a chain) and [STUDY-ACCESS.md](docs/STUDY-ACCESS.md) (entry without a login, the community partner whose terms differ, and the API an aggregate rule does not survive).
 
 ## What it earns, and from whom
 
-One layer, two paying markets. Both are hypotheses with a price attached rather than contracted revenue, and the README says so because the product's own screens do.
+One product, one ecosystem, one vision: three different relationships, and only the first is recurring revenue. None of it is contracted yet, and the README says so because the product's own screens do.
 
-| | Who pays | What they get | How |
+| | Horizon | What it is | Status |
 |---|---|---|---|
-| **Impact intelligence** · core | ESG sponsors, foundations, institutions | monitored cohorts, impact measurement, longitudinal evidence | recurring sponsored programs, target **~US$4 per business per month** — pricing to be validated |
-| **Market intelligence** · core | Web3 protocols, financial networks, capital providers | aggregated indicators, opportunity discovery, verifiable intelligence, integrations | subscriptions, APIs, protocol-sponsored programs |
-| **Financial infrastructure** · optional, later | product providers, regulated lenders | product matching, distribution, regulated lending integrations | an extension, not a prerequisite for viability — subject to regulatory structure |
+| **Impact Marketing** | short term · recurring revenue | organizations sponsor 30-day financial engagement campaigns for at least 100 entrepreneurs, priced per entrepreneur; 50% to EmpowerFI and 50% to the entrepreneurs' rewards, unlocked by keeping the diary for 30 days; unclaimed rewards go to EmpowerFI under the campaign terms | demonstrated on devnet |
+| **Strategic partnerships** | ecosystem development | fintechs, payment providers, neobanks and Web3 protocols bringing relevant products to the entrepreneurs (product activations live here, not as a second sponsorship product) | complementary; not counted as recurring revenue |
+| **Programmable financial reputation** | long term · infrastructure | verification services for institutions, financial intelligence, reputation infrastructure — what the credit platform in this repository demonstrates | in development and planned |
 
 **No personal data is sold.** Aggregates go out through controlled APIs with groups under five suppressed, and anything specific to one business requires her consent, which is itself a record proven on Solana.
 
-The first market is the one the repo demonstrates in full: *Impact Intelligence* is a working dashboard over real engine output, not a mock of a future product.
+The long-term layer is the one the showroom demonstrates in full: *Impact Intelligence* is a working dashboard over real engine output, not a mock of a future product.
 
 ## Traction
 
-- **200+ app installs** on Android and iOS, and **18 women entrepreneurs registered** on the marketplace app that is live on Google Play. The low conversion between those two numbers is the reason the entry interface is being moved to WhatsApp after the hackathon — the analysis is in [docs/STUDY-WHATSAPP.md](docs/STUDY-WHATSAPP.md).
+- **The diary is live on the web** (since November 2026), replacing the store apps and the WhatsApp check-in that came before it ([docs/STUDY-WHATSAPP.md](docs/STUDY-WHATSAPP.md) is kept as history).
+- **Campaign vaults on Solana**, built and tested, demonstrated on devnet with test tokens.
+- **Built and refined with Sebrae** (Ginga Prototipa and PIER), and an *empresa-filha* of Unicamp, registered in Unicamp Ventures.
 - **Zero PII on chain, measured rather than asserted.** Last run on 22 Sep 2026: 10,486 accounts across all thirteen types and 21 position mints, searched against 341 names, e-mails and places and 1,067 amounts from the database — no findings. `npx tsx scripts/platform/scan-chain-pii.mts` runs it again.
-- **Next:** first paid pilots, one ESG sponsor and one Web3 protocol.
+- **Next:** the first real Impact Marketing campaign.
 
 ## Who built it
 
@@ -130,19 +140,24 @@ CI runs the first, the Deno gate and the program's LiteSVM tests on every push a
 
 ```
 src/app/                     the platform (/app): pages by role, audit screen
+src/app/diary/               the EmpowerFI diary (/app/diario), on the app's production database
+src/app/missions/            EmpowerFI Missions (/app/missions), the platform's main page
 src/                         the public site (EN at /, PT-BR at /pt)
-packages/                    readiness-engine · eligibility-engine · capital-allocation · settlement-route · audit-commitments · audit-client
+packages/                    campaign-vault · readiness-engine · eligibility-engine · capital-allocation · settlement-route · audit-commitments · audit-client
 programs/empowerfi-audit     the Anchor program and its tests
+programs/empowerfi-rewards   the campaign-vault program (Missions) and its LiteSVM tests
 platform/supabase            migrations, pgTAP tests, Edge Functions
 services/zcash-watcher       Zcash viewing-key scanner (Rust → WebAssembly) for the zcash-watch function
 scripts/                     browser checks (verify-*): each reads a screen and reports MISS
 scripts/platform             demo accounts, demo scenario, zero-PII scan
+scripts/diary                the tutorial's screenshots, push keys
+scripts/rewards              the Missions program's keys
 docs/                        architecture, privacy, demo script, languages
 ```
 
 ## The public site
 
-Vite + React 18 + TypeScript, Tailwind and shadcn/ui, bilingual: English at `/` (with `/investors`, `/about`, `/sources`), Portuguese at `/pt` (with `/pt/investidores`, `/pt/sobre` and `/pt/empreendedoras`, the page for the entrepreneur). The home page tells the same loop in fifteen sections in both languages: hero, the four capital engines, the problem, how it works, the capital network, local capital first, local economic rails, global capital, the north star, who it is for, the business model, how it operates, the technology, auditability and traction. The pilot roadmap and readiness in depth live on `/investors`; market evidence and its caveats on `/sources`. A change to a page in one language is mirrored in the other. The header's **App - Devnet** button opens the platform in the page's language. The investor contact form uses the `send-transactional-email` Edge Function of the website's Supabase project (root `supabase/`, kept separate from `platform/`).
+Vite + React 18 + TypeScript, Tailwind and shadcn/ui, bilingual: English at `/` (with `/entrepreneurs`, `/sponsors`, `/protocol`, `/about`, `/sources`), Portuguese at `/pt` (with `/pt/empreendedoras`, `/pt/patrocinadores`, `/pt/protocolo`, `/pt/sobre`). The home page says what EmpowerFI offers now: financial tools for her (the diary), Impact Marketing campaigns for sponsors (Missions) and how their rewards work, the technology and its vision, and traction. `/sponsors` presents the one sponsorship product; strategic partnerships sit on `/about`, with the business model; `/protocol` is the long-term reputation layer (the old `/investors` redirects there). Every claim carries its maturity — available, devnet, in development or planned. A change to a page in one language is mirrored in the other. The header's **Platform** link opens Missions in the page's language. The contact form uses the `send-transactional-email` Edge Function of the website's Supabase project (root `supabase/`, kept separate from `platform/`).
 
 Deployed on Vercel: [`vercel.json`](vercel.json) sets the Vite preset and a SPA rewrite so client-side routes (`/pt`, `/app/...`) resolve on direct load. Set the `VITE_*` variables above for Production and Preview.
 
