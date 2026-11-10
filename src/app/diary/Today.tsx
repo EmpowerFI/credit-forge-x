@@ -14,7 +14,7 @@ import { LatestReading } from "./Reading";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
-  addDays, type AfterRecord, brl, cachedToday, dayMoney, MONTH_KEY, openDaysOf, payShare, profitLabel, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
+  addDays, type AfterRecord, isoWeekday, brl, cachedToday, dayMoney, MONTH_KEY, openDaysOf, payShare, profitLabel, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
   type GoalAfter, type HistoryEntry, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
 } from "./diary";
 
@@ -191,6 +191,8 @@ export default function Today() {
   const isToday = day === today;
   const liveEntries = keptDay?.entries.filter((e) => !e.voided) ?? [];
   const recorded = liveEntries.length > 0;
+  // A day her business does not open asks for nothing; she may still note a sale.
+  const restDay = !openDays.includes(isoWeekday(day)) && !recorded && noted.length === 0;
 
   return (
     <div className="space-y-4">
@@ -205,8 +207,17 @@ export default function Today() {
       </div>
 
       <h1 className="font-heading text-2xl font-semibold leading-tight">
-        {isToday ? tr({ en: "How did today go?", pt: "Como foi hoje?" }) : tr({ en: "How did yesterday go?", pt: "Como foi ontem?" })}
+        {restDay
+          ? tr({ en: "A day off", pt: "Dia de descanso" })
+          : isToday ? tr({ en: "How did today go?", pt: "Como foi hoje?" }) : tr({ en: "How did yesterday go?", pt: "Como foi ontem?" })}
       </h1>
+      {mode === "ask" && restDay && (
+        <p className="text-sm text-muted-foreground">
+          {isToday
+            ? tr({ en: "Your business does not open today. Nothing to record.", pt: "O seu negócio não abre hoje. Não precisa registrar nada." })
+            : tr({ en: "Your business did not open yesterday. Nothing to record.", pt: "O seu negócio não abriu ontem. Não precisa registrar nada." })}
+        </p>
+      )}
 
       {mode === "ask" && me.data && <ImpactAsk profile={me.data} />}
       {mode === "ask" && me.data && <AiNotice profile={me.data} />}
@@ -224,13 +235,13 @@ export default function Today() {
             <BigAction primary icon={Plus} onClick={() => setMode("entry")}
               title={tr({ en: "Add more", pt: "Incluir mais" })} />
           ) : (
-            <BigAction primary icon={Plus} onClick={() => setMode("entry")}
+            <BigAction primary={!restDay} icon={Plus} onClick={() => setMode("entry")}
               title={tr({ en: "I sold or spent", pt: "Vendi ou gastei" })} />
           )}
         </div>
       )}
       {mode === "ask" && <MonthCard openDays={openDays} todayKept={Boolean(todayKept)} />}
-      {mode === "ask" && !recorded && (
+      {mode === "ask" && !recorded && !restDay && (
         <div data-tour="quiet" className="space-y-2">
           <p className="text-sm text-muted-foreground">{tr({ en: "No activity?", pt: "Não teve movimento?" })}</p>
           <div className="grid grid-cols-2 gap-2">

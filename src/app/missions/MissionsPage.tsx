@@ -106,12 +106,12 @@ function HowItWorks() {
     {
       icon: CalendarCheck,
       title: tr({ en: "Engage", pt: "Engaje" }),
-      body: tr({ en: "For 30 days, entrepreneurs record their sales and expenses in the EmpowerFI diary.", pt: "Por 30 dias, as empreendedoras registram vendas e gastos no diário EmpowerFI." }),
+      body: tr({ en: "For 30 days, entrepreneurs record their sales and expenses in the EmpowerFI diary, on the days their business opens.", pt: "Por 30 dias, as empreendedoras registram vendas e gastos no diário EmpowerFI, nos dias em que o negócio abre." }),
     },
     {
       icon: Gift,
       title: tr({ en: "Reward", pt: "Recompense" }),
-      body: tr({ en: "Whoever keeps the 30 days receives her reward from the vault, under rules set before the campaign starts.", pt: "Quem cumpre os 30 dias recebe a recompensa do cofre, por regras definidas antes de a campanha começar." }),
+      body: tr({ en: "Whoever records every day she opens in those 30 days receives her reward from the vault, under rules set before the campaign starts.", pt: "Quem registra todos os dias em que abre nesses 30 dias recebe a recompensa do cofre, por regras definidas antes de a campanha começar." }),
     },
   ];
   return (
@@ -156,7 +156,7 @@ function SplitDiagram() {
         <ul className="space-y-2 text-sm">
           <li className="flex gap-3 rounded-md border border-border p-3">
             <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-sm bg-gold" aria-hidden />
-            <span><span className="font-medium">{tr({ en: "Kept the 30 days", pt: "Cumpriu os 30 dias" })}</span> → {tr({ en: "her reward, paid to her reward wallet", pt: "a recompensa dela, paga na carteira de recompensas" })}</span>
+            <span><span className="font-medium">{tr({ en: "Recorded every day she opens", pt: "Registrou todos os dias em que abre" })}</span> → {tr({ en: "her reward, paid to her reward wallet", pt: "a recompensa dela, paga na carteira de recompensas" })}</span>
           </li>
           <li className="flex gap-3 rounded-md border border-border p-3">
             <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-sm bg-gold/35" aria-hidden />

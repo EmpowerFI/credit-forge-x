@@ -89,8 +89,8 @@ export default function CampaignCard({ g, onCoSponsor }: { g: CampaignGroup; onC
               : tr({ en: "From the record; Solana did not answer", pt: "Pelo registro; a Solana não respondeu" })} />
           <Metric label={tr({ en: "Active", pt: "Em atividade" })} value={counted ? num(c.active ?? 0) : "—"}
             tip={tr({ en: "Recorded at least one day in the diary during this campaign.", pt: "Registraram pelo menos um dia no diário durante esta campanha." })} />
-          <Metric label={tr({ en: `Completed ${c.unlock_days} days`, pt: `Completaram ${c.unlock_days} dias` })} value={counted ? num(c.engaged ?? 0) : "—"}
-            tip={tr({ en: `Recorded ${c.unlock_days} days in the diary during the campaign: the condition for a reward.`, pt: `Registraram ${c.unlock_days} dias no diário durante a campanha: a condição para a recompensa.` })} />
+          <Metric label={tr({ en: "Completed", pt: "Concluíram" })} value={counted ? num(c.engaged ?? 0) : "—"}
+            tip={tr({ en: `Recorded in the diary every day their business opens, during the campaign's ${c.unlock_days} days: the condition for a reward.`, pt: `Registraram no diário todos os dias em que o negócio abre, durante os ${c.unlock_days} dias da campanha: a condição para a recompensa.` })} />
           <Metric label={tr({ en: "Rewards paid", pt: "Recompensas pagas" })} value={usd(paid.units)}
             note={tr({ en: `${paid.count} ${paid.count === 1 ? "payment" : "payments"}`, pt: `${paid.count} ${paid.count === 1 ? "pagamento" : "pagamentos"}` })} />
         </dl>
@@ -119,15 +119,15 @@ export default function CampaignCard({ g, onCoSponsor }: { g: CampaignGroup; onC
             <dl className="divide-y divide-border">
               <Row k={tr({ en: "Taking part", pt: "Participando" })} v={num(c.enrolled!)} />
               <Row k={tr({ en: "Active (recorded at least one day)", pt: "Em atividade (registraram ao menos um dia)" })} v={num(c.active ?? 0)} />
-              <Row k={tr({ en: `Completed ${c.unlock_days} days`, pt: `Completaram ${c.unlock_days} dias` })} v={num(c.engaged ?? 0)} />
+              <Row k={tr({ en: "Completed (every day they open)", pt: "Concluíram (todos os dias em que abrem)" })} v={num(c.engaged ?? 0)} />
               <Row k={tr({ en: "Mean days recorded, among the active", pt: "Média de dias registrados, entre as ativas" })}
                 v={c.avg_days === null ? "—" : num(c.avg_days, 1)} />
             </dl>
           ) : (
             <p className="text-muted-foreground">
               {tr({
-                en: `Waiting for participants. Counts, and the proof of who kept the ${c.unlock_days} days, start at ${c.min_group} entrepreneurs, so no one is ever singled out.`,
-                pt: `Aguardando participantes. Os números, e a prova de quem cumpriu os ${c.unlock_days} dias, começam com ${c.min_group} empreendedoras, para que ninguém seja identificada.`,
+                en: `Waiting for participants. Counts, and the proof of who completed the campaign, start at ${c.min_group} entrepreneurs, so no one is ever singled out.`,
+                pt: `Aguardando participantes. Os números, e a prova de quem concluiu a campanha, começam com ${c.min_group} empreendedoras, para que ninguém seja identificada.`,
               })}
             </p>
           )}
@@ -160,7 +160,7 @@ export default function CampaignCard({ g, onCoSponsor }: { g: CampaignGroup; onC
         <Panel value="conditions" title={tr({ en: "Reward conditions", pt: "Condições da recompensa" })}>
           <ul className="list-disc space-y-1.5 pl-5">
             <li>{tr({ en: "Every diary entrepreneur who shares her impact figures takes part. She does not need to sign up.", pt: "Toda empreendedora do diário que autoriza os números de impacto participa. Ela não precisa se inscrever." })}</li>
-            <li>{tr({ en: `She earns ${usd(money.perSeat)} after recording ${c.unlock_days} days in the diary during the campaign.`, pt: `Ela recebe ${usd(money.perSeat)} depois de registrar ${c.unlock_days} dias no diário durante a campanha.` })}</li>
+            <li>{tr({ en: `She earns ${usd(money.perSeat)} after recording in the diary every day her business opens during the campaign's ${c.unlock_days} days. Days it does not open need nothing.`, pt: `Ela recebe ${usd(money.perSeat)} depois de registrar no diário todos os dias em que o negócio abre, durante os ${c.unlock_days} dias da campanha. Nos dias em que não abre, não precisa registrar.` })}</li>
             {many && <li>{tr({ en: "With more than one sponsor, she is paid once by each sponsor's vault: the rewards add up.", pt: "Com mais de um patrocinador, ela recebe uma vez de cada cofre: as recompensas se somam." })}</li>}
             <li>{tr({ en: "The reward goes to her reward wallet: an address of the program, with no private key, that nothing on this page links to her.", pt: "A recompensa vai para a carteira de recompensas dela: um endereço do programa, sem chave privada, que nada nesta página liga a ela." })}</li>
             <li>{tr({ en: "Rewards that no one earns go to EmpowerFI (Impact Marketing).", pt: "As recompensas que ninguém conquistar vão para a EmpowerFI (Marketing de Impacto)." })}</li>
@@ -314,8 +314,8 @@ function History({ g, usd }: { g: CampaignGroup; usd: (n: number) => string }) {
     ...v.attestations.map((a) => ({
       at: a.as_of, key: `${v.program_id}-${a.as_of}`, signature: a.signature,
       text: tr({
-        en: `Engagement proof: ${a.engaged} of ${a.enrolled} kept ${v.unlock_days} days`,
-        pt: `Prova de engajamento: ${a.engaged} de ${a.enrolled} cumpriram ${v.unlock_days} dias`,
+        en: `Engagement proof: ${a.engaged} of ${a.enrolled} completed`,
+        pt: `Prova de engajamento: ${a.engaged} de ${a.enrolled} concluíram`,
       }) + who(v),
     })),
     {

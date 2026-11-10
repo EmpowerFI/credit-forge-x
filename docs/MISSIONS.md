@@ -3,7 +3,7 @@
 A sponsor buys a 30-day campaign, priced per entrepreneur, for at least 100 entrepreneurs. The money goes into a vault on Solana devnet that the campaign's own account owns. The terms are written on chain:
 
 - 50% goes to EmpowerFI and 50% to the entrepreneurs.
-- An entrepreneur's reward unlocks after she keeps the diary for 30 days.
+- An entrepreneur's reward unlocks once she has recorded, in the diary, every day her business opens within the campaign's 30 calendar days. Days it does not open (her `open_days`, set in the diary) need nothing; a business open every day records all 30. Since 10 November 2026, migration `20261230000000`; before, every one of the 30 days had to be recorded.
 - **Impact Marketing** is the only sponsorship product. What is not claimed goes to EmpowerFI, under the campaign terms.
 - Product activations are not a campaign type: since 9 November 2026 they are handled as strategic partnerships, outside Missions. The program still has an `Activation` reward kind and refuses it; nothing on the site, the page or the dashboard offers it.
 
@@ -34,8 +34,8 @@ The page shows, for each campaign:
 
 - **Participants:** everyone who shares her impact figures.
 - **Active:** those who recorded at least one day in the window.
-- **Completed 30 days:** those who kept the campaign's days.
-- **Mean days:** the average of days kept by those who recorded.
+- **Completed:** those who recorded every day they open within the campaign's 30 days.
+- **Mean days:** the average of days recorded by those who recorded.
 - **Paid:** the rewards confirmed on chain.
 
 At the top, the page adds up what the sponsors sent to the vaults and the rewards paid.
@@ -55,8 +55,8 @@ Every count obeys the five-woman floor that sponsors already have. Below five wo
 
 What does go on chain:
 
-- the counts: how many women are in the campaign, and how many kept the 30 days;
-- a Merkle root over salted leaves (`sha256("EMPOWERFI:CAMPAIGN_LEAF:v2" || campaign uuid || wallet ref || salt)`), one leaf per woman who kept the 30 days;
+- the counts: how many women are in the campaign, and how many completed it;
+- a Merkle root over salted leaves (`sha256("EMPOWERFI:CAMPAIGN_LEAF:v2" || campaign uuid || wallet ref || salt)`), one leaf per woman who completed it;
 - each reward paid: her wallet's address, the amount, and her leaf.
 
 No name, e-mail or business figure goes on chain. The database keeps the salts, the leaves, and which wallet is whose.

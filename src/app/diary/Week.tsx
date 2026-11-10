@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { tr } from "../i18n";
 import {
@@ -15,8 +16,8 @@ function ProgressImg({ code, size }: { code: ProgressIcon; size: number }) {
 /**
  * Her week, Monday to Sunday, with her own icon on every day she recorded.
  * Playful on purpose; each day also says in words, to a screen reader,
- * whether it was recorded. Days her business does not open are marked
- * closed, not missed.
+ * whether it was recorded. Days her business does not open are disabled:
+ * there is nothing to record on them, and nothing is missed.
  */
 export function WeekProgress({ icon, today, days, openDays }: { icon: ProgressIcon; today: string; days: HistoryDay[]; openDays: number[] }) {
   const queryClient = useQueryClient();
@@ -57,18 +58,18 @@ export function WeekProgress({ icon, today, days, openDays }: { icon: ProgressIc
           const state = done
             ? tr({ en: "recorded", pt: "registrado" })
             : closed
-              ? tr({ en: "closed", pt: "fechado" })
+              ? tr({ en: "closed, nothing to record", pt: "fechado, nada a registrar" })
               : future ? tr({ en: "still to come", pt: "ainda vai chegar" }) : tr({ en: "not recorded", pt: "sem registro" });
           return (
-            <li key={d} className="flex flex-col items-center gap-1">
-              <span className="text-xs text-muted-foreground" aria-hidden="true">{letters[i]}</span>
+            <li key={d} className={`flex flex-col items-center gap-1 ${closed && !done ? "opacity-40" : ""}`}>
+              <span className={`text-xs text-muted-foreground ${closed && !done ? "line-through" : ""}`} aria-hidden="true">{letters[i]}</span>
               <span
                 aria-label={`${names[i]}: ${state}`}
                 className={`flex h-9 w-9 items-center justify-center rounded-full ${
                   done ? "bg-primary/10"
-                    : closed ? "bg-muted text-xs text-muted-foreground"
+                    : closed ? "bg-muted text-muted-foreground"
                       : d === today ? "border-2 border-dashed border-primary/50" : future ? "opacity-40" : "border border-border"}`}>
-                {done ? <ProgressImg code={icon} size={26} /> : closed ? <span aria-hidden="true">—</span> : null}
+                {done ? <ProgressImg code={icon} size={26} /> : closed ? <Moon size={14} aria-hidden="true" /> : null}
               </span>
             </li>
           );
