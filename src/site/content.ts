@@ -18,6 +18,13 @@ export const DIARY_PATH = "/app/diario";
 export const MISSIONS_DEMO_PATH = "/app/missions";
 /** The About pages' strategic partnerships section, linked from the home page. */
 export const PARTNERSHIPS_ANCHOR = "parcerias-estrategicas";
+/** The About pages' awards section, linked from the home page. */
+export const AWARDS_ANCHOR = "premios";
+/** The two Superteam Earn listings EmpowerFI won. */
+export const AWARD_URLS = {
+  dev3pack: "https://superteam.fun/earn/listing/dev3pack-solana-build-challenge",
+  privacyWeek: "https://superteam.fun/earn/listing/privacy-week-premiacao-dos-vencedores",
+} as const;
 
 export const MATURITY: Record<Lang, Record<Maturity, string>> = {
   en: { available: "Available", devnet: "Devnet demo", development: "In development", planned: "Planned" },
@@ -135,6 +142,14 @@ const en = {
         title: "Strategic partnerships",
         body: "We also work with fintechs, payment providers, neobanks and Web3 protocols to connect entrepreneurs with relevant financial products and services. This is ecosystem development, not a sponsorship product.",
         cta: "Explore a Partnership",
+      },
+      awards: {
+        title: "Awards",
+        items: [
+          { place: "1st place", title: "Dev3pack Solana Build Challenge", by: "Dev3pack, with Superteam Brasil and SheFi Brasil", href: AWARD_URLS.dev3pack },
+          { place: "1st place", title: "Privacy Week: privacy with Cloak and Zcash", by: "Superteam Brasil", href: AWARD_URLS.privacyWeek },
+        ],
+        cta: "See the awards",
       },
     },
   },
@@ -429,6 +444,14 @@ const pt: SiteContent = {
         title: "Parcerias estratégicas",
         body: "Também trabalhamos com fintechs, meios de pagamento, bancos digitais e protocolos Web3 para levar às empreendedoras produtos e serviços financeiros que fazem sentido para elas. É desenvolvimento do ecossistema, não um produto de patrocínio.",
         cta: "Propor uma parceria",
+      },
+      awards: {
+        title: "Prêmios",
+        items: [
+          { place: "1º lugar", title: "Dev3pack Solana Build Challenge", by: "Dev3pack, com Superteam Brasil e SheFi Brasil", href: AWARD_URLS.dev3pack },
+          { place: "1º lugar", title: "Privacy Week: privacidade com Cloak e Zcash", by: "Superteam Brasil", href: AWARD_URLS.privacyWeek },
+        ],
+        cta: "Ver os prêmios",
       },
     },
   },
