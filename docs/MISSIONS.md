@@ -7,9 +7,11 @@ A sponsor buys a 30-day campaign, priced per entrepreneur, for at least 100 entr
 - **Impact Marketing** is the only sponsorship product. What is not claimed goes to EmpowerFI, under the campaign terms.
 - Product activations are not a campaign type: since 9 November 2026 they are handled as strategic partnerships, outside Missions. The program still has an `Activation` reward kind and refuses it; nothing on the site, the page or the dashboard offers it.
 
+**Real or devnet** (since 9 November 2026, migration `20261229000000`): every campaign carries `programs.is_real`. Campaigns made in the dashboard start real; Missions campaigns start devnet (a trigger on `campaign_vaults`), since their money is test USDC. EmpowerFI changes it in the dashboard (Campaigns → *Real or devnet*, `campaign_set_real`); the house campaign has no such choice. Only real campaigns show in the diary's **Sponsors** tab.
+
 **Co-sponsors** (since 9 November 2026, migration `20261228000000`): a published campaign that is still running can be joined by other sponsors. Each co-sponsor creates its own on-chain campaign and vault with the lead's exact days; the database links it (`campaign_vaults.joins`) and `campaign-register` checks the lead is published, running, with the same dates, and that the wallet is not in it already. The page shows one campaign with every sponsor and the sums; each vault is attested and pays on its own, so an entrepreneur who keeps the days is paid once by each sponsor. Each co-sponsorship is reviewed in the dashboard like any vault, and shows only while its lead is published. The program is unchanged.
 
-The page at **`/app/missions`**, inside the platform (Explore the platform), is open to anyone without a sign-in. It reads the app's production database (`campaign_vaults_public()`) and checks it against the chain's own account.
+The page at **`/app/missions`** is the platform's main page: `/app` opens it for anyone not signed in, and the site's **Platform** link goes straight to it. It is open to anyone without a sign-in. It reads the app's production database (`campaign_vaults_public()`) and checks it against the chain's own account.
 
 ## What is where
 
@@ -19,7 +21,9 @@ The page at **`/app/missions`**, inside the platform (Explore the platform), is 
 | Database | Migrations `20261222000000_a_campaign_paid_into_a_vault_on_solana.sql` (`campaign_vaults`, `campaign_attestations`, `private.campaign_leaf_salts`) and `20261226000000_her_reward_wallet_and_the_campaigns_she_is_in.sql` (`private.reward_wallets`, `campaign_payments`, `private.vault_cohort`). |
 | Daily proof and payments | Edge Function `campaign-attest`, called by the `campaign-attest` cron at 23:40 São Paulo: it attests, writes new wallets' addresses, then pays. |
 | Registration | Edge Function `campaign-register`, called by the page after the sponsor's transaction. |
-| Open page | `src/app/missions/` (route `/app/missions`; a card on the platform entrance and a link in its header). |
+| Review, publish, real or devnet | The `empowerfi-dashboard` repository, Campaigns page: `campaign_vault_review()`, `campaign_vault_list()`, `campaign_set_real()`. |
+| Open page | `src/app/missions/` (route `/app/missions`, the platform's main page). `money.ts` groups a lead and its co-sponsors (`groupCampaigns`) and adds their money (`groupMoney`); `?join=<lead id>` opens the wizard to co-sponsor that campaign. |
+| Her sponsors in the diary | `diary_sponsors()` and `src/app/diary/Sponsors.tsx` (route `/app/diario/patrocinadores`). |
 | Scripts | `scripts/rewards/generate-keys.mts`. |
 
 ## Who takes part
@@ -79,11 +83,13 @@ The sponsor is whoever connects a wallet on `/app/missions`. The steps:
    - the terms commitment matches;
    - the vault holds the funds.
 3. **It is recorded, unlisted.** `campaign_register` writes the sponsor, the campaign and its vault. The campaign starts **unlisted and invited**: the names a wallet typed show nowhere until EmpowerFI reviews them. A wallet can reuse only a sponsor name it registered itself, never the house's or a dashboard sponsor's.
-4. **EmpowerFI approves it.** Someone who manages campaigns lists it. Listing shows it on the page, and from then on it is attested and paid. The diary no longer offers it to join, because everyone who shares her figures is already in it.
+4. **EmpowerFI approves it.** Someone who manages campaigns publishes it in the dashboard (Campaigns → the sponsor's campaign, waiting campaigns first). Publishing shows it on the page, and from then on it is attested and paid. The diary no longer offers it to join, because everyone who shares her figures is already in it. The SQL editor does the same:
 
    ```sql
    select public.campaign_vault_list('<campaign id>', true);   -- false takes it back
    ```
+
+   A Missions sponsor has no logo until one is uploaded in the dashboard's campaign form; until then the diary's Sponsors tab shows its name.
 
 Shared code lives in `packages/campaign-vault`: addresses, terms, instruction bytes and the account layout. The Edge Functions use a copy in `_shared/campaign-vault`, kept in sync with `npm run platform:sync-shared`.
 
@@ -106,7 +112,7 @@ All keys go to `~/.config/empowerfi/rewards/`, outside the repo. Nothing secret 
      --buffer <keys>/buffer-keypair.json -u "$RPC" --use-rpc --with-compute-unit-price 50000 --max-sign-attempts 300
    ```
 
-3. **Apply the migrations and deploy the functions.** Migrations are `20261222…` and `20261223…`; functions are `campaign-attest` and `campaign-register`.
+3. **Apply the migrations and deploy the functions.** Migrations are `20261222…` to `20261229…`; functions are `campaign-attest` and `campaign-register`.
 4. **Set the operator secrets.** Then run `operator-vault.sql` once and delete it.
 
    ```
@@ -126,3 +132,5 @@ All keys go to `~/.config/empowerfi/rewards/`, outside the repo. Nothing secret 
   - only staff can list, and listing opens it and puts it on the page;
   - anon cannot register.
 - **Database:** on a fresh database, four women produce no attestation and no counts. Six women, two of whom kept 31 days, produce counts of 6 and 2 and two leaves. The anon role reads only the public function.
+- **Co-sponsors, on a fresh database:** a co-sponsorship of an unlisted lead, of another co-sponsorship, of a lead that has ended, with other dates, or from a wallet already in the campaign is refused; a valid one takes the lead's name, shows under it only once both are published, and the review lists which campaign it joins.
+- **Real or devnet, on a fresh database:** her Sponsors tab lists only the sponsor of the real campaign running today that she is in; another woman's campaign and an ended one stay out; a Missions campaign appears only after it is marked real; marking the house campaign, a non-staff caller and an anonymous call are refused; `campaign_list()` carries the flag.
