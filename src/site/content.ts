@@ -183,7 +183,7 @@ const en = {
       accent: "open doors.",
       steps: [
         { title: "Share your impact figures", body: "Choose it in your diary. Then you take part in the sponsored campaigns." },
-        { title: "Keep your diary for 30 days", body: "Record your sales and expenses during the campaign." },
+        { title: "Record the days you open", body: "For the campaign's 30 days, record your sales and expenses on every day your business opens. Days off need nothing." },
         { title: "Receive your reward", body: "Only if every condition of the campaign is met." },
       ],
       maturity: "devnet" as Maturity,
@@ -219,7 +219,7 @@ const en = {
       body: "One sponsorship product: a structured engagement campaign that helps women entrepreneurs build financial habits and organize their business.",
       maturity: "devnet" as Maturity,
       items: [
-        { title: "30-day financial engagement", body: "One clear window: she records her sales and expenses every day." },
+        { title: "30-day financial engagement", body: "One clear window: she records her sales and expenses on every day her business opens." },
         { title: "Minimum 100 entrepreneurs", body: "Priced per entrepreneur." },
         { title: "Conditional rewards", body: "Half of the sponsorship is reserved for the entrepreneurs who complete the requirements." },
         { title: "Engagement reporting", body: "Participation and completion, in totals from five entrepreneurs up." },
@@ -485,7 +485,7 @@ const pt: SiteContent = {
       accent: "gerar oportunidades.",
       steps: [
         { title: "Autorize os números de impacto", body: "É uma escolha no seu diário. Com ela, você participa das campanhas patrocinadas." },
-        { title: "Registre seu dia por 30 dias", body: "Anote vendas e gastos durante a campanha." },
+        { title: "Registre os dias em que abre", body: "Nos 30 dias da campanha, anote vendas e gastos em todos os dias em que o seu negócio abre. No dia de descanso, não precisa registrar." },
         { title: "Receba a recompensa", body: "Só se todas as condições da campanha forem cumpridas." },
       ],
       maturity: "devnet" as Maturity,
@@ -521,7 +521,7 @@ const pt: SiteContent = {
       body: "Um único produto de patrocínio: uma campanha estruturada de engajamento que ajuda mulheres que empreendem a criar hábitos financeiros e organizar o negócio.",
       maturity: "devnet" as Maturity,
       items: [
-        { title: "30 dias de engajamento financeiro", body: "Uma janela clara: ela registra vendas e gastos todos os dias." },
+        { title: "30 dias de engajamento financeiro", body: "Uma janela clara: ela registra vendas e gastos em todos os dias em que o negócio dela abre." },
         { title: "Mínimo de 100 empreendedoras", body: "Preço por empreendedora." },
         { title: "Recompensas condicionais", body: "Metade do patrocínio fica reservada para quem cumpre as condições." },
         { title: "Relatório de engajamento", body: "Participação e conclusão, em totais a partir de cinco empreendedoras." },

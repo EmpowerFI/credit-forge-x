@@ -19,7 +19,7 @@ This repository holds the public site, the diary, Missions and the Colosseum hac
 | | Where | What |
 |---|---|---|
 | **The EmpowerFI diary** | [www.empowerfi.io/app/diario](https://www.empowerfi.io/app/diario), installable as an app (PWA) | Her daily record: sales and expenses by voice or by typing, the month's profit after her monthly salary, her week, a weekly reading (written by AI only if she agrees), reminders on the days her business opens, and a **Sponsors** tab with the sponsors of the real campaigns she is in. Sign-in by a code sent to her e-mail. Real data, on the app's production database. [docs/DIARY.md](docs/DIARY.md) |
-| **EmpowerFI Missions** | [www.empowerfi.io/app/missions](https://www.empowerfi.io/app/missions), the platform's main page, open without a sign-in | A sponsor funds a 30-day campaign from its own wallet into a vault on Solana devnet; one or more sponsors per campaign, each in its own vault. Entrepreneurs who keep the diary for 30 days are paid on chain, once by each vault. [docs/MISSIONS.md](docs/MISSIONS.md) |
+| **EmpowerFI Missions** | [www.empowerfi.io/app/missions](https://www.empowerfi.io/app/missions), the platform's main page, open without a sign-in | A sponsor funds a 30-day campaign from its own wallet into a vault on Solana devnet; one or more sponsors per campaign, each in its own vault. Entrepreneurs who record every day their business opens within those 30 days are paid on chain, once by each vault. [docs/MISSIONS.md](docs/MISSIONS.md) |
 | **Campaign management** | the `empowerfi-dashboard` repository (EmpowerFI staff only) | Campaigns and sponsors, logos and links, reviewing and publishing a Missions campaign, and marking each campaign **real** or **devnet**. Only real campaigns show in the diary's Sponsors tab. |
 
 ## Try the credit platform (showroom)
@@ -76,7 +76,7 @@ One product, one ecosystem, one vision: three different relationships, and only 
 
 | | Horizon | What it is | Status |
 |---|---|---|---|
-| **Impact Marketing** | short term · recurring revenue | organizations sponsor 30-day financial engagement campaigns for at least 100 entrepreneurs, priced per entrepreneur; 50% to EmpowerFI and 50% to the entrepreneurs' rewards, unlocked by keeping the diary for 30 days; unclaimed rewards go to EmpowerFI under the campaign terms | demonstrated on devnet |
+| **Impact Marketing** | short term · recurring revenue | organizations sponsor 30-day financial engagement campaigns for at least 100 entrepreneurs, priced per entrepreneur; 50% to EmpowerFI and 50% to the entrepreneurs' rewards, unlocked by recording every day her business opens within the 30 days; unclaimed rewards go to EmpowerFI under the campaign terms | demonstrated on devnet |
 | **Strategic partnerships** | ecosystem development | fintechs, payment providers, neobanks and Web3 protocols bringing relevant products to the entrepreneurs (product activations live here, not as a second sponsorship product) | complementary; not counted as recurring revenue |
 | **Programmable financial reputation** | long term · infrastructure | verification services for institutions, financial intelligence, reputation infrastructure — what the credit platform in this repository demonstrates | in development and planned |
 
