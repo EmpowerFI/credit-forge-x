@@ -20,6 +20,7 @@ import {
 import advisorFernando from "@/assets/advisor-fernando-blanco.webp";
 import advisorRoberta from "@/assets/advisor-roberta-stock.webp";
 import { SEBRAE_LOGO_SRC, UNICAMP_SEAL_SRC, UNICAMP_VENTURES_URL } from "@/config/links";
+import { AWARD_URLS } from "@/site/content";
 
 const ROBERTA_LINKEDIN_URL = "https://www.linkedin.com/in/robertastock/";
 const ROBERTA_WEBSITE = { href: "https://www.triunna.com.br/", label: "triunna.com.br" };
@@ -147,6 +148,13 @@ export interface AboutContent {
       cta: string;
     };
   };
+  awards: {
+    eyebrow: string;
+    titleLead: string;
+    titleAccent: string;
+    subtitle: string;
+    items: { place: string; title: string; by: string; desc: string; prize: string; href: string; linkLabel: string }[];
+  };
   recognitions: {
     eyebrow: string;
     titleLead: string;
@@ -218,6 +226,7 @@ export const aboutPt: AboutContent = {
       { label: "Time", href: "#time" },
       { label: "Parceiros", href: "#parceiros" },
       { label: "Parcerias", href: "#parcerias-estrategicas" },
+      { label: "Prêmios", href: "#premios" },
       { label: "Mídia", href: "#midia" },
       { label: "Contato", href: "#contato" },
     ],
@@ -460,6 +469,32 @@ export const aboutPt: AboutContent = {
       cta: "Propor uma parceria",
     },
   },
+  awards: {
+    eyebrow: "Prêmios",
+    titleLead: "Dois primeiros lugares ",
+    titleAccent: "com a EmpowerFI",
+    subtitle: "Desafios da Superteam Brasil em 2026. Os dois podem ser conferidos na Superteam Earn.",
+    items: [
+      {
+        place: "1º lugar",
+        title: "Dev3pack Solana Build Challenge",
+        by: "Dev3pack, com Superteam Brasil e SheFi Brasil",
+        desc: "Competição para times construindo na Solana.",
+        prize: "300 USDG",
+        href: AWARD_URLS.dev3pack,
+        linkLabel: "Ver na Superteam Earn",
+      },
+      {
+        place: "1º lugar",
+        title: "Privacy Week: privacidade com Cloak e Zcash",
+        by: "Superteam Brasil",
+        desc: "Desafio de privacidade para participantes do hackathon da Colosseum.",
+        prize: "100 USDG",
+        href: AWARD_URLS.privacyWeek,
+        linkLabel: "Ver na Superteam Earn",
+      },
+    ],
+  },
   recognitions: {
     eyebrow: "Reconhecimentos",
     titleLead: "O que já é ",
@@ -587,6 +622,7 @@ export const aboutEn: AboutContent = {
       { label: "Team", href: "#time" },
       { label: "Partners", href: "#parceiros" },
       { label: "Partnerships", href: "#parcerias-estrategicas" },
+      { label: "Awards", href: "#premios" },
       { label: "Media", href: "#midia" },
       { label: "Contact", href: "#contato" },
     ],
@@ -829,6 +865,32 @@ export const aboutEn: AboutContent = {
       note: "Partnerships complement the sponsored Impact Marketing campaigns. They are not a sponsorship product.",
       cta: "Explore a Partnership",
     },
+  },
+  awards: {
+    eyebrow: "Awards",
+    titleLead: "Two first places ",
+    titleAccent: "with EmpowerFI",
+    subtitle: "Superteam Brasil challenges in 2026. Both can be checked on Superteam Earn.",
+    items: [
+      {
+        place: "1st place",
+        title: "Dev3pack Solana Build Challenge",
+        by: "Dev3pack, with Superteam Brasil and SheFi Brasil",
+        desc: "A competition for teams building on Solana.",
+        prize: "300 USDG",
+        href: AWARD_URLS.dev3pack,
+        linkLabel: "See it on Superteam Earn",
+      },
+      {
+        place: "1st place",
+        title: "Privacy Week: privacy with Cloak and Zcash",
+        by: "Superteam Brasil",
+        desc: "A privacy challenge for participants of the Colosseum hackathon.",
+        prize: "100 USDG",
+        href: AWARD_URLS.privacyWeek,
+        linkLabel: "See it on Superteam Earn",
+      },
+    ],
   },
   recognitions: {
     eyebrow: "Recognition",

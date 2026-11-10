@@ -1,9 +1,9 @@
-import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, Trophy } from "lucide-react";
 import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
 import { GradedRule, SiteLinkButton } from "@/components/site/editorial";
 import { SEBRAE_LOGO_SRC, UNICAMP_SEAL_SRC } from "@/config/links";
-import { DIARY_PATH, type Lang, type Maturity, MISSIONS_DEMO_PATH, PARTNERSHIPS_ANCHOR, PATHS, SITE } from "./content";
+import { AWARDS_ANCHOR, DIARY_PATH, type Lang, type Maturity, MISSIONS_DEMO_PATH, PARTNERSHIPS_ANCHOR, PATHS, SITE } from "./content";
 import { CampaignFlow, ContactForm, DiaryAccess, MaturityTag, MoreLink, Section, Shot, SitePage } from "./parts";
 
 const shot = (name: "month" | "day", lang: Lang) => `/site/diary-${name}-${lang}.png`;
@@ -137,6 +137,22 @@ export function HomePage({ lang }: { lang: Lang }) {
               )}
             </div>
           ))}
+        </div>
+        <div className="mt-14 border-t border-foreground/15 pt-10">
+          <h3 className="flex items-center gap-2 font-heading text-2xl"><Trophy size={22} className="text-accent" aria-hidden />{t.traction.awards.title}</h3>
+          <ul className="mt-5 grid gap-6 sm:grid-cols-2">
+            {t.traction.awards.items.map((a) => (
+              <li key={a.title} className="border-l-2 border-gold pl-4">
+                <p className="label-ui text-accent">{a.place}</p>
+                <a href={a.href} target="_blank" rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-start gap-1.5 font-heading text-[1.2rem] leading-snug underline-offset-4 hover:underline">
+                  {a.title} <ArrowUpRight size={16} className="mt-1 shrink-0 text-accent" aria-hidden />
+                </a>
+                <p className="mt-1 text-foreground/75">{a.by}</p>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4"><MoreLink to={`${p.about}#${AWARDS_ANCHOR}`}>{t.traction.awards.cta}</MoreLink></div>
         </div>
         <div className="mt-14 grid gap-10 border-t border-foreground/15 pt-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div className="max-w-2xl">

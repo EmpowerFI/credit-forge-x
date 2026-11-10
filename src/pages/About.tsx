@@ -9,6 +9,7 @@ import AboutTeam from "@/components/about/AboutTeam";
 import AboutPartners from "@/components/about/AboutPartners";
 import AboutStrategy from "@/components/about/AboutStrategy";
 import AboutMedia from "@/components/about/AboutMedia";
+import AboutAwards from "@/components/about/AboutAwards";
 import AboutRecognitions from "@/components/about/AboutRecognitions";
 import AboutFaq from "@/components/about/AboutFaq";
 import AboutContact from "@/components/about/AboutContact";
@@ -50,6 +51,7 @@ const About = () => (
     <AboutTeam team={aboutEn.team} founderPhotoSrc={founderPhoto} />
     <AboutPartners partners={aboutEn.partners} />
     <AboutStrategy strategy={aboutEn.strategy} lang="en" />
+    <AboutAwards awards={aboutEn.awards} />
     <AboutRecognitions recognitions={aboutEn.recognitions} />
     <AboutMedia media={mediaEn} items={mediaItemsEn} pageLang="en" />
     <AboutFaq faq={aboutEn.faq} />
