@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { tr } from "../i18n";
 import { MyRewards } from "./Campaigns";
 import { ProfitValue } from "./Month";
-import { AllReadings } from "./Reading";
 import { addDays, brl, cachedToday, categoryLabel, dayMoney, dayName, diary, diaryErrorText, type HistoryEntry, methodLabel, MONTH_KEY, openDaysOf, payShare, PROFILE_KEY, profitLabel } from "./diary";
 
 /** The last 31 days she kept, newest first. Today's and yesterday's lines can be taken back. */
@@ -54,7 +53,6 @@ export default function History() {
         })}
       </p>
       {me.data && <MyRewards profile={me.data} />}
-      <AllReadings />
 
       {history.isLoading && <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-20 w-full" />)}</div>}
       {history.error && (
