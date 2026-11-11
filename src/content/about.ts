@@ -203,7 +203,6 @@ export interface AboutContent {
   footer: {
     tagline: string;
     developedBy: string;
-    cnpjLabel: string;
     privacy: string;
     terms: string;
     contact: string;
@@ -599,7 +598,6 @@ export const aboutPt: AboutContent = {
   footer: {
     tagline: "Ferramentas financeiras simples e oportunidades patrocinadas para mulheres que empreendem.",
     developedBy: "Produto desenvolvido por",
-    cnpjLabel: "CNPJ",
     privacy: "Política de Privacidade",
     terms: "Termos de Uso",
     contact: "Contato",
@@ -996,7 +994,6 @@ export const aboutEn: AboutContent = {
   footer: {
     tagline: "Simple financial tools and sponsored opportunities for women entrepreneurs.",
     developedBy: "Product developed by",
-    cnpjLabel: "Company tax ID (CNPJ)",
     privacy: "Privacy Policy",
     terms: "Terms of Use",
     contact: "Contact",

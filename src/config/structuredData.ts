@@ -4,12 +4,8 @@
 
 import {
   COMPANY_BRAND_NAME,
-  COMPANY_CITY,
-  COMPANY_CNPJ,
-  COMPANY_COUNTRY_CODE,
   COMPANY_FOUNDING_YEAR,
   COMPANY_LEGAL_NAME,
-  COMPANY_STATE,
   FOUNDER_LINKEDIN_URL,
   FOUNDER_NAME,
   SITE_URL,
@@ -32,12 +28,6 @@ export const organizationSchema = (): Record<string, unknown> => ({
   foundingDate: COMPANY_FOUNDING_YEAR,
   description:
     "EmpowerFI builds simple financial tools and sponsored engagement campaigns for women entrepreneurs in Brazil. Entrepreneurs track sales, expenses and profit and keep daily financial records; organizations sponsor 30-day campaigns, priced per participant, with conditional rewards. Its long-term infrastructure is privacy-preserving, programmable financial reputation. EmpowerFI holds no lending or investment licence.",
-  address: {
-    "@type": "PostalAddress",
-    addressLocality: COMPANY_CITY,
-    addressRegion: COMPANY_STATE,
-    addressCountry: COMPANY_COUNTRY_CODE,
-  },
   founder: {
     "@type": "Person",
     name: FOUNDER_NAME,
@@ -54,9 +44,6 @@ export const organizationSchema = (): Record<string, unknown> => ({
   // Unicamp's official recognition, so the distinction is machine-readable and
   // not only a mark on a card.
   award: "Selo Empresa-filha da Unicamp (Unicamp Ventures)",
-  // Only advertise the tax ID once it is confirmed — a blank taxID is worse
-  // than an absent one.
-  ...(COMPANY_CNPJ ? { taxID: COMPANY_CNPJ } : {}),
 });
 
 export const softwareApplicationSchema = (): Record<string, unknown> => ({

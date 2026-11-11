@@ -28,8 +28,8 @@ export interface LegalDoc {
   sections: LegalSection[];
 }
 
-const LAST_UPDATED_PT = "5 de novembro de 2026";
-const LAST_UPDATED_EN = "5 November 2026";
+const LAST_UPDATED_PT = "11 de novembro de 2026";
+const LAST_UPDATED_EN = "11 November 2026";
 
 export const privacyPt: LegalDoc = {
   title: "Política de Privacidade",
@@ -42,7 +42,7 @@ export const privacyPt: LegalDoc = {
     {
       title: "Quem é o controlador dos seus dados",
       paragraphs: [
-        `O controlador dos dados pessoais tratados nesta plataforma é ${COMPANY_LEGAL_NAME}, sociedade estabelecida em ${COMPANY_CITY} – ${COMPANY_STATE}, Brasil, responsável pelo desenvolvimento e pela operação do aplicativo e do site EmpowerFI.`,
+        `O controlador dos dados pessoais tratados nesta plataforma é ${COMPANY_LEGAL_NAME}, responsável pelo desenvolvimento e pela operação do aplicativo e do site EmpowerFI.`,
         `Para qualquer assunto relacionado a privacidade e proteção de dados, incluindo o exercício dos seus direitos como titular, o canal oficial é o e-mail ${CONTACT_EMAIL}.`,
       ],
     },
@@ -174,7 +174,7 @@ export const privacyEn: LegalDoc = {
     {
       title: "Who controls your data",
       paragraphs: [
-        `The controller of the personal data processed on this platform is ${COMPANY_LEGAL_NAME}, a company established in ${COMPANY_CITY} – ${COMPANY_STATE}, Brazil, responsible for developing and operating the EmpowerFI app and website.`,
+        `The controller of the personal data processed on this platform is ${COMPANY_LEGAL_NAME}, responsible for developing and operating the EmpowerFI app and website.`,
         `For any matter related to privacy and data protection, including exercising your rights as a data subject, the official channel is ${CONTACT_EMAIL}.`,
       ],
     },
@@ -304,7 +304,7 @@ export const termsPt: LegalDoc = {
     {
       title: "Aceitação destes termos",
       paragraphs: [
-        `Estes Termos de Uso regem o acesso e a utilização do aplicativo e do site EmpowerFI, operados por ${COMPANY_LEGAL_NAME}, com sede em ${COMPANY_CITY} – ${COMPANY_STATE}, Brasil. Ao criar um perfil ou utilizar a plataforma, você declara que leu, compreendeu e concorda com estes termos.`,
+        `Estes Termos de Uso regem o acesso e a utilização do aplicativo e do site EmpowerFI, operados por ${COMPANY_LEGAL_NAME}. Ao criar um perfil ou utilizar a plataforma, você declara que leu, compreendeu e concorda com estes termos.`,
         "Se você não concordar com qualquer disposição aqui prevista, não utilize a plataforma.",
       ],
     },
@@ -411,7 +411,7 @@ export const termsEn: LegalDoc = {
     {
       title: "Acceptance of these terms",
       paragraphs: [
-        `These Terms of Use govern access to and use of the EmpowerFI app and website, operated by ${COMPANY_LEGAL_NAME}, headquartered in ${COMPANY_CITY} – ${COMPANY_STATE}, Brazil. By creating a profile or using the platform, you confirm that you have read, understood and agree to these terms.`,
+        `These Terms of Use govern access to and use of the EmpowerFI app and website, operated by ${COMPANY_LEGAL_NAME}. By creating a profile or using the platform, you confirm that you have read, understood and agree to these terms.`,
         "If you do not agree with any provision set out here, do not use the platform.",
       ],
     },
