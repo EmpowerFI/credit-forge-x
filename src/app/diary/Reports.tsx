@@ -8,7 +8,7 @@ import { tr } from "../i18n";
 import { ProfitValue } from "./Month";
 import { AllReadings } from "./Reading";
 import {
-  brl, categoryLabel, diary, diaryErrorText, methodLabel, type MonthStatement, PAYMENT_METHODS, profitLabel,
+  brl, categoryLabel, diary, diaryErrorText, methodLabel, type MonthStatement, type OnTerms, PAYMENT_METHODS, profitLabel,
 } from "./diary";
 
 /**
@@ -117,11 +117,18 @@ function Statement({ s, refreshing }: { s: MonthStatement; refreshing: boolean }
         </dl>
       )}
 
+      {s.bought_on_terms && <OnTermsBlock kind="expense" t={s.bought_on_terms} complete={s.complete} />}
+      {s.sold_on_terms && <OnTermsBlock kind="sale" t={s.sold_on_terms} complete={s.complete} />}
+
       {(s.taken_home_cents > 0 || s.receivable_cents > 0 || s.payable_cents > 0) && (
         <dl className="space-y-1 border-t border-border pt-3 text-sm text-muted-foreground">
           {s.taken_home_cents > 0 && <Line plain label={tr({ en: "Taken home (not a cost)", pt: "Retirada para casa (não é gasto)" })} cents={s.taken_home_cents} />}
-          {s.receivable_cents > 0 && <Line plain label={tr({ en: "Still to receive, in later months", pt: "A receber nos próximos meses" })} cents={s.receivable_cents} />}
-          {s.payable_cents > 0 && <Line plain label={tr({ en: "Still to pay, in later months", pt: "A pagar nos próximos meses" })} cents={s.payable_cents} />}
+          {s.receivable_cents > 0 && <Line plain label={s.complete
+            ? tr({ en: "Still to receive, in later months", pt: "A receber nos próximos meses" })
+            : tr({ en: "Still to receive, after today", pt: "A receber depois de hoje" })} cents={s.receivable_cents} />}
+          {s.payable_cents > 0 && <Line plain label={s.complete
+            ? tr({ en: "Still to pay, in later months", pt: "A pagar nos próximos meses" })
+            : tr({ en: "Still to pay, after today", pt: "A pagar depois de hoje" })} cents={s.payable_cents} />}
         </dl>
       )}
       <p className="text-xs text-muted-foreground">
@@ -131,6 +138,28 @@ function Statement({ s, refreshing }: { s: MonthStatement; refreshing: boolean }
         })}
       </p>
     </div>
+  );
+}
+
+/**
+ * What she bought (or sold) in the month in instalments or to pay later: the whole
+ * amount, and how it splits between this month's statement and later ones, so a
+ * purchase whose instalments fall due later does not look missing.
+ */
+function OnTermsBlock({ kind, t, complete }: { kind: "sale" | "expense"; t: OnTerms; complete: boolean }) {
+  const buy = kind === "expense";
+  return (
+    <dl className="space-y-1 rounded-lg bg-secondary/60 p-3 text-sm">
+      <Line tone={buy ? "expense" : "sales"} label={buy
+        ? tr({ en: `Bought in instalments or to pay later (${t.lines})`, pt: `Compras parceladas ou a prazo (${t.lines})` })
+        : tr({ en: `Sold in instalments or to receive later (${t.lines})`, pt: `Vendas parceladas ou a prazo (${t.lines})` })} cents={t.total_cents} />
+      <Line sub label={buy
+        ? tr({ en: "In this month's expenses", pt: "Entram nos gastos deste mês" })
+        : tr({ en: "In this month's sales", pt: "Entram nas vendas deste mês" })} cents={t.in_month_cents} />
+      <Line sub label={complete
+        ? tr({ en: "Fall due in later months", pt: "Vencem nos próximos meses" })
+        : tr({ en: "Fall due after today", pt: "Vencem depois de hoje" })} cents={t.later_cents} />
+    </dl>
   );
 }
 
@@ -160,7 +189,7 @@ function Line({ label, cents, strong, sub, total, minus, plain, tone }: {
     return (
       <div className="flex items-baseline justify-between gap-3 border-t border-border pt-1.5">
         <dt className="font-semibold">= {label}</dt>
-        <dd className={`font-semibold tabular-nums ${cents < 0 ? "text-alert" : "text-positive"}`}>{cents < 0 ? `−${brl(-cents)}` : brl(cents)}</dd>
+        <dd className={`shrink-0 whitespace-nowrap font-semibold tabular-nums ${cents < 0 ? "text-alert" : "text-positive"}`}>{cents < 0 ? `−${brl(-cents)}` : brl(cents)}</dd>
       </div>
     );
   }
@@ -169,7 +198,7 @@ function Line({ label, cents, strong, sub, total, minus, plain, tone }: {
       <dt className={`${strong || (!sub && !plain) ? "font-medium" : ""} ${sub || plain ? "" : color}`}>
         {minus && !sub && <span aria-hidden="true">− </span>}{label}
       </dt>
-      <dd className={`tabular-nums ${sub || plain ? "" : `font-semibold ${color}`}`}>{brl(cents)}</dd>
+      <dd className={`shrink-0 whitespace-nowrap tabular-nums ${sub || plain ? "" : `font-semibold ${color}`}`}>{brl(cents)}</dd>
     </div>
   );
 }
