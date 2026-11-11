@@ -27,7 +27,7 @@ const Sources = () => (
       lang="en"
       alternates={alternates}
     />
-    <SiteNav lang="en" twin="/pt" />
+    <SiteNav lang="en" twin="/" />
     <div className="pt-16"><MarketEvidenceSectionEn sourcesLink={false} /></div>
 
     <main className="section-padding">
@@ -85,7 +85,7 @@ const Sources = () => (
       </div>
     </main>
 
-    <SiteFoot lang="en" twin="/pt" />
+    <SiteFoot lang="en" twin="/" />
   </div>
 );
 

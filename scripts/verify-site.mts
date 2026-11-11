@@ -14,7 +14,7 @@ const errors: string[] = [];
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 page.on("pageerror", (e) => errors.push(String(e)));
 
-await page.goto(`${BASE}${PT ? "/pt" : "/"}`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}${PT ? "/" : "/en"}`, { waitUntil: "networkidle" });
 await settle(page, 2000);
 
 const body = (await page.locator("body").innerText()).toLowerCase();

@@ -142,7 +142,7 @@ CI runs the first, the Deno gate and the program's LiteSVM tests on every push a
 src/app/                     the platform (/app): pages by role, audit screen
 src/app/diary/               the EmpowerFI diary (/app/diario), on the app's production database
 src/app/missions/            EmpowerFI Missions (/app/missions), the platform's main page
-src/                         the public site (EN at /, PT-BR at /pt)
+src/                         the public site (PT-BR at /, the main page; EN at /en)
 packages/                    campaign-vault · readiness-engine · eligibility-engine · capital-allocation · settlement-route · audit-commitments · audit-client
 programs/empowerfi-audit     the Anchor program and its tests
 programs/empowerfi-rewards   the campaign-vault program (Missions) and its LiteSVM tests
@@ -157,7 +157,7 @@ docs/                        architecture, privacy, demo script, languages
 
 ## The public site
 
-Vite + React 18 + TypeScript, Tailwind and shadcn/ui, bilingual: English at `/` (with `/entrepreneurs`, `/sponsors`, `/protocol`, `/about`, `/sources`), Portuguese at `/pt` (with `/pt/empreendedoras`, `/pt/patrocinadores`, `/pt/protocolo`, `/pt/sobre`). The home page says what EmpowerFI offers now: financial tools for her (the diary), Impact Marketing campaigns for sponsors (Missions) and how their rewards work, the technology and its vision, and traction. `/sponsors` presents the one sponsorship product; strategic partnerships sit on `/about`, with the business model; `/protocol` is the long-term reputation layer (the old `/investors` redirects there). Every claim carries its maturity — available, devnet, in development or planned. A change to a page in one language is mirrored in the other. The header's **Platform** link opens Missions in the page's language. The contact form uses the `send-transactional-email` Edge Function of the website's Supabase project (root `supabase/`, kept separate from `platform/`).
+Vite + React 18 + TypeScript, Tailwind and shadcn/ui, bilingual: Portuguese is the main page, at `/` (with `/pt/empreendedoras`, `/pt/patrocinadores`, `/pt/protocolo`, `/pt/sobre`; `/pt` redirects to `/`), and English at `/en` (with `/entrepreneurs`, `/sponsors`, `/protocol`, `/about`, `/sources`). The home page says what EmpowerFI offers now: financial tools for her (the diary), Impact Marketing campaigns for sponsors (Missions) and how their rewards work, the technology and its vision, and traction. `/sponsors` presents the one sponsorship product; strategic partnerships sit on `/about`, with the business model; `/protocol` is the long-term reputation layer (the old `/investors` redirects there). Every claim carries its maturity — available, devnet, in development or planned. A change to a page in one language is mirrored in the other. The header's **Platform** link opens Missions in the page's language. The contact form uses the `send-transactional-email` Edge Function of the website's Supabase project (root `supabase/`, kept separate from `platform/`).
 
 Deployed on Vercel: [`vercel.json`](vercel.json) sets the Vite preset and a SPA rewrite so client-side routes (`/pt`, `/app/...`) resolve on direct load. Set the `VITE_*` variables above for Production and Preview.
 

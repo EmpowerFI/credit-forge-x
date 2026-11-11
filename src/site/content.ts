@@ -9,8 +9,8 @@ export type Lang = "en" | "pt";
 export type Maturity = "available" | "devnet" | "development" | "planned";
 
 export const PATHS = {
-  en: { home: "/", entrepreneurs: "/entrepreneurs", sponsors: "/sponsors", protocol: "/protocol", about: "/about", privacy: "/privacy", terms: "/terms" },
-  pt: { home: "/pt", entrepreneurs: "/pt/empreendedoras", sponsors: "/pt/patrocinadores", protocol: "/pt/protocolo", about: "/pt/sobre", privacy: "/privacidade", terms: "/termos" },
+  en: { home: "/en", entrepreneurs: "/entrepreneurs", sponsors: "/sponsors", protocol: "/protocol", about: "/about", privacy: "/privacy", terms: "/terms" },
+  pt: { home: "/", entrepreneurs: "/pt/empreendedoras", sponsors: "/pt/patrocinadores", protocol: "/pt/protocolo", about: "/pt/sobre", privacy: "/privacidade", terms: "/termos" },
 } as const;
 
 /** The diary on the web, and the devnet demo of the campaign vault. */
