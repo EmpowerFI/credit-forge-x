@@ -36,7 +36,9 @@ const App = () => (
         <Routes>
           {/* English is the corporate site and lives at the root: it is what an
               investor, a partner or a hackathon judge opens at empowerfi.io. */}
-          <Route path="/" element={<HomePage lang="en" />} />
+          {/* The main page is in Portuguese; the English one is at /en. */}
+          <Route path="/" element={<HomePage lang="pt" />} />
+          <Route path="/en" element={<HomePage lang="en" />} />
           <Route path="/entrepreneurs" element={<EntrepreneursPage lang="en" />} />
           <Route path="/sponsors" element={<SponsorsPage lang="en" />} />
           <Route path="/protocol" element={<ProtocolPage lang="en" />} />
@@ -46,7 +48,7 @@ const App = () => (
           <Route path="/sources" element={<Sources />} />
 
           {/* Portuguese: the same five places, written for Brazil. */}
-          <Route path="/pt" element={<HomePage lang="pt" />} />
+          <Route path="/pt" element={<Navigate to="/" replace />} />
           <Route path="/pt/empreendedoras" element={<EntrepreneursPage lang="pt" />} />
           <Route path="/pt/patrocinadores" element={<SponsorsPage lang="pt" />} />
           <Route path="/pt/protocolo" element={<ProtocolPage lang="pt" />} />
@@ -59,7 +61,6 @@ const App = () => (
           {/* Where /en/* used to live. Vercel serves 308s for these in
               production (see vercel.json); these keep dev and direct
               client-side navigation working. */}
-          <Route path="/en" element={<Navigate to="/" replace />} />
           <Route path="/en/about" element={<Navigate to="/about" replace />} />
           <Route path="/en/privacy" element={<Navigate to="/privacy" replace />} />
           <Route path="/en/terms" element={<Navigate to="/terms" replace />} />

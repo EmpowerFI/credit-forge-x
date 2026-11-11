@@ -81,7 +81,8 @@ export function SitePage({ lang, page, seo, children }: {
   const alternates = [
     { hreflang: "en", path: PATHS.en[page] },
     { hreflang: "pt-BR", path: PATHS.pt[page] },
-    { hreflang: "x-default", path: PATHS.en[page] },
+    // The main page is the Portuguese one; elsewhere English is the default.
+    { hreflang: "x-default", path: page === "home" ? PATHS.pt.home : PATHS.en[page] },
   ];
   return (
     <div className="min-h-screen bg-background">

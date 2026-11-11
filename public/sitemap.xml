@@ -6,15 +6,15 @@
 >
   <url>
     <loc>https://empowerfi.io/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://empowerfi.io/" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://empowerfi.io/pt" />
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://empowerfi.io/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://empowerfi.io/en" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://empowerfi.io/" />
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://empowerfi.io/pt</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://empowerfi.io/" />
-    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://empowerfi.io/pt" />
+    <loc>https://empowerfi.io/en</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://empowerfi.io/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://empowerfi.io/en" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://empowerfi.io/" />
     <priority>1.0</priority>
   </url>

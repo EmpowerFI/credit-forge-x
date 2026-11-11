@@ -18,7 +18,7 @@ interface LegalPageProps {
 const LegalPage = ({ doc, lang, path, alternates }: LegalPageProps) => {
   const pt = lang === "pt-BR";
   const content = pt ? aboutPt : aboutEn;
-  const homePath = pt ? "/pt" : "/";
+  const homePath = pt ? "/" : "/en";
 
   return (
     <div className="min-h-screen bg-background">

@@ -26,7 +26,7 @@ const LanguageToggle = ({ language, className = "" }: { language: Language; clas
       className="label-ui flex min-h-[2.5rem] items-center bg-foreground/[0.06] px-2.5 text-foreground/70">
       {language.current}
     </span>
-    <Link to={language.to} hrefLang={language.to.startsWith("/pt") ? "pt-BR" : "en"}
+    <Link to={language.to} hrefLang={language.to === "/" || language.to.startsWith("/pt") || ["/privacidade", "/termos"].includes(language.to) ? "pt-BR" : "en"}
       // Gold, because everywhere else on the site gold means "you can click
       // this". Leaving the other language quieter than the one you are already
       // reading pointed the eye at the wrong half of the control.
