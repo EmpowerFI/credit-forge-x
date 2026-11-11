@@ -281,6 +281,9 @@ export interface MonthSoFar {
   monthly_need_cents: number | null;
 }
 
+/** Lines made in a month on terms: how many, the whole amount, and how much falls due in the month and after it. */
+export interface OnTerms { lines: number; total_cents: number; in_month_cents: number; later_cents: number }
+
 /** One month as a statement (diary_month_statement): the same money as "Seu mês", laid out like a DRE. */
 export interface MonthStatement {
   period: string;
@@ -301,6 +304,10 @@ export interface MonthStatement {
   taken_home_cents: number;
   receivable_cents: number;
   payable_cents: number;
+  /** Sales she made in the month to receive later or in instalments; null if none. */
+  sold_on_terms: OnTerms | null;
+  /** Purchases she made in the month to pay later or in instalments; null if none. */
+  bought_on_terms: OnTerms | null;
   /** Every month she can open, newest first (YYYY-MM). */
   months: string[];
 }
