@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, BookOpen, Handshake, Loader2, PenLine, RefreshCw } from "lucide-react";
+import { Bell, BookOpen, ChartColumn, Handshake, Loader2, PenLine, RefreshCw } from "lucide-react";
 import { tr } from "../i18n";
 import { Button } from "@/components/ui/button";
 import { diaryClosed, useDiarySession } from "./db";
@@ -19,6 +19,7 @@ const Today = lazy(() => import("./Today"));
 const History = lazy(() => import("./History"));
 const Reminders = lazy(() => import("./Reminders"));
 const Sponsors = lazy(() => import("./Sponsors"));
+const Reports = lazy(() => import("./Reports"));
 
 const waiting = (
   <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
@@ -52,6 +53,7 @@ export default function DiaryApp() {
             <Route index element={<Today />} />
             <Route path="historico" element={<History />} />
             <Route path="lembretes" element={<Reminders />} />
+            <Route path="relatorios" element={<Reports />} />
             <Route path="patrocinadores" element={<Sponsors />} />
             <Route path="*" element={<Navigate to="/app/diario" replace />} />
           </Route>
@@ -169,6 +171,7 @@ function Layout({ name, userId }: { name: string; userId: string }) {
         <div className="mx-auto flex max-w-md">
           {tab("/app/diario", tr({ en: "Today", pt: "Hoje" }), PenLine, true)}
           {tab("/app/diario/historico", tr({ en: "History", pt: "Histórico" }), BookOpen, false, "tab-history")}
+          {tab("/app/diario/relatorios", tr({ en: "Reports", pt: "Relatórios" }), ChartColumn)}
           {tab("/app/diario/patrocinadores", tr({ en: "Sponsors", pt: "Patrocinadores" }), Handshake)}
           {tab("/app/diario/lembretes", tr({ en: "Reminders", pt: "Lembretes" }), Bell)}
         </div>

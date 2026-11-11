@@ -1,6 +1,6 @@
-import { Fragment, useEffect, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Sparkles } from "lucide-react";
+import { ChevronDown, Sparkles } from "lucide-react";
 import { tr } from "../i18n";
 import { addDays, brl, diary, mondayOf, type WeekReading, weekSpan } from "./diary";
 import { ProfitValue } from "./Month";
@@ -95,7 +95,9 @@ function Figures({ f }: { f: NonNullable<WeekReading["figures"]> }) {
 }
 
 /** One reading, as she reads it. */
-export function ReadingCard({ reading, open = true }: { reading: WeekReading; open?: boolean }) {
+export function ReadingCard({ reading, open = true, collapsible = false }: { reading: WeekReading; open?: boolean; collapsible?: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  const bodyId = useId();
   const r = reading.report;
   const colours = amountColours(reading.figures);
   const body = (
@@ -124,6 +126,28 @@ export function ReadingCard({ reading, open = true }: { reading: WeekReading; op
   );
   const title = tr({ en: `Week of ${weekSpan(reading.week_start)}`, pt: `Semana de ${weekSpan(reading.week_start)}` });
 
+  if (collapsible) {
+    // On Hoje: closed until she opens it, so the screen is not all reading.
+    return (
+      <section className="rounded-xl border-2 border-primary/30 bg-card" aria-labelledby={`reading-${reading.week_start}`}>
+        <button type="button" aria-expanded={expanded} aria-controls={bodyId} onClick={() => setExpanded(!expanded)}
+          className="flex w-full items-center justify-between gap-3 rounded-xl p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <span>
+            <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+              <Sparkles size={16} aria-hidden="true" />{tr({ en: "Your week, read", pt: "Sua leitura da semana" })}
+            </span>
+            <span id={`reading-${reading.week_start}`} className="block font-heading text-lg font-semibold">{title}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-1 text-sm text-muted-foreground">
+            {expanded ? tr({ en: "Close", pt: "Fechar" }) : tr({ en: "Read", pt: "Ler" })}
+            <ChevronDown size={18} aria-hidden="true" className={`transition-transform motion-reduce:transition-none ${expanded ? "rotate-180" : ""}`} />
+          </span>
+        </button>
+        <div id={bodyId} hidden={!expanded} className="px-4 pb-4">{body}</div>
+      </section>
+    );
+  }
+
   if (open) {
     return (
       <section className="space-y-2 rounded-xl border-2 border-primary/30 bg-card p-4" aria-labelledby={`reading-${reading.week_start}`}>
@@ -149,17 +173,17 @@ export function ReadingCard({ reading, open = true }: { reading: WeekReading; op
 
 /**
  * On Hoje: the reading of the week that has just closed, for the week after
- * it. Older ones live in the history.
+ * it, closed until she opens it. Every reading lives in Relatórios.
  */
 export function LatestReading({ today }: { today: string }) {
   useCheckReading(today);
   const readings = useReadings();
   const latest = readings.data?.[0];
   if (!latest || latest.week_start < addDays(mondayOf(today), -7)) return null;
-  return <ReadingCard reading={latest} />;
+  return <ReadingCard reading={latest} collapsible />;
 }
 
-/** In the history: every reading, the newest open. */
+/** In Relatórios: every reading, the newest open. */
 export function AllReadings() {
   const readings = useReadings();
   const list = readings.data ?? [];

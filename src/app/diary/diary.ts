@@ -253,6 +253,7 @@ export const diary = {
   joinCampaign: (id: string) => call<{ starts_on: string; until: string }>("diary_campaign_join", { p_program_id: id }),
   leaveCampaign: () => call<{ ends_on: string }>("diary_campaign_leave"),
   month: () => call<MonthSoFar>("diary_month"),
+  statement: (period?: string) => call<MonthStatement>("diary_month_statement", period ? { p_period: period } : {}),
   setMonthlyNeed: (cents: number | null) => call<number | null>("diary_monthly_need_set", { p_cents: cents }),
   setOpenDays: (days: number[]) => call<number[]>("diary_open_days_set", { p_days: days }),
   setAiReading: (on: boolean) => call<boolean>("diary_ai_reading_set", { p_on: on }),
@@ -278,6 +279,30 @@ export interface MonthSoFar {
   days_kept: number;
   /** "Coloque aqui o seu salário mensal": her pay, the month's break-even. Null until she says. */
   monthly_need_cents: number | null;
+}
+
+/** One month as a statement (diary_month_statement): the same money as "Seu mês", laid out like a DRE. */
+export interface MonthStatement {
+  period: string;
+  first_day: string;
+  last_day: string;
+  /** The last day counted: the month's last, or today while it runs. */
+  to: string;
+  complete: boolean;
+  days_kept: number;
+  sales_cents: number;
+  sales_by_method: Partial<Record<PaymentMethod, number>>;
+  expenses_by_category: { category: Category | null; group: "cogs" | "opex" | "staff" | "investment" | "financing" | null; cents: number }[];
+  expenses_cents: number;
+  /** Sales less the business's expenses, before her salary. */
+  result_cents: number;
+  salary_cents: number | null;
+  profit_cents: number | null;
+  taken_home_cents: number;
+  receivable_cents: number;
+  payable_cents: number;
+  /** Every month she can open, newest first (YYYY-MM). */
+  months: string[];
 }
 
 /** A week's reading: what the model wrote (checked) or the fixed-sentence fallback, in Portuguese. */
