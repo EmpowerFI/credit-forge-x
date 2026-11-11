@@ -103,7 +103,7 @@ function Statement({ s, refreshing }: { s: MonthStatement; refreshing: boolean }
           <Line total label={tr({ en: "The business's result", pt: "Resultado do negócio" })} cents={s.result_cents} />
           {s.salary_cents !== null ? (
             <>
-              <Line minus label={tr({ en: "Your monthly salary", pt: "Seu salário do mês" })} cents={s.salary_cents} />
+              <Line minus tone="expense" label={tr({ en: "Your monthly salary", pt: "Seu salário do mês" })} cents={s.salary_cents} />
               <div className="flex items-baseline justify-between gap-3 border-t-2 border-foreground/20 pt-2">
                 <dt className="font-semibold">{profitLabel(s.profit_cents ?? 0)}</dt>
                 <dd><ProfitValue cents={s.profit_cents ?? 0} className="font-heading text-xl font-semibold" /></dd>
@@ -148,7 +148,10 @@ function Group({ id, byGroup }: { id: (typeof GROUPS)[number]["id"]; byGroup: (g
   );
 }
 
-/** One row of the statement. A sub-row is indented and quieter; a total has a rule above it. */
+/**
+ * One row of the statement. Sales in blue, costs in orange, a subtotal green when it is a
+ * profit and red when it is a loss. A sub-row is indented and quieter; a total has a rule above it.
+ */
 function Line({ label, cents, strong, sub, total, minus, plain, tone }: {
   label: string; cents: number; strong?: boolean; sub?: boolean; total?: boolean; minus?: boolean; plain?: boolean; tone?: "sales" | "expense";
 }) {
@@ -157,7 +160,7 @@ function Line({ label, cents, strong, sub, total, minus, plain, tone }: {
     return (
       <div className="flex items-baseline justify-between gap-3 border-t border-border pt-1.5">
         <dt className="font-semibold">= {label}</dt>
-        <dd className={`font-semibold tabular-nums ${cents < 0 ? "text-alert" : ""}`}>{cents < 0 ? `−${brl(-cents)}` : brl(cents)}</dd>
+        <dd className={`font-semibold tabular-nums ${cents < 0 ? "text-alert" : "text-positive"}`}>{cents < 0 ? `−${brl(-cents)}` : brl(cents)}</dd>
       </div>
     );
   }
