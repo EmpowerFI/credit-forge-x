@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import {
   base58, campaignWindow, checkCampaign, createCampaignData, decodeCampaign, discriminator, HOUSE_WALLET, OPERATOR_WALLET,
-  leafCommitment, payRewardData, rewardPerSeat, spDay, termsJson, USDC_DEVNET_MINT, uuidBytes,
+  leafCommitment, payRewardData, rewardPerSeat, setPayoutData, withdrawHouseData, withdrawRewardData, spDay, termsJson, USDC_DEVNET_MINT, uuidBytes,
 } from "./index";
 
 const ID = "0f0e0d0c-0b0a-4908-8706-050403020100";
@@ -108,5 +108,27 @@ describe("rewards", () => {
   it("pays half the seat, rounded down, as the program does", () => {
     expect(rewardPerSeat(1_000_000_000n, 100)).toBe(5_000_000n);
     expect(rewardPerSeat(1_000_001n, 100)).toBe(5_000n);
+  });
+});
+
+describe("paying out", () => {
+  // The discriminators the program's IDL gives (anchor build).
+  const IDL = { set_payout: [55, 43, 132, 51, 227, 169, 242, 195], withdraw_reward: [191, 187, 176, 137, 9, 25, 187, 244], withdraw_house: [226, 236, 222, 156, 198, 230, 70, 147] };
+  const ref = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+
+  it("lays set_payout out as the program reads it", async () => {
+    const d = await setPayoutData(ref, new Uint8Array(32).fill(9));
+    expect([...d.slice(0, 8)]).toEqual(IDL.set_payout);
+    expect(d.length).toBe(8 + 16 + 32);
+    expect([...d.slice(8, 24)]).toEqual([...uuidBytes(ref)]);
+    expect(d[55]).toBe(9);
+    await expect(setPayoutData(ref, new Uint8Array(31))).rejects.toThrow();
+  });
+
+  it("lays withdraw_reward and withdraw_house out as the program reads them", async () => {
+    const w = await withdrawRewardData(ref);
+    expect([...w.slice(0, 8)]).toEqual(IDL.withdraw_reward);
+    expect([...w.slice(8)]).toEqual([...uuidBytes(ref)]);
+    expect([...(await withdrawHouseData())]).toEqual(IDL.withdraw_house);
   });
 });

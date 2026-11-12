@@ -156,7 +156,7 @@ const fromHex = (h: string) => {
  * pay_reward(recipient_ref: [u8; 16], salt: [u8; 32], index: u32, proof: Vec<[u8; 32]>).
  * Accounts: operator (signer, writable), campaign, mint, vault (writable), her
  * wallet, her wallet's token account (writable), receipt (writable), token
- * program, system program.
+ * program, system program, the campaign's house ledger.
  */
 export async function payRewardData(walletRef: string, saltHex: string, index: number, proofHex: string[]): Promise<Uint8Array> {
   const out = new Uint8Array(8 + 16 + 32 + 4 + 4 + 32 * proofHex.length);
@@ -208,6 +208,46 @@ export interface CampaignAccount {
   attestedAt: number;
   attestations: number;
 }
+
+// ------------------------------------------------------------------ paying out
+
+/** Where her wallet pays out: [PAYOUT_SEED, her wallet ref]. */
+export const PAYOUT_SEED = "payout";
+/** What EmpowerFI has taken of a campaign's half: [HOUSE_LEDGER_SEED, campaign]. */
+export const HOUSE_LEDGER_SEED = "house";
+/** A new destination waits this long (the program's PAYOUT_DELAY). */
+export const PAYOUT_DELAY_SECONDS = 86_400;
+
+/**
+ * set_payout(recipient_ref: [u8; 16], destination: Pubkey).
+ * Accounts: operator (signer, writable), campaign, receipt, her wallet, payout (writable), system program.
+ */
+export async function setPayoutData(walletRef: string, destination: Uint8Array): Promise<Uint8Array> {
+  if (destination.length !== 32) throw new Error("a destination is 32 bytes");
+  const out = new Uint8Array(8 + 16 + 32);
+  out.set(await discriminator("set_payout"), 0);
+  out.set(uuidBytes(walletRef), 8);
+  out.set(destination, 24);
+  return out;
+}
+
+/**
+ * withdraw_reward(recipient_ref: [u8; 16]).
+ * Accounts: operator (signer, writable), campaign, receipt, mint, her wallet, her token
+ * account (writable), payout, the destination's token account (writable), token program.
+ */
+export async function withdrawRewardData(walletRef: string): Promise<Uint8Array> {
+  const out = new Uint8Array(8 + 16);
+  out.set(await discriminator("withdraw_reward"), 0);
+  out.set(uuidBytes(walletRef), 8);
+  return out;
+}
+
+/**
+ * withdraw_house(). Accounts: authority (operator or house; signer, writable), campaign, mint,
+ * vault (writable), the house's token account (writable), ledger (writable), token program, system program.
+ */
+export const withdrawHouseData = () => discriminator("withdraw_house");
 
 /** The Campaign account, as the program writes it: an 8-byte discriminator, then Borsh. */
 export function decodeCampaign(data: Uint8Array): CampaignAccount {

@@ -11,10 +11,15 @@
 //! Rewards go out one woman at a time: the operator proves her leaf is in the
 //! attested root, and the program pays her share into her reward wallet -- an
 //! address of this program, [RECIPIENT_SEED, her opaque reference], with no
-//! private key anywhere. Only this program can ever move what it holds, which
-//! is what a later version will do to hand it to the wallet she chooses. A
-//! receipt per campaign and wallet pays her once; EmpowerFI's half never
-//! leaves the vault here.
+//! private key anywhere. Only this program can ever move what it holds. A
+//! receipt per campaign and wallet pays her once.
+//!
+//! What she has can go out to one place only: the destination written for her
+//! wallet ([PAYOUT_SEED, her reference]), for instance her account at a
+//! partner. The operator writes it when she asks, but a new destination waits
+//! PAYOUT_DELAY before anything can be sent there, so a key that leaked could
+//! not empty her wallet unseen. EmpowerFI's half leaves the vault only for the
+//! campaign's own house account, and never more than half of what was funded.
 
 use anchor_lang::{
     prelude::*,
@@ -59,6 +64,15 @@ pub const RECEIPT_SEED: &[u8] = b"paid";
 pub const LEAF_DOMAIN: &[u8] = b"EMPOWERFI:CAMPAIGN_LEAF:v2";
 /// The longest inclusion proof accepted: a tree of up to 2^24 leaves.
 const MAX_PROOF: usize = 24;
+/// Where her wallet pays out: [PAYOUT_SEED, recipient_ref].
+#[constant]
+pub const PAYOUT_SEED: &[u8] = b"payout";
+/// How long a new destination waits before anything is sent to it.
+#[constant]
+pub const PAYOUT_DELAY: i64 = 86_400;
+/// What EmpowerFI has taken of a campaign's half: [HOUSE_LEDGER_SEED, campaign].
+#[constant]
+pub const HOUSE_LEDGER_SEED: &[u8] = b"house";
 
 #[program]
 pub mod empowerfi_rewards {
@@ -227,7 +241,9 @@ pub mod empowerfi_rewards {
             require!(v.len() == TOKEN_ACCOUNT_LEN, RewardsError::NotTheVault);
             u64::from_le_bytes(v[64..72].try_into().unwrap())
         };
-        require!(in_vault >= amount && in_vault - amount >= c.house_share(), RewardsError::EntrepreneursShareSpent);
+        // What EmpowerFI is still owed stays in the vault; what it already took is gone from it.
+        let house_owed = c.house_share().saturating_sub(house_withdrawn(&a.house_ledger)?);
+        require!(in_vault >= amount && in_vault - amount >= house_owed, RewardsError::EntrepreneursShareSpent);
 
         let decimals = *a.mint.try_borrow_data()?.get(MINT_DECIMALS_OFFSET).ok_or(RewardsError::NotAMint)?;
         let mut data = Vec::with_capacity(10);
@@ -268,6 +284,145 @@ pub mod empowerfi_rewards {
         emit!(RewardPaid { campaign, recipient, amount, leaf: commitment });
         Ok(())
     }
+
+    /// Writes where her wallet pays out. The operator of a campaign that paid
+    /// her (its receipt is the proof) writes it when she asks. A destination
+    /// that changes waits PAYOUT_DELAY again; writing the same one is a no-op.
+    pub fn set_payout(ctx: Context<SetPayout>, recipient_ref: [u8; 16], destination: Pubkey) -> Result<()> {
+        require!(destination != Pubkey::default(), RewardsError::NoDestination);
+        require!(destination != ctx.accounts.recipient.key(), RewardsError::NoDestination);
+        let now = Clock::get()?.unix_timestamp;
+        let recipient = ctx.accounts.recipient.key();
+        let p = &mut ctx.accounts.payout;
+        if p.recipient_ref == recipient_ref && p.destination == destination {
+            return Ok(());
+        }
+        p.recipient_ref = recipient_ref;
+        p.destination = destination;
+        p.active_from = now.checked_add(PAYOUT_DELAY).ok_or(RewardsError::Overflow)?;
+        p.bump = ctx.bumps.payout;
+        emit!(PayoutSet { recipient, destination, active_from: p.active_from });
+        Ok(())
+    }
+
+    /// Sends everything her wallet holds of the campaign's mint to a token
+    /// account her destination owns, once that destination is active.
+    pub fn withdraw_reward(ctx: Context<WithdrawReward>, recipient_ref: [u8; 16]) -> Result<()> {
+        let a = &ctx.accounts;
+        let mint = a.campaign.mint;
+        require!(Clock::get()?.unix_timestamp >= a.payout.active_from, RewardsError::DestinationNotActiveYet);
+        let amount = {
+            let t = a.recipient_tokens.try_borrow_data()?;
+            require!(t.len() == TOKEN_ACCOUNT_LEN, RewardsError::NotHerTokenAccount);
+            require!(t[0..32] == mint.to_bytes(), RewardsError::NotHerTokenAccount);
+            require!(t[32..64] == a.recipient.key().to_bytes(), RewardsError::NotHerTokenAccount);
+            u64::from_le_bytes(t[64..72].try_into().unwrap())
+        };
+        require!(amount > 0, RewardsError::NothingToWithdraw);
+        {
+            let t = a.destination_tokens.try_borrow_data()?;
+            require!(t.len() == TOKEN_ACCOUNT_LEN, RewardsError::NotTheDestination);
+            require!(t[0..32] == mint.to_bytes(), RewardsError::NotTheDestination);
+            require!(t[32..64] == a.payout.destination.to_bytes(), RewardsError::NotTheDestination);
+        }
+        let decimals = *a.mint.try_borrow_data()?.get(MINT_DECIMALS_OFFSET).ok_or(RewardsError::NotAMint)?;
+        let mut data = Vec::with_capacity(10);
+        data.push(TRANSFER_CHECKED);
+        data.extend_from_slice(&amount.to_le_bytes());
+        data.push(decimals);
+        let bump = [ctx.bumps.recipient];
+        let seeds: &[&[u8]] = &[RECIPIENT_SEED, recipient_ref.as_ref(), &bump];
+        invoke_signed(
+            &Instruction {
+                program_id: TOKEN_PROGRAM_ID,
+                accounts: vec![
+                    AccountMeta::new(a.recipient_tokens.key(), false),
+                    AccountMeta::new_readonly(a.mint.key(), false),
+                    AccountMeta::new(a.destination_tokens.key(), false),
+                    AccountMeta::new_readonly(a.recipient.key(), true),
+                ],
+                data,
+            },
+            &[
+                a.recipient_tokens.to_account_info(),
+                a.mint.to_account_info(),
+                a.destination_tokens.to_account_info(),
+                a.recipient.to_account_info(),
+            ],
+            &[seeds],
+        )?;
+        emit!(RewardWithdrawn { recipient: a.recipient.key(), destination: a.payout.destination, amount });
+        Ok(())
+    }
+
+    /// Sends EmpowerFI what is left of its half of a campaign to a token
+    /// account the campaign's house owns. The operator or the house signs;
+    /// nothing else can be the destination, and never more than the half.
+    pub fn withdraw_house(ctx: Context<WithdrawHouse>) -> Result<()> {
+        let a = &ctx.accounts;
+        let c = &a.campaign;
+        require!(c.status == CampaignStatus::Funded, RewardsError::NotFunded);
+        let signer = a.authority.key();
+        require!(signer == c.operator || signer == c.house, RewardsError::NotTheOperator);
+        let owed = c.house_share().checked_sub(a.ledger.withdrawn).ok_or(RewardsError::Overflow)?;
+        require!(owed > 0, RewardsError::NothingToWithdraw);
+        {
+            let t = a.house_tokens.try_borrow_data()?;
+            require!(t.len() == TOKEN_ACCOUNT_LEN, RewardsError::NotTheDestination);
+            require!(t[0..32] == c.mint.to_bytes(), RewardsError::NotTheDestination);
+            require!(t[32..64] == c.house.to_bytes(), RewardsError::NotTheDestination);
+        }
+        let in_vault = {
+            let v = a.vault.try_borrow_data()?;
+            require!(v.len() == TOKEN_ACCOUNT_LEN, RewardsError::NotTheVault);
+            u64::from_le_bytes(v[64..72].try_into().unwrap())
+        };
+        require!(in_vault >= owed, RewardsError::NothingToWithdraw);
+        let decimals = *a.mint.try_borrow_data()?.get(MINT_DECIMALS_OFFSET).ok_or(RewardsError::NotAMint)?;
+        let mut data = Vec::with_capacity(10);
+        data.push(TRANSFER_CHECKED);
+        data.extend_from_slice(&owed.to_le_bytes());
+        data.push(decimals);
+        let bump = [c.bump];
+        let seeds: &[&[u8]] = &[CAMPAIGN_SEED, c.campaign_ref.as_ref(), &bump];
+        invoke_signed(
+            &Instruction {
+                program_id: TOKEN_PROGRAM_ID,
+                accounts: vec![
+                    AccountMeta::new(a.vault.key(), false),
+                    AccountMeta::new_readonly(a.mint.key(), false),
+                    AccountMeta::new(a.house_tokens.key(), false),
+                    AccountMeta::new_readonly(c.key(), true),
+                ],
+                data,
+            },
+            &[
+                a.vault.to_account_info(),
+                a.mint.to_account_info(),
+                a.house_tokens.to_account_info(),
+                c.to_account_info(),
+            ],
+            &[seeds],
+        )?;
+        let campaign = c.key();
+        let house = c.house;
+        let l = &mut ctx.accounts.ledger;
+        l.campaign = campaign;
+        l.withdrawn = l.withdrawn.checked_add(owed).ok_or(RewardsError::Overflow)?;
+        l.bump = ctx.bumps.ledger;
+        emit!(HouseWithdrawn { campaign, house, amount: owed });
+        Ok(())
+    }
+}
+
+/// What EmpowerFI has taken of a campaign's half: the ledger's figure, or
+/// nothing while the ledger has not been written.
+fn house_withdrawn(ledger: &UncheckedAccount) -> Result<u64> {
+    if ledger.owner != &crate::ID || ledger.data_is_empty() {
+        return Ok(0);
+    }
+    let data = ledger.try_borrow_data()?;
+    Ok(HouseLedger::try_deserialize(&mut &data[..])?.withdrawn)
 }
 
 /// sha256(LEAF_DOMAIN | campaign_ref | recipient_ref | salt): what the
@@ -410,6 +565,106 @@ pub struct PayReward<'info> {
     #[account(address = TOKEN_PROGRAM_ID)]
     pub token_program: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
+    /// CHECK: the campaign's house ledger, read in the handler (empty until EmpowerFI first takes its half).
+    #[account(seeds = [HOUSE_LEDGER_SEED, campaign.key().as_ref()], bump)]
+    pub house_ledger: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+#[instruction(recipient_ref: [u8; 16])]
+pub struct SetPayout<'info> {
+    #[account(mut)]
+    pub operator: Signer<'info>,
+    #[account(
+        seeds = [CAMPAIGN_SEED, campaign.campaign_ref.as_ref()],
+        bump = campaign.bump,
+        has_one = operator @ RewardsError::NotTheOperator,
+    )]
+    pub campaign: Account<'info, Campaign>,
+    /// That this campaign paid her: only its operator may write where she is paid out.
+    #[account(seeds = [RECEIPT_SEED, campaign.key().as_ref(), recipient_ref.as_ref()], bump = receipt.bump)]
+    pub receipt: Account<'info, Receipt>,
+    /// CHECK: her reward wallet, an address of this program.
+    #[account(seeds = [RECIPIENT_SEED, recipient_ref.as_ref()], bump)]
+    pub recipient: UncheckedAccount<'info>,
+    #[account(
+        init_if_needed,
+        payer = operator,
+        space = 8 + Payout::INIT_SPACE,
+        seeds = [PAYOUT_SEED, recipient_ref.as_ref()],
+        bump,
+    )]
+    pub payout: Account<'info, Payout>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(recipient_ref: [u8; 16])]
+pub struct WithdrawReward<'info> {
+    #[account(mut)]
+    pub operator: Signer<'info>,
+    #[account(
+        seeds = [CAMPAIGN_SEED, campaign.campaign_ref.as_ref()],
+        bump = campaign.bump,
+        has_one = operator @ RewardsError::NotTheOperator,
+        has_one = mint @ RewardsError::NotAMint,
+    )]
+    pub campaign: Account<'info, Campaign>,
+    /// That this campaign paid her.
+    #[account(seeds = [RECEIPT_SEED, campaign.key().as_ref(), recipient_ref.as_ref()], bump = receipt.bump)]
+    pub receipt: Account<'info, Receipt>,
+    /// CHECK: the campaign's mint (has_one above).
+    #[account(owner = TOKEN_PROGRAM_ID)]
+    pub mint: UncheckedAccount<'info>,
+    /// CHECK: her reward wallet; the program signs for it with its seeds.
+    #[account(seeds = [RECIPIENT_SEED, recipient_ref.as_ref()], bump)]
+    pub recipient: UncheckedAccount<'info>,
+    /// CHECK: a token account of the mint her wallet owns, checked in the handler.
+    #[account(mut, owner = TOKEN_PROGRAM_ID)]
+    pub recipient_tokens: UncheckedAccount<'info>,
+    #[account(seeds = [PAYOUT_SEED, recipient_ref.as_ref()], bump = payout.bump)]
+    pub payout: Account<'info, Payout>,
+    /// CHECK: a token account of the mint her destination owns, checked in the handler.
+    #[account(mut, owner = TOKEN_PROGRAM_ID)]
+    pub destination_tokens: UncheckedAccount<'info>,
+    /// CHECK: pinned to SPL Token.
+    #[account(address = TOKEN_PROGRAM_ID)]
+    pub token_program: UncheckedAccount<'info>,
+}
+
+#[derive(Accounts)]
+pub struct WithdrawHouse<'info> {
+    /// The campaign's operator or its house, checked in the handler.
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(
+        seeds = [CAMPAIGN_SEED, campaign.campaign_ref.as_ref()],
+        bump = campaign.bump,
+        has_one = mint @ RewardsError::NotAMint,
+        has_one = vault @ RewardsError::NotTheVault,
+    )]
+    pub campaign: Account<'info, Campaign>,
+    /// CHECK: the campaign's mint (has_one above).
+    #[account(owner = TOKEN_PROGRAM_ID)]
+    pub mint: UncheckedAccount<'info>,
+    /// CHECK: the campaign's vault (has_one above).
+    #[account(mut, owner = TOKEN_PROGRAM_ID)]
+    pub vault: UncheckedAccount<'info>,
+    /// CHECK: a token account of the mint the campaign's house owns, checked in the handler.
+    #[account(mut, owner = TOKEN_PROGRAM_ID)]
+    pub house_tokens: UncheckedAccount<'info>,
+    #[account(
+        init_if_needed,
+        payer = authority,
+        space = 8 + HouseLedger::INIT_SPACE,
+        seeds = [HOUSE_LEDGER_SEED, campaign.key().as_ref()],
+        bump,
+    )]
+    pub ledger: Account<'info, HouseLedger>,
+    /// CHECK: pinned to SPL Token.
+    #[account(address = TOKEN_PROGRAM_ID)]
+    pub token_program: UncheckedAccount<'info>,
+    pub system_program: Program<'info, System>,
 }
 
 // ------------------------------------------------------------------ state
@@ -474,6 +729,25 @@ pub struct Receipt {
     pub bump: u8,
 }
 
+/// Where one reward wallet pays out, and from when.
+#[account]
+#[derive(InitSpace)]
+pub struct Payout {
+    pub recipient_ref: [u8; 16],
+    pub destination: Pubkey,
+    pub active_from: i64,
+    pub bump: u8,
+}
+
+/// What EmpowerFI has taken of one campaign's half.
+#[account]
+#[derive(InitSpace)]
+pub struct HouseLedger {
+    pub campaign: Pubkey,
+    pub withdrawn: u64,
+    pub bump: u8,
+}
+
 impl Campaign {
     /// What the sponsor pays: price times seats (checked at creation).
     pub fn total(&self) -> u64 {
@@ -529,6 +803,27 @@ pub struct RewardPaid {
     pub leaf: [u8; 32],
 }
 
+#[event]
+pub struct PayoutSet {
+    pub recipient: Pubkey,
+    pub destination: Pubkey,
+    pub active_from: i64,
+}
+
+#[event]
+pub struct RewardWithdrawn {
+    pub recipient: Pubkey,
+    pub destination: Pubkey,
+    pub amount: u64,
+}
+
+#[event]
+pub struct HouseWithdrawn {
+    pub campaign: Pubkey,
+    pub house: Pubkey,
+    pub amount: u64,
+}
+
 // ------------------------------------------------------------------ errors
 
 #[error_code]
@@ -577,4 +872,12 @@ pub enum RewardsError {
     NotHerTokenAccount,
     #[msg("The entrepreneurs' half is spent")]
     EntrepreneursShareSpent,
+    #[msg("Not a destination")]
+    NoDestination,
+    #[msg("The destination is new and not active yet")]
+    DestinationNotActiveYet,
+    #[msg("Nothing to withdraw")]
+    NothingToWithdraw,
+    #[msg("Not a token account of the mint owned by the destination")]
+    NotTheDestination,
 }

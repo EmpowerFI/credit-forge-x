@@ -482,6 +482,12 @@ verify_jwt = false
 [functions.campaign-attest]
 verify_jwt = false
 
+# Called by pg_cron every ten minutes with campaign-attest's secret, and right
+# after a request by the diary or the dashboard with the caller's session,
+# which the function checks itself: either way it only works through the queue.
+[functions.reward-payout]
+verify_jwt = false
+
 # Called from the open /app/missions page, with no sign-in: it trusts only
 # what it reads back from Solana.
 [functions.campaign-register]

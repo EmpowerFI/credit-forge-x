@@ -137,6 +137,20 @@ export interface DiarySponsor {
   campaigns: string[];
 }
 
+/** Her reward wallet on Solana devnet (20270104): what is in it, where it goes, what went out. */
+export interface DiaryRewards {
+  network: "devnet";
+  decimals: number;
+  paid_units: number;
+  withdrawn_units: number;
+  balance_units: number;
+  destination: string | null;
+  destination_active_from: string | null;
+  in_flight: { kind: "set_payout" | "withdraw_reward"; status: "pending" | "sent"; destination: string; created_at: string } | null;
+  last_failed: { kind: "set_payout" | "withdraw_reward"; created_at: string } | null;
+  withdrawals: { amount_units: number; destination: string; confirmed_at: string; signature: string }[];
+}
+
 /** A strategic partner of EmpowerFI's (20270103), shown to every entrepreneur. */
 export interface DiaryPartner {
   name: string;
@@ -267,6 +281,13 @@ export const diary = {
   setOpenDays: (days: number[]) => call<number[]>("diary_open_days_set", { p_days: days }),
   setAiReading: (on: boolean) => call<boolean>("diary_ai_reading_set", { p_on: on }),
   readings: (limit = 12) => call<WeekReading[]>("diary_readings", { p_limit: limit }),
+  rewards: () => call<DiaryRewards>("diary_rewards"),
+  setPayout: (destination: string) => call<DiaryRewards>("diary_payout_set", { p_destination: destination }),
+  withdrawReward: () => call<DiaryRewards>("diary_reward_withdraw"),
+  /** Makes the payout queue move now rather than at the next ten-minute run. Quiet on failure: the cron picks it up. */
+  runPayout: async () => {
+    await diaryDb.functions.invoke("reward-payout", { method: "POST" }).catch(() => undefined);
+  },
   /** Writes the week that has just closed, if it is due a reading. Once per week, whoever asks. */
   checkReading: async () => {
     const { data, error } = await diaryDb.functions.invoke<{ week_start: string; status: "not_due" | "written" | "busy" | "failed" }>(
@@ -555,6 +576,12 @@ export function diaryErrorText(error: unknown): string {
     ["a_sponsor_reward_says_how_to_redeem", { en: "Each reward needs to say how to redeem it.", pt: "Cada prêmio precisa dizer como resgatar." }],
     ["link_must_be_https", { en: "The link must start with https://", pt: "O link precisa começar com https://" }],
     ["too_many_devices", { en: "Reminders are on in 10 devices already. Turn one off first.", pt: "Os lembretes já estão ligados em 10 aparelhos. Desligue um primeiro." }],
+    ["no_reward_yet", { en: "Your wallet has received no reward yet.", pt: "Sua carteira ainda não recebeu recompensa." }],
+    ["payout_destination_invalid", { en: "That is not a valid account address.", pt: "Esse não é um endereço de conta válido." }],
+    ["payout_destination_missing", { en: "Connect your account first.", pt: "Conecte sua conta primeiro." }],
+    ["payout_destination_not_active", { en: "For your safety, a new account receives transfers after 24 hours.", pt: "Por segurança, uma conta nova recebe transferências depois de 24 horas." }],
+    ["payout_in_flight", { en: "A transfer is already on its way. Wait a moment.", pt: "Já tem uma transferência a caminho. Espere um pouco." }],
+    ["nothing_to_withdraw", { en: "There is nothing to transfer right now.", pt: "Não tem nada para transferir agora." }],
     [/consent/, { en: "Your consent is needed to continue.", pt: "Precisamos do seu consentimento para continuar." }],
     [/woman of 18/, { en: "This diary is for women entrepreneurs aged 18 or over.", pt: "Este diário é para mulheres empreendedoras com 18 anos ou mais." }],
   ];
