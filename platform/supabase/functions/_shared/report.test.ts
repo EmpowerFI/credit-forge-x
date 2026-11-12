@@ -1,6 +1,7 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import { computeInsights, type MonthFigures } from "./checkin-insights/index.ts";
 import {
+  adviceFacts, adviceRequest, fallbackAdvice, validateAdvice,
   anthropicRequest, costMicroUsd, DEFAULT_MODEL, factsFor, fallbackReport, formatBRL, formatPercent,
   coverageLine, monthName, numbersIn, parseAnthropicResponse, promptFor, renderMessage, validateReport, weekName,
 } from "./report.ts";
@@ -337,4 +338,74 @@ Deno.test("her pay is a cost: profit is what the sales leave after it", () => {
   const fallback = fallbackReport(short);
   assertEquals(fallback.summary.includes("faltaram R$ 150,00"), true);
   assertEquals(fallbackReport(i).summary.includes("sobrou um lucro de R$ 150,00"), true);
+});
+
+// ---------------------------------------------------------------- a week's advice
+
+const detail = {
+  days_recorded: 6,
+  sales_by_method: { pix: 50_000, cash: 30_000, fiado: 10_000 },
+  expenses_by_category: [{ category: "stock", cents: 30_000 }, { category: "transport", cents: 5_000 }],
+};
+
+Deno.test("the advice sees where the week's money came from and went", () => {
+  const f = adviceFacts(weekOf({ open_days: 6 }), detail);
+  const text = f.lines.join("\n");
+  assertEquals(text.includes("vendas em Pix: R$ 500,00"), true);
+  assertEquals(text.includes("vendas em fiado: R$ 100,00"), true);
+  assertEquals(text.includes("mercadoria ou matéria-prima: R$ 300,00"), true);
+  assertEquals(text.includes("Dias registrados no diário na semana: 6"), true);
+  assertEquals(f.allowedNumbers.has("500,00") && f.allowedNumbers.has("100"), true);
+  // A loan instalment is named so that repeating it never trips the forbidden words.
+  const debt = adviceFacts(weekOf(), { expenses_by_category: [{ category: "debt", cents: 1_000 }] });
+  assertEquals(debt.lines.join(" ").includes("empréstimo"), false);
+});
+
+Deno.test("the advice is asked for with its own tool and her sector", () => {
+  const { init } = adviceRequest("sk-test", "claude-haiku-5-5", weekOf({ open_days: 6 }), "doces", detail);
+  const body = JSON.parse(init.body as string);
+  assertEquals(body.tool_choice.name, "write_advice");
+  assertEquals(body.messages[0].content.includes("Ela trabalha com: doces"), true);
+  assertEquals(body.system.includes("Sebrae"), true);
+});
+
+Deno.test("good advice passes; praise and improve may be empty", () => {
+  const f = adviceFacts(weekOf({ open_days: 6 }), detail);
+  const ok = validateAdvice({
+    summary: "Na semana, as vendas foram de R$ 900,00.",
+    praise: "Você recebeu a maior parte em Pix, R$ 500,00. Muito bem!",
+    improve: "",
+    action: "Ofereça um doce a mais para quem paga no Pix nesta semana.",
+  }, f.allowedNumbers, f.profitWords, "Estes números vêm das suas anotações.");
+  assertEquals(ok.ok, true);
+  if (ok.ok) {
+    assertEquals(ok.report.improve, "");
+    assertEquals(ok.report.observations, []);
+  }
+});
+
+Deno.test("advice with an invented number, Sebrae's name or paper is refused", () => {
+  const f = adviceFacts(weekOf({ open_days: 6 }), detail);
+  const bad = validateAdvice({
+    summary: "Você vendeu quase R$ 1.000 na semana.",
+    praise: "O Sebrae recomenda e você fez!",
+    improve: "Anote os gastos num caderno.",
+    action: "",
+  }, f.allowedNumbers, f.profitWords, "x");
+  assertEquals(bad.ok, false);
+  if (!bad.ok) {
+    const all = bad.reasons.join(" | ");
+    assertEquals(all.includes("1.000"), true);
+    assertEquals(all.includes("Sebrae"), true);
+    assertEquals(all.includes("caderno"), true);
+    assertEquals(all.includes("action is empty"), true);
+  }
+});
+
+Deno.test("the fixed-sentence advice praises a week kept in full and names what to improve", () => {
+  const kept = fallbackAdvice(weekOf({ open_days: 6 }), { days_recorded: 6 });
+  assertEquals(kept.praise?.startsWith("Você registrou todos os dias em que abriu"), true);
+  const hard = fallbackAdvice(weekOf({ open_days: 6, cogs_cents: 200_000 }), { days_recorded: 3 });
+  assertEquals((hard.improve ?? "").length > 0, true);
+  assertEquals(hard.observations, []);
 });

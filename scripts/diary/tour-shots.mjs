@@ -36,13 +36,17 @@ const month = { period: "2026-11", first_day: "2026-11-01", today: TODAY, sales_
   taken_home_cents: 0, days_kept: 3, monthly_need_cents: 150_000 };
 const figures = { sales_cents: 124_000, expenses_cents: 61_000, result_cents: 63_000, pay_cents: null, profit_cents: null };
 const readings = (pt) => [{ week_start: "2026-10-26", source: "model", days_kept: 5, open_days: 6, figures, completed_at: "2026-11-02T10:00:00Z", report: pt
-  ? { summary: "Na semana, as vendas somaram R$ 1.240,00 e os gastos do negócio R$ 610,00. Sobraram R$ 630,00.",
-      observations: ["O Pix foi a forma de pagamento mais usada.", "Sábado foi o dia com mais vendas."],
-      action: "anote também as compras pequenas de mercadoria; elas somam no fim da semana.",
-      limits: "Os números vêm das suas anotações." }
+  ? { summary: "Na semana, as vendas foram de R$ 1.240,00 e os gastos do negócio, R$ 610,00. Sobraram R$ 630,00.",
+      observations: [],
+      praise: "Você registrou 5 dos 6 dias em que abriu, e a maior parte das vendas entrou no Pix. Muito bem!",
+      improve: "A mercadoria levou a maior parte dos gastos. Vale conferir o que sobrou no fim da semana.",
+      action: "antes de comprar ingredientes, olhe quais doces mais saíram e compre para eles primeiro.",
+      limits: "Estes números vêm das suas anotações." }
   : { summary: "This week, sales came to R$ 1,240.00 and business expenses to R$ 610.00. R$ 630.00 was left.",
-      observations: ["Pix was the most used way to pay.", "Saturday was the best day for sales."],
-      action: "note small stock purchases too; they add up by the end of the week.",
+      observations: [],
+      praise: "You recorded 5 of the 6 days you opened, and most sales came in by Pix. Well done!",
+      improve: "Stock took most of the expenses. Worth checking what was left at the end of the week.",
+      action: "before buying ingredients, look at which sweets sold most and buy for those first.",
       limits: "The figures come from your notes." } }];
 const pending = [
   { key: "1", kind: "sale", amount_cents: 4_500, payment_method: "pix" },
@@ -111,6 +115,13 @@ for (const [locale, lang] of [["pt-BR", "pt"], ["en-GB", "en"]]) {
   let { page, ctx } = await open(locale, "/app/diario");
   await strip(page, f("1-today"), "header", "[data-tour=quiet]", 0);
   await strip(page, f("4-month"), "[data-tour=month]", "[data-tour=month]");
+  // The advice on Hoje is closed until she opens it.
+  await page.locator("section[aria-labelledby^='reading-'] button[aria-expanded]").click();
+  await page.waitForTimeout(300);
+  // Opened, it reaches below the tab bar, which is fixed to the screen: hide the bar for the shot.
+  await page.addStyleTag({ content: "nav[aria-label='EmpowerFI Diário'] { display: none !important; }" });
+  await page.locator("section[aria-labelledby^='reading-']").evaluate((el) => el.scrollIntoView({ block: "start" }));
+  await page.waitForTimeout(200);
   await strip(page, f("5-reading"), "section[aria-labelledby^='reading-']", "section[aria-labelledby^='reading-']");
   await page.locator("[data-tour=add] button").first().click();
   await page.locator("#line-amount").fill("45,00");

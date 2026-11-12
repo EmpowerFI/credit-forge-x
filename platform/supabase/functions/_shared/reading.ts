@@ -28,8 +28,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeInsights, INSIGHTS_FORMULA_VERSION, type MonthFigures } from "./checkin-insights/index.ts";
 import {
-  anthropicRequest, costMicroUsd, coverageLine, DEFAULT_MODEL, fallbackReport, parseAnthropicResponse,
-  PROMPT_VERSION, renderMessage, type Report, validateReport,
+  ADVICE_TOOL, adviceRequest, anthropicRequest, costMicroUsd, coverageLine, DEFAULT_MODEL, fallbackAdvice, fallbackReport,
+  limitsFor, parseAnthropicResponse, PROMPT_VERSION, REPORT_TOOL, renderMessage, type Report, validateAdvice, validateReport,
+  type WeekDetail,
 } from "./report.ts";
 
 const UUID = /^[0-9a-f-]{36}$/i;
@@ -87,6 +88,8 @@ interface Inputs {
   coverage?: { kept: number; days: number } | null;
   /** Weeks only: false when she chose a reading without AI. Absent: on. */
   ai_reading?: boolean;
+  /** Weeks only (20270102): where the week's money came from and went, for the advice. */
+  detail?: WeekDetail | null;
 }
 
 /** What a reading call answers: an HTTP status and its body. */
@@ -122,7 +125,9 @@ export async function writeReading(db: SupabaseClient, target: Target): Promise<
 
   try {
     const insights = computeInsights({ current: inputs.current, previous: inputs.previous });
-    const fallback = fallbackReport(insights);
+    // A week is read as advice (since 12/11/2026); a month keeps its reading.
+    const week = target.span === "week";
+    const fallback = week ? fallbackAdvice(insights, inputs.detail) : fallbackReport(insights);
 
     let report: Report = fallback;
     let source: "model" | "fallback" = "fallback";
@@ -139,17 +144,21 @@ export async function writeReading(db: SupabaseClient, target: Target): Promise<
       error = "she chose a reading without AI; fallback written";
     } else if (action === "run" && apiKey) {
       try {
-        const { url, init, facts } = anthropicRequest(apiKey, model, insights, inputs.sector);
+        const { url, init, facts } = week
+          ? adviceRequest(apiKey, model, insights, inputs.sector, inputs.detail)
+          : anthropicRequest(apiKey, model, insights, inputs.sector);
         const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) });
         const body = await response.json().catch(() => null);
         if (!response.ok) throw new Error(`model answered ${response.status}: ${JSON.stringify(body).slice(0, 300)}`);
 
-        const parsed = parseAnthropicResponse(body);
+        const parsed = parseAnthropicResponse(body, week ? ADVICE_TOOL.name : REPORT_TOOL.name);
         if (!parsed) throw new Error("model returned no report");
         inputTokens = parsed.inputTokens;
         outputTokens = parsed.outputTokens;
 
-        const checked = validateReport(parsed.input, facts.allowedNumbers, facts.profitWords);
+        const checked = week
+          ? validateAdvice(parsed.input, facts.allowedNumbers, facts.profitWords, limitsFor(insights))
+          : validateReport(parsed.input, facts.allowedNumbers, facts.profitWords);
         if (checked.ok) {
           report = checked.report;
           source = "model";
