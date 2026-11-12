@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Loader2, LogOut, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { tr } from "../i18n";
+import { getLocale, tr } from "../i18n";
 import LanguageSwitch from "../i18n/LanguageSwitch";
 import { LocaleProvider } from "../i18n/LocaleProvider";
 import { addDays, diaryErrorText } from "../diary/diary";
@@ -11,6 +11,7 @@ import { diaryClosed, diaryDb, useDiarySession } from "../diary/db";
 import SignIn from "../diary/SignIn";
 import Dashboard from "./Dashboard";
 import RewardsPanel from "./RewardsPanel";
+import { PATHS } from "@/site/content";
 import { type Campaign, ddmm, impacto } from "./impacto";
 
 /**
@@ -88,9 +89,18 @@ function Gate() {
   return <Area campaigns={campaigns.data} email={session.user.email ?? ""} />;
 }
 
+/**
+ * Leaving the area goes back to the site's home, in the page's language, not
+ * to the sign-in: the page is left first, so the gate never sees the session go.
+ */
 function SignOut() {
+  const navigate = useNavigate();
+  const leave = () => {
+    navigate(PATHS[getLocale()].home, { replace: true });
+    void diaryDb.auth.signOut();
+  };
   return (
-    <Button variant="outline" className="h-10" onClick={() => void diaryDb.auth.signOut()}>
+    <Button variant="outline" className="h-10" onClick={leave}>
       <LogOut aria-hidden="true" />
       {tr({ en: "Sign out", pt: "Sair" })}
     </Button>
