@@ -64,7 +64,7 @@ const en = {
     language: "Português",
     notices: [
       "Nothing on this site is an offer of securities, credit or a financial product. EmpowerFI does not operate a licensed lending or investment business.",
-      "Campaign rewards are not live yet. The campaign vault is demonstrated on Solana devnet with test tokens that have no value. Rewards always depend on each campaign's eligibility rules.",
+      "In today's campaigns, EmpowerFI pays each reward directly to the entrepreneur who meets the conditions. Payment through the campaign vault on Solana is still demonstrated on devnet, with test tokens that have no value, until it is ready for mainnet. Rewards always depend on each campaign's eligibility rules.",
     ],
     rights: "All rights reserved.",
   },
@@ -101,7 +101,7 @@ const en = {
       accent: "drives impact.",
       body: "Organizations sponsor 30-day financial engagement journeys, with conditional rewards for the entrepreneurs who take part.",
       product: "Impact Marketing",
-      maturity: "devnet" as Maturity,
+      maturity: "available" as Maturity,
       facts: ["30 days", "100+ entrepreneurs", "Priced per participant", "Conditional rewards"],
     },
     how: {
@@ -189,8 +189,8 @@ const en = {
         { title: "Record the days you open", body: "For the campaign's 30 days, record your sales and expenses on every day your business opens. Days off need nothing." },
         { title: "Receive your reward", body: "Only if every condition of the campaign is met." },
       ],
-      maturity: "devnet" as Maturity,
-      caveat: "Campaign rewards are not live yet. No reward, income or credit approval is guaranteed.",
+      maturity: "available" as Maturity,
+      caveat: "EmpowerFI pays the rewards directly to you; payment on Solana is still a devnet demo. No reward, income or credit approval is guaranteed.",
     },
     history: {
       eyebrow: "Over time",
@@ -221,7 +221,7 @@ const en = {
       title: "Impact Marketing",
       accent: "campaigns.",
       body: "One sponsorship product: a structured engagement campaign that helps women entrepreneurs build financial habits and organize their business.",
-      maturity: "devnet" as Maturity,
+      maturity: "available" as Maturity,
       items: [
         { title: "30-day financial engagement", body: "One clear window: she records her sales and expenses on every day her business opens." },
         { title: "Minimum 100 entrepreneurs", body: "Priced per entrepreneur." },
@@ -235,7 +235,7 @@ const en = {
       eyebrow: "Under the hood",
       title: "A vault for",
       accent: "every campaign.",
-      body: "The sponsorship sits in a Solana vault owned by the campaign itself. The split and the unlock rule are written there, readable by anyone.",
+      body: "Today EmpowerFI pays the rewards directly. Next, the sponsorship will sit in a Solana vault owned by the campaign itself, with the split and the unlock rule written there, readable by anyone. It is demonstrated on devnet until it is ready for mainnet.",
       demo: "See the devnet demo",
     },
     contact: {
@@ -296,8 +296,8 @@ const en = {
       title: "Now, next,",
       accent: "later.",
       phases: [
-        { when: "Now", items: ["Financial diary on the web", "Campaign vaults on Solana devnet"] },
-        { when: "Next", items: ["First sponsored campaigns", "Reward settlement", "Business passport"] },
+        { when: "Now", items: ["Financial diary on the web", "Sponsored campaigns, rewards paid by EmpowerFI", "Campaign vaults on Solana devnet"] },
+        { when: "Next", items: ["Reward settlement on Solana mainnet", "Business passport"] },
         { when: "Later", items: ["Repayment probability models", "Identity-bound credentials", "Verifiable institutional risk policies"] },
       ],
     },
@@ -368,7 +368,7 @@ const pt: SiteContent = {
     language: "English",
     notices: [
       "Nada neste site é oferta de valores mobiliários, crédito ou produto financeiro. A EmpowerFI não opera atividade licenciada de empréstimo ou investimento.",
-      "As recompensas das campanhas ainda não estão no ar. O cofre das campanhas é demonstrado na devnet da Solana, com tokens de teste sem valor. Toda recompensa depende das regras de cada campanha.",
+      "Nas campanhas de hoje, a EmpowerFI paga cada recompensa diretamente à empreendedora que cumpre as condições. O pagamento pelo cofre da campanha na Solana segue em demonstração na devnet, com tokens de teste sem valor, até estar pronto para a mainnet. Toda recompensa depende das regras de cada campanha.",
     ],
     rights: "Todos os direitos reservados.",
   },
@@ -405,7 +405,7 @@ const pt: SiteContent = {
       accent: "gera impacto.",
       body: "Organizações patrocinam jornadas de 30 dias de cuidado com as finanças, com recompensas condicionais para quem participa.",
       product: "Marketing de impacto",
-      maturity: "devnet" as Maturity,
+      maturity: "available" as Maturity,
       facts: ["30 dias", "100+ empreendedoras", "Preço por participante", "Recompensas condicionais"],
     },
     how: {
@@ -493,8 +493,8 @@ const pt: SiteContent = {
         { title: "Registre os dias em que abre", body: "Nos 30 dias da campanha, anote vendas e gastos em todos os dias em que o seu negócio abre. No dia de descanso, não precisa registrar." },
         { title: "Receba a recompensa", body: "Só se todas as condições da campanha forem cumpridas." },
       ],
-      maturity: "devnet" as Maturity,
-      caveat: "As recompensas das campanhas ainda não estão no ar. Nenhuma recompensa, renda ou aprovação de crédito é garantida.",
+      maturity: "available" as Maturity,
+      caveat: "A EmpowerFI paga a recompensa diretamente a você; o pagamento pela Solana ainda é uma demonstração na devnet. Nenhuma recompensa, renda ou aprovação de crédito é garantida.",
     },
     history: {
       eyebrow: "Com o tempo",
@@ -525,7 +525,7 @@ const pt: SiteContent = {
       title: "Campanhas de",
       accent: "Marketing de Impacto.",
       body: "Um único produto de patrocínio: uma campanha estruturada de engajamento que ajuda mulheres que empreendem a criar hábitos financeiros e organizar o negócio.",
-      maturity: "devnet" as Maturity,
+      maturity: "available" as Maturity,
       items: [
         { title: "30 dias de engajamento financeiro", body: "Uma janela clara: ela registra vendas e gastos em todos os dias em que o negócio dela abre." },
         { title: "Mínimo de 100 empreendedoras", body: "Preço por empreendedora." },
@@ -539,7 +539,7 @@ const pt: SiteContent = {
       eyebrow: "Por dentro",
       title: "Um cofre para",
       accent: "cada campanha.",
-      body: "O patrocínio fica num cofre na Solana que pertence à própria campanha. A divisão e a regra de desbloqueio ficam gravadas ali, e qualquer pessoa pode conferir.",
+      body: "Hoje a EmpowerFI paga as recompensas diretamente. A seguir, o patrocínio vai ficar num cofre na Solana que pertence à própria campanha, com a divisão e a regra de desbloqueio gravadas ali, e qualquer pessoa pode conferir. Ele segue em demonstração na devnet até estar pronto para a mainnet.",
       demo: "Ver a demonstração na devnet",
     },
     contact: {
@@ -600,8 +600,8 @@ const pt: SiteContent = {
       title: "Agora, a seguir,",
       accent: "depois.",
       phases: [
-        { when: "Agora", items: ["Diário financeiro na web", "Cofres de campanha na devnet da Solana"] },
-        { when: "A seguir", items: ["Primeiras campanhas patrocinadas", "Pagamento das recompensas", "Passaporte do negócio"] },
+        { when: "Agora", items: ["Diário financeiro na web", "Campanhas patrocinadas, recompensas pagas pela EmpowerFI", "Cofres de campanha na devnet da Solana"] },
+        { when: "A seguir", items: ["Pagamento das recompensas na mainnet da Solana", "Passaporte do negócio"] },
         { when: "Depois", items: ["Modelos de probabilidade de pagamento", "Credenciais ligadas à identidade", "Políticas de risco verificáveis"] },
       ],
     },
