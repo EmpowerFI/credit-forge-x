@@ -3,8 +3,8 @@ import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
 import { GradedRule, SiteLinkButton } from "@/components/site/editorial";
 import { SEBRAE_LOGO_SRC, UNICAMP_SEAL_SRC } from "@/config/links";
-import { AWARDS_ANCHOR, DIARY_PATH, IMPACT_AREA_PATH, type Lang, type Maturity, MISSIONS_DEMO_PATH, PARTNERSHIPS_ANCHOR, PATHS, SITE } from "./content";
-import { CampaignFlow, ContactForm, DiaryAccess, MaturityTag, MoreLink, Section, Shot, SitePage } from "./parts";
+import { AWARDS_ANCHOR, IMPACT_AREA_PATH, WAITLIST_ANCHOR, type Lang, type Maturity, MISSIONS_DEMO_PATH, PARTNERSHIPS_ANCHOR, PATHS, SITE } from "./content";
+import { CampaignFlow, ContactForm, DiaryVideo, MaturityTag, MoreLink, Section, Shot, SitePage, WaitlistForm } from "./parts";
 
 const shot = (name: "month" | "day", lang: Lang) => `/site/diary-${name}-${lang}.png`;
 
@@ -130,7 +130,7 @@ export function HomePage({ lang }: { lang: Lang }) {
               <p className="label-ui mt-4 text-foreground/85">{it.tag}</p>
               <h3 className="mt-2 font-heading text-[1.25rem] leading-tight">{it.title}</h3>
               <p className="mt-2 leading-relaxed text-foreground/80">{it.body}</p>
-              {"diary" in it && it.diary && <DiaryAccess lang={lang} stack className="mt-4" />}
+              {"diary" in it && it.diary && <div className="mt-4"><MoreLink to={`${p.entrepreneurs}#${WAITLIST_ANCHOR}`}>{SITE[lang].waitlist.link}</MoreLink></div>}
               {"logo" in it && it.logo === "sebrae" && <SupportLogo src={SEBRAE_LOGO_SRC} alt="Sebrae" />}
               {"logo" in it && it.logo === "unicamp" && (
                 <SupportLogo large src={UNICAMP_SEAL_SRC} alt={lang === "pt" ? "Selo Empresa-filha da Unicamp" : "Unicamp empresa-filha seal"} />
@@ -176,10 +176,11 @@ export function HomePage({ lang }: { lang: Lang }) {
 export function EntrepreneursPage({ lang }: { lang: Lang }) {
   const t = SITE[lang].entrepreneurs;
   const p = PATHS[lang];
+  const w = SITE[lang].waitlist;
   const start = (
-    <SiteLinkButton to={DIARY_PATH} primary>
-      {t.hero.primary} <ArrowUpRight size={18} className="text-accent" aria-hidden />
-    </SiteLinkButton>
+    <a href={`#${WAITLIST_ANCHOR}`} className="btn-site btn-site-primary">
+      {t.hero.primary} <ArrowRight size={18} className="text-accent" aria-hidden />
+    </a>
   );
   return (
     <SitePage lang={lang} page="entrepreneurs" seo={t.seo}>
@@ -193,12 +194,15 @@ export function EntrepreneursPage({ lang }: { lang: Lang }) {
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-foreground/85 md:text-xl">{t.hero.body}</p>
             <div className="mt-9">{start}</div>
-            <DiaryAccess lang={lang} className="mt-7" />
           </div>
           <Shot src={shot("month", lang)} alt={SITE[lang].home.hero.shotAlt} note={SITE[lang].home.hero.shotNote}
             className="justify-self-center lg:justify-self-end" />
         </div>
       </section>
+
+      <Section id="video" className="border-t border-foreground/10">
+        <DiaryVideo lang={lang} label={t.video} className="mx-auto max-w-5xl" />
+      </Section>
 
       <Section id="tools" className="border-t border-foreground/10">
         <SectionHeading eyebrow={t.tools.eyebrow} title={t.tools.title} accent={t.tools.accent} />
@@ -244,10 +248,14 @@ export function EntrepreneursPage({ lang }: { lang: Lang }) {
         </div>
       </Section>
 
-      <Section className="border-t border-foreground/10">
-        <div className="flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
-          <h2 className="section-title">{t.cta.title}</h2>
-          <div className="space-y-6">{start}<DiaryAccess lang={lang} /></div>
+      <Section id={WAITLIST_ANCHOR} className="border-t border-foreground/10">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:gap-16">
+          <div>
+            <SectionHeading eyebrow={w.eyebrow} title={w.title} accent={w.accent} />
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-foreground/85">{w.body}</p>
+            <p className="mt-6 font-heading text-2xl">{t.cta.title}</p>
+          </div>
+          <WaitlistForm lang={lang} source="entrepreneurs-page" />
         </div>
       </Section>
     </SitePage>

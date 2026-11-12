@@ -15,6 +15,11 @@ export const PATHS = {
 
 /** The diary on the web, and the devnet demo of the campaign vault. */
 export const DIARY_PATH = "/app/diario";
+/**
+ * The diary opens little by little (founder, 12/11/2026): the site no longer
+ * links to it and offers this waitlist, on the Entrepreneurs page.
+ */
+export const WAITLIST_ANCHOR = "lista-de-espera";
 /** The reserved impact area: each sponsor signs in with the e-mail EmpowerFI authorised and sees its own campaigns. */
 export const IMPACT_AREA_PATH = "/impacto";
 export const MISSIONS_DEMO_PATH = "/app/missions";
@@ -47,10 +52,26 @@ const en = {
     app: "Platform",
     menu: "Menu",
   },
-  diaryAccess: {
-    scan: "Point your phone's camera",
-    note: "For the best experience, use it on your phone.",
-    qr: "QR code that opens the EmpowerFI diary",
+  waitlist: {
+    eyebrow: "Waitlist",
+    title: "Access opens",
+    accent: "little by little.",
+    body: "The diary is opening to one group of entrepreneurs at a time. Leave your details and we will let you know when it is your turn.",
+    name: "Name",
+    email: "E-mail",
+    sells: "What you sell",
+    sellsPlaceholder: "Cakes and sweets, clothes, beauty services…",
+    city: "City",
+    state: "State",
+    statePlaceholder: "State",
+    consent: "I agree to be contacted by EmpowerFI about access to the diary.",
+    submit: "Join the waitlist",
+    sending: "Sending…",
+    sent: { title: "You are on the list.", desc: "We will write to you when it is your turn." },
+    already: { title: "You were already on the list.", desc: "We will write to you when it is your turn." },
+    failed: { title: "It did not go through.", desc: "Try again in a moment, or write to us." },
+    invalid: "Fill in every field and accept to be contacted.",
+    link: "Join the waitlist",
   },
   footer: {
     tagline: "Simple financial tools and sponsored opportunities for women entrepreneurs.",
@@ -167,8 +188,9 @@ const en = {
       title: "Your business",
       accent: "deserves to grow.",
       body: "Organize your finances, join opportunities and follow how your business evolves.",
-      primary: "Start your diary",
+      primary: "Join the waitlist",
     },
+    video: "A short film of the EmpowerFI diary: noting a sale, the month's profit after your salary, and the tip of the week.",
     tools: {
       eyebrow: "What you can use today",
       title: "Your numbers,",
@@ -200,7 +222,7 @@ const en = {
       maturity: "development" as Maturity,
     },
     privacy: { title: "Your data is yours.", body: "We never sell it. Sponsors only see totals from at least five entrepreneurs.", link: "Privacy policy" },
-    cta: { title: "Start today. It is free.", primary: "Start your diary" },
+    cta: { title: "Free, and opening soon.", primary: "Join the waitlist" },
   },
 
   sponsors: {
@@ -351,10 +373,26 @@ const pt: SiteContent = {
     app: "Plataforma",
     menu: "Menu",
   },
-  diaryAccess: {
-    scan: "Aponte a câmera do celular",
-    note: "Para uma experiência melhor, use no celular.",
-    qr: "QR code que abre o diário EmpowerFI",
+  waitlist: {
+    eyebrow: "Lista de espera",
+    title: "O acesso abre",
+    accent: "aos poucos.",
+    body: "O diário está abrindo para um grupo de empreendedoras por vez. Deixe seus dados e avisamos quando chegar a sua vez.",
+    name: "Nome",
+    email: "E-mail",
+    sells: "O que você vende",
+    sellsPlaceholder: "Bolos e doces, roupas, serviços de beleza…",
+    city: "Cidade",
+    state: "Estado",
+    statePlaceholder: "UF",
+    consent: "Aceito receber contato da EmpowerFI sobre o acesso ao diário.",
+    submit: "Entrar na lista de espera",
+    sending: "Enviando…",
+    sent: { title: "Você está na lista.", desc: "Vamos escrever para você quando chegar a sua vez." },
+    already: { title: "Você já estava na lista.", desc: "Vamos escrever para você quando chegar a sua vez." },
+    failed: { title: "Não deu certo.", desc: "Tente de novo daqui a pouco, ou escreva para a gente." },
+    invalid: "Preencha todos os campos e aceite receber contato.",
+    link: "Entrar na lista de espera",
   },
   footer: {
     tagline: "Ferramentas financeiras simples e oportunidades patrocinadas para mulheres que empreendem.",
@@ -471,8 +509,9 @@ const pt: SiteContent = {
       title: "Seu negócio",
       accent: "merece crescer.",
       body: "Organize suas finanças, participe de oportunidades e acompanhe a evolução do seu negócio.",
-      primary: "Começar meu diário",
+      primary: "Entrar na lista de espera",
     },
+    video: "Um filme curto do diário EmpowerFI: anotar uma venda, o lucro do mês depois do seu salário e a dica da semana.",
     tools: {
       eyebrow: "Para usar hoje",
       title: "Seus números,",
@@ -504,7 +543,7 @@ const pt: SiteContent = {
       maturity: "development" as Maturity,
     },
     privacy: { title: "Seus dados são seus.", body: "Nunca vendemos. Patrocinadores só veem totais de pelo menos cinco empreendedoras.", link: "Política de privacidade" },
-    cta: { title: "Comece hoje. É grátis.", primary: "Começar meu diário" },
+    cta: { title: "Grátis, e abrindo em breve.", primary: "Entrar na lista de espera" },
   },
 
   sponsors: {

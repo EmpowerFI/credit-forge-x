@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ArrowRight, ArrowUpRight, Smartphone, Send } from "lucide-react";
+import { ArrowRight, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { CONTACT_EMAIL } from "@/config/links";
-import { SITE_URL } from "@/config/company";
-import QrCode from "@/app/components/QrCode";
 import Seo from "@/components/Seo";
 import SiteHeader, { type HeaderLink } from "@/components/site/SiteHeader";
 import SiteFooter, { type FooterColumn } from "@/components/site/SiteFooter";
 import { organizationSchema } from "@/config/structuredData";
-import { DIARY_PATH, IMPACT_AREA_PATH, type Lang, MATURITY, type Maturity, MISSIONS_DEMO_PATH, PATHS, SITE } from "./content";
+import { IMPACT_AREA_PATH, type Lang, MATURITY, type Maturity, MISSIONS_DEMO_PATH, PATHS, SITE } from "./content";
 
 export type PageKey = keyof (typeof PATHS)["en"];
 
@@ -133,6 +131,20 @@ export function Shot({ src, alt, note, className = "" }: { src: string; alt: str
         className="w-full max-w-[24rem] rounded-2xl border border-foreground/15 bg-card shadow-sm" />
       {note && <figcaption className="mt-3 text-sm text-foreground/65">{note}</figcaption>}
     </figure>
+  );
+}
+
+/**
+ * The diary, shown in motion (founder, 12/11/2026): a short silent film per
+ * language. It plays muted and in a loop, with the controls to pause it; with
+ * reduced motion it waits for a tap.
+ */
+export function DiaryVideo({ lang, label, className = "" }: { lang: Lang; label: string; className?: string }) {
+  const still = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  return (
+    <video className={`aspect-video w-full rounded-2xl border border-foreground/15 bg-card shadow-sm ${className}`}
+      src={`/site/diario-${lang}.mp4`} poster={`/site/diario-${lang}.jpg`} aria-label={label}
+      autoPlay={!still} muted loop playsInline controls preload="metadata" width={1920} height={1080} />
   );
 }
 
@@ -279,27 +291,102 @@ export function ContactForm({ lang, initial }: { lang: Lang; initial: Objective 
   );
 }
 
+const UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
+
 /**
- * The way into the diary from a computer: a QR code her phone's camera opens,
- * the address written out, and the reminder that the diary is made for the
- * phone. On a phone the code is no use, so the link and the note stand alone.
+ * The diary's waitlist (founder, 12/11/2026: access opens a group at a time).
+ * She leaves her name, e-mail, what she sells and where; the row goes to the
+ * site's database (diary_waitlist, insert-only), and the founder gets an
+ * e-mail through the existing contact template. Signing up twice is fine.
  */
-export function DiaryAccess({ lang, stack = false, className = "" }: { lang: Lang; stack?: boolean; className?: string }) {
-  const t = SITE[lang].diaryAccess;
-  const url = `${SITE_URL}${DIARY_PATH}`;
+export function WaitlistForm({ lang, source }: { lang: Lang; source: string }) {
+  const t = SITE[lang].waitlist;
+  const [form, setForm] = useState({ name: "", email: "", sells: "", city: "", state: "" });
+  const [consent, setConsent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const schema = z.object({
+    name: z.string().trim().min(1).max(100),
+    email: z.string().trim().email().max(255),
+    sells: z.string().trim().min(1).max(120),
+    city: z.string().trim().min(1).max(80),
+    state: z.string().regex(/^[A-Z]{2}$/),
+  });
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = schema.safeParse(form);
+    if (!parsed.success || !consent) {
+      toast({ title: t.invalid, variant: "destructive" });
+      return;
+    }
+    const d = parsed.data;
+    setSending(true);
+    try {
+      const { error } = await supabase.from("diary_waitlist").insert({
+        name: d.name, email: d.email.toLowerCase(), sells: d.sells, city: d.city, state: d.state, language: lang, consent: true, source,
+      });
+      if (error && error.code !== "23505") throw error;
+      if (!error) {
+        // The founder hears of it; a failure here does not undo the signup.
+        void supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "contact-question-for-founder",
+            idempotencyKey: `diary-waitlist-${d.email.toLowerCase()}`,
+            templateData: { name: d.name, email: d.email, message: `[Diary waitlist · ${lang.toUpperCase()}]\nSells: ${d.sells}\nWhere: ${d.city}/${d.state}` },
+          },
+        }).catch(() => undefined);
+      }
+      const done = error ? t.already : t.sent;
+      toast({ title: done.title, description: done.desc });
+      setForm({ name: "", email: "", sells: "", city: "", state: "" });
+      setConsent(false);
+    } catch (err) {
+      console.error("Error joining the diary waitlist", err);
+      toast({ title: t.failed.title, description: t.failed.desc, variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const field = "h-[3.25rem] rounded-sm border-foreground/25 bg-transparent px-4 text-lg";
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value });
   return (
-    <div className={`flex gap-4 ${stack ? "flex-col items-start gap-3" : "items-center"} ${className}`}>
-      <QrCode value={url} label={t.qr} className="hidden h-28 w-28 shrink-0 border border-foreground/15 sm:block" />
-      <div className="min-w-0 space-y-1">
-        <p className="hidden text-sm text-foreground/70 sm:block">{t.scan}</p>
-        <a href={DIARY_PATH} className="inline-flex items-center gap-1.5 break-all text-[1.0625rem] text-accent underline-offset-4 hover:underline">
-          {url.replace(/^https:\/\//, "")} <ArrowUpRight size={15} aria-hidden className="shrink-0" />
-        </a>
-        <p className="flex items-start gap-1.5 text-[0.95rem] leading-snug text-foreground/80">
-          <Smartphone size={16} aria-hidden className="mt-0.5 shrink-0 text-accent" />{t.note}
-        </p>
+    <form onSubmit={submit} className="space-y-6" noValidate>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <div className="space-y-2.5">
+          <Label htmlFor="wl-name" className="label-ui text-foreground/90">{t.name}</Label>
+          <Input id="wl-name" required maxLength={100} autoComplete="name" value={form.name} className={field} onChange={set("name")} />
+        </div>
+        <div className="space-y-2.5">
+          <Label htmlFor="wl-email" className="label-ui text-foreground/90">{t.email}</Label>
+          <Input id="wl-email" type="email" required maxLength={255} autoComplete="email" inputMode="email" value={form.email} className={field} onChange={set("email")} />
+        </div>
+        <div className="space-y-2.5 sm:col-span-2">
+          <Label htmlFor="wl-sells" className="label-ui text-foreground/90">{t.sells}</Label>
+          <Input id="wl-sells" required maxLength={120} value={form.sells} placeholder={t.sellsPlaceholder} className={field} onChange={set("sells")} />
+        </div>
+        <div className="space-y-2.5">
+          <Label htmlFor="wl-city" className="label-ui text-foreground/90">{t.city}</Label>
+          <Input id="wl-city" required maxLength={80} autoComplete="address-level2" value={form.city} className={field} onChange={set("city")} />
+        </div>
+        <div className="space-y-2.5">
+          <Label htmlFor="wl-state" className="label-ui text-foreground/90">{t.state}</Label>
+          <select id="wl-state" required autoComplete="address-level1" value={form.state} onChange={set("state")}
+            className={`${field} w-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}>
+            <option value="">{t.statePlaceholder}</option>
+            {UFS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
+          </select>
+        </div>
       </div>
-    </div>
+      <label className="flex cursor-pointer items-start gap-3 text-[1.0625rem] leading-snug text-foreground/85">
+        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required
+          className="mt-1 h-5 w-5 shrink-0 accent-[hsl(var(--accent))]" />
+        {t.consent}
+      </label>
+      <button type="submit" disabled={sending} className="btn-site btn-site-primary disabled:opacity-60">
+        {sending ? t.sending : <>{t.submit} <ArrowRight size={16} className="text-accent" aria-hidden /></>}
+      </button>
+    </form>
   );
 }
 

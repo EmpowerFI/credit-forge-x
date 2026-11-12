@@ -101,6 +101,45 @@ export type Database = {
         }
         Relationships: []
       }
+      diary_waitlist: {
+        Row: {
+          consent: boolean
+          city: string
+          created_at: string
+          email: string
+          id: string
+          language: string
+          name: string
+          sells: string
+          source: string | null
+          state: string
+        }
+        Insert: {
+          consent: boolean
+          city: string
+          created_at?: string
+          email: string
+          id?: string
+          language?: string
+          name: string
+          sells: string
+          source?: string | null
+          state: string
+        }
+        Update: {
+          consent?: boolean
+          city?: string
+          created_at?: string
+          email?: string
+          id?: string
+          language?: string
+          name?: string
+          sells?: string
+          source?: string | null
+          state?: string
+        }
+        Relationships: []
+      }
       investor_waitlist: {
         Row: {
           consent: boolean
