@@ -14,7 +14,7 @@ import Seo from "@/components/Seo";
 import SiteHeader, { type HeaderLink } from "@/components/site/SiteHeader";
 import SiteFooter, { type FooterColumn } from "@/components/site/SiteFooter";
 import { organizationSchema } from "@/config/structuredData";
-import { DIARY_PATH, type Lang, MATURITY, type Maturity, MISSIONS_DEMO_PATH, PATHS, SITE } from "./content";
+import { DIARY_PATH, IMPACT_AREA_PATH, type Lang, MATURITY, type Maturity, MISSIONS_DEMO_PATH, PATHS, SITE } from "./content";
 
 export type PageKey = keyof (typeof PATHS)["en"];
 
@@ -25,7 +25,11 @@ const twinOf = (lang: Lang, key?: PageKey) => (key ? PATHS[lang === "en" ? "pt" 
 export function SiteNav({ lang, page, twin }: { lang: Lang; page?: PageKey; twin?: string }) {
   const t = SITE[lang];
   const p = PATHS[lang];
-  const links: HeaderLink[] = t.nav.links.map((l) => ({ label: l.label, to: p[l.key as PageKey], top: "lg" }));
+  const links: HeaderLink[] = [
+    ...t.nav.links.map((l) => ({ label: l.label, to: p[l.key as PageKey], top: "lg" as const })),
+    // Panel only: the bar keeps one action; on a wide screen the footer carries it.
+    { label: t.nav.sponsorArea, to: `${IMPACT_AREA_PATH}?lang=${lang}` },
+  ];
   const other = twin ?? twinOf(lang, page);
   return (
     <SiteHeader home={p.home} lang={lang} links={links}
@@ -47,6 +51,7 @@ export function SiteFoot({ lang, page, twin }: { lang: Lang; page?: PageKey; twi
         { label: t.nav.links[1].label, to: p.entrepreneurs },
         { label: t.nav.links[2].label, to: p.sponsors },
         { label: t.nav.links[3].label, to: p.protocol },
+        { label: t.nav.sponsorArea, to: `${IMPACT_AREA_PATH}?lang=${lang}` },
         { label: t.footer.missionsDemo, to: MISSIONS_DEMO_PATH },
       ],
     },

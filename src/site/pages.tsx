@@ -3,7 +3,7 @@ import SectionHeading from "@/components/SectionHeading";
 import SupportLogo from "@/components/SupportLogo";
 import { GradedRule, SiteLinkButton } from "@/components/site/editorial";
 import { SEBRAE_LOGO_SRC, UNICAMP_SEAL_SRC } from "@/config/links";
-import { AWARDS_ANCHOR, DIARY_PATH, type Lang, type Maturity, MISSIONS_DEMO_PATH, PARTNERSHIPS_ANCHOR, PATHS, SITE } from "./content";
+import { AWARDS_ANCHOR, DIARY_PATH, IMPACT_AREA_PATH, type Lang, type Maturity, MISSIONS_DEMO_PATH, PARTNERSHIPS_ANCHOR, PATHS, SITE } from "./content";
 import { CampaignFlow, ContactForm, DiaryAccess, MaturityTag, MoreLink, Section, Shot, SitePage } from "./parts";
 
 const shot = (name: "month" | "day", lang: Lang) => `/site/diary-${name}-${lang}.png`;
@@ -269,8 +269,9 @@ export function SponsorsPage({ lang }: { lang: Lang }) {
             {t.hero.title} <em className="italic text-accent">{t.hero.accent}</em>
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-foreground/85 md:text-xl">{t.hero.body}</p>
-          <div className="mt-9">
+          <div className="mt-9 flex flex-wrap gap-4">
             <a href="#contact" className="btn-site btn-site-primary">{t.hero.primary} <ArrowRight size={18} className="text-accent" aria-hidden /></a>
+            <SiteLinkButton to={`${IMPACT_AREA_PATH}?lang=${lang}`}>{t.hero.signIn} <ArrowUpRight size={18} className="text-accent" aria-hidden /></SiteLinkButton>
           </div>
         </div>
       </section>
