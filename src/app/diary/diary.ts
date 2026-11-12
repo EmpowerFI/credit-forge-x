@@ -316,8 +316,8 @@ export interface MonthStatement {
 export interface WeekReading {
   week_start: string;
   source: "model" | "fallback";
-  /** Since 12/11/2026 a week is advice: praise and improve, each possibly empty; older readings have observations. */
-  report: { summary: string; observations: string[]; action: string; limits: string; praise?: string; improve?: string };
+  /** Since 13/11/2026 a week is one tip (report.tip); a reading written before shows its action, which was its tip. */
+  report: { summary: string; observations: string[]; action: string; limits: string; tip?: string };
   days_kept: number;
   /** The days a week her business opened, the week's base. */
   open_days: number;
