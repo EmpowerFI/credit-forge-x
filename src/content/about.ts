@@ -45,6 +45,7 @@ export interface AboutContent {
     subtitle: string;
     primaryCta: string;
     secondaryCta: string;
+    secondaryHref: string;
   };
   story: {
     eyebrow: string;
@@ -239,7 +240,8 @@ export const aboutPt: AboutContent = {
     subtitle:
       "A EmpowerFI ajuda mulheres que empreendem a conhecer seus números e a participar de campanhas patrocinadas com recompensas. Ao longo do tempo, essa atividade vira uma reputação financeira que ela controla.",
     primaryCta: "Falar com a gente",
-    secondaryCta: "Abrir o diário",
+    secondaryCta: "Entrar na lista de espera",
+    secondaryHref: "/pt/empreendedoras#lista-de-espera",
   },
   story: {
     eyebrow: "Nossa história",
@@ -503,9 +505,9 @@ export const aboutPt: AboutContent = {
       {
         icon: Smartphone,
         title: "Diário EmpowerFI no ar, na web",
-        desc: "O diário está publicado e em uso, no navegador do celular. Não é demonstração: dá para usar hoje, sem instalar nada.",
-        href: "/app/diario",
-        linkLabel: "empowerfi.io/app/diario",
+        desc: "O diário está publicado e em uso por um primeiro grupo de empreendedoras, no navegador do celular. Não é demonstração. O acesso abre aos poucos, por lista de espera.",
+        href: "/pt/empreendedoras#lista-de-espera",
+        linkLabel: "Lista de espera",
       },
       {
         icon: BarChart3,
@@ -548,7 +550,8 @@ export const aboutPt: AboutContent = {
       },
       {
         q: "O diário já está disponível?",
-        a: "Sim, e é gratuito. Ele funciona no navegador, em empowerfi.io/app/diario. Para uma experiência melhor, use no celular.",
+        a: "Sim, para um primeiro grupo de empreendedoras, e é gratuito. O acesso abre aos poucos: entre na lista de espera e avisamos quando chegar a sua vez.",
+        link: { href: "/pt/empreendedoras#lista-de-espera", label: "Entrar na lista de espera" },
       },
       {
         q: "O que são as Missões?",
@@ -634,7 +637,8 @@ export const aboutEn: AboutContent = {
     subtitle:
       "EmpowerFI helps women entrepreneurs know their numbers and join sponsored campaigns with conditional rewards. Over time, that activity becomes a financial reputation she controls.",
     primaryCta: "Get in touch",
-    secondaryCta: "Open the diary",
+    secondaryCta: "Join the waitlist",
+    secondaryHref: "/entrepreneurs#lista-de-espera",
   },
   story: {
     eyebrow: "Our story",
@@ -899,9 +903,9 @@ export const aboutEn: AboutContent = {
       {
         icon: Smartphone,
         title: "The EmpowerFI diary, live on the web",
-        desc: "The diary is published and in use, in the phone's browser. It is not a demo: you can use it today, with nothing to install.",
-        href: "/app/diario",
-        linkLabel: "empowerfi.io/app/diario",
+        desc: "The diary is published and in use by a first group of entrepreneurs, in the phone's browser. It is not a demo. Access opens little by little, through a waitlist.",
+        href: "/entrepreneurs#lista-de-espera",
+        linkLabel: "Waitlist",
       },
       {
         icon: BarChart3,
@@ -944,7 +948,8 @@ export const aboutEn: AboutContent = {
       },
       {
         q: "Is the diary already available?",
-        a: "Yes, and it is free. It works in the browser, at empowerfi.io/app/diario. For the best experience, use it on your phone.",
+        a: "Yes, for a first group of entrepreneurs, and it is free. Access opens little by little: join the waitlist and we will let you know when it is your turn.",
+        link: { href: "/entrepreneurs#lista-de-espera", label: "Join the waitlist" },
       },
       {
         q: "What are Missions?",

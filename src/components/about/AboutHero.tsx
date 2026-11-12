@@ -32,7 +32,7 @@ const AboutHero = ({ hero }: { hero: AboutContent["hero"] }) => (
             </a>
           </Button>
           <Button asChild size="lg" variant="outline" className="border-primary/40 text-foreground hover:bg-primary/10 gap-2">
-            <a href="/app/diario">
+            <a href={hero.secondaryHref}>
               {hero.secondaryCta} <ArrowUpRight size={16} />
             </a>
           </Button>
