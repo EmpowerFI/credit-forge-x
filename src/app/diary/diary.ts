@@ -137,6 +137,14 @@ export interface DiarySponsor {
   campaigns: string[];
 }
 
+/** A strategic partner of EmpowerFI's (20270103), shown to every entrepreneur. */
+export interface DiaryPartner {
+  name: string;
+  description: string | null;
+  logo_path: string | null;
+  link_url: string | null;
+}
+
 /** An open campaign she can join with one tap. blocked_by: the campaign she is already named in for later. */
 export interface OpenCampaign {
   id: string;
@@ -250,6 +258,7 @@ export const diary = {
   forget: () => call<{ erased: boolean }>("diary_account_forget", { p_confirmation: "EXCLUIR" }),
   openCampaigns: () => call<OpenCampaign[]>("diary_campaigns"),
   sponsors: () => call<DiarySponsor[]>("diary_sponsors"),
+  partners: () => call<DiaryPartner[]>("diary_partners"),
   joinCampaign: (id: string) => call<{ starts_on: string; until: string }>("diary_campaign_join", { p_program_id: id }),
   leaveCampaign: () => call<{ ends_on: string }>("diary_campaign_leave"),
   month: () => call<MonthSoFar>("diary_month"),

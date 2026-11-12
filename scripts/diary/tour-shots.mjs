@@ -69,7 +69,7 @@ async function open(locale, path, { withPending = false } = {}) {
     localStorage.setItem("diary-install-dismissed", "1");
     if (list) localStorage.setItem(`empowerfi-diary-pending:${p}`, JSON.stringify(list));
   }, [session, TODAY, withPending ? pending : null]);
-  const answer = { diary_profile: profile, diary_history: history, diary_month: month, diary_readings: readings(pt), diary_campaigns: [], diary_open_campaigns: [], diary_sponsors: sponsors };
+  const answer = { diary_profile: profile, diary_history: history, diary_month: month, diary_readings: readings(pt), diary_campaigns: [], diary_open_campaigns: [], diary_sponsors: sponsors, diary_partners: [] };
   await ctx.route("**/rest/v1/rpc/**", (route) => {
     const fn = route.request().url().split("/rpc/")[1].split("?")[0];
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(answer[fn] ?? null) });
