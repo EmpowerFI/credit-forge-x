@@ -361,51 +361,47 @@ Deno.test("the advice sees where the week's money came from and went", () => {
   assertEquals(debt.lines.join(" ").includes("empréstimo"), false);
 });
 
-Deno.test("the advice is asked for with its own tool and her sector", () => {
+Deno.test("the tip is asked for with its own tool and her sector", () => {
   const { init } = adviceRequest("sk-test", "claude-haiku-5-5", weekOf({ open_days: 6 }), "doces", detail);
   const body = JSON.parse(init.body as string);
-  assertEquals(body.tool_choice.name, "write_advice");
+  assertEquals(body.tool_choice.name, "write_tip");
+  assertEquals(Object.keys(body.tools[0].input_schema.properties), ["tip"]);
   assertEquals(body.messages[0].content.includes("Ela trabalha com: doces"), true);
   assertEquals(body.system.includes("Sebrae"), true);
 });
 
-Deno.test("good advice passes; praise and improve may be empty", () => {
+Deno.test("a good tip passes, and is all the week's report carries", () => {
   const f = adviceFacts(weekOf({ open_days: 6 }), detail);
-  const ok = validateAdvice({
-    summary: "Na semana, as vendas foram de R$ 900,00.",
-    praise: "Você recebeu a maior parte em Pix, R$ 500,00. Muito bem!",
-    improve: "",
-    action: "Ofereça um doce a mais para quem paga no Pix nesta semana.",
-  }, f.allowedNumbers, f.profitWords, "Estes números vêm das suas anotações.");
+  const ok = validateAdvice({ tip: "Você recebeu a maior parte em Pix, R$ 500,00. Muito bem! Nesta semana, ofereça um doce a mais para quem paga no Pix." },
+    f.allowedNumbers, f.profitWords, "Estes números vêm das suas anotações.");
   assertEquals(ok.ok, true);
   if (ok.ok) {
-    assertEquals(ok.report.improve, "");
+    assertEquals(ok.report.summary, "");
     assertEquals(ok.report.observations, []);
+    assertEquals(ok.report.action, ok.report.tip);
   }
 });
 
-Deno.test("advice with an invented number, Sebrae's name or paper is refused", () => {
+Deno.test("a tip with an invented number, Sebrae's name or paper is refused", () => {
   const f = adviceFacts(weekOf({ open_days: 6 }), detail);
-  const bad = validateAdvice({
-    summary: "Você vendeu quase R$ 1.000 na semana.",
-    praise: "O Sebrae recomenda e você fez!",
-    improve: "Anote os gastos num caderno.",
-    action: "",
-  }, f.allowedNumbers, f.profitWords, "x");
+  const bad = validateAdvice({ tip: "Você vendeu quase R$ 1.000. O Sebrae recomenda anotar os gastos num caderno." },
+    f.allowedNumbers, f.profitWords, "x");
   assertEquals(bad.ok, false);
   if (!bad.ok) {
     const all = bad.reasons.join(" | ");
     assertEquals(all.includes("1.000"), true);
     assertEquals(all.includes("Sebrae"), true);
     assertEquals(all.includes("caderno"), true);
-    assertEquals(all.includes("action is empty"), true);
   }
+  const empty = validateAdvice({ tip: "  " }, f.allowedNumbers, f.profitWords, "x");
+  assertEquals(empty.ok, false);
 });
 
-Deno.test("the fixed-sentence advice praises a week kept in full and names what to improve", () => {
+Deno.test("the fixed-sentence tip praises a week kept in full, or names what to improve, then gives the action", () => {
   const kept = fallbackAdvice(weekOf({ open_days: 6 }), { days_recorded: 6 });
-  assertEquals(kept.praise?.startsWith("Você registrou todos os dias em que abriu"), true);
+  assertEquals(kept.tip?.startsWith("Você registrou todos os dias em que abriu"), true);
+  assertEquals(kept.summary, "");
   const hard = fallbackAdvice(weekOf({ open_days: 6, cogs_cents: 200_000 }), { days_recorded: 3 });
-  assertEquals((hard.improve ?? "").length > 0, true);
+  assertEquals((hard.tip ?? "").length > 0, true);
   assertEquals(hard.observations, []);
 });

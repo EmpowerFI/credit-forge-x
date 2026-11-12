@@ -28,7 +28,7 @@
 
 import { type InsightFlag, type Insights, type Span, spanOf } from "./checkin-insights/index.ts";
 
-export const PROMPT_VERSION = "report-prompt-v0.7.0";
+export const PROMPT_VERSION = "report-prompt-v0.8.0";
 export const DEFAULT_MODEL = "claude-haiku-5-5";
 
 /** The reading, as the model must return it and as the fallback builds it. */
@@ -37,10 +37,12 @@ export interface Report {
   observations: string[];
   action: string;
   limits: string;
-  /** A week's advice (v0.7.0): one good practice to praise; empty when there is none to say truthfully. */
-  praise?: string;
-  /** A week's advice: one place to improve, given what she sells; empty when the week shows none. */
-  improve?: string;
+  /**
+   * A week's tip (v0.8.0, 13/11/2026): the only thing she is shown for a week -- a word
+   * of praise or a place to improve, given what she sells, and one action. A week's
+   * report then has an empty summary and no observations; action carries the tip too.
+   */
+  tip?: string;
 }
 
 // ------------------------------------------------------------------ figures
@@ -460,10 +462,10 @@ export function fallbackReport(i: Insights): Report {
 // ------------------------------------------------------------------ a week's advice
 
 /**
- * Since 12/11/2026 a week's reading is advice, in the manner of a
- * small-business adviser (as Sebrae gives it): how the week went, one good
- * practice to praise, one place to improve given what she sells, and one tip.
- * Short, warm and plain. The same rules hold -- only computed numbers, no
+ * Since 13/11/2026 a week's reading is one tip, in the manner of a
+ * small-business adviser (as Sebrae gives it): a word of praise for a good
+ * practice or a place to improve, given what she sells and the week's figures,
+ * and one small action. Short, warm and plain; nothing else is shown. The same rules hold -- only computed numbers, no
  * credit, no blame, no paper -- and the same fallback idea: fixed sentences
  * when the model is off, down or refused.
  */
@@ -517,16 +519,15 @@ export function adviceFacts(i: Insights, detail?: WeekDetail | null): Facts {
 function adviceSystem(profitWords: boolean): string {
   return [
     "Você é uma conselheira de pequenos negócios, no jeito das orientações do Sebrae: prática, próxima e encorajadora.",
-    "Você escreve, em português do Brasil, um conselho curto sobre a semana do negócio de uma microempreendedora. Ela lê no diário da EmpowerFI, no celular.",
+    "Você escreve, em português do Brasil, a dica da semana para o negócio de uma microempreendedora. Ela lê no diário da EmpowerFI, no celular. É a única coisa que ela vê sobre a semana.",
     "Olhe para o ramo dela (o que ela vende ou faz) e para os números da semana: quanto vendeu, de onde veio o dinheiro, para onde foram os gastos, em quantos dias vendeu e registrou.",
     "Tom: acolhedor e simples, como uma conversa. Trate-a por \"você\". Frases curtas, palavras do dia a dia, sem jargão (nada de fluxo de caixa, margem de contribuição ou capital de giro).",
-    "Seja concisa: cada campo tem uma ou duas frases.",
+    "Seja concisa: no máximo três frases curtas.",
     "",
-    "Campos:",
-    "- summary: como foi a semana, com os números principais.",
-    "- praise: uma boa prática dela que merece parabéns, tirada dos números (registrou todos os dias em que abriu, vendas subiram, gastos sob controle, vendeu em vários dias, recebeu mais em Pix ou dinheiro do que no fiado...). Deixe vazio se não houver nada verdadeiro para elogiar.",
-    "- improve: um ponto em que ela pode melhorar, pensando no ramo dela e nos números (um gasto que pesou, muito fiado, poucos dias com venda, retirada para casa alta...). Deixe vazio se a semana não mostrar nenhum.",
-    "- action: uma dica prática e pequena para esta semana, pensada para o ramo dela, possível de fazer sem gastar dinheiro.",
+    "A dica (campo tip):",
+    "- Comece com uma frase: OU parabenize uma boa prática tirada dos números (registrou todos os dias em que abriu, vendas subiram, gastos sob controle, recebeu mais em Pix ou dinheiro do que no fiado...), OU aponte com carinho um ponto a melhorar (um gasto que pesou, muito fiado, poucos dias com venda, retirada para casa alta...). Escolha o que for mais útil para ela.",
+    "- Termine com uma ação prática e pequena para esta semana, pensada para o ramo dela, possível de fazer sem gastar dinheiro.",
+    "- Não faça resumo da semana nem liste os números.",
     "",
     "Regras que não podem ser quebradas:",
     "1. Use apenas os números da lista de fatos, escritos exatamente como estão lá. Não arredonde, não some, não calcule, não crie nenhum número novo. Pode falar sem números.",
@@ -544,17 +545,14 @@ function adviceSystem(profitWords: boolean): string {
 
 /** Forces the advice out of the model, in exactly this shape. */
 export const ADVICE_TOOL = {
-  name: "write_advice",
-  description: "Registra o conselho da semana para a empreendedora.",
+  name: "write_tip",
+  description: "Registra a dica da semana para a empreendedora.",
   input_schema: {
     type: "object",
     properties: {
-      summary: { type: "string", description: "Como foi a semana, em até duas frases curtas." },
-      praise: { type: "string", description: "Uma boa prática para parabenizar, em uma frase. Vazio se não houver." },
-      improve: { type: "string", description: "Um ponto para melhorar, pensando no ramo dela, em uma frase. Vazio se não houver." },
-      action: { type: "string", description: "Uma dica prática e pequena para esta semana, em até duas frases." },
+      tip: { type: "string", description: "A dica da semana: um elogio ou um ponto a melhorar, e uma ação pequena. No máximo três frases curtas." },
     },
-    required: ["summary", "praise", "improve", "action"],
+    required: ["tip"],
     additionalProperties: false,
   },
 } as const;
@@ -571,7 +569,7 @@ export function adviceRequest(apiKey: string, model: string, i: Insights, sector
     "Fatos da semana:",
     ...facts.lines.map((l) => (l.startsWith("  ") ? `  - ${l.trim()}` : `- ${l}`)),
     "",
-    "Escreva o conselho usando a ferramenta write_advice.",
+    "Escreva a dica usando a ferramenta write_tip.",
   ].join("\n");
   return {
     url: "https://api.anthropic.com/v1/messages",
@@ -580,7 +578,7 @@ export function adviceRequest(apiKey: string, model: string, i: Insights, sector
       headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
         model,
-        max_tokens: 600,
+        max_tokens: 400,
         system: adviceSystem(facts.profitWords),
         tools: [ADVICE_TOOL],
         tool_choice: { type: "tool", name: ADVICE_TOOL.name },
@@ -591,7 +589,7 @@ export function adviceRequest(apiKey: string, model: string, i: Insights, sector
   };
 }
 
-const ADVICE_LIMITS = { summary: 280, praise: 220, improve: 220, action: 260 } as const;
+const TIP_MAX = 360;
 
 /** How much to trust the week's figures, said by code. */
 export function limitsFor(i: Insights): string {
@@ -602,41 +600,33 @@ export function limitsFor(i: Insights): string {
       : "Faltou um dos custos, então o resultado da semana ficou de fora.";
 }
 
-/** The model's advice, accepted only if it passes every check validateReport runs. */
+/** The model's tip, accepted only if it passes every check validateReport runs. */
 export function validateAdvice(raw: unknown, allowedNumbers: Set<string>, profitWords: boolean, limits: string):
   { ok: true; report: Report } | { ok: false; reasons: string[] } {
   const reasons: string[] = [];
-  const r = raw as { summary?: unknown; praise?: unknown; improve?: unknown; action?: unknown } | null;
+  const r = raw as { tip?: unknown } | null;
   if (r === null || typeof r !== "object") return { ok: false, reasons: ["not an object"] };
-  const text = (v: unknown, field: keyof typeof ADVICE_LIMITS, optional: boolean): string | null => {
-    if (typeof v !== "string") { reasons.push(`${field} is not text`); return null; }
-    const t = v.trim();
-    if (t.length === 0) { if (!optional) reasons.push(`${field} is empty`); return ""; }
-    if (t.length > ADVICE_LIMITS[field]) { reasons.push(`${field} is longer than ${ADVICE_LIMITS[field]} characters`); return null; }
-    return t;
-  };
-  const summary = text(r.summary, "summary", false);
-  const praise = text(r.praise, "praise", true);
-  const improve = text(r.improve, "improve", true);
-  const action = text(r.action, "action", false);
+  const tip = typeof r.tip === "string" ? r.tip.trim() : "";
+  if (typeof r.tip !== "string") reasons.push("tip is not text");
+  else if (!tip) reasons.push("tip is empty");
+  else if (tip.length > TIP_MAX) reasons.push(`tip is longer than ${TIP_MAX} characters`);
 
-  const all = [summary, praise, improve, action].filter((x): x is string => !!x).join(" ");
-  const plain = strip(all);
+  const plain = strip(tip);
   for (const word of profitWords ? FORBIDDEN : [...FORBIDDEN, ...PROFIT_WORDS]) {
     if (plain.includes(word)) reasons.push(`uses the forbidden word "${word}"`);
   }
   if (plain.includes("sebrae")) reasons.push("speaks in Sebrae's name");
   const paper = plain.match(PAPER);
   if (paper) reasons.push(`sends her to keep her figures outside the diary: "${paper[1]}"`);
-  for (const n of numbersIn(all)) {
+  for (const n of numbersIn(tip)) {
     if (/^\d$/.test(n)) continue;
     if (!allowedNumbers.has(n)) reasons.push(`contains a number nobody computed: ${n}`);
   }
   if (reasons.length) return { ok: false, reasons };
-  return { ok: true, report: { summary: summary!, observations: [], praise: praise!, improve: improve!, action: action!, limits } };
+  return { ok: true, report: { summary: "", observations: [], action: tip, tip, limits } };
 }
 
-/** The week's advice in fixed sentences: when the AI is off, down or refused. */
+/** The week's tip in fixed sentences: when the AI is off, down or refused. */
 export function fallbackAdvice(i: Insights, detail?: WeekDetail | null): Report {
   const base = fallbackReport(i);
   const days = detail?.days_recorded;
@@ -653,8 +643,10 @@ export function fallbackAdvice(i: Insights, detail?: WeekDetail | null): Report 
   const OBS = observationsFor("week");
   const negative = (Object.keys(OBS) as InsightFlag[]).filter((f) => f !== "REVENUE_UP");
   const flag = negative.find((f) => i.flags.includes(f));
-  const improve = flag ? OBS[flag]! : "";
-  return { summary: base.summary, observations: [], praise, improve, action: base.action, limits: limitsFor(i) };
+  // Praise first when there is something true to praise; otherwise the place to improve.
+  const opening = praise || (flag ? OBS[flag]! : "");
+  const tip = [opening, base.action].filter(Boolean).join(" ");
+  return { summary: "", observations: [], action: tip, tip, limits: limitsFor(i) };
 }
 
 // ------------------------------------------------------------------ message
@@ -672,9 +664,8 @@ export function coverageLine(c: { kept: number; days: number } | null | undefine
 export function renderMessage(report: Report, firstName?: string | null, span: Span = "month", footer?: string | null): string {
   const whose = span === "week" ? "da sua semana" : "do seu mês";
   const greeting = firstName ? `Oi, ${firstName.split(" ")[0]}! Aqui está a leitura ${whose} 💜` : `Aqui está a leitura ${whose} 💜`;
+  if (report.tip) return [greeting, `💡 ${report.tip}`, ...(footer ? [footer] : [])].join("\n\n");
   const parts = [greeting, report.summary];
-  if (report.praise) parts.push(`👏 ${report.praise}`);
-  if (report.improve) parts.push(`🌱 ${report.improve}`);
   if (report.observations.length) parts.push(report.observations.map((o) => `• ${o}`).join("\n"));
   parts.push(`*${WORDS[span].nextTitle}:* ${report.action}`);
   parts.push(`_${report.limits}_`);
