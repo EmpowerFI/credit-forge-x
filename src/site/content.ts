@@ -238,6 +238,7 @@ const en = {
       primary: "Sponsor an Impact Campaign",
       signIn: "Already a sponsor? See your campaign",
     },
+    video: "A short film for sponsors: a 30-day journey in the diary, and the sponsor's area with group totals, never names.",
     format: {
       eyebrow: "The offering",
       title: "Impact Marketing",
@@ -559,6 +560,7 @@ const pt: SiteContent = {
       primary: "Patrocinar uma campanha",
       signIn: "Já patrocina? Veja sua campanha",
     },
+    video: "Um filme curto para patrocinadores: a jornada de 30 dias no diário e a área do patrocinador, com totais do grupo e nunca nomes.",
     format: {
       eyebrow: "A oferta",
       title: "Campanhas de",
