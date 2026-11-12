@@ -15,6 +15,8 @@ export const PATHS = {
 
 /** The diary on the web, and the devnet demo of the campaign vault. */
 export const DIARY_PATH = "/app/diario";
+/** The reserved impact area: each sponsor signs in with the e-mail EmpowerFI authorised and sees its own campaigns. */
+export const IMPACT_AREA_PATH = "/impacto";
 export const MISSIONS_DEMO_PATH = "/app/missions";
 /** The About pages' strategic partnerships section, linked from the home page. */
 export const PARTNERSHIPS_ANCHOR = "parcerias-estrategicas";
@@ -41,6 +43,7 @@ const en = {
       { label: "About", key: "about" },
     ],
     primary: "Become a Sponsor",
+    sponsorArea: "Sponsor area",
     app: "Platform",
     menu: "Menu",
   },
@@ -211,6 +214,7 @@ const en = {
       accent: "Create lasting impact.",
       body: "Support women entrepreneurs through measurable financial engagement campaigns and conditional rewards.",
       primary: "Sponsor an Impact Campaign",
+      signIn: "Already a sponsor? See your campaign",
     },
     format: {
       eyebrow: "The offering",
@@ -343,6 +347,7 @@ const pt: SiteContent = {
       { label: "Sobre", key: "about" },
     ],
     primary: "Quero patrocinar",
+    sponsorArea: "Área do patrocinador",
     app: "Plataforma",
     menu: "Menu",
   },
@@ -513,6 +518,7 @@ const pt: SiteContent = {
       accent: "Crie impacto duradouro.",
       body: "Apoie mulheres que empreendem com campanhas de engajamento financeiro mensurável e recompensas condicionais.",
       primary: "Patrocinar uma campanha",
+      signIn: "Já patrocina? Veja sua campanha",
     },
     format: {
       eyebrow: "A oferta",

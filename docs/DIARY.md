@@ -24,7 +24,7 @@ The diary is the entrepreneur's daily financial record. It is free, on the web a
 ## Campaigns and sponsors
 
 - A campaign is a `programs` row of a sponsor. She is in one through `program_participants` (by e-mail) or, for a published Missions campaign, by sharing her impact figures. The house campaign, EmpowerFI's own, has no end.
-- Sponsors see only group totals, never her name: every count obeys the floor of five women. Their reserved area is `/impacto`.
+- Sponsors see only group totals, never her name: every count obeys the floor of five women. Their reserved area is `/impacto` (the site links to it as *Área do patrocinador*: in the menu, the footer and the Sponsors page); a sponsor sees a campaign once one of its e-mails is in `sponsor_viewers`.
 - **Real or devnet** (`programs.is_real`): only real campaigns put a sponsor in her Sponsors tab. Dashboard campaigns start real; Missions campaigns start devnet.
 - Missions pays a reward into a wallet that is hers on chain once she keeps 30 days: [MISSIONS.md](MISSIONS.md).
 
