@@ -11,6 +11,7 @@ import { ImpactAsk } from "./ImpactChoice";
 import { InstallInvite } from "./Install";
 import { MonthCard, ProfitValue } from "./Month";
 import { LatestReading } from "./Reading";
+import { RewardsWallet } from "./Wallet";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
 import {
@@ -241,6 +242,7 @@ export default function Today() {
         </div>
       )}
       {mode === "ask" && <MonthCard openDays={openDays} todayKept={Boolean(todayKept)} />}
+      {mode === "ask" && <RewardsWallet />}
       {mode === "ask" && !recorded && !restDay && (
         <div data-tour="quiet" className="space-y-2">
           <p className="text-sm text-muted-foreground">{tr({ en: "No activity?", pt: "Não teve movimento?" })}</p>

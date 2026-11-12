@@ -49,7 +49,17 @@ Every entrepreneur gets a reward wallet: the program's address at `["recipient",
 - **No key exists.** Nothing anywhere holds a key for it, and only the program moves what it holds.
 - **Opaque.** The ref is a random uuid in `private.reward_wallets`, created when she enters the diary (a trigger on `entrepreneurs`), so the address says nothing of who she is.
 - **On-chain accounts.** Her token account is created by the first reward paid into it.
-- **Later.** A later version of the program will move rewards from it to a wallet she chooses, for example a partner app. That is not built yet.
+- **Paying out** (since 12 November 2026, migration `20270104000000`). See below.
+
+## Paying out: her rewards and EmpowerFI's half
+
+On Today the diary shows **Suas recompensas** once something was paid into her wallet: the balance (devnet USDC), what was received and transferred, and **Transferir para o conta.vc**. EmpowerFI takes its half of each vault from the dashboard's Campaigns page.
+
+- **`set_payout`.** Where her wallet pays out, at `["payout", her wallet ref]`. The operator writes it when she asks, and only the operator of a campaign that paid her (its receipt is the proof). **A new destination waits a day** (`PAYOUT_DELAY`, 24 h) before anything can be sent there; writing the same one again changes nothing. So a key that leaked could not empty her wallet unseen.
+- **`withdraw_reward`.** Everything her wallet holds of the mint, to a token account her destination owns, once the destination is active. The program signs for her wallet with its seeds.
+- **`withdraw_house`.** What is left of EmpowerFI's half of a campaign, only to a token account the campaign's house wallet owns, and never more than half of what was funded. The operator or the house signs. `["house", campaign]` keeps what was taken, and `pay_reward` now reads it so the women's share is still checked after the house took its half.
+- **The last leg is pending.** The partner (conta.vc) giving the address of her account there is not connected yet. On devnet she pastes the address of a devnet wallet. EmpowerFI's half lands in the house wallet; moving it on to EmpowerFI's conta.vc account is the same pending link.
+- **How it runs.** Each request is a row of `payout_ops` (`diary_payout_set`, `diary_reward_withdraw`, `house_withdraw`). The Edge Function `reward-payout` works through them one transaction at a time, right after the request and every ten minutes by pg_cron (`reward-payout`), with campaign-attest's operator key and secret. Her balance is what was paid in, less what went out or is on its way. Rewards of real campaigns, paid by EmpowerFI by hand, are not in it.
 
 ## Privacy
 
@@ -120,6 +130,15 @@ All keys go to `~/.config/empowerfi/rewards/`, outside the repo. Nothing secret 
    ```
    npx supabase secrets set --env-file <keys>/operator.env --project-ref <prod-ref> --workdir platform
    ```
+
+### Upgrading the program (paying out, 12 November 2026)
+
+The program id stays; `solana program deploy` with the existing `--program-id` upgrades it in place, and every campaign, receipt and wallet keeps working. **`pay_reward` gained an account** (the campaign's house ledger), so `campaign-attest` must be deployed in the same sitting as the upgrade, or its next payment is refused.
+
+1. Build (`cargo-build-sbf …`, as above) and run `cargo test -p empowerfi-rewards`.
+2. Deploy over the existing id, with the Helius RPC and the fixed buffer (the command above).
+3. Apply migration `20270104000000_her_rewards_paid_out.sql`.
+4. Deploy `campaign-attest` and `reward-payout`. No new secret: `reward-payout` uses campaign-attest's.
 
 ## Tested
 

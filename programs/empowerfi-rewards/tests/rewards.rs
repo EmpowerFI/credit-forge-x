@@ -7,8 +7,9 @@ use {
         AccountDeserialize, InstructionData, ToAccountMetas,
     },
     empowerfi_rewards::{
-        leaf_commitment, verify_inclusion, Campaign, CampaignStatus, Receipt, RewardKind, RewardsError, CAMPAIGN_SEED,
-        HOUSE_SHARE_BPS, MIN_SEATS, RECEIPT_SEED, RECIPIENT_SEED, TOKEN_PROGRAM_ID, UNLOCK_DAYS,
+        leaf_commitment, verify_inclusion, Campaign, CampaignStatus, HouseLedger, Payout, Receipt, RewardKind, RewardsError,
+        CAMPAIGN_SEED, HOUSE_LEDGER_SEED, HOUSE_SHARE_BPS, MIN_SEATS, PAYOUT_DELAY, PAYOUT_SEED, RECEIPT_SEED, RECIPIENT_SEED,
+        TOKEN_PROGRAM_ID, UNLOCK_DAYS,
     },
     solana_sha256_hasher::hashv,
     litesvm::{types::TransactionResult, LiteSVM},
@@ -391,6 +392,7 @@ fn pay_ix(env: &Env, signer: &Pubkey, vault: Pubkey, r: [u8; 16], tokens: Pubkey
             receipt: receipt_pda(&r),
             token_program: TOKEN_PROGRAM_ID,
             system_program: anchor_lang::system_program::ID,
+            house_ledger: ledger_pda(),
         }
         .to_account_metas(None),
     )
@@ -520,4 +522,177 @@ fn the_leaf_is_the_one_the_database_and_the_client_hash() {
     let wallet = [0xaa, 0xaa, 0xaa, 0xaa, 0xbb, 0xbb, 0xcc, 0xcc, 0xdd, 0xdd, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee];
     let hex: String = leaf_commitment(&campaign, &wallet, &[7; 32]).iter().map(|b| format!("{b:02x}")).collect();
     assert_eq!(hex, "da525a5476b8fc4de752bd0bc3a0b682bc0c7e22c5351c3500052670bc24588c");
+}
+
+// ------------------------------------------------------------------ paying out
+
+fn payout_pda(r: &[u8; 16]) -> Pubkey {
+    Pubkey::find_program_address(&[PAYOUT_SEED, r], &empowerfi_rewards::ID).0
+}
+fn ledger_pda() -> Pubkey {
+    Pubkey::find_program_address(&[HOUSE_LEDGER_SEED, campaign_pda(&REF).as_ref()], &empowerfi_rewards::ID).0
+}
+
+fn set_payout_ix(signer: &Pubkey, r: [u8; 16], destination: Pubkey) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_rewards::ID,
+        &empowerfi_rewards::instruction::SetPayout { recipient_ref: r, destination }.data(),
+        empowerfi_rewards::accounts::SetPayout {
+            operator: *signer,
+            campaign: campaign_pda(&REF),
+            receipt: receipt_pda(&r),
+            recipient: wallet(&r),
+            payout: payout_pda(&r),
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+fn withdraw_ix(env: &Env, signer: &Pubkey, r: [u8; 16], tokens: Pubkey, destination_tokens: Pubkey) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_rewards::ID,
+        &empowerfi_rewards::instruction::WithdrawReward { recipient_ref: r }.data(),
+        empowerfi_rewards::accounts::WithdrawReward {
+            operator: *signer,
+            campaign: campaign_pda(&REF),
+            receipt: receipt_pda(&r),
+            mint: env.mint,
+            recipient: wallet(&r),
+            recipient_tokens: tokens,
+            payout: payout_pda(&r),
+            destination_tokens,
+            token_program: TOKEN_PROGRAM_ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+fn house_ix(env: &Env, signer: &Pubkey, vault: Pubkey, house_tokens: Pubkey) -> Instruction {
+    Instruction::new_with_bytes(
+        empowerfi_rewards::ID,
+        &empowerfi_rewards::instruction::WithdrawHouse {}.data(),
+        empowerfi_rewards::accounts::WithdrawHouse {
+            authority: *signer,
+            campaign: campaign_pda(&REF),
+            mint: env.mint,
+            vault,
+            house_tokens,
+            ledger: ledger_pda(),
+            token_program: TOKEN_PROGRAM_ID,
+            system_program: anchor_lang::system_program::ID,
+        }
+        .to_account_metas(None),
+    )
+}
+
+/// Woman 0 paid her reward, and a token account her destination owns.
+fn paid(env: &mut Env) -> (Pubkey, Cohort, Vec<Pubkey>, Pubkey, Pubkey) {
+    let (vault, c, tokens) = attested(env);
+    let ix = pay_ix(env, &env.operator.pubkey(), vault, c.refs[0], tokens[0], c.salts[0], 0, path(&c.hashed, 0));
+    send(&mut env.svm, ix, &[&env.operator]).unwrap();
+    let destination = Pubkey::new_unique();
+    let dest_tokens = Pubkey::new_unique();
+    put_token_account(&mut env.svm, dest_tokens, env.mint, destination, 0);
+    (vault, c, tokens, destination, dest_tokens)
+}
+
+#[test]
+fn her_reward_goes_to_her_destination_once_it_is_active() {
+    let mut env = setup();
+    let (_, c, tokens, destination, dest_tokens) = paid(&mut env);
+    let reward = campaign(&env.svm).reward_per_seat();
+    send(&mut env.svm, set_payout_ix(&env.operator.pubkey(), c.refs[0], destination), &[&env.operator]).unwrap();
+    let p = Payout::try_deserialize(&mut env.svm.get_account(&payout_pda(&c.refs[0])).unwrap().data.as_slice()).unwrap();
+    assert_eq!((p.destination, p.active_from), (destination, NOW + PAYOUT_DELAY));
+
+    let ix = withdraw_ix(&env, &env.operator.pubkey(), c.refs[0], tokens[0], dest_tokens);
+    assert_error(send(&mut env.svm, ix.clone(), &[&env.operator]), RewardsError::DestinationNotActiveYet);
+    set_time(&mut env.svm, NOW + PAYOUT_DELAY);
+    send(&mut env.svm, ix.clone(), &[&env.operator]).unwrap();
+    assert_eq!((balance(&env.svm, &tokens[0]), balance(&env.svm, &dest_tokens)), (0, reward));
+    assert_error(send(&mut env.svm, ix, &[&env.operator]), RewardsError::NothingToWithdraw);
+}
+
+#[test]
+fn a_new_destination_waits_again_and_the_same_one_does_not() {
+    let mut env = setup();
+    let (_, c, tokens, destination, _) = paid(&mut env);
+    send(&mut env.svm, set_payout_ix(&env.operator.pubkey(), c.refs[0], destination), &[&env.operator]).unwrap();
+    set_time(&mut env.svm, NOW + PAYOUT_DELAY);
+    send(&mut env.svm, set_payout_ix(&env.operator.pubkey(), c.refs[0], destination), &[&env.operator]).unwrap();
+    let p = Payout::try_deserialize(&mut env.svm.get_account(&payout_pda(&c.refs[0])).unwrap().data.as_slice()).unwrap();
+    assert_eq!(p.active_from, NOW + PAYOUT_DELAY);
+
+    // A leaked key points her wallet elsewhere: nothing can go there for a day.
+    let thief = Pubkey::new_unique();
+    let thief_tokens = Pubkey::new_unique();
+    put_token_account(&mut env.svm, thief_tokens, env.mint, thief, 0);
+    send(&mut env.svm, set_payout_ix(&env.operator.pubkey(), c.refs[0], thief), &[&env.operator]).unwrap();
+    let ix = withdraw_ix(&env, &env.operator.pubkey(), c.refs[0], tokens[0], thief_tokens);
+    assert_error(send(&mut env.svm, ix, &[&env.operator]), RewardsError::DestinationNotActiveYet);
+}
+
+#[test]
+fn her_reward_goes_only_to_a_token_account_her_destination_owns() {
+    let mut env = setup();
+    let (_, c, tokens, destination, _) = paid(&mut env);
+    send(&mut env.svm, set_payout_ix(&env.operator.pubkey(), c.refs[0], destination), &[&env.operator]).unwrap();
+    set_time(&mut env.svm, NOW + PAYOUT_DELAY);
+    let elsewhere = Pubkey::new_unique();
+    put_token_account(&mut env.svm, elsewhere, env.mint, env.operator.pubkey(), 0);
+    let ix = withdraw_ix(&env, &env.operator.pubkey(), c.refs[0], tokens[0], elsewhere);
+    assert_error(send(&mut env.svm, ix, &[&env.operator]), RewardsError::NotTheDestination);
+}
+
+#[test]
+fn only_the_operator_of_a_campaign_that_paid_her_writes_her_destination() {
+    let mut env = setup();
+    let (_, c, _, destination, _) = paid(&mut env);
+    let ix = set_payout_ix(&env.sponsor.pubkey(), c.refs[0], destination);
+    assert_error(send(&mut env.svm, ix, &[&env.sponsor]), RewardsError::NotTheOperator);
+    // Woman 1 was not paid: no receipt, no destination.
+    assert!(send(&mut env.svm, set_payout_ix(&env.operator.pubkey(), c.refs[1], destination), &[&env.operator]).is_err());
+}
+
+#[test]
+fn her_own_wallet_is_not_a_destination() {
+    let mut env = setup();
+    let (_, c, _, _, _) = paid(&mut env);
+    let ix = set_payout_ix(&env.operator.pubkey(), c.refs[0], wallet(&c.refs[0]));
+    assert_error(send(&mut env.svm, ix, &[&env.operator]), RewardsError::NoDestination);
+}
+
+#[test]
+fn empowerfi_takes_its_half_once_to_its_house_and_the_women_are_still_paid() {
+    let mut env = setup();
+    let (vault, c, tokens) = attested(&mut env);
+    let k = campaign(&env.svm);
+    let house_tokens = Pubkey::new_unique();
+    put_token_account(&mut env.svm, house_tokens, env.mint, env.house, 0);
+    let ix = house_ix(&env, &env.operator.pubkey(), vault, house_tokens);
+    send(&mut env.svm, ix.clone(), &[&env.operator]).unwrap();
+    assert_eq!(balance(&env.svm, &house_tokens), k.house_share());
+    assert_eq!(balance(&env.svm, &vault), k.funded - k.house_share());
+    let l = HouseLedger::try_deserialize(&mut env.svm.get_account(&ledger_pda()).unwrap().data.as_slice()).unwrap();
+    assert_eq!(l.withdrawn, k.house_share());
+    assert_error(send(&mut env.svm, ix, &[&env.operator]), RewardsError::NothingToWithdraw);
+    // Her reward still comes out of what is left.
+    let ix = pay_ix(&env, &env.operator.pubkey(), vault, c.refs[2], tokens[2], c.salts[2], 2, path(&c.hashed, 2));
+    send(&mut env.svm, ix, &[&env.operator]).unwrap();
+    assert_eq!(balance(&env.svm, &tokens[2]), k.reward_per_seat());
+}
+
+#[test]
+fn the_house_half_goes_only_to_the_house() {
+    let mut env = setup();
+    let (vault, _, _) = attested(&mut env);
+    let elsewhere = Pubkey::new_unique();
+    put_token_account(&mut env.svm, elsewhere, env.mint, env.operator.pubkey(), 0);
+    let ix = house_ix(&env, &env.operator.pubkey(), vault, elsewhere);
+    assert_error(send(&mut env.svm, ix, &[&env.operator]), RewardsError::NotTheDestination);
+    let house_tokens = Pubkey::new_unique();
+    put_token_account(&mut env.svm, house_tokens, env.mint, env.house, 0);
+    let ix = house_ix(&env, &env.sponsor.pubkey(), vault, house_tokens);
+    assert_error(send(&mut env.svm, ix, &[&env.sponsor]), RewardsError::NotTheOperator);
 }
