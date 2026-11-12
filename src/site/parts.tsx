@@ -135,15 +135,15 @@ export function Shot({ src, alt, note, className = "" }: { src: string; alt: str
 }
 
 /**
- * The diary, shown in motion (founder, 12/11/2026): a short silent film per
- * language. It plays muted and in a loop, with the controls to pause it; with
- * reduced motion it waits for a tap.
+ * A short silent film per language (founder, 12/11/2026): the diary on the
+ * Entrepreneurs page, the sponsorship on the Sponsors page. It plays muted and
+ * in a loop, with the controls to pause it; with reduced motion it waits for a tap.
  */
-export function DiaryVideo({ lang, label, className = "" }: { lang: Lang; label: string; className?: string }) {
+export function SiteVideo({ name, lang, label, className = "" }: { name: "diario" | "patrocinadores"; lang: Lang; label: string; className?: string }) {
   const still = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   return (
     <video className={`aspect-video w-full rounded-2xl border border-foreground/15 bg-card shadow-sm ${className}`}
-      src={`/site/diario-${lang}.mp4`} poster={`/site/diario-${lang}.jpg`} aria-label={label}
+      src={`/site/${name}-${lang}.mp4`} poster={`/site/${name}-${lang}.jpg`} aria-label={label}
       autoPlay={!still} muted loop playsInline controls preload="metadata" width={1920} height={1080} />
   );
 }
