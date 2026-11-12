@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { diaryDb } from "@/app/diary/db";
 import { CONTACT_EMAIL } from "@/config/links";
 import Seo from "@/components/Seo";
 import SiteHeader, { type HeaderLink } from "@/components/site/SiteHeader";
@@ -296,8 +297,9 @@ const UFS = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "
 /**
  * The diary's waitlist (founder, 12/11/2026: access opens a group at a time).
  * She leaves her name, e-mail, what she sells and where; the row goes to the
- * site's database (diary_waitlist, insert-only), and the founder gets an
- * e-mail through the existing contact template. Signing up twice is fine.
+ * diary's database (diary_waitlist_join, 20270105), where the dashboard reads
+ * it, and the founder gets an e-mail through the site's contact template.
+ * Signing up twice is fine.
  */
 export function WaitlistForm({ lang, source }: { lang: Lang; source: string }) {
   const t = SITE[lang].waitlist;
@@ -322,11 +324,13 @@ export function WaitlistForm({ lang, source }: { lang: Lang; source: string }) {
     const d = parsed.data;
     setSending(true);
     try {
-      const { error } = await supabase.from("diary_waitlist").insert({
-        name: d.name, email: d.email.toLowerCase(), sells: d.sells, city: d.city, state: d.state, language: lang, consent: true, source,
+      const { data, error } = await diaryDb.rpc("diary_waitlist_join", {
+        p_name: d.name, p_email: d.email, p_sells: d.sells, p_city: d.city, p_state: d.state,
+        p_consent: true, p_language: lang, p_source: source,
       });
-      if (error && error.code !== "23505") throw error;
-      if (!error) {
+      if (error) throw error;
+      const joined = data === "joined";
+      if (joined) {
         // The founder hears of it; a failure here does not undo the signup.
         void supabase.functions.invoke("send-transactional-email", {
           body: {
@@ -336,7 +340,7 @@ export function WaitlistForm({ lang, source }: { lang: Lang; source: string }) {
           },
         }).catch(() => undefined);
       }
-      const done = error ? t.already : t.sent;
+      const done = joined ? t.sent : t.already;
       toast({ title: done.title, description: done.desc });
       setForm({ name: "", email: "", sells: "", city: "", state: "" });
       setConsent(false);
