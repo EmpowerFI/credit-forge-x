@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { Minus, ShieldCheck, TrendingDown, TrendingUp } from "lucide-react";
+import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { brl } from "../diary/diary";
 import SponsorLogo from "../diary/SponsorLogo";
 import { tr } from "../i18n";
@@ -333,15 +333,6 @@ export default function Dashboard({ data, face }: { data: ImpactLive; face?: Cam
         </>
       )}
 
-      <section className="flex gap-3 rounded-lg bg-muted p-4 text-sm break-inside-avoid">
-        <ShieldCheck className="mt-0.5 shrink-0" size={18} aria-hidden="true" />
-        <p>
-          {tr({
-            en: "What a sponsor never receives: a name, an e-mail, or any one woman's figures. Averages, medians and breakdowns need at least 5 people behind them, and business figures count only women who chose to be counted.",
-            pt: "O que o patrocinador nunca recebe: um nome, um e-mail, ou os números de uma empreendedora sozinha. Médias, medianas e recortes precisam de pelo menos 5 pessoas, e os números de negócio só incluem quem escolheu ser incluída.",
-          })}
-        </p>
-      </section>
     </div>
   );
 }
