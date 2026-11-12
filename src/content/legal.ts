@@ -28,8 +28,8 @@ export interface LegalDoc {
   sections: LegalSection[];
 }
 
-const LAST_UPDATED_PT = "11 de novembro de 2026";
-const LAST_UPDATED_EN = "11 November 2026";
+const LAST_UPDATED_PT = "12 de novembro de 2026";
+const LAST_UPDATED_EN = "12 November 2026";
 
 export const privacyPt: LegalDoc = {
   title: "Política de Privacidade",
@@ -64,7 +64,7 @@ export const privacyPt: LegalDoc = {
       paragraphs: [
         "No EmpowerFI Diário (www.empowerfi.io/app/diario), você registra as vendas e os gastos do negócio, pode receber um lembrete por dia e recebe uma leitura semanal. Você entra com o seu e-mail, com a mesma conta do aplicativo EmpowerFI. O cadastro só começa depois que você aceita um texto que explica tudo o que está nesta seção, e a versão desse texto fica registrada junto com o seu aceite.",
         "Os seus registros não são mostrados a ninguém fora da EmpowerFI sem uma autorização sua. Se você participa de uma campanha com patrocinador e concordar, o patrocinador vê apenas números somados de grupos de pelo menos 5 empreendedoras, nunca o seu nome nem os seus números sozinhos. Você pode mudar essa escolha a qualquer momento.",
-        "Leitura da semana com inteligência artificial: depois de uma semana com pelo menos 3 dias registrados (ou todos, se o seu negócio abre menos de 3 dias), a IA da Anthropic escreve uma leitura curta do seu negócio. Ela recebe apenas os valores da semana (vendas, custos, resultado, retiradas para casa, dias com venda e dias em que o negócio abre) e o ramo do negócio, nunca o seu nome, e-mail, telefone ou cidade. Cada número que ela escreve é conferido com os seus antes de você ver a leitura. Se você preferir, desligue a IA em Lembretes: a leitura passa a ser feita com frases prontas, e nada é enviado à Anthropic.",
+        "Leitura da semana com inteligência artificial: depois de uma semana com pelo menos 3 dias registrados (ou todos, se o seu negócio abre menos de 3 dias), a IA da Anthropic escreve um conselho curto para o seu negócio: o que foi bem, o que dá para melhorar e uma dica. Ela recebe apenas os valores da semana (vendas, inclusive por forma de pagamento, custos, inclusive por categoria, resultado, retiradas para casa, dias registrados, dias com venda e dias em que o negócio abre) e o ramo do negócio, nunca o seu nome, e-mail, telefone ou cidade. Cada número que ela escreve é conferido com os seus antes de você ver a leitura. Se você preferir, desligue a IA em Lembretes: a leitura passa a ser feita com frases prontas, e nada é enviado à Anthropic.",
         "Os lembretes chegam por notificação no celular, só se você ativar, e nunca trazem os seus valores. Você escolhe o horário, desliga quando quiser, e não recebe lembrete nos dias em que o seu negócio não abre.",
         "Você pode excluir a sua conta a qualquer momento, em Lembretes. Isso apaga os seus registros, as suas leituras e a sua conta EmpowerFI.",
       ],
@@ -196,7 +196,7 @@ export const privacyEn: LegalDoc = {
       paragraphs: [
         "In the EmpowerFI Diary (www.empowerfi.io/app/diario) you record your business's sales and expenses, may receive one reminder a day, and receive a weekly reading. You sign in with your email, using the same account as the EmpowerFI app. Registration only starts after you accept a text explaining everything in this section, and the version of that text is recorded with your acceptance.",
         "Your records are not shown to anyone outside EmpowerFI without your authorisation. If you take part in a sponsored campaign and agree, the sponsor sees only figures added up over groups of at least 5 entrepreneurs, never your name or your figures alone. You can change that choice at any time.",
-        "Weekly reading with artificial intelligence: after a week with at least 3 days recorded (or all of them, if your business opens fewer than 3 days), Anthropic's AI writes a short reading of your business. It receives only the week's figures (sales, costs, result, money taken home, days with sales and days the business opens) and your business sector, never your name, email, phone or city. Every number it writes is checked against yours before you see the reading. If you prefer, turn the AI off under Reminders: the reading is then made of fixed sentences, and nothing is sent to Anthropic.",
+        "Weekly reading with artificial intelligence: after a week with at least 3 days recorded (or all of them, if your business opens fewer than 3 days), Anthropic's AI writes short advice for your business: what went well, what can improve and one tip. It receives only the week's figures (sales, including by how you were paid, costs, including by category, result, money taken home, days recorded, days with sales and days the business opens) and your business sector, never your name, email, phone or city. Every number it writes is checked against yours before you see the reading. If you prefer, turn the AI off under Reminders: the reading is then made of fixed sentences, and nothing is sent to Anthropic.",
         "Reminders arrive as phone notifications, only if you turn them on, and never carry your figures. You choose the time, turn them off whenever you like, and get no reminder on days your business does not open.",
         "You can delete your account at any time, under Reminders. This erases your records, your readings and your EmpowerFI account.",
       ],

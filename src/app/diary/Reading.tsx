@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useId, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown, Lightbulb, Sparkles, Sprout, ThumbsUp } from "lucide-react";
 import { tr } from "../i18n";
 import { addDays, brl, diary, mondayOf, type WeekReading, weekSpan } from "./diary";
 import { ProfitValue } from "./Month";
@@ -104,12 +104,27 @@ export function ReadingCard({ reading, open = true, collapsible = false }: { rea
     <div className="space-y-2 text-sm leading-relaxed">
       {reading.figures && <Figures f={reading.figures} />}
       <p>{painted(r.summary, colours)}</p>
+      {r.praise && (
+        <p className="flex gap-2">
+          <ThumbsUp size={16} className="mt-0.5 shrink-0 text-positive" aria-hidden="true" />
+          <span><strong>{tr({ en: "Well done:", pt: "Mandou bem:" })}</strong> {painted(r.praise, colours)}</span>
+        </p>
+      )}
+      {r.improve && (
+        <p className="flex gap-2">
+          <Sprout size={16} className="mt-0.5 shrink-0 text-expense" aria-hidden="true" />
+          <span><strong>{tr({ en: "Room to grow:", pt: "Dá para melhorar:" })}</strong> {painted(r.improve, colours)}</span>
+        </p>
+      )}
       {r.observations.length > 0 && (
         <ul className="list-disc space-y-1 pl-5">
           {r.observations.map((o) => <li key={o}>{painted(o, colours)}</li>)}
         </ul>
       )}
-      <p><strong>{tr({ en: "For this week:", pt: "Para esta semana:" })}</strong> {painted(r.action, colours)}</p>
+      <p className="flex gap-2">
+        <Lightbulb size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+        <span><strong>{tr({ en: "Tip for this week:", pt: "Dica para esta semana:" })}</strong> {painted(r.action, colours)}</span>
+      </p>
       <p className="text-sm text-muted-foreground">
         {reading.days_kept > (reading.open_days ?? 7)
           // She recorded on a day she usually closes: it counts, and the sentence says so.
@@ -134,7 +149,7 @@ export function ReadingCard({ reading, open = true, collapsible = false }: { rea
           className="flex w-full items-center justify-between gap-3 rounded-xl p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <span>
             <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-              <Sparkles size={16} aria-hidden="true" />{tr({ en: "Your week, read", pt: "Sua leitura da semana" })}
+              <Sparkles size={16} aria-hidden="true" />{tr({ en: "Weekly advice", pt: "Conselho da semana" })}
             </span>
             <span id={`reading-${reading.week_start}`} className="block font-heading text-lg font-semibold">{title}</span>
           </span>
@@ -153,7 +168,7 @@ export function ReadingCard({ reading, open = true, collapsible = false }: { rea
       <section className="space-y-2 rounded-xl border-2 border-primary/30 bg-card p-4" aria-labelledby={`reading-${reading.week_start}`}>
         <div>
           <p className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-            <Sparkles size={16} aria-hidden="true" />{tr({ en: "Your week, read", pt: "Sua leitura da semana" })}
+            <Sparkles size={16} aria-hidden="true" />{tr({ en: "Weekly advice", pt: "Conselho da semana" })}
           </p>
           <h2 id={`reading-${reading.week_start}`} className="font-heading text-lg font-semibold">{title}</h2>
         </div>
@@ -190,7 +205,7 @@ export function AllReadings() {
   if (!list.length) return null;
   return (
     <section className="space-y-3" aria-labelledby="all-readings">
-      <h2 id="all-readings" className="font-heading text-lg font-semibold">{tr({ en: "Your weekly readings", pt: "Suas leituras da semana" })}</h2>
+      <h2 id="all-readings" className="font-heading text-lg font-semibold">{tr({ en: "Your weekly advice", pt: "Seus conselhos da semana" })}</h2>
       {list.map((r, i) => <ReadingCard key={r.week_start} reading={r} open={i === 0} />)}
     </section>
   );

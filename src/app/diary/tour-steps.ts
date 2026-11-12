@@ -58,11 +58,11 @@ export const TOUR: TourStep[] = [
   },
   {
     image: pic("5-reading"),
-    alt: { en: "A weekly reading", pt: "Uma leitura da semana" },
-    title: { en: "Your week, read", pt: "A leitura da semana" },
+    alt: { en: "The weekly advice", pt: "O conselho da semana" },
+    title: { en: "Weekly advice", pt: "Conselho da semana" },
     body: {
-      en: "Record 3 days in a week and, from Sunday, a reading of your business is waiting when you open the diary.",
-      pt: "Registre 3 dias na semana e, a partir de domingo, a leitura do seu negócio aparece quando você abrir o diário.",
+      en: "Record 3 days in a week and, from Sunday, advice for your business is waiting: what went well, what to improve and a tip.",
+      pt: "Registre 3 dias na semana e, a partir de domingo, chega um conselho para o seu negócio: o que foi bem, o que melhorar e uma dica.",
     },
   },
   {
