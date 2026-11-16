@@ -113,7 +113,7 @@ function Statement({ s, refreshing }: { s: MonthStatement; refreshing: boolean }
         <p className="py-4 text-sm text-muted-foreground">{tr({ en: "No sales or expenses this month.", pt: "Nenhuma venda ou gasto neste mês." })}</p>
       ) : (
         <>
-          <p className="rounded-lg bg-secondary/60 p-3 text-sm">{inShort(s)}</p>
+          <p className="rounded-lg bg-secondary/60 p-3 text-sm [&_b]:whitespace-nowrap [&_b]:font-semibold [&_b]:tabular-nums">{inShort(s)}</p>
 
           <div className="space-y-1 text-sm">
             <Heading>{tr({ en: "What came in", pt: "O que entrou" })}</Heading>
@@ -148,17 +148,14 @@ function Statement({ s, refreshing }: { s: MonthStatement; refreshing: boolean }
                 </>
               )}
             </dl>
-            <p className="pt-1 text-xs text-muted-foreground">
-              {s.salary_cents !== null
-                ? tr({
-                  en: "Profit is what is left after every expense and after paying yourself. Your salary is a cost of the business too.",
-                  pt: "Lucro é o que sobra depois de todos os gastos e depois de pagar você. O seu salário também é um custo do negócio.",
-                })
-                : tr({
+            {s.salary_cents === null && (
+              <p className="pt-1 text-xs text-muted-foreground">
+                {tr({
                   en: "This is not profit yet: your salary is still missing. Enter your monthly salary on Today to see the profit.",
                   pt: "Isso ainda não é lucro: falta tirar o seu salário. Coloque o seu salário mensal na tela Hoje para ver o lucro.",
                 })}
-            </p>
+              </p>
+            )}
           </div>
         </>
       )}
@@ -194,12 +191,6 @@ function Statement({ s, refreshing }: { s: MonthStatement; refreshing: boolean }
           </dl>
         </div>
       )}
-      <p className="text-xs text-muted-foreground">
-        {tr({
-          en: "Each sale and expense counts when the money comes in or goes out; instalments, in the month each one falls due.",
-          pt: "Cada venda e cada gasto contam quando o dinheiro entra ou sai; parcelas, no mês em que cada uma vence.",
-        })}
-      </p>
     </div>
   );
 }
@@ -207,29 +198,37 @@ function Statement({ s, refreshing }: { s: MonthStatement; refreshing: boolean }
 /** "R$ 38": a share of R$ 100, whole reais. */
 const per100 = (part: number, whole: number) => String(Math.round((part / whole) * 100));
 
-/** The month in one sentence, before the lines: sold, spent, and what was left. */
-function inShort(s: MonthStatement): string {
-  const sold = brl(s.sales_cents);
-  const spent = brl(s.expenses_cents);
+/**
+ * The month in one sentence, before the lines: sold, spent, and what was left,
+ * each amount in the colour its line wears below -- sales blue, expenses and
+ * her salary orange, a profit green and a loss red -- and in bold, so the
+ * colour is never the only thing that marks it.
+ */
+function inShort(s: MonthStatement): ReactNode {
+  const sold = <b className="text-sales">{brl(s.sales_cents)}</b>;
+  const spent = <b className="text-expense">{brl(s.expenses_cents)}</b>;
+  const good = (cents: number) => <b className="text-positive">{brl(cents)}</b>;
+  const bad = (cents: number) => <b className="text-alert">{brl(cents)}</b>;
   if (s.profit_cents !== null && s.salary_cents !== null) {
+    const salary = <b className="text-expense">{brl(s.salary_cents)}</b>;
     return s.profit_cents >= 0
       ? tr({
-        en: `You sold ${sold} and spent ${spent} on the business. After your salary of ${brl(s.salary_cents)}, ${brl(s.profit_cents)} was left as profit.`,
-        pt: `Você vendeu ${sold} e gastou ${spent} no negócio. Depois do seu salário de ${brl(s.salary_cents)}, sobrou ${brl(s.profit_cents)} de lucro.`,
+        en: <>You sold {sold} and spent {spent} on the business. After your salary of {salary}, {good(s.profit_cents)} was left as profit.</>,
+        pt: <>Você vendeu {sold} e gastou {spent} no negócio. Depois do seu salário de {salary}, sobrou {good(s.profit_cents)} de lucro.</>,
       })
       : tr({
-        en: `You sold ${sold} and spent ${spent} on the business. With your salary of ${brl(s.salary_cents)}, ${brl(-s.profit_cents)} was missing: a loss.`,
-        pt: `Você vendeu ${sold} e gastou ${spent} no negócio. Com o seu salário de ${brl(s.salary_cents)}, faltaram ${brl(-s.profit_cents)}: um prejuízo.`,
+        en: <>You sold {sold} and spent {spent} on the business. With your salary of {salary}, {bad(-s.profit_cents)} was missing: a loss.</>,
+        pt: <>Você vendeu {sold} e gastou {spent} no negócio. Com o seu salário de {salary}, faltaram {bad(-s.profit_cents)}: um prejuízo.</>,
       });
   }
   return s.result_cents >= 0
     ? tr({
-      en: `You sold ${sold} and spent ${spent} on the business: ${brl(s.result_cents)} was left before your salary.`,
-      pt: `Você vendeu ${sold} e gastou ${spent} no negócio: sobraram ${brl(s.result_cents)} antes do seu salário.`,
+      en: <>You sold {sold} and spent {spent} on the business: {good(s.result_cents)} was left before your salary.</>,
+      pt: <>Você vendeu {sold} e gastou {spent} no negócio: sobraram {good(s.result_cents)} antes do seu salário.</>,
     })
     : tr({
-      en: `You sold ${sold} and spent ${spent} on the business: the expenses were ${brl(-s.result_cents)} more than the sales.`,
-      pt: `Você vendeu ${sold} e gastou ${spent} no negócio: os gastos passaram as vendas em ${brl(-s.result_cents)}.`,
+      en: <>You sold {sold} and spent {spent} on the business: the expenses were {bad(-s.result_cents)} more than the sales.</>,
+      pt: <>Você vendeu {sold} e gastou {spent} no negócio: os gastos passaram as vendas em {bad(-s.result_cents)}.</>,
     });
 }
 
