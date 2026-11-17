@@ -151,12 +151,17 @@ export interface DiaryRewards {
   withdrawals: { amount_units: number; destination: string; confirmed_at: string; signature: string }[];
 }
 
-/** A strategic partner of EmpowerFI's (20270103), shown to every entrepreneur. */
+/**
+ * A strategic partner of EmpowerFI's (20270103): one tied to no campaign shows to
+ * every entrepreneur; one tied to campaigns (20270106), only to the women in them.
+ */
 export interface DiaryPartner {
   name: string;
   description: string | null;
   logo_path: string | null;
   link_url: string | null;
+  /** Her campaigns this partner is part of; empty for a partner of everyone. */
+  campaigns?: string[];
 }
 
 /** An open campaign she can join with one tap. blocked_by: the campaign she is already named in for later. */
