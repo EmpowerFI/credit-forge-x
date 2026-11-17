@@ -39,6 +39,10 @@ const ANON_CALLABLE_ALLOWLIST: Record<string, string> = {
   // are public on chain anyway, and counts only from five women up. Names no
   // one; reads no row of hers. (20261222)
   campaign_vaults_public: "public campaign terms, counts under the five-woman floor",
+  // The site's waitlist form (20270105): writes one row per e-mail, reads
+  // nothing back, and answers the same whether the e-mail was on the list or
+  // not (20270110), so it tells no one who signed up.
+  diary_waitlist_join: "site form, write-only, same answer for every e-mail",
 };
 
 const DB_URL = process.env.DB_URL;
@@ -221,7 +225,7 @@ function run() {
   if (findings.length === 0) {
     console.log("no findings: nothing this repo creates is reachable by an anonymous visitor,");
     console.log("every table of ours has row level security, no policy opens one to the public,");
-    console.log("and no function of ours is anon-callable except the allowlisted ones (share report, campaign vaults).");
+    console.log("and no function of ours is anon-callable except the allowlisted ones (share report, campaign vaults, waitlist form).");
     process.exit(0);
   }
 
