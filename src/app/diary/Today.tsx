@@ -5,7 +5,7 @@ import { ClipboardCheck, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { OpenCampaigns, RewardCard } from "./Campaigns";
+import { CampaignRewardCard, OpenCampaigns, RewardCard } from "./Campaigns";
 import { AiNotice } from "./BusinessWeek";
 import { ImpactAsk } from "./ImpactChoice";
 import { InstallInvite } from "./Install";
@@ -242,6 +242,7 @@ export default function Today() {
         </div>
       )}
       {mode === "ask" && <MonthCard openDays={openDays} todayKept={Boolean(todayKept)} />}
+      {mode === "ask" && me.data && <CampaignRewardCard profile={me.data} />}
       {mode === "ask" && <RewardsWallet />}
       {mode === "ask" && !recorded && !restDay && (
         <div data-tour="quiet" className="space-y-2">
