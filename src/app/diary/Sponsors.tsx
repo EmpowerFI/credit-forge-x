@@ -11,8 +11,9 @@ const SAFE_LINK = /^https:\/\/\S+$/;
 /**
  * Her sponsors: who supports the real campaigns she is in today, one tile
  * each, the logo opening the page the sponsor named (a new tab, no referrer).
- * Devnet campaigns never show here. Below them, EmpowerFI's strategic partners
- * (20270103), the same for every entrepreneur, with or without a campaign.
+ * Devnet campaigns never show here; a campaign's co-sponsors do (20270106).
+ * Below them, EmpowerFI's strategic partners (20270103): those of everyone, and
+ * those tied to a campaign she is in, with the campaign's name.
  */
 export default function Sponsors() {
   const list = useQuery({ queryKey: [...PROFILE_KEY, "sponsors"], queryFn: diary.sponsors });
@@ -68,6 +69,9 @@ export default function Sponsors() {
                 <li key={p.name}>
                   <Tile name={p.name} logo={p.logo_path} link={p.link_url} kind="partner">
                     {p.description && <span className="line-clamp-3 text-xs text-muted-foreground">{p.description}</span>}
+                    {p.campaigns && p.campaigns.length > 0 && (
+                      <span className="line-clamp-2 text-xs font-medium text-primary">{p.campaigns.join(" · ")}</span>
+                    )}
                   </Tile>
                 </li>
               ))}

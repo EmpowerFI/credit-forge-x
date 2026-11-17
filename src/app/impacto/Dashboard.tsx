@@ -171,6 +171,11 @@ export default function Dashboard({ data, face }: { data: ImpactLive; face?: Cam
             {c.is_default ? c.sponsor_name : `${tr({ en: "Sponsored by", pt: "Patrocinado por" })} ${c.sponsor_name}`}
           </p>
         )}
+        {!c.is_default && c.cosponsors && c.cosponsors.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            {tr({ en: "With ", pt: "Com " })}{c.cosponsors.join(", ")}
+          </p>
+        )}
         <h1 className="text-2xl font-semibold sm:text-3xl">{c.name}</h1>
         <p className="text-sm text-muted-foreground">
           {tr({ en: "Campaign ", pt: "Campanha " })}{ddmm(c.period_start)} – {c.period_end ? ddmm(c.period_end) : tr({ en: "ongoing", pt: "contínua" })}

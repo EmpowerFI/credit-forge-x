@@ -29,6 +29,8 @@ export interface Campaign {
   offers_rewards?: boolean;
   /** The caller is one of the sponsor's people, who set its rewards (or, for EmpowerFI's, its dashboard owners). */
   can_edit_rewards?: boolean;
+  /** The other sponsors of the campaign (20270106), by name. */
+  cosponsors?: string[];
 }
 
 /** One milestone of a sponsor's rewards: a gift handed over by code or link. */
