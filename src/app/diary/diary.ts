@@ -174,7 +174,22 @@ export interface OpenCampaign {
   logo_path: string | null;
   link_url: string | null;
   offers_rewards: boolean;
+  /** What each woman who completes it receives, in cents of a real (20270107); null when none. */
+  reward_cents?: number | null;
   blocked_by: string | null;
+}
+
+/** Her campaign's reward and how far along she is (diary_campaign_reward, 20270107). */
+export interface CampaignReward {
+  campaign: string;
+  reward_cents: number;
+  /** The campaign's last day for her. */
+  until: string;
+  /** The days her business opens in her window, and how many of them she has recorded so far. */
+  open_days: number;
+  kept: number;
+  completed: boolean;
+  paid_at: string | null;
 }
 
 export interface Progress {
@@ -276,6 +291,7 @@ export const diary = {
   setEmoji: (emoji: string) => call<string>("diary_emoji_set", { p_emoji: emoji }),
   forget: () => call<{ erased: boolean }>("diary_account_forget", { p_confirmation: "EXCLUIR" }),
   openCampaigns: () => call<OpenCampaign[]>("diary_campaigns"),
+  campaignReward: () => call<CampaignReward | null>("diary_campaign_reward"),
   sponsors: () => call<DiarySponsor[]>("diary_sponsors"),
   partners: () => call<DiaryPartner[]>("diary_partners"),
   joinCampaign: (id: string) => call<{ starts_on: string; until: string }>("diary_campaign_join", { p_program_id: id }),
@@ -569,6 +585,7 @@ export function diaryErrorText(error: unknown): string {
     ["age_range_required", { en: "Choose your age range.", pt: "Escolha a sua faixa etária." }],
     ["sector_not_a_category", { en: "Choose what you sell from the list.", pt: "Escolha o que você vende na lista." }],
     ["emoji_not_offered", { en: "Choose one of the icons offered.", pt: "Escolha um dos ícones da lista." }],
+    ["campaign_full", { en: "All the places in this campaign are taken.", pt: "Todas as vagas desta campanha já foram preenchidas." }],
     ["campaign_not_open", { en: "This campaign is not open to join.", pt: "Esta campanha não está aberta para adesão." }],
     ["campaign_not_running", { en: "This campaign is not running today.", pt: "Esta campanha não está acontecendo hoje." }],
     ["already_in_this_campaign", { en: "You have already taken part in this campaign.", pt: "Você já participou desta campanha." }],
