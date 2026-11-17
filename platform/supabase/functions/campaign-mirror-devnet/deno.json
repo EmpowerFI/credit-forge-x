@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@solana/kit": "npm:@solana/kit@8.3.0",
+    "@solana-program/token": "npm:@solana-program/token@0.16.1",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.116.0"
+  }
+}
