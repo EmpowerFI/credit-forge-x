@@ -493,6 +493,12 @@ verify_jwt = false
 [functions.campaign-register]
 verify_jwt = false
 
+# Called by empowerfi-dashboard with the session of someone who manages
+# campaigns: the gateway checks the JWT, and the database (campaign_mirror_plan)
+# refuses anyone else.
+[functions.campaign-mirror-devnet]
+verify_jwt = true
+
 # Called by her diary in the browser with her session: the gateway checks the
 # JWT, and the function resolves who she is from it.
 [functions.diary-reading]
