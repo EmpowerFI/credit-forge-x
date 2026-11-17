@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Loader2 } from "lucide-react";
+import { ExternalLink, Gift, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { tr } from "../i18n";
-import { diary, diaryErrorText, type DiaryProfile, type OpenCampaign, PROFILE_KEY, type Reward } from "./diary";
+import { brl, diary, diaryErrorText, type DiaryProfile, type OpenCampaign, PROFILE_KEY, type Reward } from "./diary";
 import SponsorLogo from "./SponsorLogo";
 
 const ddmm = (day: string) => day.slice(0, 10).split("-").reverse().join("/");
@@ -54,6 +54,14 @@ export function OpenCampaigns({ profile }: { profile: DiaryProfile }) {
             {tr({ en: `Until ${ddmm(c.period_end)}`, pt: `Até ${ddmm(c.period_end)}` })}
             {c.offers_rewards && tr({ en: " · rewards for recording", pt: " · tem prêmios por registrar" })}
           </p>
+          {c.reward_cents ? (
+            <p className="font-medium">
+              {tr({
+                en: `Reward of ${brl(c.reward_cents)} if you record every day your business opens until the end.`,
+                pt: `Recompensa de ${brl(c.reward_cents)} se você registrar todos os dias em que o seu negócio abrir, até o fim.`,
+              })}
+            </p>
+          ) : null}
           {c.blocked_by ? (
             <p className="rounded-md bg-muted p-3">
               {tr({
@@ -184,6 +192,52 @@ export function MyRewards({ profile }: { profile: DiaryProfile }) {
     <section className="space-y-3" aria-labelledby="my-rewards">
       <h2 id="my-rewards" className="font-heading text-lg font-semibold">{tr({ en: "Your rewards", pt: "Seus prêmios" })}</h2>
       {rewards.map((r, i) => <RewardCard key={`${r.title}-${r.granted_at ?? i}`} reward={r} />)}
+    </section>
+  );
+}
+
+/**
+ * On Today, while she is in a campaign that pays each woman who completes it
+ * (20270107): the amount, the days she has recorded of those she opens, and
+ * what happens next. EmpowerFI pays it by hand for now.
+ */
+export function CampaignRewardCard({ profile }: { profile: DiaryProfile }) {
+  const inCampaign = Boolean(profile.campaign && !profile.campaign.is_default);
+  const reward = useQuery({ queryKey: [...PROFILE_KEY, "campaign-reward"], queryFn: diary.campaignReward, enabled: inCampaign });
+  const r = reward.data;
+  if (!inCampaign || !r) return null;
+  const share = r.open_days > 0 ? Math.min(100, Math.round((r.kept / r.open_days) * 100)) : 0;
+
+  return (
+    <section className="space-y-3 rounded-xl border border-border bg-card p-4" aria-labelledby="campaign-reward-title">
+      <div className="flex items-start justify-between gap-3">
+        <h2 id="campaign-reward-title" className="flex items-center gap-2 font-heading text-lg font-semibold">
+          <Gift size={18} className="text-primary" aria-hidden="true" />
+          {tr({ en: "Your campaign reward", pt: "Recompensa da campanha" })}
+        </h2>
+        <span className="shrink-0 font-heading text-lg font-semibold tabular-nums">{brl(r.reward_cents)}</span>
+      </div>
+      <p className="text-sm text-muted-foreground">{r.campaign}</p>
+      <div className="space-y-1.5">
+        <div className="flex justify-between text-sm">
+          <span>{tr({ en: "Days recorded", pt: "Dias registrados" })}</span>
+          <span className="tabular-nums">{tr({ en: `${r.kept} of ${r.open_days}`, pt: `${r.kept} de ${r.open_days}` })}</span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-valuemin={0} aria-valuemax={r.open_days} aria-valuenow={r.kept}
+          aria-label={tr({ en: "Days recorded", pt: "Dias registrados" })}>
+          <div className="h-full rounded-full bg-primary" style={{ width: `${share}%` }} />
+        </div>
+      </div>
+      <p className="text-sm">
+        {r.paid_at
+          ? tr({ en: "Paid. Thank you for keeping every day!", pt: "Recompensa paga. Parabéns por registrar todos os dias!" })
+          : r.completed
+            ? tr({ en: "You completed it! EmpowerFI will send your reward.", pt: "Você completou! A EmpowerFI vai enviar a sua recompensa." })
+            : tr({
+              en: `Record every day your business opens until ${ddmm(r.until)} to receive it.`,
+              pt: `Registre todos os dias em que o seu negócio abrir até ${ddmm(r.until)} para receber.`,
+            })}
+      </p>
     </section>
   );
 }
