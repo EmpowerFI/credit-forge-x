@@ -2,6 +2,16 @@
 
 Status: **planned, not started.** Build window **Thu 19/11 → Fri 27/11/2026**: seven working days, plus the weekend if needed (founder, 18/11/2026). The hackathon asks for a **public repository** (credit-forge-x already is) and a **demo video**; a dApp Store listing is not required. Last revised 18/11/2026.
 
+## 0a · An MVP on the dev database (founder, 18/11/2026)
+
+For the hackathon this is an **MVP, not a production release**. It runs entirely on the app's **dev** Supabase project, **`boivrcjvsnrmzbregavl`**, never on production (`efylyaroluqatqmtuuml`):
+
+- **Migrations.** The Seeker migrations are applied to dev only. Production gets them only if the founder decides to launch after the hackathon.
+- **Functions and secrets.** `diary-speak-seeker` and `seeker-wallet` are deployed to dev; the changed `reward-payout`, `campaign-attest` and any other function the MVP needs are deployed to dev only. Secrets are set on dev, by name: `ELEVENLABS_API_KEY`, and a **dev operator wallet** for devnet, separate from production's. Production keeps its functions and secrets untouched.
+- **Bringing dev up to date.** Dev was behind while everything went straight to production (04/11/2026). Day one starts by applying main's migrations to dev and deploying the existing diary functions there.
+- **The app.** `/app/seeker` reads its own variables, `VITE_SEEKER_SUPABASE_URL` and `VITE_SEEKER_SUPABASE_PUBLISHABLE_KEY`, pointing at dev. A separate Vercel deployment sets them; the production site does not, so `/app/seeker` there shows "not available". The webshell wraps that separate deployment's URL.
+- **Accounts.** Sign-ups, test accounts and the demo campaign all live in dev. Nothing of the demo can reach a real woman's diary, a real sponsor or an impact figure.
+
 ## 0 · The rule: Seeker only
 
 Every change for the hackathon lives in the Seeker app. **The web diary (`/app/diario`) that the women use today does not change**: no new button, no new wording, no new behaviour, no new dependency in its bundle. That rule shapes everything below:
@@ -118,20 +128,18 @@ The web diary already takes a voice note (`diary-speak`):
 
 A reward unlocks after 30 days kept, and nothing is attested below five women, so a payout cannot happen live inside one week. The demo uses **a devnet demonstration campaign that started 30+ days before the demo**: the program accepts a past start, as long as the end is still ahead. It has the founder and at least four test accounts, with their days filled in backwards. The video says plainly that it is a devnet demonstration campaign.
 
-Check on day one, before seeding anything:
-- the diary database is production (`efylyaroluqatqmtuuml`), so test accounts must stay out of every impact figure, sponsor count and report;
-- whether `private.vault_cohort` and the attestation admit accounts flagged `is_simulated`;
-- if not, decide how to mark the demo accounts so they are attested but never counted as real women;
-- the founder's own account must not pick up fake days in her real diary: use a separate test account for her in the demo.
+Everything is seeded in **dev** (§0a), so the demo accounts never touch production. Check on day one, before seeding:
+- whether `private.vault_cohort` and the attestation admit accounts flagged `is_simulated`. In dev, the demo accounts can simply be ordinary accounts, which is the simplest path;
+- the founder's demo account in dev is separate from her real diary in production.
 
 ## 4b · Schedule: Thu 19 → Fri 27 November
 
 | Day | Work | Gate at the end of the day |
 |---|---|---|
-| **Thu 19** | `/app/seeker` route and the build check that keeps it out of `/app/diario`; webshell app built and installed on her Android; sign-in by e-mail code; check Web Push in the shell. The demo-account check in §4a. | The APK on her phone signs in and records a day; the web diary is unchanged. |
-| **Fri 20** | `diary-speak-seeker` with batch Scribe, allow-list, consent text; three voices to hear; secret `ELEVENLABS_API_KEY` set by her. | She says a sale aloud and it becomes a draft. |
+| **Thu 19** | Dev brought up to date (§0a: migrations by her, diary functions deployed to dev); the separate Vercel deployment for `/app/seeker` pointing at dev; `/app/seeker` route and the build check that keeps it out of `/app/diario`; webshell app built and installed on her Android; sign-in by e-mail code; check Web Push in the shell. | The APK on her phone signs in and records a day; the web diary is unchanged. |
+| **Fri 20** | `diary-speak-seeker` with batch Scribe, allow-list, consent text; three voices to hear; secret `ELEVENLABS_API_KEY` set by her **on dev**. | She says a sale aloud and it becomes a draft. |
 | **Sat 21 – Sun 22** | Optional buffer. | — |
-| **Mon 23** | Read-back with Flash in the chosen voice; confirm by tap. The demo campaign created on devnet (past start), its accounts and their days seeded. | She hears the draft back and confirms it. |
+| **Mon 23** | Read-back with Flash in the chosen voice; confirm by tap. The dev operator wallet funded with devnet SOL and USDC; the demo campaign created on devnet (past start), its accounts and their days seeded in dev. | She hears the draft back and confirms it. |
 | **Tue 24** | Wallet connection (MWA + signed message), `seeker-wallet`, the additive migration, the automatic transfer in `reward-payout`. **Connect the demo wallet on Tuesday:** the program's 24-hour wait is then over by Wednesday. | Her Phantom/Solflare (devnet) is recorded as destination. |
 | **Wed 25** | End to end on devnet: attestation of the demo campaign, the reward paid, arriving in the wallet on her phone. Fixes. | The test USDC shows in the wallet on the phone. |
 | **Thu 26** | Demo video recorded (voice, read-back, the payout landing), README section for judges, repository clean (no secret, no personal data). | The video is cut. |
