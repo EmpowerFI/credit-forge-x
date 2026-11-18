@@ -1,6 +1,6 @@
 # EmpowerFI on Seeker — hackathon plan
 
-Status: **planned, not started.** Work starts when the hackathon begins (founder, 14/11/2026). Last revised 18/11/2026.
+Status: **planned, not started.** Build window **Mon 23/11 → Fri 27/11/2026**, five working days (founder, 18/11/2026). Last revised 18/11/2026.
 
 ## 0 · The rule: Seeker only
 
@@ -17,7 +17,7 @@ Every change for the hackathon lives in the Seeker app. **The web diary (`/app/d
 - **Packaging.** The shell is `npx solana-mobile@latest webshell init/build`, a WebView, not a TWA, which breaks MWA. Package id `io.empowerfi.diario`; it cannot change later. The keystore is hers, made and kept outside the repo.
 - **Store policy.** The Seeker dApp is the only store app: no Play Store, no App Store. Every other phone keeps the web diary (PWA).
 - **Reviewers.** The diary stays open to sign-ups inside the app, so reviewers can get in. The waitlist is the site's only.
-- **Testing.** She has an Android phone, not a Seeker. Test with Phantom and Solflare on it, and on a Seeker if one can be borrowed.
+- **Testing.** There is no Seeker to test on: everything is tested on her Android phone, with the APK installed by hand and Phantom or Solflare as the wallet. Seed Vault Wallet exists only on Seeker, so it is not tested; MWA is the same standard, which is the bet. The listing and the demo say it was tested on Android.
 - **Publishing:**
   - publisher KYC/KYB;
   - a fresh publisher wallet with a little mainnet SOL;
@@ -42,12 +42,12 @@ The web diary already takes a voice note (`diary-speak`):
 1. **Hearing her: ElevenLabs Speech to Text (Scribe).**
    - `diary-speak-seeker` is a copy of `diary-speak` whose transcription step calls ElevenLabs instead of OpenAI. Language is fixed to Portuguese, which removes language-detection errors on short notes.
    - The reading, the figure checks, the draft and the confirmation are the same shared code (`_shared/spoken.ts`), so a sale is read the same way on both.
-   - Model: the batch Scribe model for a voice note. Today `scribe_v2`; a newer realtime `scribe_v2_realtime` / `scribe_v3_live` exists. Pin the model id from the live API reference when work starts, and keep it in an env var as `OPENAI_TRANSCRIBE_MODEL` is.
+   - Model: **the cheapest** (founder, 18/11/2026). That is batch Scribe for a voice note, never realtime, which costs more; about $0.20 per audio hour on ElevenLabs' price page. On 23/11, pick the cheapest batch id on elevenlabs.io/pricing/api (`scribe_v2` or `scribe_v3`, listed at the same price) and keep it in an env var, as `OPENAI_TRANSCRIBE_MODEL` is.
 2. **Answering her aloud: ElevenLabs Text to Speech.**
    - After the draft, the app reads it back: "Entendi: venda de R$ 30,00 de bolo, no dinheiro. Está certo?"
    - She still confirms by tapping Confirm / Discard: the voice informs and the tap decides.
    - This is the part that matters for women who read with difficulty, and the hackathon demo moment.
-   - Model: Flash, for low latency, with a Brazilian Portuguese voice chosen by the founder in the voice library.
+   - Model: **the cheapest, Flash** (`eleven_flash_v2_5` unless a cheaper one is listed on 23/11). It is about half the price per character of Multilingual, and also the fastest. Use a Brazilian Portuguese voice from the voice library.
    - The function returns the audio with the draft, or streams it. The API key never reaches the phone.
 3. **Talking it through (P2, only if P0/P1 are done): an ElevenLabs conversational agent.**
    - The end-of-day check-in asks: "Quanto você vendeu hoje? E gastou com o quê?"
@@ -107,12 +107,24 @@ The web diary already takes a voice note (`diary-speak`):
 
 - Store listing and submission to the dApp Store.
 - Native reminders in the shell, if Web Push does not work there.
-- ElevenLabs realtime transcription (words appear while she speaks).
 
 ### P2 — not for the hackathon
 
 - The conversational agent (§2.2.3).
+- Realtime transcription: it costs more than batch.
 - Any of this on the web diary.
+
+## 4b · Schedule: Mon 23 → Fri 27 November
+
+| Day | Work | Gate at the end of the day |
+|---|---|---|
+| **Mon 23** | `/app/seeker` route and the build check that keeps it out of `/app/diario`; webshell app built and installed on her Android; sign-in by e-mail code and a day recorded in it; check whether Web Push works in the shell. | The APK on her phone records a day; the web diary is unchanged. |
+| **Tue 24** | `diary-speak-seeker` with batch Scribe, consent text, read-back with Flash; secret `ELEVENLABS_API_KEY` set by her. | She says a sale aloud on the phone, hears it back, confirms, and it is in her journal. |
+| **Wed 25** | Wallet connection (MWA + signed message), `seeker-wallet`, the additive migration, the automatic transfer in `reward-payout`. **Connect the demo wallet by Wed evening:** the program's 24-hour wait must be over by Thursday. | Her Phantom/Solflare (devnet) is recorded as destination. |
+| **Thu 26** | End to end on devnet: a campaign funded, her days attested, the reward paid and arriving in the wallet on her phone. Fixes. | The test USDC shows in the wallet on the phone. |
+| **Fri 27** | Store assets and submission to the dApp Store; the demo video; the submission text. Store review takes 3–4 business days, so approval lands after the 27th: the demo uses the installed APK. | Submitted. |
+
+Cut line: if Wednesday slips, the read-back (TTS) moves after the wallet; if Thursday slips, the store submission is dropped and the APK is the deliverable.
 
 ## 5 · Tests
 
@@ -128,7 +140,6 @@ The web diary already takes a voice note (`diary-speak`):
 
 ## 6 · Open questions for the founder
 
-- The hackathon's dates and tracks, which set the schedule.
+- The hackathon's tracks and submission requirements (video, repo, APK or store link).
 - The ElevenLabs plan (zero retention needs Enterprise) and the voice for the read-back.
 - Mirrored real campaigns paying through to the phone, as test money: yes or no (§3.3).
-- Whether a Seeker can be borrowed for testing.
