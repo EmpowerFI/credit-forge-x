@@ -1,6 +1,6 @@
 # EmpowerFI on Seeker — hackathon plan
 
-Status: **planned, not started.** Build window **Mon 23/11 → Fri 27/11/2026**, five working days (founder, 18/11/2026). Last revised 18/11/2026.
+Status: **planned, not started.** Build window **Thu 19/11 → Fri 27/11/2026**: seven working days, plus the weekend if needed (founder, 18/11/2026). The hackathon asks for a **public repository** (credit-forge-x already is) and a **demo video**; a dApp Store listing is not required. Last revised 18/11/2026.
 
 ## 0 · The rule: Seeker only
 
@@ -55,6 +55,8 @@ The web diary already takes a voice note (`diary-speak`):
 
 ### 2.3 Privacy and consent
 
+- **Who can use it (founder, 18/11/2026).** During the hackathon the ElevenLabs voice is **for the founder and testers only**: an allow-list of accounts on the server (`diary-speak-seeker` refuses anyone else). Real entrepreneurs do not use it until the plan is chosen. Zero retention needs Enterprise.
+- **Voice (founder).** A female Brazilian Portuguese voice: three candidates from the library to hear on day one, and she picks one.
 - **Consent.** Her audio goes to ElevenLabs, a processor outside Brazil, for transcription. The Seeker app says so before the first recording, in plain words, and she agrees once. The web diary's consent text does not change, since the web keeps OpenAI.
 - **Retention.** ElevenLabs' **zero-retention mode is Enterprise-only** (`enable_logging=false`). On a lower plan, they log requests. Decide before launch: Enterprise or a hackathon arrangement, or accept logging with it written in the consent and in docs/PRIVACY.md.
 - **What we keep.** We store the transcript and draft as today; the audio is never stored. Logs keep counts and status codes only.
@@ -86,9 +88,7 @@ The web diary already takes a voice note (`diary-speak`):
 
 ### 3.3 Decisions before building
 
-- **Which campaigns pay through to the phone?**
-  - **Recommended:** devnet campaigns (Missions and the hackathon's) pay through.
-  - **Mirrored real campaigns** (20270109): their test payouts are hidden in the diary so test money never looks like her real reward. Sending them to the phone would show test USDC in her personal wallet. Recommendation: not for mirrors, or only with the wallet labelled "USDC de teste (devnet)".
+- **Which campaigns pay through to the phone? Decided (founder, 18/11/2026): devnet campaigns only** (Missions and the demo campaign). Mirrored real campaigns (20270109) keep their test payouts hidden and never pay through to the phone.
 - **Devnet in the wallet.** Phones' wallets default to mainnet, so she sees devnet USDC only with the wallet set to devnet. Check how Seed Vault Wallet, Phantom and Solflare show devnet tokens. This is the main demo risk.
 - **The token account at her wallet.** The operator pays the rent for her destination's USDC account, as today.
 
@@ -105,7 +105,7 @@ The web diary already takes a voice note (`diary-speak`):
 
 ### P1 — ships if the schedule holds
 
-- Store listing and submission to the dApp Store.
+- Store listing and submission to the dApp Store (not required by the hackathon).
 - Native reminders in the shell, if Web Push does not work there.
 
 ### P2 — not for the hackathon
@@ -114,17 +114,30 @@ The web diary already takes a voice note (`diary-speak`):
 - Realtime transcription: it costs more than batch.
 - Any of this on the web diary.
 
-## 4b · Schedule: Mon 23 → Fri 27 November
+## 4a · The demo campaign (founder, 18/11/2026)
+
+A reward unlocks after 30 days kept, and nothing is attested below five women, so a payout cannot happen live inside one week. The demo uses **a devnet demonstration campaign that started 30+ days before the demo**: the program accepts a past start, as long as the end is still ahead. It has the founder and at least four test accounts, with their days filled in backwards. The video says plainly that it is a devnet demonstration campaign.
+
+Check on day one, before seeding anything:
+- the diary database is production (`efylyaroluqatqmtuuml`), so test accounts must stay out of every impact figure, sponsor count and report;
+- whether `private.vault_cohort` and the attestation admit accounts flagged `is_simulated`;
+- if not, decide how to mark the demo accounts so they are attested but never counted as real women;
+- the founder's own account must not pick up fake days in her real diary: use a separate test account for her in the demo.
+
+## 4b · Schedule: Thu 19 → Fri 27 November
 
 | Day | Work | Gate at the end of the day |
 |---|---|---|
-| **Mon 23** | `/app/seeker` route and the build check that keeps it out of `/app/diario`; webshell app built and installed on her Android; sign-in by e-mail code and a day recorded in it; check whether Web Push works in the shell. | The APK on her phone records a day; the web diary is unchanged. |
-| **Tue 24** | `diary-speak-seeker` with batch Scribe, consent text, read-back with Flash; secret `ELEVENLABS_API_KEY` set by her. | She says a sale aloud on the phone, hears it back, confirms, and it is in her journal. |
-| **Wed 25** | Wallet connection (MWA + signed message), `seeker-wallet`, the additive migration, the automatic transfer in `reward-payout`. **Connect the demo wallet by Wed evening:** the program's 24-hour wait must be over by Thursday. | Her Phantom/Solflare (devnet) is recorded as destination. |
-| **Thu 26** | End to end on devnet: a campaign funded, her days attested, the reward paid and arriving in the wallet on her phone. Fixes. | The test USDC shows in the wallet on the phone. |
-| **Fri 27** | Store assets and submission to the dApp Store; the demo video; the submission text. Store review takes 3–4 business days, so approval lands after the 27th: the demo uses the installed APK. | Submitted. |
+| **Thu 19** | `/app/seeker` route and the build check that keeps it out of `/app/diario`; webshell app built and installed on her Android; sign-in by e-mail code; check Web Push in the shell. The demo-account check in §4a. | The APK on her phone signs in and records a day; the web diary is unchanged. |
+| **Fri 20** | `diary-speak-seeker` with batch Scribe, allow-list, consent text; three voices to hear; secret `ELEVENLABS_API_KEY` set by her. | She says a sale aloud and it becomes a draft. |
+| **Sat 21 – Sun 22** | Optional buffer. | — |
+| **Mon 23** | Read-back with Flash in the chosen voice; confirm by tap. The demo campaign created on devnet (past start), its accounts and their days seeded. | She hears the draft back and confirms it. |
+| **Tue 24** | Wallet connection (MWA + signed message), `seeker-wallet`, the additive migration, the automatic transfer in `reward-payout`. **Connect the demo wallet on Tuesday:** the program's 24-hour wait is then over by Wednesday. | Her Phantom/Solflare (devnet) is recorded as destination. |
+| **Wed 25** | End to end on devnet: attestation of the demo campaign, the reward paid, arriving in the wallet on her phone. Fixes. | The test USDC shows in the wallet on the phone. |
+| **Thu 26** | Demo video recorded (voice, read-back, the payout landing), README section for judges, repository clean (no secret, no personal data). | The video is cut. |
+| **Fri 27** | Submission. Optional: the dApp Store submission, not required by the hackathon. | Submitted. |
 
-Cut line: if Wednesday slips, the read-back (TTS) moves after the wallet; if Thursday slips, the store submission is dropped and the APK is the deliverable.
+Cut line: if Tuesday slips, the read-back (TTS) moves after the wallet; if Wednesday slips, Thursday morning finishes the payout and the video is recorded in the afternoon. The store listing is the first thing dropped.
 
 ## 5 · Tests
 
@@ -140,6 +153,4 @@ Cut line: if Wednesday slips, the read-back (TTS) moves after the wallet; if Thu
 
 ## 6 · Open questions for the founder
 
-- The hackathon's tracks and submission requirements (video, repo, APK or store link).
-- The ElevenLabs plan (zero retention needs Enterprise) and the voice for the read-back.
-- Mirrored real campaigns paying through to the phone, as test money: yes or no (§3.3).
+- The ElevenLabs plan before real entrepreneurs use the voice (zero retention needs Enterprise).
