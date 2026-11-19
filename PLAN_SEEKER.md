@@ -63,10 +63,20 @@ The web diary already takes a voice note (`diary-speak`):
    - The end-of-day check-in asks: "Quanto você vendeu hoje? E gastou com o quê?"
    - Its output must still become a draft she confirms. The agent never writes to her journal.
 
+### 2.2b Two languages (founder, 19/11/2026)
+
+The hackathon is international, so the Seeker voice works in **Portuguese and English**, following the language the app is set to. The diary already has both, through `tr({ en, pt })`.
+
+- **Transcription.** Scribe gets `language_code` `pt` or `en` from the app's language. Today `transcribeRequest` fixes `pt`.
+- **Reading and checks.** `_shared/spoken.ts` checks every figure against her words in Portuguese: number words, "mil", "reais", "conto". The Seeker path adds the English counterparts: number words, "thousand", "reais"/"real", "bucks". This lives behind a language argument, so the Portuguese path and the web diary's `diary-speak` behave exactly as before; their tests must stay unchanged. Amounts are still in reais.
+- **Read-back.** In English, read by one of ElevenLabs' default voices, which the free plan can use through the API. In Portuguese, read by a default multilingual voice. Library voices are not available through the API on the free plan.
+- **Plan.** The **free plan** is enough for the MVP. Starter (about US$5–6 a month) only if no default voice sounds right, or to settle the free plan's non-commercial licence for a public video.
+- **Demo.** The founder records in English for the judges, plus one Portuguese moment, because the real users speak Portuguese.
+
 ### 2.3 Privacy and consent
 
 - **Who can use it (founder, 18/11/2026).** During the hackathon the ElevenLabs voice is **for the founder and testers only**: an allow-list of accounts on the server (`diary-speak-seeker` refuses anyone else). Real entrepreneurs do not use it until the plan is chosen. Zero retention needs Enterprise.
-- **Voice (founder).** A female Brazilian Portuguese voice: three candidates from the library to hear on day one, and she picks one.
+- **Voice (founder).** English and Portuguese, from ElevenLabs' default voices (§2.2b).
 - **Consent.** Her audio goes to ElevenLabs, a processor outside Brazil, for transcription. The Seeker app says so before the first recording, in plain words, and she agrees once. The web diary's consent text does not change, since the web keeps OpenAI.
 - **Retention.** ElevenLabs' **zero-retention mode is Enterprise-only** (`enable_logging=false`). On a lower plan, they log requests. Decide before launch: Enterprise or a hackathon arrangement, or accept logging with it written in the consent and in docs/PRIVACY.md.
 - **What we keep.** We store the transcript and draft as today; the audio is never stored. Logs keep counts and status codes only.
@@ -142,19 +152,19 @@ Order is set by one hard constraint: **the program's 24-hour wait** before a new
 | **Fri 27, morning** | `/app/seeker` route reading `VITE_SEEKER_SUPABASE_*` (dev), and the build check that keeps it out of `/app/diario`; the separate Vercel deployment; webshell app built and installed on her Android; sign-in by e-mail code. | The app on her phone signs in to dev. |
 | **Fri 27, midday** | Wallet connection (MWA + signed message), `seeker-wallet`, the additive migration (destination and automatic transfer), deployed to dev. **She connects the demo wallet as soon as it works**, which starts the 24-hour wait. | Her Phantom/Solflare (devnet) is recorded as destination, before about 14:00. |
 | **Fri 27, afternoon** | `diary-speak-seeker` with batch Scribe, allow-list and consent text, deployed to dev. | She says a sale aloud and it becomes a draft. |
-| **Sat 28, morning** | Read-back with Flash in the chosen voice; confirm by tap. | She hears the draft back and confirms it. |
+| **Sat 28, morning** | Read-back with Flash (English and Portuguese default voices); confirm by tap. English in transcription and in the figure checks (§2.2b), behind a language argument, with the Portuguese tests unchanged. | She says a sale in English and in Portuguese, hears each back, and confirms. |
 | **Sat 28, midday** | Automatic transfer in `reward-payout` (dev). The demo campaign created on devnet with a past start; its accounts and days seeded in dev; attestation. | The demo campaign is attested on devnet. |
 | **Sat 28, afternoon** | Once the 24 hours are over: `pay_reward`, then the automatic transfer to the wallet on her phone. Fixes. **Code freeze at the end of the day.** | The test USDC shows in the wallet on the phone. |
 | **Sun 29** | No new features. Demo video (voice, read-back, the payout landing), README section for judges, repository checked (no secret, no personal data), submission. | Submitted. |
 
-**Cut line.** Dropped first: the dApp Store listing and native reminders, both now out. If Friday runs late, the read-back (TTS) goes and the voice stays as transcription only. If the payout does not land by Saturday night, the video shows the connected wallet, the attestation and the payment transaction on the explorer, and says the transfer is the next step.
+**Cut line.** Dropped first: the dApp Store listing and native reminders, both now out. If Friday runs late, English goes first and the demo is in Portuguese with English subtitles; then the read-back (TTS), leaving the voice as transcription only. If the payout does not land by Saturday night, the video shows the connected wallet, the attestation and the payment transaction on the explorer, and says the transfer is the next step.
 
 ## 4c · Before the 27th: preparation that is not code
 
 None of this is an improvement to the project; it is what lets Friday start at full speed.
 
 **The founder:**
-- **ElevenLabs.** Create the account on the cheapest paid plan; set `ELEVENLABS_API_KEY` as a secret **on dev** (`boivrcjvsnrmzbregavl`), by name. Listen to female Brazilian Portuguese voices in the voice library, pick one, and note its voice id.
+- **ElevenLabs.** Create a **free** account and set `ELEVENLABS_API_KEY` as a secret **on dev** (`boivrcjvsnrmzbregavl`), by name. Listen to the default voices (English, and the multilingual ones in Portuguese) and pick one for each language.
 - **Phone.** Allow installing apps from unknown sources. Install Phantom or Solflare, switch it to **devnet**, and note the wallet address.
 - **Demo accounts.** A separate demo e-mail for herself in dev, and four more test e-mails for the demo campaign.
 - **Devnet funds.** Devnet SOL and USDC (Circle faucet) for dev's operator wallet. Its address can be read from the operator key's path, never its contents.
