@@ -1,6 +1,6 @@
 # EmpowerFI on Seeker — hackathon plan
 
-Status: **planned, not started.** Build window **Thu 19/11 → Fri 27/11/2026**: seven working days, plus the weekend if needed (founder, 18/11/2026). The hackathon asks for a **public repository** (credit-forge-x already is) and a **demo video**; a dApp Store listing is not required. Last revised 18/11/2026.
+Status: **planned, not started.** The hackathon's rules (updated 19/11/2026): an existing project may enter, but **the improvements must be made between 27 and 29 November**. So no code for this plan is written or committed before **Fri 27/11**. **Build Fri 27 and Sat 28, frozen on the night of the 28th; Sun 29 is for the submission only** (founder, 19/11/2026). Until the 27th, only preparation that is not code (§4c). The hackathon asks for a **public repository** (credit-forge-x already is) and a **demo video**; a dApp Store listing is not required. Last revised 18/11/2026.
 
 ## 0a · An MVP on the dev database (founder, 18/11/2026)
 
@@ -63,10 +63,20 @@ The web diary already takes a voice note (`diary-speak`):
    - The end-of-day check-in asks: "Quanto você vendeu hoje? E gastou com o quê?"
    - Its output must still become a draft she confirms. The agent never writes to her journal.
 
+### 2.2b Two languages (founder, 19/11/2026)
+
+The hackathon is international, so the Seeker voice works in **Portuguese and English**, following the language the app is set to. The diary already has both, through `tr({ en, pt })`.
+
+- **Transcription.** Scribe gets `language_code` `pt` or `en` from the app's language. Today `transcribeRequest` fixes `pt`.
+- **Reading and checks.** `_shared/spoken.ts` checks every figure against her words in Portuguese: number words, "mil", "reais", "conto". The Seeker path adds the English counterparts: number words, "thousand", "reais"/"real", "bucks". This lives behind a language argument, so the Portuguese path and the web diary's `diary-speak` behave exactly as before; their tests must stay unchanged. Amounts are still in reais.
+- **Read-back.** In English, read by one of ElevenLabs' default voices, which the free plan can use through the API. In Portuguese, read by a default multilingual voice. Library voices are not available through the API on the free plan.
+- **Plan.** The **free plan** is enough for the MVP. Starter (about US$5–6 a month) only if no default voice sounds right, or to settle the free plan's non-commercial licence for a public video.
+- **Demo.** The founder records in English for the judges, plus one Portuguese moment, because the real users speak Portuguese.
+
 ### 2.3 Privacy and consent
 
 - **Who can use it (founder, 18/11/2026).** During the hackathon the ElevenLabs voice is **for the founder and testers only**: an allow-list of accounts on the server (`diary-speak-seeker` refuses anyone else). Real entrepreneurs do not use it until the plan is chosen. Zero retention needs Enterprise.
-- **Voice (founder).** A female Brazilian Portuguese voice: three candidates from the library to hear on day one, and she picks one.
+- **Voice (founder).** English and Portuguese, from ElevenLabs' default voices (§2.2b).
 - **Consent.** Her audio goes to ElevenLabs, a processor outside Brazil, for transcription. The Seeker app says so before the first recording, in plain words, and she agrees once. The web diary's consent text does not change, since the web keeps OpenAI.
 - **Retention.** ElevenLabs' **zero-retention mode is Enterprise-only** (`enable_logging=false`). On a lower plan, they log requests. Decide before launch: Enterprise or a hackathon arrangement, or accept logging with it written in the consent and in docs/PRIVACY.md.
 - **What we keep.** We store the transcript and draft as today; the audio is never stored. Logs keep counts and status codes only.
@@ -115,11 +125,12 @@ The web diary already takes a voice note (`diary-speak`):
 
 ### P1 — ships if the schedule holds
 
-- Store listing and submission to the dApp Store (not required by the hackathon).
-- Native reminders in the shell, if Web Push does not work there.
+- Nothing else: two days hold the P0 and no more.
 
 ### P2 — not for the hackathon
 
+- Store listing and submission to the dApp Store (not required by the hackathon).
+- Native reminders in the shell.
 - The conversational agent (§2.2.3).
 - Realtime transcription: it costs more than batch.
 - Any of this on the web diary.
@@ -132,20 +143,37 @@ Everything is seeded in **dev** (§0a), so the demo accounts never touch product
 - whether `private.vault_cohort` and the attestation admit accounts flagged `is_simulated`. In dev, the demo accounts can simply be ordinary accounts, which is the simplest path;
 - the founder's demo account in dev is separate from her real diary in production.
 
-## 4b · Schedule: Thu 19 → Fri 27 November
+## 4b · Schedule: Fri 27 → Sun 29 November
 
-| Day | Work | Gate at the end of the day |
+Order is set by one hard constraint: **the program's 24-hour wait** before a new payout destination can receive. So the wallet is connected first, on Friday morning, and the payout is shown on Saturday afternoon.
+
+| When | Work | Gate |
 |---|---|---|
-| **Thu 19** | Dev brought up to date (§0a: migrations by her, diary functions deployed to dev); the separate Vercel deployment for `/app/seeker` pointing at dev; `/app/seeker` route and the build check that keeps it out of `/app/diario`; webshell app built and installed on her Android; sign-in by e-mail code; check Web Push in the shell. | The APK on her phone signs in and records a day; the web diary is unchanged. |
-| **Fri 20** | `diary-speak-seeker` with batch Scribe, allow-list, consent text; three voices to hear; secret `ELEVENLABS_API_KEY` set by her **on dev**. | She says a sale aloud and it becomes a draft. |
-| **Sat 21 – Sun 22** | Optional buffer. | — |
-| **Mon 23** | Read-back with Flash in the chosen voice; confirm by tap. The dev operator wallet funded with devnet SOL and USDC; the demo campaign created on devnet (past start), its accounts and their days seeded in dev. | She hears the draft back and confirms it. |
-| **Tue 24** | Wallet connection (MWA + signed message), `seeker-wallet`, the additive migration, the automatic transfer in `reward-payout`. **Connect the demo wallet on Tuesday:** the program's 24-hour wait is then over by Wednesday. | Her Phantom/Solflare (devnet) is recorded as destination. |
-| **Wed 25** | End to end on devnet: attestation of the demo campaign, the reward paid, arriving in the wallet on her phone. Fixes. | The test USDC shows in the wallet on the phone. |
-| **Thu 26** | Demo video recorded (voice, read-back, the payout landing), README section for judges, repository clean (no secret, no personal data). | The video is cut. |
-| **Fri 27** | Submission. Optional: the dApp Store submission, not required by the hackathon. | Submitted. |
+| **Fri 27, morning** | `/app/seeker` route reading `VITE_SEEKER_SUPABASE_*` (dev), and the build check that keeps it out of `/app/diario`; the separate Vercel deployment; webshell app built and installed on her Android; sign-in by e-mail code. | The app on her phone signs in to dev. |
+| **Fri 27, midday** | Wallet connection (MWA + signed message), `seeker-wallet`, the additive migration (destination and automatic transfer), deployed to dev. **She connects the demo wallet as soon as it works**, which starts the 24-hour wait. | Her Phantom/Solflare (devnet) is recorded as destination, before about 14:00. |
+| **Fri 27, afternoon** | `diary-speak-seeker` with batch Scribe, allow-list and consent text, deployed to dev. | She says a sale aloud and it becomes a draft. |
+| **Sat 28, morning** | Read-back with Flash (English and Portuguese default voices); confirm by tap. English in transcription and in the figure checks (§2.2b), behind a language argument, with the Portuguese tests unchanged. | She says a sale in English and in Portuguese, hears each back, and confirms. |
+| **Sat 28, midday** | Automatic transfer in `reward-payout` (dev). The demo campaign created on devnet with a past start; its accounts and days seeded in dev; attestation. | The demo campaign is attested on devnet. |
+| **Sat 28, afternoon** | Once the 24 hours are over: `pay_reward`, then the automatic transfer to the wallet on her phone. Fixes. **Code freeze at the end of the day.** | The test USDC shows in the wallet on the phone. |
+| **Sun 29** | No new features. Demo video (voice, read-back, the payout landing), README section for judges, repository checked (no secret, no personal data), submission. | Submitted. |
 
-Cut line: if Tuesday slips, the read-back (TTS) moves after the wallet; if Wednesday slips, Thursday morning finishes the payout and the video is recorded in the afternoon. The store listing is the first thing dropped.
+**Cut line.** Dropped first: the dApp Store listing and native reminders, both now out. If Friday runs late, English goes first and the demo is in Portuguese with English subtitles; then the read-back (TTS), leaving the voice as transcription only. If the payout does not land by Saturday night, the video shows the connected wallet, the attestation and the payment transaction on the explorer, and says the transfer is the next step.
+
+## 4c · Before the 27th: preparation that is not code
+
+None of this is an improvement to the project; it is what lets Friday start at full speed.
+
+**The founder:**
+- **ElevenLabs.** Create a **free** account and set `ELEVENLABS_API_KEY` as a secret **on dev** (`boivrcjvsnrmzbregavl`), by name. Listen to the default voices (English, and the multilingual ones in Portuguese) and pick one for each language.
+- **Phone.** Allow installing apps from unknown sources. Install Phantom or Solflare, switch it to **devnet**, and note the wallet address.
+- **Demo accounts.** A separate demo e-mail for herself in dev, and four more test e-mails for the demo campaign.
+- **Devnet funds.** Devnet SOL and USDC (Circle faucet) for dev's operator wallet. Its address can be read from the operator key's path, never its contents.
+
+**Done already:**
+- Dev brought up to date with the platform's migrations on 18/11, through `20270112`.
+- The diary's functions are on dev.
+
+**Planning only, nothing committed as code:** a written checklist of each Friday and Saturday task, so the build is execution.
 
 ## 5 · Tests
 
