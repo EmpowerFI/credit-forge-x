@@ -14,6 +14,7 @@ import { LatestReading } from "./Reading";
 import { RewardsWallet } from "./Wallet";
 import { WeekProgress } from "./Week";
 import { tr } from "../i18n";
+import { DayNotes } from "./DayNotes";
 import {
   addDays, type AfterRecord, isoWeekday, brl, cachedToday, dayMoney, MONTH_KEY, openDaysOf, payShare, profitLabel, progressIcon, shortDay, CATEGORIES, type Category, categoryLabel, dayName, diary, diaryErrorText,
   type GoalAfter, type HistoryEntry, type Line, methodLabel, newRequestId, parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY,
@@ -289,6 +290,7 @@ export default function Today() {
               </div>
             )}
           </div>
+          <DayNotes day={keptDay} />
           {money.takenHome > 0 && (
             <p className="text-sm text-muted-foreground">
               {tr({ en: `Taken home: ${brl(money.takenHome)}`, pt: `Retirada para casa: ${brl(money.takenHome)}` })}
