@@ -273,6 +273,7 @@ export default function Today() {
               <p className="text-sm font-medium text-expense">{tr({ en: "Expenses", pt: "Gastos" })}</p>
               <p className="font-heading text-lg font-semibold tabular-nums text-expense">{brl(money.expenses)}</p>
             </div>
+            <div className="col-span-2 empty:hidden"><DayNotes day={keptDay} /></div>
             {need !== null && (
               <div className="col-span-2 space-y-1.5 rounded-lg border border-border bg-card px-3 py-2">
                 {money.pay > 0 && (
@@ -290,7 +291,6 @@ export default function Today() {
               </div>
             )}
           </div>
-          <DayNotes day={keptDay} />
           {money.takenHome > 0 && (
             <p className="text-sm text-muted-foreground">
               {tr({ en: `Taken home: ${brl(money.takenHome)}`, pt: `Retirada para casa: ${brl(money.takenHome)}` })}
