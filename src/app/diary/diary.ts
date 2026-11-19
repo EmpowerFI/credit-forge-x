@@ -257,6 +257,8 @@ export interface HistoryDay {
 export interface FallingDue {
   kind: "sale" | "expense";
   category: Category | null;
+  /** Since 20270114; absent before. */
+  payment_method?: PaymentMethod;
   amount_cents: number;
   instalment: number;
   installments: number;
