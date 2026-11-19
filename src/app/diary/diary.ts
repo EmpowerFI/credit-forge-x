@@ -246,7 +246,21 @@ export interface HistoryDay {
   quiet_reason: "closed" | "no_sales" | null;
   /** What moved that day; absent from a database older than 20261221. */
   money?: DayCash;
+  /** Instalments of lines from other days that fell due that day (20270113). */
+  falling_due?: FallingDue[];
+  /** What the day's own lines leave for later: not in that day's figures (20270113). */
+  later_cents?: { sales: number; expenses: number };
   entries: HistoryEntry[];
+}
+
+/** One instalment of a line from another day, falling due on this one. */
+export interface FallingDue {
+  kind: "sale" | "expense";
+  category: Category | null;
+  amount_cents: number;
+  instalment: number;
+  installments: number;
+  from_day: string;
 }
 
 export interface GoalNow {

@@ -37,3 +37,7 @@ The diary is the entrepreneur's daily financial record. It is free, on the web a
 | Edge Functions | `diary-speak` (voice or text into a draft), `diary-reading` (the tip of the week), `diary-push` (reminders, by pg_cron every fifteen minutes) |
 | Push keys | `scripts/diary/generate-push-keys.mts`, once per environment. Never regenerate them: every phone's subscription would stop. |
 | Tests | `src/app/diary/diary.test.ts`; the database functions in the migrations' pgTAP suite |
+
+## Where a day's figures come from (since 19 November 2026, migration `20270113000000`)
+
+The diary counts each line when its money moves (20261221), so a day's "vendeu" and "gastou" can hold an instalment of a line from another day, and leave out what the day's own lines leave for later. `diary_history` now returns, per day, `falling_due` (the instalments of lines from other days that fell due that day: kind, amount, which instalment of how many, and the day the line was made) and `later_cents` (what that day's lines leave for later, by kind). The Today summary and the History list show both under the day's figures (`DayNotes.tsx`), for example "Parcela 1/3 da venda de 20/10: R$ 200,00" and "Gastos para pagar depois, não contam hoje: R$ 150,00".

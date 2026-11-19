@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { tr } from "../i18n";
 import { MyRewards } from "./Campaigns";
+import { DayNotes } from "./DayNotes";
 import { ProfitValue } from "./Month";
 import { addDays, brl, cachedToday, categoryLabel, dayMoney, dayName, diary, diaryErrorText, type HistoryEntry, methodLabel, MONTH_KEY, openDaysOf, payShare, PROFILE_KEY, profitLabel } from "./diary";
 
@@ -100,6 +101,7 @@ export default function History() {
                   {money.takenHome > 0 && <>{" · "}{tr({ en: "took home", pt: "retirou" })} {brl(money.takenHome)}</>}
                 </p>
               )}
+              {!d.no_activity && <DayNotes day={d} />}
               {d.no_activity ? (
                 <p className="text-sm text-muted-foreground">
                   {d.quiet_reason === "closed"
