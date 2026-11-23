@@ -28,7 +28,7 @@
 
 import { type InsightFlag, type Insights, type Span, spanOf } from "./checkin-insights/index.ts";
 
-export const PROMPT_VERSION = "report-prompt-v0.8.0";
+export const PROMPT_VERSION = "report-prompt-v0.9.0";
 export const DEFAULT_MODEL = "claude-haiku-5-5";
 
 /** The reading, as the model must return it and as the fallback builds it. */
@@ -208,6 +208,7 @@ function systemFor(span: Span, profitWords = false): string {
     `4. Nunca culpe ou acuse. ${span === "week" ? "Uma semana difícil" : "Um mês difícil"} é um fato, não um erro dela. Se algum número parecer inconsistente, peça com gentileza que ela confira.`,
     `5. A ação prática deve ser uma só, pequena e possível de fazer ${span === "week" ? "nesta semana que começa" : "nas próximas duas semanas"}, sem gastar dinheiro.`,
     "   Ela usa o diário da EmpowerFI justamente para não precisar de papel: nunca sugira papel, caderno, caderneta, planilha, bloco de notas nem outro aplicativo. Se a ação for anotar ou acompanhar algo, é no próprio diário: registrar no diário cada gasto no dia em que paga, anotar as vendas pequenas também, olhar em Seu mês quanto falta vender, marcar os dias em que o negócio abre.",
+    "   O diário só registra três coisas: vendas (valor e como recebeu, na hora ou depois), gastos do negócio (valor, com o quê — inclusive divulgação — e como pagou) e os dias sem movimento. Não há onde anotar outra coisa: nada de anotar o que ela fez, uma divulgação, clientes, encomendas, preços, estoque, ideias ou metas. Uma ação como divulgar, conversar com clientes ou organizar a vitrine pode ser sugerida, mas nunca peça para anotar essa ação no diário. Se pedir para registrar algo, é uma venda, um gasto ou um dia sem movimento.",
     "6. Não dê conselho contábil, jurídico ou de investimento.",
     "",
     `Sobre os sinais: RESULT_NEGATIVE quer dizer que os custos passaram das vendas. HOUSEHOLD_OVER_RESULT quer dizer que ela retirou para casa mais do que o negócio gerou. HOUSEHOLD_OVER_REVENUE sugere que o dinheiro da casa e do negócio estão misturados. FIGURES_ESTIMATED e COST_UNKNOWN pedem cuidado ao tirar conclusões. REVENUE_UP e REVENUE_DOWN são mudanças grandes em relação ${w.previous}. FEW_ACTIVE_DAYS quer dizer que o negócio vendeu em poucos dias ${w.this}. PROFIT_NEGATIVE quer dizer que as vendas não cobriram os gastos e o salário dela.`,
@@ -319,6 +320,23 @@ const PROFIT_WORDS = ["lucro", "prejuizo"];
  */
 const PAPER = /\b(papel|papeis|papeizinhos|caderno|cadernos|caderneta|planilha|planilhas|bloco de notas|excel)\b/;
 
+/**
+ * What the diary can hold: sales, the business's expenses, and days without
+ * activity (founder, 23/11/2026: a tip asked her to "anote no diário o que
+ * você fez" after posting a photo, and there is nowhere to). A sentence that
+ * sends her to note or record something in the diary must name one of these;
+ * otherwise it asks for a feature that does not exist. Matched on stripped
+ * text, sentence by sentence.
+ */
+const NOTE_IN_DIARY = /\b(anot|registr|marc|marq|lanc)\w*\b[^.!?]*\bdiario\b|\bdiario\b[^.!?]*\b(anot|registr|marc|marq|lanc)\w*/;
+const DIARY_THINGS = /\b(vend\w*|gast\w*|compr\w*|despes\w*|pag\w*|retirad\w*|sem movimento|abr\w*|fech\w*|nao abriu)\b/;
+export function asksForWhatTheDiaryCannotHold(text: string): string | null {
+  for (const sentence of strip(text).split(/[.!?]+/)) {
+    if (NOTE_IN_DIARY.test(sentence) && !DIARY_THINGS.test(sentence)) return sentence.trim();
+  }
+  return null;
+}
+
 const LIMITS = { summary: 320, observation: 240, action: 240, limits: 240 } as const;
 
 /**
@@ -366,6 +384,8 @@ export function validateReport(raw: unknown, allowedNumbers: Set<string>, profit
   }
   const paper = plain.match(PAPER);
   if (paper) reasons.push(`sends her to keep her figures outside the diary: "${paper[1]}"`);
+  const cannot = asksForWhatTheDiaryCannotHold(all);
+  if (cannot) reasons.push(`asks her to note in the diary what it cannot hold: "${cannot}"`);
 
   // Every figure in the prose must be one we computed. Single digits are let
   // through as counting words -- "uma ação", "2 semanas" -- because a single
@@ -537,6 +557,7 @@ function adviceSystem(profitWords: boolean): string {
     "3. Nunca fale de crédito, empréstimo, financiamento, score ou risco de inadimplência.",
     "4. Nunca culpe nem cobre. Uma semana difícil é um fato, não um erro dela.",
     "5. Ela usa o diário da EmpowerFI justamente para não precisar de papel: nunca sugira papel, caderno, caderneta, planilha nem outro aplicativo. Se a dica for anotar algo, é no próprio diário.",
+    "   O diário só registra três coisas: vendas (valor e como recebeu, na hora ou depois), gastos do negócio (valor, com o quê — inclusive divulgação — e como pagou) e os dias sem movimento. Não há onde anotar outra coisa: nada de anotar o que ela fez, uma divulgação, clientes, encomendas, preços, estoque, ideias ou metas. Uma ação como divulgar, conversar com clientes ou organizar a vitrine pode ser sugerida, mas nunca peça para anotar essa ação no diário. Se pedir para registrar algo, é uma venda, um gasto ou um dia sem movimento.",
     "6. Não dê conselho contábil, jurídico ou de investimento, e não invente nada sobre o negócio dela além do ramo e dos números.",
     "7. Não diga que você é do Sebrae nem fale em nome de nenhuma instituição.",
     "8. Os dias em que o negócio não abre não são falta: nunca diga que ela deixou de vender ou de anotar nesses dias.",
@@ -618,6 +639,8 @@ export function validateAdvice(raw: unknown, allowedNumbers: Set<string>, profit
   if (plain.includes("sebrae")) reasons.push("speaks in Sebrae's name");
   const paper = plain.match(PAPER);
   if (paper) reasons.push(`sends her to keep her figures outside the diary: "${paper[1]}"`);
+  const cannot = asksForWhatTheDiaryCannotHold(tip);
+  if (cannot) reasons.push(`asks her to note in the diary what it cannot hold: "${cannot}"`);
   for (const n of numbersIn(tip)) {
     if (/^\d$/.test(n)) continue;
     if (!allowedNumbers.has(n)) reasons.push(`contains a number nobody computed: ${n}`);
