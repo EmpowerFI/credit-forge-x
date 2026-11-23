@@ -1,7 +1,7 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import { computeInsights, type MonthFigures } from "./checkin-insights/index.ts";
 import {
-  adviceFacts, adviceRequest, fallbackAdvice, validateAdvice,
+  adviceFacts, adviceRequest, asksForWhatTheDiaryCannotHold, fallbackAdvice, validateAdvice,
   anthropicRequest, costMicroUsd, DEFAULT_MODEL, factsFor, fallbackReport, formatBRL, formatPercent,
   coverageLine, monthName, numbersIn, parseAnthropicResponse, promptFor, renderMessage, validateReport, weekName,
 } from "./report.ts";
@@ -404,4 +404,35 @@ Deno.test("the fixed-sentence tip praises a week kept in full, or names what to 
   const hard = fallbackAdvice(weekOf({ open_days: 6, cogs_cents: 200_000 }), { days_recorded: 3 });
   assertEquals((hard.tip ?? "").length > 0, true);
   assertEquals(hard.observations, []);
+});
+
+Deno.test("a tip never asks her to note in the diary what it cannot hold", () => {
+  const f = adviceFacts(weekOf({ open_days: 6 }), detail);
+  // The tip the founder received on 23/11/2026.
+  const real = "Na próxima semana, escolha um dia para divulgar seu trabalho, como uma foto ou um recado para seus clientes, e anote no diário o que você fez.";
+  const r = validateAdvice({ tip: real }, f.allowedNumbers, f.profitWords, "x");
+  assertEquals(r.ok, false);
+  for (const bad of [
+    "Registre no diário quantos clientes vieram.",
+    "Anote no diário as encomendas da semana.",
+    "No diário, anote a sua meta.",
+  ]) assertEquals(asksForWhatTheDiaryCannotHold(bad) !== null, true, bad);
+  for (const ok of [
+    "Nesta semana, divulgue seu trabalho com uma foto para seus clientes.",
+    "Registre no diário cada gasto no dia em que paga.",
+    "Anote no diário as vendas pequenas também.",
+    "Se gastar com divulgação, registre no diário como gasto.",
+    "Marque no diário os dias em que não abriu.",
+    "Olhe no diário, em Seu mês, quanto falta vender.",
+  ]) assertEquals(asksForWhatTheDiaryCannotHold(ok), null, ok);
+  // The fixed sentences pass their own rule.
+  for (const flags of [["FIGURES_ESTIMATED"], ["COST_UNKNOWN"], ["RESULT_NEGATIVE"], []] as const) {
+    const fb = fallbackReport({ ...insights(), flags: [...flags] });
+    assertEquals(asksForWhatTheDiaryCannotHold(fb.action), null, fb.action);
+  }
+});
+
+Deno.test("the prompts say what the diary can hold", () => {
+  const body = JSON.parse(adviceRequest("k", "m", weekOf({ open_days: 6 }), "doces", detail).init.body as string);
+  assertEquals(body.system.includes("O diário só registra três coisas"), true);
 });
