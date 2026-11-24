@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardCheck, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -146,6 +146,22 @@ export default function Today() {
     setError(null);
     started.current = Date.now();
   };
+
+  // A tap on Hoje in the bottom bar, even while on this screen: back to the
+  // main screen of today, whatever she was doing (noting, reviewing, the
+  // message after recording, yesterday). What she noted and did not record
+  // stays saved for its day.
+  const home = (useLocation().state as { home?: number } | null)?.home;
+  const lastHome = useRef(home);
+  useEffect(() => {
+    if (home === undefined || home === lastHome.current) return;
+    lastHome.current = home;
+    setDay(today);
+    setNoted(loadPending(today));
+    restart();
+    window.scrollTo({ top: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [home]);
 
   const finish = async (out: AfterRecord) => {
     setResult(out);
