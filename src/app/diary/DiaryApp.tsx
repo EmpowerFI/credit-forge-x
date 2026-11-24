@@ -120,6 +120,9 @@ function Layout({ name, userId }: { name: string; userId: string }) {
     <NavLink
       to={to}
       end={end}
+      // Hoje is also "back to the start": a tap while already on it carries a
+      // fresh mark, and Today goes back to its main screen (founder, 24/11/2026).
+      state={to === "/app/diario" ? { home: Date.now() } : undefined}
       data-tour={tourName}
       className={({ isActive }) =>
         `group flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
