@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { addDays, breakEven, brl, cachedToday, dayMoney, payShare, dayName, diaryErrorText, mondayOf, parseReais, progressIcon, PROGRESS_ICONS, signedBrl, spToday, weekSpan } from "./diary";
+import { addDays, breakEven, brl, cachedToday, dayMoney, payShare, dayName, diaryErrorText, mondayOf, parseReais, progressIcon, PROGRESS_ICONS, rewardMoney, signedBrl, spToday, weekSpan } from "./diary";
+
+describe("rewardMoney", () => {
+  it("says a reward in reais as before, and one in dollars with the reais beside it", () => {
+    expect(rewardMoney(5000)).toBe(brl(5000));
+    expect(rewardMoney(5000, "BRL", 999)).toBe(brl(5000));
+    expect(rewardMoney(150, "USD", 800)).toBe(`US$ 1,50 (≈ ${brl(800)})`);
+    expect(rewardMoney(150, "USD", null)).toBe("US$ 1,50");
+  });
+});
+
+describe("a Conta.vc user that is not one", () => {
+  it("is explained in her words", () => {
+    setCurrentLocale("pt");
+    expect(diaryErrorText(new Error("contavc_handle_invalid"))).toMatch(/usuário do Conta\.vc/);
+  });
+});
 import { setCurrentLocale } from "../i18n";
 
 describe("parseReais", () => {

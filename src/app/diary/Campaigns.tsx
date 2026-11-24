@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Gift, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { tr } from "../i18n";
-import { brl, diary, diaryErrorText, type DiaryProfile, type OpenCampaign, PROFILE_KEY, type Reward } from "./diary";
+import { diary, diaryErrorText, type DiaryProfile, type OpenCampaign, PROFILE_KEY, type Reward, rewardMoney } from "./diary";
 import SponsorLogo from "./SponsorLogo";
 
 const ddmm = (day: string) => day.slice(0, 10).split("-").reverse().join("/");
@@ -57,8 +59,8 @@ export function OpenCampaigns({ profile }: { profile: DiaryProfile }) {
           {c.reward_cents ? (
             <p className="font-medium">
               {tr({
-                en: `Reward of ${brl(c.reward_cents)} if you record every day your business opens until the end.`,
-                pt: `Recompensa de ${brl(c.reward_cents)} se você registrar todos os dias em que o seu negócio abrir, até o fim.`,
+                en: `Reward of ${rewardMoney(c.reward_cents, c.reward_currency, c.reward_brl_approx_cents)} if you record every day your business opens until the end.`,
+                pt: `Recompensa de ${rewardMoney(c.reward_cents, c.reward_currency, c.reward_brl_approx_cents)} se você registrar todos os dias em que o seu negócio abrir, até o fim.`,
               })}
             </p>
           ) : null}
@@ -215,7 +217,12 @@ export function CampaignRewardCard({ profile }: { profile: DiaryProfile }) {
           <Gift size={18} className="text-primary" aria-hidden="true" />
           {tr({ en: "Your campaign reward", pt: "Recompensa da campanha" })}
         </h2>
-        <span className="shrink-0 font-heading text-lg font-semibold tabular-nums">{brl(r.reward_cents)}</span>
+        <span className="shrink-0 text-right font-heading text-lg font-semibold tabular-nums">
+          {rewardMoney(r.reward_cents, r.reward_currency)}
+          {r.reward_currency === "USD" && r.reward_brl_approx_cents ? (
+            <span className="block text-xs font-normal text-muted-foreground">≈ {rewardMoney(r.reward_brl_approx_cents)}</span>
+          ) : null}
+        </span>
       </div>
       <p className="text-sm text-muted-foreground">{r.campaign}</p>
       <div className="space-y-1.5">
@@ -238,6 +245,87 @@ export function CampaignRewardCard({ profile }: { profile: DiaryProfile }) {
               pt: `Registre todos os dias em que o seu negócio abrir até ${ddmm(r.until)} para receber.`,
             })}
       </p>
+      {!r.paid_at && <ContaVc />}
     </section>
+  );
+}
+
+/**
+ * Where her reward goes: her personal account at Conta.vc (20270115). She
+ * opens it herself, subject to Conta.vc's approval, and gives her user, the
+ * "@" under her name in the app. EmpowerFI deposits there by hand.
+ */
+function ContaVc() {
+  const queryClient = useQueryClient();
+  const saved = useQuery({ queryKey: [...PROFILE_KEY, "contavc"], queryFn: diary.contavc });
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const handle = saved.data ?? null;
+  const showForm = editing || (!saved.isLoading && !handle);
+
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await diary.setContavc(value);
+      await queryClient.invalidateQueries({ queryKey: [...PROFILE_KEY, "contavc"] });
+      setEditing(false);
+    } catch (e) {
+      setError(diaryErrorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3 border-t border-border pt-3">
+      <h3 className="font-heading text-base font-semibold">{tr({ en: "Receive it at Conta.vc", pt: "Receber no Conta.vc" })}</h3>
+      <p className="text-sm text-muted-foreground">
+        {tr({
+          en: "When you complete the campaign, EmpowerFI deposits the reward in your personal Conta.vc account, subject to Conta.vc's account conditions.",
+          pt: "Quando você completar a campanha, a EmpowerFI deposita a recompensa na sua conta pessoal do Conta.vc, sujeito às condições de abertura de conta do Conta.vc.",
+        })}
+      </p>
+      {saved.isError && <p role="alert" className="text-sm text-destructive">{diaryErrorText(saved.error)}</p>}
+      {handle && !editing && (
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-secondary px-3 py-2">
+          <span className="text-sm">
+            {tr({ en: "Your Conta.vc user: ", pt: "Seu usuário no Conta.vc: " })}
+            <strong>@{handle}</strong>
+          </span>
+          <Button variant="outline" className="h-11" onClick={() => { setValue(`@${handle}`); setError(null); setEditing(true); }}>
+            {tr({ en: "Change", pt: "Alterar" })}
+          </Button>
+        </div>
+      )}
+      {showForm && (
+        <form className="space-y-2" noValidate onSubmit={(e) => { e.preventDefault(); void save(); }}>
+          <Label htmlFor="contavc-handle">{tr({ en: "Your Conta.vc user", pt: "Seu usuário no Conta.vc" })}</Label>
+          <Input id="contavc-handle" value={value} onChange={(e) => setValue(e.target.value)} placeholder="@seuusuario"
+            autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} inputMode="email"
+            aria-describedby="contavc-steps" aria-invalid={error ? true : undefined} className="h-11 text-base" />
+          <p role="alert" aria-live="polite" className="min-h-0 text-sm text-destructive">{error}</p>
+          <div className="flex gap-2">
+            <Button type="submit" className="h-11" disabled={busy || !value.trim()}>
+              {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
+              {tr({ en: "Save", pt: "Salvar" })}
+            </Button>
+            {editing && (
+              <Button type="button" variant="ghost" className="h-11" disabled={busy} onClick={() => { setEditing(false); setError(null); }}>
+                {tr({ en: "Cancel", pt: "Cancelar" })}
+              </Button>
+            )}
+          </div>
+        </form>
+      )}
+      <ol id="contavc-steps" className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+        <li>{tr({ en: "Open your personal account at app.conta.vc. Opening the account is subject to approval.", pt: "Crie sua conta pessoal no Conta.vc em app.conta.vc. A abertura da conta está sujeita a aprovação." })}</li>
+        <li>{tr({ en: "In the app, tap your round icon in the top right corner.", pt: "No app, toque no seu ícone redondo no canto superior direito." })}</li>
+        <li>{tr({ en: "Under your name is your user, starting with @ (for example: @danbr).", pt: "Abaixo do seu nome aparece o seu usuário, começando com @ (por exemplo: @danbr)." })}</li>
+        <li>{tr({ en: "Type that user here.", pt: "Digite esse usuário aqui." })}</li>
+      </ol>
+    </div>
   );
 }

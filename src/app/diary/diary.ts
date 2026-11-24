@@ -174,8 +174,11 @@ export interface OpenCampaign {
   logo_path: string | null;
   link_url: string | null;
   offers_rewards: boolean;
-  /** What each woman who completes it receives, in cents of a real (20270107); null when none. */
+  /** What each woman who completes it receives, in cents of reward_currency (20270107); null when none. */
   reward_cents?: number | null;
+  /** Since 20270115: BRL (absent before) or USD, and, for USD, the approximate value in reais. */
+  reward_currency?: RewardCurrency;
+  reward_brl_approx_cents?: number | null;
   blocked_by: string | null;
 }
 
@@ -183,6 +186,8 @@ export interface OpenCampaign {
 export interface CampaignReward {
   campaign: string;
   reward_cents: number;
+  reward_currency?: RewardCurrency;
+  reward_brl_approx_cents?: number | null;
   /** The campaign's last day for her. */
   until: string;
   /** The days her business opens in her window, and how many of them she has recorded so far. */
@@ -308,6 +313,9 @@ export const diary = {
   forget: () => call<{ erased: boolean }>("diary_account_forget", { p_confirmation: "EXCLUIR" }),
   openCampaigns: () => call<OpenCampaign[]>("diary_campaigns"),
   campaignReward: () => call<CampaignReward | null>("diary_campaign_reward"),
+  /** Her Conta.vc user, without the "@", or null (20270115). */
+  contavc: () => call<string | null>("diary_contavc_get"),
+  setContavc: (handle: string) => call<string | null>("diary_contavc_set", { p_handle: handle }),
   sponsors: () => call<DiarySponsor[]>("diary_sponsors"),
   partners: () => call<DiaryPartner[]>("diary_partners"),
   joinCampaign: (id: string) => call<{ starts_on: string; until: string }>("diary_campaign_join", { p_program_id: id }),
@@ -537,6 +545,15 @@ export function brl(cents: number): string {
   return `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+export type RewardCurrency = "BRL" | "USD";
+
+/** A campaign's reward as she reads it: "R$ 50,00", or "US$ 1,50 (≈ R$ 8,00)" when it is in dollars (20270115). */
+export function rewardMoney(cents: number, currency: RewardCurrency = "BRL", brlApprox?: number | null): string {
+  if (currency !== "USD") return brl(cents);
+  const usd = `US$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return brlApprox ? `${usd} (≈ ${brl(brlApprox)})` : usd;
+}
+
 /** "Lucro" or "Prejuízo", by the sign. */
 export const profitLabel = (cents: number) => (cents < 0 ? tr({ en: "Loss", pt: "Prejuízo" }) : tr({ en: "Profit", pt: "Lucro" }));
 
@@ -601,6 +618,10 @@ export function diaryErrorText(error: unknown): string {
     ["age_range_required", { en: "Choose your age range.", pt: "Escolha a sua faixa etária." }],
     ["sector_not_a_category", { en: "Choose what you sell from the list.", pt: "Escolha o que você vende na lista." }],
     ["emoji_not_offered", { en: "Choose one of the icons offered.", pt: "Escolha um dos ícones da lista." }],
+    ["contavc_handle_invalid", {
+      en: "That is not a Conta.vc user. Use only letters, numbers, dot or underscore, as it appears under your name in the app.",
+      pt: "Esse não parece um usuário do Conta.vc. Use só letras, números, ponto ou sublinhado, como aparece abaixo do seu nome no app.",
+    }],
     ["campaign_full", { en: "All the places in this campaign are taken.", pt: "Todas as vagas desta campanha já foram preenchidas." }],
     ["campaign_not_open", { en: "This campaign is not open to join.", pt: "Esta campanha não está aberta para adesão." }],
     ["campaign_not_running", { en: "This campaign is not running today.", pt: "Esta campanha não está acontecendo hoje." }],
