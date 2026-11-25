@@ -35,7 +35,7 @@ export function SiteNav({ lang, page, twin }: { lang: Lang; page?: PageKey; twin
       language={lang === "en"
         ? { current: "EN", other: "PT", otherName: "Português", to: other }
         : { current: "PT", other: "EN", otherName: "English", to: other }}
-      primary={{ label: t.nav.primary, to: `${p.sponsors}#contact` }} appLabel={t.nav.app} menuLabel={t.nav.menu} />
+      primary={{ label: t.nav.primary, to: p.sponsors }} appLabel={t.nav.app} menuLabel={t.nav.menu} />
   );
 }
 
