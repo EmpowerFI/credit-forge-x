@@ -1,13 +1,13 @@
 # EmpowerFI on Seeker — hackathon plan
 
-Status: **planned, not started.** The hackathon's rules (updated 19/11/2026): an existing project may enter, but **the improvements must be made between 27 and 29 November**. So no code for this plan is written or committed before **Fri 27/11**. **Build Fri 27 and Sat 28, frozen on the night of the 28th; Sun 29 is for the submission only** (founder, 19/11/2026). Until the 27th, only preparation that is not code (§4c). The hackathon asks for a **public repository** (credit-forge-x already is) and a **demo video**; a dApp Store listing is not required. Last revised 18/11/2026.
+Status: **planned, not started.** The hackathon's rules (updated 19/11/2026): an existing project may enter, but **the improvements must be made between 27 and 29 November**. So no code for this plan is written or committed before **Fri 27/11**. **Build Fri 27 and Sat 28, frozen on the night of the 28th; Sun 29 is for the submission only** (founder, 19/11/2026). Until the 27th, only preparation that is not code (§4c). The hackathon asks for a **public repository** (credit-forge-x already is) and a **demo video**; a dApp Store listing is not required. Last revised 25/11/2026.
 
 ## 0a · An MVP on the dev database (founder, 18/11/2026)
 
 For the hackathon this is an **MVP, not a production release**. It runs entirely on the app's **dev** Supabase project, **`boivrcjvsnrmzbregavl`**, never on production (`efylyaroluqatqmtuuml`):
 
 - **Migrations.** The Seeker migrations are applied to dev only. Production gets them only if the founder decides to launch after the hackathon.
-- **Functions and secrets.** `diary-speak-seeker` and `seeker-wallet` are deployed to dev; the changed `reward-payout`, `campaign-attest` and any other function the MVP needs are deployed to dev only. Secrets are set on dev, by name: `ELEVENLABS_API_KEY`, and a **dev operator wallet** for devnet, separate from production's. Production keeps its functions and secrets untouched.
+- **Functions and secrets.** `diary-speak-seeker` and `seeker-wallet` are deployed to dev; the changed `reward-payout`, `campaign-attest` and any other function the MVP needs are deployed to dev only. Secrets are set on dev, by name: `ELEVENLABS_API_KEY` (set 25/11). The campaign operator stays **the one devnet operator, `Ax71…UNb`**: the code pins it (`OPERATOR_WALLET` in `_shared/campaign-vault`, checked by `campaign-register`), both projects pay only on devnet, and dev has had its `CAMPAIGN_OPERATOR_*` secrets since 07/11. A wallet of dev's own would mean changing that pin, for no gain on devnet (decided 25/11, replacing "a dev operator wallet"). Production keeps its functions and secrets untouched.
 - **Bringing dev up to date.** Dev was behind while everything went straight to production (04/11/2026). Day one starts by applying main's migrations to dev and deploying the existing diary functions there.
 - **The app.** `/app/seeker` reads its own variables, `VITE_SEEKER_SUPABASE_URL` and `VITE_SEEKER_SUPABASE_PUBLISHABLE_KEY`, pointing at dev. A separate Vercel deployment sets them; the production site does not, so `/app/seeker` there shows "not available". The webshell wraps that separate deployment's URL.
 - **Accounts.** Sign-ups, test accounts and the demo campaign all live in dev. Nothing of the demo can reach a real woman's diary, a real sponsor or an impact figure.
@@ -69,18 +69,18 @@ The hackathon is international, so the Seeker voice works in **Portuguese and En
 
 - **Transcription.** Scribe gets `language_code` `pt` or `en` from the app's language. Today `transcribeRequest` fixes `pt`.
 - **Reading and checks.** `_shared/spoken.ts` checks every figure against her words in Portuguese: number words, "mil", "reais", "conto". The Seeker path adds the English counterparts: number words, "thousand", "reais"/"real", "bucks". This lives behind a language argument, so the Portuguese path and the web diary's `diary-speak` behave exactly as before; their tests must stay unchanged. Amounts are still in reais.
-- **Read-back.** In English, read by one of ElevenLabs' default voices, which the free plan can use through the API. In Portuguese, read by a default multilingual voice. Library voices are not available through the API on the free plan.
-- **Plan.** The **free plan** is enough for the MVP. Starter (about US$5–6 a month) only if no default voice sounds right, or to settle the free plan's non-commercial licence for a public video.
+- **Read-back.** Her two voices from the Voice Library (§4c), which the Starter plan she took on 25/11 can use through the API.
+- **Plan.** **Starter**, taken by the founder on 25/11: library voices through the API and a licence for the public video.
 - **Demo.** The founder records in English for the judges, plus one Portuguese moment, because the real users speak Portuguese.
 
 ### 2.3 Privacy and consent
 
 - **Who can use it (founder, 18/11/2026).** During the hackathon the ElevenLabs voice is **for the founder and testers only**: an allow-list of accounts on the server (`diary-speak-seeker` refuses anyone else). Real entrepreneurs do not use it until the plan is chosen. Zero retention needs Enterprise.
-- **Voice (founder).** English and Portuguese, from ElevenLabs' default voices (§2.2b).
+- **Voice (founder).** English and Portuguese, two Voice Library voices she chose (§4c).
 - **Consent.** Her audio goes to ElevenLabs, a processor outside Brazil, for transcription. The Seeker app says so before the first recording, in plain words, and she agrees once. The web diary's consent text does not change, since the web keeps OpenAI.
 - **Retention.** ElevenLabs' **zero-retention mode is Enterprise-only** (`enable_logging=false`). On a lower plan, they log requests. Decide before launch: Enterprise or a hackathon arrangement, or accept logging with it written in the consent and in docs/PRIVACY.md.
 - **What we keep.** We store the transcript and draft as today; the audio is never stored. Logs keep counts and status codes only.
-- **Secrets.** A new secret on the diary project, `ELEVENLABS_API_KEY` (by name only), plus an optional `ELEVENLABS_VOICE_ID` and model ids.
+- **Secrets.** A new secret on the diary project, `ELEVENLABS_API_KEY` (by name only), plus `ELEVENLABS_VOICE_ID_PT`, `ELEVENLABS_VOICE_ID_EN` and model ids (not secrets).
 
 ### 2.4 Cost and limits
 
@@ -102,7 +102,11 @@ The hackathon is international, so the Seeker voice works in **Portuguese and En
 
 1. **Connect.** She connects the wallet on her phone with Mobile Wallet Adapter (`@solana-mobile/wallet-standard-mobile`, `registerMwa`, chain `solana:devnet`). She proves the wallet is hers by signing a short message (Sign In With Solana); no transaction.
 2. **Record.** `seeker-wallet` checks the signature and records that wallet as her payout destination (`set_payout`) and her choice of **automatic transfer**.
-3. **Pay through.** After each `pay_reward` for her, `reward-payout` queues `withdraw_reward` at once. The money lands in the wallet on her phone with no step of hers. The 24-hour wait applies once, when the wallet is first connected, and is the program's own safety rule.
+3. **Pay through.** After each `pay_reward` for her, `reward-payout` queues `withdraw_reward` at once. The money lands in the wallet on her phone with no step of hers. The 24-hour wait applies once, when the wallet is first recorded, and is the program's own safety rule.
+
+**Order (found 25/11).** `set_payout` needs a **receipt**: only the operator of a campaign that has *already paid her* may write her destination (`SetPayout` checks `[paid, campaign, her ref]`; `diary_payout_set` refuses with `no_reward_yet`). So a wallet cannot be recorded before her first payment, and the 24 hours start only after it. Two consequences:
+- `seeker-wallet` records the wallet and the automatic transfer at once; if she has no payment yet, it keeps the wallet and queues `set_payout` right after her first `pay_reward`, then `withdraw_reward` once the day has passed.
+- For the demo, the payment has to exist **before Friday**, or the transfer lands on Sunday (§4a).
 
 **No program change.** Paying her public key directly from `pay_reward` would need a redeploy and a new program id. It would also put her own key in the attested payment instead of the opaque reference. The two-step path keeps the audit model, and the automatic transfer gives the same experience.
 
@@ -135,45 +139,112 @@ The hackathon is international, so the Seeker voice works in **Portuguese and En
 - Realtime transcription: it costs more than batch.
 - Any of this on the web diary.
 
-## 4a · The demo campaign (founder, 18/11/2026)
+## 4a · The demo campaign (founder, 18/11/2026; order fixed 25/11)
 
-A reward unlocks after 30 days kept, and nothing is attested below five women, so a payout cannot happen live inside one week. The demo uses **a devnet demonstration campaign that started 30+ days before the demo**: the program accepts a past start, as long as the end is still ahead. It has the founder and at least four test accounts, with their days filled in backwards. The video says plainly that it is a devnet demonstration campaign.
+A reward unlocks after 30 days kept, and nothing is attested below five women, so a payout cannot happen live inside one week. The demo uses **a devnet demonstration campaign that started 29 days before it was made** (the Missions page's earliest start; the program accepts a past start as long as the end is still ahead). It has the founder's demo account and four test accounts, with their days filled in backwards. The video says plainly that it is a devnet demonstration campaign.
 
-Everything is seeded in **dev** (§0a), so the demo accounts never touch production. Check on day one, before seeding:
-- whether `private.vault_cohort` and the attestation admit accounts flagged `is_simulated`. In dev, the demo accounts can simply be ordinary accounts, which is the simplest path;
-- the founder's demo account in dev is separate from her real diary in production.
+Because `set_payout` needs a payment first (§3.2, "Order"), the campaign is made, attested and paid **on Thursday 26/11**, with the product as it is: the Missions page and the web diary, pointed at dev. That is data, not an improvement: no code is written or committed for it, and the seed script is a throwaway in the scratchpad.
+
+**Thursday 26/11, step by step:**
+1. **Accounts.** The five demo e-mails sign in to the web diary on dev (run locally with `VITE_DIARY_SUPABASE_URL` and `VITE_DIARY_SUPABASE_PUBLISHABLE_KEY` set to dev), each says yes to the impact figures, and records today.
+2. **Campaign.** On `/app/missions` (same local run, on dev), a campaign starting **28/10** (so it ends 26/11, still ahead when it is made), 100 seats at **0,10 USDC** = 10 devnet USDC, paid from a browser wallet that holds them and some SOL. `campaign-register` records it in dev.
+3. **Days.** A seed, run by the founder in dev's SQL editor, fills 28/10–25/11 for the five accounts (sales and expenses, plausible and varied). Checked first: what "a day kept" is (`private.vault_cohort`, `private.campaign_progress`) so the seed writes exactly that, and that the demo accounts are ordinary accounts, not `is_simulated`.
+4. **Attest and pay.** `campaign-attest` is called the same day, while the campaign is still open (pg_cron runs it daily; one call with `x-campaign-attest-secret` does it now). The run after the attestation confirms pays the five reward wallets (`pay_reward`).
+5. **Destination.** On the web diary, her demo account gives the phone's Solflare address as destination (`diary_payout_set`). The 24 hours start; it is active on **Friday** at the same hour. On Friday the Seeker connects **the same wallet**: the program sees the same destination and does not restart the clock (`set_payout` is a no-op then).
+
+Gate for Thursday night: in dev, her demo account shows a paid reward and a destination waiting for its day.
+
+**If Thursday slips**, the same steps run first thing on Friday, and the transfer can land on Saturday afternoon only if the destination is in by about 14:00 on Friday.
 
 ## 4b · Schedule: Fri 27 → Sun 29 November
 
-Order is set by one hard constraint: **the program's 24-hour wait** before a new payout destination can receive. So the wallet is connected first, on Friday morning, and the payout is shown on Saturday afternoon.
+The 24-hour wait is started on Thursday (§4a), so Friday and Saturday are only the Seeker's own work. The detailed checklist is §4d.
 
 | When | Work | Gate |
 |---|---|---|
 | **Fri 27, morning** | `/app/seeker` route reading `VITE_SEEKER_SUPABASE_*` (dev), and the build check that keeps it out of `/app/diario`; the separate Vercel deployment; webshell app built and installed on her Android; sign-in by e-mail code. | The app on her phone signs in to dev. |
-| **Fri 27, midday** | Wallet connection (MWA + signed message), `seeker-wallet`, the additive migration (destination and automatic transfer), deployed to dev. **She connects the demo wallet as soon as it works**, which starts the 24-hour wait. | Her Phantom/Solflare (devnet) is recorded as destination, before about 14:00. |
+| **Fri 27, midday** | Wallet connection (MWA + signed message), `seeker-wallet`, the additive migration (wallet, automatic transfer), deployed to dev. | Her Solflare (devnet) is recorded by the Seeker app, proven by its signature. |
 | **Fri 27, afternoon** | `diary-speak-seeker` with batch Scribe, allow-list and consent text, deployed to dev. | She says a sale aloud and it becomes a draft. |
-| **Sat 28, morning** | Read-back with Flash (English and Portuguese default voices); confirm by tap. English in transcription and in the figure checks (§2.2b), behind a language argument, with the Portuguese tests unchanged. | She says a sale in English and in Portuguese, hears each back, and confirms. |
-| **Sat 28, midday** | Automatic transfer in `reward-payout` (dev). The demo campaign created on devnet with a past start; its accounts and days seeded in dev; attestation. | The demo campaign is attested on devnet. |
-| **Sat 28, afternoon** | Once the 24 hours are over: `pay_reward`, then the automatic transfer to the wallet on her phone. Fixes. **Code freeze at the end of the day.** | The test USDC shows in the wallet on the phone. |
+| **Sat 28, morning** | Read-back with Flash (her two voices); confirm by tap. English in transcription and in the figure checks (§2.2b), behind a language argument, with the Portuguese tests unchanged. | She says a sale in English and in Portuguese, hears each back, and confirms. |
+| **Sat 28, midday** | Automatic transfer in `reward-payout` (dev): after a payment, and at once for a balance already paid when the destination is active. | The queue holds a `withdraw_reward` for her demo account, made by the automatic transfer. |
+| **Sat 28, afternoon** | The transfer lands on the phone. Fixes. **Code freeze at the end of the day.** | The test USDC shows in the wallet on the phone. |
 | **Sun 29** | No new features. Demo video (voice, read-back, the payout landing), README section for judges, repository checked (no secret, no personal data), submission. | Submitted. |
 
-**Cut line.** Dropped first: the dApp Store listing and native reminders, both now out. If Friday runs late, English goes first and the demo is in Portuguese with English subtitles; then the read-back (TTS), leaving the voice as transcription only. If the payout does not land by Saturday night, the video shows the connected wallet, the attestation and the payment transaction on the explorer, and says the transfer is the next step.
+**Cut line.** Dropped first: the dApp Store listing and native reminders, both now out. If Friday runs late, English goes first and the demo is in Portuguese with English subtitles; then the read-back (TTS), leaving the voice as transcription only. If the transfer does not land by Saturday night, the video shows the connected wallet, the attestation and the payment transaction on the explorer, and says the transfer is the next step.
 
 ## 4c · Before the 27th: preparation that is not code
 
 None of this is an improvement to the project; it is what lets Friday start at full speed.
 
-**The founder:**
-- **ElevenLabs.** Create a **free** account and set `ELEVENLABS_API_KEY` as a secret **on dev** (`boivrcjvsnrmzbregavl`), by name. Listen to the default voices (English, and the multilingual ones in Portuguese) and pick one for each language.
-- **Phone.** Allow installing apps from unknown sources. Install Phantom or Solflare, switch it to **devnet**, and note the wallet address.
-- **Demo accounts.** A separate demo e-mail for herself in dev, and four more test e-mails for the demo campaign.
-- **Devnet funds.** Devnet SOL and USDC (Circle faucet) for dev's operator wallet. Its address can be read from the operator key's path, never its contents.
+**Done (25/11):**
+- **ElevenLabs.** Starter plan (not free): library voices work through the API and the licence covers a public video. `ELEVENLABS_API_KEY` is set on dev, by name, restricted to Text to Speech, Speech to Text and Voices (read), with a credit cap.
+- **Voices.** Portuguese `33B4UnXyTNbgLmdEDh5P`, English `RGymW84CSmfVugnA5tvA` (to confirm which is which by name on ElevenLabs before Friday). They become `ELEVENLABS_VOICE_ID_PT` and `ELEVENLABS_VOICE_ID_EN`, not secrets.
+- **Phone.** Unknown sources and USB debugging on; Solflare on devnet, with devnet SOL and USDC; its address is kept out of this public repository.
+- **Demo accounts.** Her demo e-mail and four test e-mails exist.
+- **Operator.** No new wallet (§0a). The operator `Ax71…UNb` holds about 5 devnet SOL, enough for the demo's transactions.
+- **Dev database.** Migrations through `20270115`; the diary's functions are on dev.
+- **Build tools.** JDK 21, Android SDK (build-tools 35–37, platform 36), `adb`. No `cmdline-tools`: installed only if the webshell asks for `sdkmanager`.
 
-**Done already:**
-- Dev brought up to date with the platform's migrations on 18/11, through `20270112`.
-- The diary's functions are on dev.
+**Thursday 26/11:** the demo campaign, §4a.
 
-**Planning only, nothing committed as code:** a written checklist of each Friday and Saturday task, so the build is execution.
+## 4d · Friday and Saturday, task by task
+
+Each task ends in a PR on main (never stacked), merged by the founder before the next one that needs it. Migrations go to dev only, applied by her (`apply-credit-migrations.sh` with dev's `DB_URL`); functions deploy from `platform/` with `--project-ref boivrcjvsnrmzbregavl`.
+
+### Friday 27
+
+**F1 · The route (08:00–10:00)**
+- `src/app/seeker/` with `SeekerApp.tsx`, routed at `/app/seeker` with `React.lazy`, so its chunk is separate.
+- `src/app/seeker/db.ts`: a Supabase client from `VITE_SEEKER_SUPABASE_URL` / `VITE_SEEKER_SUPABASE_PUBLISHABLE_KEY`; without them the route shows "not available here". It reuses the diary's screens (Today, History, Reports) by passing them this client, with no change to how `/app/diario` builds its own.
+- Build check: a script after `vite build` that reads the manifest and fails if the `/app/diario` chunk graph includes any module under `src/app/seeker/`; added to `npm run build` in CI.
+- Done when: `npm run build` passes, the check fails on purpose when a diary file imports from `seeker/`, the web diary's tests are unchanged.
+
+**F2 · Deployment and the APK (10:00–11:30)**
+- A second Vercel project on the same repo, with only `VITE_SEEKER_*` (dev) set. Production's project gets nothing.
+- `npx solana-mobile@0.6.0 webshell --help`, then `init` with package id `io.empowerfi.diario` and that deployment's `/app/seeker` URL; the generated Android project lives outside `src/` (`apps/seeker-shell/`), with no keystore in the repo. A debug build is enough for the demo.
+- `adb install` on her phone, by cable.
+- Done when: the app opens on her phone, signs in to dev with the e-mail code, and records a day.
+
+**F3 · The wallet (11:30–14:00)**
+- `@solana-mobile/wallet-standard-mobile` (0.7.x) imported only under `src/app/seeker/`; `registerMwa` with chain `solana:devnet`.
+- Sign In With Solana: the app asks `seeker-wallet` for a nonce, the wallet signs the message (domain, her account, nonce, expiry), no transaction.
+- Migration `…_her_phone_wallet_on_the_seeker.sql` (additive): `private.seeker_wallets` (her account, address, auto transfer, nonce, verified at) and RPCs `seeker_wallet_nonce()`, `seeker_wallet_record(address, signature, message)` through the function only.
+- `seeker-wallet` (new function): checks the ed25519 signature, the nonce and its age, and that the address is a valid key; records the wallet; calls `diary_payout_set` for her if she has a payment and the destination differs; otherwise keeps it for after her first payment.
+- Tests: wrong signer, old nonce, another account's nonce, same address twice.
+- Done when: on the phone she connects Solflare, signs, and dev shows the wallet recorded with automatic transfer on.
+
+**F4 · Voice in (14:00–18:00)**
+- `_shared/elevenlabs.ts`: `scribeRequest(apiKey, model, audio, language)` building the `multipart/form-data` call to `POST /v1/speech-to-text` (`model_id`, `language_code`, `file`), and `readTranscript(body)`. The model id from `ELEVENLABS_STT_MODEL`, default the cheapest batch Scribe listed on the day.
+- `diary-speak-seeker`: a copy of `diary-speak` that transcribes with `scribeRequest` and refuses accounts outside the allow-list (`SEEKER_VOICE_ALLOW`, e-mails, as a secret on dev) with 403; reading, checks and draft through `_shared/spoken.ts` as today.
+- The Seeker's record button posts to it; a one-time consent screen ("sua voz vai para a ElevenLabs, fora do Brasil, para virar texto") stored per account.
+- Tests: request builder with fetch mocked; allow-list refusal; `spoken.test.ts` unchanged.
+- Done when: on the phone she says "vendi trinta reais de bolo no pix" and gets the draft.
+
+### Saturday 28
+
+**S1 · Voice out (08:00–10:30)**
+- `ttsRequest(apiKey, voiceId, model, text)` for `POST /v1/text-to-speech/{voice_id}` with `eleven_flash_v2_5` (or the cheapest listed), `output_format` mp3 at the lowest bitrate.
+- `diary-speak-seeker` returns the read-back audio (base64) with the draft; a per-account daily cap on characters. If TTS fails, the draft comes without audio.
+- The Seeker plays it and shows Confirm / Discard; the tap decides.
+- Done when: she hears "Entendi: venda de R$ 30,00 de bolo, no Pix. Está certo?" and confirms.
+
+**S2 · English (10:30–12:00)**
+- A `lang` argument through `diary-speak-seeker`: Scribe `language_code`, the voice, and the read-back wording from `tr({ en, pt })`.
+- `_shared/spoken.ts`: English number words, "thousand", "bucks", "reais"/"real" behind `lang = "en"`; the Portuguese path byte-for-byte as before.
+- Tests: new English cases; every existing Portuguese test unchanged.
+- Done when: "I sold thirty reais of cake by pix" becomes the same draft.
+
+**S3 · Automatic transfer (12:00–14:00)**
+- Additive change in `reward-payout` (or a step in `campaign-attest` after `pay_reward`): for a woman with a Seeker wallet and automatic transfer on, queue `withdraw_reward` after a payment, and once at the start for a balance already paid when her destination becomes active. Nothing changes for anyone without a Seeker wallet.
+- Only devnet campaigns (Missions and the demo), never mirrors.
+- Tests: queued once per payment; never without opt-in; never for a mirror.
+- Done when: the queue holds her `withdraw_reward` and `reward-payout` sends it.
+
+**S4 · Landing and freeze (14:00–19:00)**
+- The USDC shows in Solflare on devnet on the phone; the Seeker shows "R$ … na sua carteira" with the explorer link.
+- The web diary's tests and the screenshot pass of `/app/diario` before/after (§5).
+- Repository check: no key, no e-mail, no address of a real woman.
+- **Code freeze at 19:00.**
 
 ## 5 · Tests
 
