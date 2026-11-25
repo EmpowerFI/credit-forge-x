@@ -37,6 +37,11 @@ const SiteHeader = ({ home, lang, links, language, primary, appLabel, menuLabel 
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const close = () => setOpen(false);
+  // A link to the page already open does not change the location, so nothing
+  // would scroll: take her back to its top, where the page explains itself.
+  const toTop = (to: string) => () => {
+    if (to === pathname) window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const quiet = "text-foreground/85 transition-colors hover:text-accent";
   const top = links.filter((l) => l.top);
@@ -53,7 +58,7 @@ const SiteHeader = ({ home, lang, links, language, primary, appLabel, menuLabel 
         <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-6">
           <nav aria-label={menuLabel} className="hidden items-center gap-6 lg:flex">
             {top.map((l) => (
-              <Link key={l.to} to={l.to} aria-current={pathname === l.to ? "page" : undefined}
+              <Link key={l.to} to={l.to} onClick={toTop(l.to)} aria-current={pathname === l.to ? "page" : undefined}
                 className={`${quiet} whitespace-nowrap text-base xl:text-[1.0625rem] ${l.top === "xl" ? "hidden xl:inline" : ""}`}>
                 {l.label}
               </Link>
@@ -63,7 +68,7 @@ const SiteHeader = ({ home, lang, links, language, primary, appLabel, menuLabel 
             <Link to={`/app/missions?lang=${lang}`} className="btn-site !min-h-[2.75rem] !px-4 !text-base xl:!min-h-[2.875rem] xl:!px-5 xl:!text-[1.0625rem]">
               {appLabel} <ArrowUpRight size={15} className="text-accent" aria-hidden />
             </Link>
-            <Link to={primary.to} className="btn-site btn-site-primary !min-h-[2.75rem] !px-5 !text-base xl:!min-h-[2.875rem] xl:!text-[1.0625rem]">
+            <Link to={primary.to} onClick={toTop(primary.to)} className="btn-site btn-site-primary !min-h-[2.75rem] !px-5 !text-base xl:!min-h-[2.875rem] xl:!text-[1.0625rem]">
               {primary.label}
             </Link>
           </nav>
@@ -93,7 +98,7 @@ const SiteHeader = ({ home, lang, links, language, primary, appLabel, menuLabel 
         <div id="site-menu" className="border-t border-foreground/15 bg-background xl:hidden">
           <div className="container mx-auto divide-y divide-foreground/12 px-4 pb-5 md:px-8">
             {[...links, { to: language.to, label: language.otherName }].map((l) => (
-              <Link key={l.to} to={l.to} onClick={close}
+              <Link key={l.to} to={l.to} onClick={() => { close(); toTop(l.to)(); }}
                 aria-current={pathname === l.to ? "page" : undefined}
                 className={`flex min-h-[3rem] items-center text-[1.0625rem] ${quiet}`}>
                 {l.label}
@@ -103,7 +108,7 @@ const SiteHeader = ({ home, lang, links, language, primary, appLabel, menuLabel 
               <Link to={`/app/missions?lang=${lang}`} onClick={close} className="btn-site w-full">
                 {appLabel} <ArrowUpRight size={15} className="text-accent" aria-hidden />
               </Link>
-              <Link to={primary.to} onClick={close} className="btn-site btn-site-primary w-full lg:hidden">{primary.label}</Link>
+              <Link to={primary.to} onClick={() => { close(); toTop(primary.to)(); }} className="btn-site btn-site-primary w-full lg:hidden">{primary.label}</Link>
             </div>
           </div>
         </div>

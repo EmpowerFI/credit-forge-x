@@ -162,7 +162,7 @@ export function HomePage({ lang }: { lang: Lang }) {
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <SiteLinkButton to={p.entrepreneurs} primary>{t.traction.join} <ArrowRight size={18} className="text-accent" aria-hidden /></SiteLinkButton>
-            <SiteLinkButton to={`${p.sponsors}#contact`}>{t.traction.partner} <ArrowRight size={18} className="text-accent" aria-hidden /></SiteLinkButton>
+            <SiteLinkButton to={p.sponsors}>{t.traction.partner} <ArrowRight size={18} className="text-accent" aria-hidden /></SiteLinkButton>
           </div>
         </div>
       </Section>
