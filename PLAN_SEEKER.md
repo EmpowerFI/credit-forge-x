@@ -185,6 +185,8 @@ None of this is an improvement to the project; it is what lets Friday start at f
 - **Dev database.** Migrations through `20270115`; the diary's functions are on dev.
 - **Build tools.** JDK 21, Android SDK (build-tools 35–37, platform 36), `adb`. No `cmdline-tools`: installed only if the webshell asks for `sdkmanager`.
 
+- **Sponsor wallet for the demo campaign.** A Solflare browser wallet on the computer, new (not the phone's seed), funded from the phone with devnet USDC and SOL to pay the Missions campaign.
+
 **Thursday 26/11:** the demo campaign, §4a.
 
 ## 4d · Friday and Saturday, task by task
