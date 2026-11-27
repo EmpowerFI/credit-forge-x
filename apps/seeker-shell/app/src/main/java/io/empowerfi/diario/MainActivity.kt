@@ -1,6 +1,8 @@
 package io.empowerfi.diario
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewGroup
@@ -11,6 +13,8 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
@@ -43,6 +47,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -81,6 +86,23 @@ fun WebShellScreen() {
     var isRefreshing by remember { mutableStateOf(false) }
     var hasError by remember { mutableStateOf(false) }
     var showSplash by remember { mutableStateOf(true) }
+
+    // EmpowerFI: the microphone for the page's voice notes. Asked of her once;
+    // the answer goes back to the WebView's permission request.
+    val pendingMicrophone = remember { arrayOfNulls<(Boolean) -> Unit>(1) }
+    val microphoneLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            pendingMicrophone[0]?.invoke(granted)
+            pendingMicrophone[0] = null
+        }
+    val askMicrophone: ((Boolean) -> Unit) -> Unit = { onResult ->
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            onResult(true)
+        } else {
+            pendingMicrophone[0] = onResult
+            microphoneLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
 
     val webView =
         remember {
@@ -124,6 +146,8 @@ fun WebShellScreen() {
                             isLoading = newProgress < 100
                         },
                         isDebug = BuildConfig.DEBUG,
+                        scopeHost = scopeHost,
+                        askMicrophone = askMicrophone,
                     )
 
                 webViewClient =

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Message
 import android.util.Log
 import android.webkit.ConsoleMessage
+import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -13,7 +14,22 @@ import android.webkit.WebViewClient
 class WebShellChromeClient(
     private val onProgressChanged: (Int) -> Unit,
     private val isDebug: Boolean,
+    // EmpowerFI: the microphone, for the voice notes on /app/seeker. Only the
+    // app's own host may ask; Android asks her once (RECORD_AUDIO).
+    private val scopeHost: String,
+    private val askMicrophone: (onResult: (Boolean) -> Unit) -> Unit,
 ) : WebChromeClient() {
+    override fun onPermissionRequest(request: PermissionRequest) {
+        val audioOnly = request.resources.all { it == PermissionRequest.RESOURCE_AUDIO_CAPTURE }
+        if (request.origin.host != scopeHost || !audioOnly) {
+            request.deny()
+            return
+        }
+        askMicrophone { granted ->
+            if (granted) request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) else request.deny()
+        }
+    }
+
     override fun onProgressChanged(
         view: WebView,
         newProgress: Int,
