@@ -10,6 +10,7 @@ import { diary, diaryErrorText, PROFILE_KEY } from "../diary/diary";
 import { DiaryLogo } from "../diary/Brand";
 import { seekerOpen } from "./config";
 import { SeekerWallet } from "./SeekerWallet";
+import { SeekerSpeak } from "./SeekerSpeak";
 
 // The Seeker app (hackathon, 27–28/11/2026; PLAN_SEEKER.md). Its own route,
 // /app/seeker, lazy-loaded: nothing here reaches the web diary's bundle
@@ -75,10 +76,10 @@ function Gate() {
     );
   }
   if (!profile.data.enrolled) return <Navigate to="/app/diario" replace />;
-  return <Home name={profile.data.name ?? ""} />;
+  return <Home name={profile.data.name ?? ""} userId={session.user.id} />;
 }
 
-function Home({ name }: { name: string }) {
+function Home({ name, userId }: { name: string; userId: string }) {
   const first = name.trim().split(/\s+/)[0] ?? "";
   return (
     <>
@@ -92,6 +93,7 @@ function Home({ name }: { name: string }) {
         <h1 className="font-heading text-2xl">
           {first ? tr({ en: `Hi, ${first}`, pt: `Oi, ${first}` }) : tr({ en: "Hi", pt: "Oi" })}
         </h1>
+        <SeekerSpeak userId={userId} />
         <SeekerWallet />
         <section className="rounded-lg border border-border bg-card p-4">
           <h2 className="font-semibold">{tr({ en: "Your diary", pt: "Seu diário" })}</h2>
