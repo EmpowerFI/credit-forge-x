@@ -1,0 +1,13 @@
+{
+  "fallbackType": "webview",
+  "generatorApp": "solana-mobile",
+  "host": "empowerfi-seeker-dev.vercel.app",
+  "launcherName": "EmpowerFI",
+  "name": "EmpowerFI",
+  "packageId": "io.empowerfi.diario",
+  "startUrl": "/app/seeker",
+  "signingKey": {
+    "alias": "empowerfi",
+    "path": "../../../../.config/empowerfi/seeker/empowerfi-seeker.keystore"
+  }
+}
