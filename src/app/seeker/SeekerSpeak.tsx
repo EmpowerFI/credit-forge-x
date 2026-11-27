@@ -6,7 +6,7 @@ import { getLocale, tr } from "../i18n";
 import { diaryDb } from "../diary/db";
 import {
   addDays, brl, CATEGORIES, type Category, categoryLabel, dayName, diary, type Line, methodLabel, newRequestId,
-  PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY, spToday,
+  parseReais, PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY, spToday,
 } from "../diary/diary";
 
 // The Seeker's voice (PLAN_SEEKER.md §2.2): she says what she sold and spent,
@@ -66,19 +66,29 @@ function lineProblem(l: Line, day: string): string | null {
   return null;
 }
 
+/** A card, sale or expense: whether it is paid at once or in instalments is hers to say (founder, 27/11/2026). */
+const asksTerms = (l: Line) => l.payment_method === "credit_card";
+/** What the draft opens for her: an expense's category, a card's terms. */
+const needsHand = (l: Line) => l.kind === "expense" || asksTerms(l);
+
 /**
- * What the voice cannot always catch, she sets by hand (founder, 27/11/2026):
- * how it was paid, the instalments and the first due date, and what an
- * expense was for. The amount stays what she said.
+ * What the voice does not decide, she sets by hand (founder, 27/11/2026): an
+ * expense's category (she may say anything, and the list is ours), and for a
+ * card whether it is at once or in instalments, how many and from when. How
+ * it was paid can be changed too. The amount stays what she said.
  */
 function LineEditor({ line, day, index, onChange }: { line: Line; day: string; index: number; onChange: (l: Line) => void }) {
   const later = line.due_on !== undefined;
   const id = (name: string) => `voice-${name}-${index}`;
+  const setLater = (on: boolean) => {
+    const { due_on: _due, installments: _n, ...rest } = line;
+    onChange(on ? { ...rest, due_on: line.due_on ?? addDays(day, 30), installments: line.installments ?? 1 } : rest);
+  };
   return (
     <div className="space-y-3 rounded-md bg-muted/60 p-3">
       {line.kind === "expense" && (
         <div className="space-y-1">
-          <label htmlFor={id("cat")} className="text-sm font-medium">{tr({ en: "What for", pt: "Com o quê" })}</label>
+          <label htmlFor={id("cat")} className="text-sm font-medium">{tr({ en: "What was it for?", pt: "Com o que foi o gasto?" })}</label>
           <select id={id("cat")} className={selectClass} value={line.category ?? ""}
             onChange={(e) => onChange({ ...line, category: (e.target.value || undefined) as Category | undefined })}>
             <option value="">{tr({ en: "Choose", pt: "Escolha" })}</option>
@@ -95,16 +105,23 @@ function LineEditor({ line, day, index, onChange }: { line: Line; day: string; i
           {PAYMENT_METHODS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>
       </div>
-      <label className="flex min-h-11 items-center gap-3 text-sm">
-        <input type="checkbox" className="h-5 w-5" checked={later}
-          onChange={(e) => {
-            const { due_on: _due, installments: _n, ...rest } = line;
-            onChange(e.target.checked ? { ...rest, due_on: addDays(day, 30), installments: line.installments ?? 1 } : rest);
-          }} />
-        {line.kind === "sale" ? tr({ en: "In instalments or received later", pt: "Parcelado ou recebo depois" }) : tr({ en: "In instalments or paid later", pt: "Parcelado ou pago depois" })}
-      </label>
+      <div role="group" aria-label={tr({ en: "At once or in instalments", pt: "À vista ou parcelado" })} className="grid grid-cols-2 gap-2">
+        <Button type="button" variant={later ? "outline" : "default"} className="h-11" aria-pressed={!later} onClick={() => setLater(false)}>
+          {tr({ en: "At once", pt: "À vista" })}
+        </Button>
+        <Button type="button" variant={later ? "default" : "outline"} className="h-11" aria-pressed={later} onClick={() => setLater(true)}>
+          {tr({ en: "In instalments", pt: "Parcelado" })}
+        </Button>
+      </div>
       {later && (
         <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label htmlFor={id("inst")} className="text-sm font-medium">{tr({ en: "How many", pt: "Quantas vezes" })}</label>
+            <select id={id("inst")} className={selectClass} value={line.installments ?? 1}
+              onChange={(e) => onChange({ ...line, installments: Number(e.target.value) })}>
+              {Array.from({ length: 12 }, (_, n) => <option key={n + 1} value={n + 1}>{n + 1}x</option>)}
+            </select>
+          </div>
           <div className="space-y-1">
             <label htmlFor={id("due")} className="text-sm font-medium">
               {(line.installments ?? 1) > 1 ? tr({ en: "1st due date", pt: "1º vencimento" }) : tr({ en: "Due date", pt: "Vencimento" })}
@@ -113,16 +130,53 @@ function LineEditor({ line, day, index, onChange }: { line: Line; day: string; i
               onChange={(e) => onChange({ ...line, due_on: e.target.value })}
               className="h-11 w-full rounded-md border border-input bg-background px-3 text-base" />
           </div>
-          <div className="space-y-1">
-            <label htmlFor={id("inst")} className="text-sm font-medium">{tr({ en: "Instalments", pt: "Parcelas" })}</label>
-            <select id={id("inst")} className={selectClass} value={line.installments ?? 1}
-              onChange={(e) => onChange({ ...line, installments: Number(e.target.value) })}>
-              {Array.from({ length: 12 }, (_, n) => <option key={n + 1} value={n + 1}>{n + 1}x</option>)}
-            </select>
-          </div>
         </div>
       )}
     </div>
+  );
+}
+
+/** When the voice could not make a record: she writes it, one line, with the same fields. */
+function ManualLine({ day, busy, onSave, onCancel }: { day: string; busy: boolean; onSave: (l: Line) => void; onCancel: () => void }) {
+  const [amount, setAmount] = useState("");
+  const [line, setLine] = useState<Line>({ kind: "sale", amount_cents: 0, payment_method: "pix" });
+  const [problem, setProblem] = useState<string | null>(null);
+  const save = () => {
+    const cents = parseReais(amount);
+    if (cents === null) {
+      return setProblem(amount.trim()
+        ? tr({ en: `"${amount}" is not an amount.`, pt: `"${amount}" não é um valor.` })
+        : tr({ en: "Fill in the amount.", pt: "Preencha o valor." }));
+    }
+    const full = cleanLine({ ...line, amount_cents: cents });
+    const wrong = lineProblem(full, day);
+    if (wrong) return setProblem(wrong);
+    onSave(full);
+  };
+  return (
+    <form className="space-y-3" noValidate onSubmit={(e) => { e.preventDefault(); save(); }}>
+      <p className="font-medium">{tr({ en: "Write it here:", pt: "Anote aqui:" })}</p>
+      <div role="group" aria-label={tr({ en: "Sale or expense", pt: "Venda ou gasto" })} className="grid grid-cols-2 gap-2">
+        {(["sale", "expense"] as const).map((k) => (
+          <Button key={k} type="button" variant={line.kind === k ? "default" : "outline"} className="h-11" aria-pressed={line.kind === k}
+            onClick={() => { setProblem(null); setLine(({ category: _c, ...rest }) => ({ ...rest, kind: k })); }}>
+            {k === "sale" ? tr({ en: "💰 Sale", pt: "💰 Venda" }) : tr({ en: "💸 Expense", pt: "💸 Gasto" })}
+          </Button>
+        ))}
+      </div>
+      <div className="space-y-1">
+        <label htmlFor="voice-manual-amount" className="text-sm font-medium">{tr({ en: "Amount (R$)", pt: "Valor (R$)" })}</label>
+        <input id="voice-manual-amount" inputMode="decimal" autoComplete="off" placeholder="0,00" value={amount}
+          onChange={(e) => { setProblem(null); setAmount(e.target.value); }}
+          className="h-11 w-full rounded-md border border-input bg-background px-3 text-base" />
+      </div>
+      <LineEditor line={line} day={day} index={99} onChange={(l) => { setProblem(null); setLine(l); }} />
+      {problem && <p role="alert" className="text-sm text-destructive">{problem}</p>}
+      <div className="grid grid-cols-2 gap-3">
+        <Button type="submit" className="h-12" disabled={busy}>{tr({ en: "Save", pt: "Salvar" })}</Button>
+        <Button type="button" variant="outline" className="h-12" disabled={busy} onClick={onCancel}>{tr({ en: "Cancel", pt: "Cancelar" })}</Button>
+      </div>
+    </form>
   );
 }
 
@@ -151,6 +205,7 @@ export function SeekerSpeak({ userId }: { userId: string }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
   const [editing, setEditing] = useState<Set<number>>(new Set());
+  const [manual, setManual] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const timer = useRef<number | null>(null);
@@ -193,20 +248,18 @@ export function SeekerSpeak({ userId }: { userId: string }) {
     if (data.draft_id) {
       setDraft(data);
       setLines(data.lines);
-      // A card sale or an expense without its category: open for her to check.
-      setEditing(new Set(data.lines.flatMap((l, i) => (l.payment_method === "credit_card" || (l.kind === "expense" && !l.category) ? [i] : []))));
+      // An expense (its category) or a card (at once or in instalments): open for her.
+      setEditing(new Set(data.lines.flatMap((l, i) => (needsHand(l) ? [i] : []))));
       return;
     }
+    // Nothing it could make a record of: she writes it by hand.
+    setManual(true);
     setNotes([
       ...(data.heard ? [`🎙️ «${data.heard}»`] : []),
       data.error === "not_heard"
         ? tr({ en: "I could not hear anything. Try again, closer to the phone.", pt: "Não ouvi nada. Tente de novo, mais perto do celular." })
         : tr({ en: "I could not make a record from that.", pt: "Não consegui montar um registro com isso." }),
       ...(data.notes ?? []),
-      tr({
-        en: "Say the amount and how it was paid, e.g. «sold 30 of cake by Pix».",
-        pt: "Diga o valor e como recebeu ou pagou, por exemplo: «vendi 30 reais de bolo no Pix».",
-      }),
     ]);
   };
 
@@ -286,6 +339,22 @@ export function SeekerSpeak({ userId }: { userId: string }) {
     }
   };
 
+  const saveByHand = async (l: Line) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await diary.record({ requestId: newRequestId(), day: today, lines: [l] });
+      setManual(false);
+      setNotes([]);
+      setSaved(dayName(today, today));
+      void queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
+    } catch {
+      setError(tr({ en: "It was not saved. Try again.", pt: "Não foi salvo. Tente de novo." }));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!consented) {
     return (
       <section className="space-y-3 rounded-lg border border-border bg-card p-4" aria-labelledby="seeker-voice-title">
@@ -338,6 +407,8 @@ export function SeekerSpeak({ userId }: { userId: string }) {
             <Button variant="outline" className="h-12" disabled={busy} onClick={() => void decide(false)}>{tr({ en: "Discard", pt: "Descartar" })}</Button>
           </div>
         </div>
+      ) : manual ? (
+        <ManualLine day={today} busy={busy} onSave={(l) => void saveByHand(l)} onCancel={() => { setManual(false); setNotes([]); }} />
       ) : (
         <div className="space-y-2 text-center">
           {recording ? (
@@ -358,6 +429,11 @@ export function SeekerSpeak({ userId }: { userId: string }) {
                 ? tr({ en: "Listening…", pt: "Ouvindo…" })
                 : tr({ en: "Tap and say what you sold or spent.", pt: "Toque e diga o que vendeu ou gastou." })}
           </p>
+          {!recording && !busy && (
+            <Button variant="ghost" className="h-10" onClick={() => { setSaved(null); setManual(true); }}>
+              {tr({ en: "Write it instead", pt: "Prefiro anotar" })}
+            </Button>
+          )}
         </div>
       )}
 

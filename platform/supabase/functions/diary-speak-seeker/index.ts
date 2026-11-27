@@ -126,7 +126,8 @@ Deno.serve(async (req) => {
     const input = toolInput(body);
     if (input === null) throw new Error("model returned no reading");
 
-    const reading = readInterpretation(input, said, now);
+    // The Seeker: category, card dates and instalments are hers to set by hand in the draft.
+    const reading = readInterpretation(input, said, now, { byHand: true });
     // The screen says which day; her words win only when she named one.
     if (!reading.daySaid) reading.day = chosenDay;
     // Counts only: refusals quote her words, which stay out of the log.
