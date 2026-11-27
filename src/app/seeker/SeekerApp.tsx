@@ -9,6 +9,7 @@ import { diaryClosed, useDiarySession } from "../diary/db";
 import { diary, diaryErrorText, PROFILE_KEY } from "../diary/diary";
 import { DiaryLogo } from "../diary/Brand";
 import { seekerOpen } from "./config";
+import { SeekerWallet } from "./SeekerWallet";
 
 // The Seeker app (hackathon, 27–28/11/2026; PLAN_SEEKER.md). Its own route,
 // /app/seeker, lazy-loaded: nothing here reaches the web diary's bundle
@@ -91,6 +92,7 @@ function Home({ name }: { name: string }) {
         <h1 className="font-heading text-2xl">
           {first ? tr({ en: `Hi, ${first}`, pt: `Oi, ${first}` }) : tr({ en: "Hi", pt: "Oi" })}
         </h1>
+        <SeekerWallet />
         <section className="rounded-lg border border-border bg-card p-4">
           <h2 className="font-semibold">{tr({ en: "Your diary", pt: "Seu diário" })}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
