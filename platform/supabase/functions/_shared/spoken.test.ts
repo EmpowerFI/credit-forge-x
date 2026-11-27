@@ -241,3 +241,54 @@ Deno.test("what she said rides on the draft, so a voice note costs one message",
   assertEquals(two.before, longHeard);
   assertEquals(two.body.startsWith("Entendi assim"), true);
 });
+
+Deno.test("by hand (Seeker): a card sale without its date and an expense without its category are kept, for her to finish", () => {
+  const said = "vendi 350 no cartão em 3x e gastei 40 no pix com umas coisinhas";
+  const input = {
+    day: "today",
+    lines: [
+      line({ amount_quote: "350", payment_method: "credit_card" }),
+      line({ kind: "expense", amount_quote: "40", payment_method: "pix", category: "other" }),
+    ],
+    left_out: [],
+  };
+  const seeker = readInterpretation(input, said, EVENING, { byHand: true });
+  assertEquals(seeker.lines, [
+    { kind: "sale", amount_cents: 35_000, payment_method: "credit_card" },
+    // The model's category is not kept: she picks it.
+    { kind: "expense", amount_cents: 4_000, payment_method: "pix" },
+  ]);
+  assertEquals(seeker.notes, []);
+
+  // Everyone else, as before: the card sale without a date is left out with a note.
+  const web = readInterpretation(input, said, EVENING);
+  assertEquals(web.lines, [{ kind: "expense", amount_cents: 4_000, payment_method: "pix", category: "other" }]);
+  assertEquals(web.notes.length, 1);
+});
+
+Deno.test("by hand: a date and instalments she said are still read", () => {
+  const said = "paguei 600 de mercadoria no cartão em 3x, a primeira dia 10";
+  const r = readInterpretation({
+    day: null,
+    lines: [line({ kind: "expense", amount_quote: "600", payment_method: "credit_card", category: "stock", paid_later: true, due_quote: "dia 10", installments_quote: "3x" })],
+    left_out: [],
+  }, said, EVENING, { byHand: true });
+  assertEquals(r.lines, [{ kind: "expense", amount_cents: 60_000, payment_method: "credit_card", due_on: "2026-11-10", installments: 3 }]);
+});
+
+Deno.test("by hand: a date it cannot read leaves the line, without the date", () => {
+  const said = "paguei 600 no cartão pra pagar depois";
+  const r = readInterpretation({
+    day: null,
+    lines: [line({ kind: "expense", amount_quote: "600", payment_method: "credit_card", paid_later: true, due_quote: "", installments_quote: "" })],
+    left_out: [],
+  }, said, EVENING, { byHand: true });
+  assertEquals(r.lines, [{ kind: "expense", amount_cents: 60_000, payment_method: "credit_card" }]);
+  assertEquals(r.notes, []);
+});
+
+Deno.test("by hand: a figure she did not say is still refused", () => {
+  const r = readInterpretation({ day: null, lines: [line({ amount_quote: "999", payment_method: "pix" })], left_out: [] },
+    "vendi 250 no pix", EVENING, { byHand: true });
+  assertEquals(r.lines, []);
+});

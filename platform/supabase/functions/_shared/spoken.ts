@@ -395,7 +395,19 @@ const brl = (cents: number) => `R$ ${formatBRL(cents)}`;
  * goes at nine, about the day before -- and one after noon about today. She
  * sees the date before anything is written.
  */
-export function readInterpretation(input: unknown, said: string, sentAt: Date): Reading {
+export function readInterpretation(
+  input: unknown,
+  said: string,
+  sentAt: Date,
+  /**
+   * The Seeker app (founder, 27/11/2026): from her voice only the amount, sale
+   * or expense, and how it was paid. An expense's category, a card's due date
+   * and instalments she sets by hand in the draft, so a line missing them is
+   * kept, without them, instead of left out. Off for everyone else.
+   */
+  opts: { byHand?: boolean } = {},
+): Reading {
+  const byHand = opts.byHand === true;
   const refusals: string[] = [];
   const notes: string[] = [];
   const answer = (input ?? {}) as { day?: unknown; lines?: unknown; left_out?: unknown };
@@ -450,23 +462,26 @@ export function readInterpretation(input: unknown, said: string, sentAt: Date): 
       continue;
     }
 
-    /** A date from her words, or a note saying it is missing. */
+    /** A date from her words, or a note saying it is missing. By hand, she sets it: no note. */
+    const note = (text: string) => {
+      if (!byHand) notes.push(text);
+    };
     const dueOrNote = (missing: string): string | null => {
       const q = typeof l.due_quote === "string" ? l.due_quote : "";
       if (q === "") {
-        notes.push(`${what}: ${missing}`);
+        note(`${what}: ${missing}`);
         return null;
       }
       if (occurrences(q, said) === 0) {
         refusals.push(`line ${i}: due ${JSON.stringify(q)} not in the words`);
-        notes.push(`${what}: ${missing}`);
+        note(`${what}: ${missing}`);
         return null;
       }
       try {
         return dueFrom(q, day);
       } catch (e) {
         refusals.push(`line ${i}: ${String(e)}`);
-        notes.push(`${what}: não entendi a data «${q}». Diga o dia, assim: dia 10, ou 10/11.`);
+        note(`${what}: não entendi a data «${q}». Diga o dia, assim: dia 10, ou 10/11.`);
         return null;
       }
     };
@@ -475,41 +490,54 @@ export function readInterpretation(input: unknown, said: string, sentAt: Date): 
     if (kind === "sale") {
       if (method === "credit_card" || method === "fiado") {
         const due = dueOrNote(`faltou dizer quando vai receber (${METHOD_TITLE[method].toLowerCase()}).`);
-        if (due === null) continue;
-        line.due_on = due;
+        if (due !== null) line.due_on = due;
+        else if (!byHand) continue;
       }
     } else {
-      const category = CATEGORY_IDS.includes(l.category as Category) ? l.category as Category : null;
-      if (category === null) {
+      // By hand, the category is hers to pick: whatever the model chose is not kept.
+      const category = !byHand && CATEGORY_IDS.includes(l.category as Category) ? l.category as Category : null;
+      if (category === null && !byHand) {
         notes.push(`${what}: faltou dizer com o quê.`);
         continue;
       }
-      line.category = category;
+      if (category !== null) line.category = category;
       if (l.paid_later === true) {
         const due = dueOrNote("faltou dizer quando vai pagar.");
-        if (due === null) continue;
+        if (due === null) {
+          if (byHand) {
+            lines.push(line);
+            continue;
+          }
+          continue;
+        }
         line.due_on = due;
         const iq = typeof l.installments_quote === "string" ? l.installments_quote : "";
         if (iq !== "") {
+          let k = 1;
           if (occurrences(iq, said) === 0) {
             refusals.push(`line ${i}: instalments ${JSON.stringify(iq)} not in the words`);
-            notes.push(`${what}: não entendi em quantas parcelas.`);
-            continue;
-          }
-          let k: number;
-          try {
-            k = installmentsFrom(iq);
-          } catch (e) {
-            refusals.push(`line ${i}: ${String(e)}`);
-            notes.push(`${what}: não entendi em quantas parcelas.`);
-            continue;
+            if (!byHand) {
+              notes.push(`${what}: não entendi em quantas parcelas.`);
+              continue;
+            }
+          } else {
+            try {
+              k = installmentsFrom(iq);
+            } catch (e) {
+              refusals.push(`line ${i}: ${String(e)}`);
+              if (!byHand) {
+                notes.push(`${what}: não entendi em quantas parcelas.`);
+                continue;
+              }
+            }
           }
           if (k > 1) {
             if (cents < k) {
-              notes.push(`${what}: valor pequeno demais para ${k} parcelas.`);
-              continue;
-            }
-            line.installments = k;
+              if (!byHand) {
+                notes.push(`${what}: valor pequeno demais para ${k} parcelas.`);
+                continue;
+              }
+            } else line.installments = k;
           }
         }
       }
