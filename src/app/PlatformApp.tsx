@@ -40,6 +40,8 @@ const ReportPage = lazy(() => import("./pages/ReportPage"));
 // EmpowerFI Missions: real diary figures and campaign vaults on devnet, no sign-in.
 const MissionsPage = lazy(() => import("./missions/MissionsPage"));
 const DiaryApp = lazy(() => import("./diary/DiaryApp"));
+// The Seeker app (hackathon): closed unless the deployment sets VITE_SEEKER=1.
+const SeekerApp = lazy(() => import("./seeker/SeekerApp"));
 const PassportPage = lazy(() => import("./pages/PassportPage"));
 const ConsentPage = lazy(() => import("./pages/ConsentPage"));
 const EvidencePage = lazy(() => import("./pages/EvidencePage"));
@@ -129,6 +131,7 @@ function Pages() {
       <Route path="login" element={<LoginPage />} />
       {/* The entrepreneur's daily diary: its own sign-in, layout and guard. */}
       <Route path="diario/*" element={<Suspense fallback={null}><DiaryApp /></Suspense>} />
+      <Route path="seeker/*" element={<Suspense fallback={null}><SeekerApp /></Suspense>} />
       <Route path="missions" element={<Suspense fallback={null}><MissionsPage /></Suspense>} />
       <Route path="report/:token" element={<Suspense fallback={null}><ReportPage /></Suspense>} />
       <Route path="passport/:token" element={<Suspense fallback={null}><PassportPage /></Suspense>} />
