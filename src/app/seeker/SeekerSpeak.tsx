@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Mic, Square } from "lucide-react";
+import { Check, Loader2, Mic, Pencil, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getLocale, tr } from "../i18n";
 import { diaryDb } from "../diary/db";
-import { brl, categoryLabel, dayName, type Line, methodLabel, newRequestId, PROFILE_KEY, spToday } from "../diary/diary";
+import {
+  addDays, brl, CATEGORIES, type Category, categoryLabel, dayName, diary, type Line, methodLabel, newRequestId,
+  PAYMENT_METHODS, type PaymentMethod, PROFILE_KEY, spToday,
+} from "../diary/diary";
 
 // The Seeker's voice (PLAN_SEEKER.md §2.2): she says what she sold and spent,
 // ElevenLabs hears it (diary-speak-seeker), the shared reading makes a draft,
@@ -38,10 +41,95 @@ function recorderType(): string | undefined {
   return undefined;
 }
 
+const ddmm = (day: string) => `${day.slice(8)}/${day.slice(5, 7)}`;
+
 function lineText(l: Line): string {
+  const later = l.due_on
+    ? (l.installments ?? 1) > 1
+      ? tr({ en: `, ${l.installments}x from ${ddmm(l.due_on)}`, pt: `, em ${l.installments}x a partir de ${ddmm(l.due_on)}` })
+      : tr({ en: `, due ${ddmm(l.due_on)}`, pt: `, para ${ddmm(l.due_on)}` })
+    : "";
   return l.kind === "sale"
-    ? `💰 ${tr({ en: "Sale", pt: "Venda" })} · ${methodLabel(l.payment_method)}: ${brl(l.amount_cents)}`
-    : `💸 ${categoryLabel(l.category ?? null)}: ${brl(l.amount_cents)} · ${methodLabel(l.payment_method)}`;
+    ? `💰 ${tr({ en: "Sale", pt: "Venda" })} · ${methodLabel(l.payment_method)}: ${brl(l.amount_cents)}${later}`
+    : `💸 ${categoryLabel(l.category ?? null) || tr({ en: "Expense", pt: "Gasto" })}: ${brl(l.amount_cents)} · ${methodLabel(l.payment_method)}${later}`;
+}
+
+const selectClass =
+  "h-11 w-full rounded-md border border-input bg-background px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+/** What is wrong with a line she adjusted, or null: the same rules as the diary's form. */
+function lineProblem(l: Line, day: string): string | null {
+  if (l.kind === "expense" && !l.category) return tr({ en: "Say what the expense was for.", pt: "Diga com o que foi o gasto." });
+  if (l.due_on !== undefined && !(l.due_on > day)) {
+    return tr({ en: "Choose a date after the day for what is paid later.", pt: "Escolha uma data depois do dia para o que fica para depois." });
+  }
+  return null;
+}
+
+/**
+ * What the voice cannot always catch, she sets by hand (founder, 27/11/2026):
+ * how it was paid, the instalments and the first due date, and what an
+ * expense was for. The amount stays what she said.
+ */
+function LineEditor({ line, day, index, onChange }: { line: Line; day: string; index: number; onChange: (l: Line) => void }) {
+  const later = line.due_on !== undefined;
+  const id = (name: string) => `voice-${name}-${index}`;
+  return (
+    <div className="space-y-3 rounded-md bg-muted/60 p-3">
+      {line.kind === "expense" && (
+        <div className="space-y-1">
+          <label htmlFor={id("cat")} className="text-sm font-medium">{tr({ en: "What for", pt: "Com o quê" })}</label>
+          <select id={id("cat")} className={selectClass} value={line.category ?? ""}
+            onChange={(e) => onChange({ ...line, category: (e.target.value || undefined) as Category | undefined })}>
+            <option value="">{tr({ en: "Choose", pt: "Escolha" })}</option>
+            {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+          </select>
+        </div>
+      )}
+      <div className="space-y-1">
+        <label htmlFor={id("method")} className="text-sm font-medium">
+          {line.kind === "sale" ? tr({ en: "Received by", pt: "Recebeu como" }) : tr({ en: "Paid by", pt: "Pagou como" })}
+        </label>
+        <select id={id("method")} className={selectClass} value={line.payment_method}
+          onChange={(e) => onChange({ ...line, payment_method: e.target.value as PaymentMethod })}>
+          {PAYMENT_METHODS.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
+        </select>
+      </div>
+      <label className="flex min-h-11 items-center gap-3 text-sm">
+        <input type="checkbox" className="h-5 w-5" checked={later}
+          onChange={(e) => {
+            const { due_on: _due, installments: _n, ...rest } = line;
+            onChange(e.target.checked ? { ...rest, due_on: addDays(day, 30), installments: line.installments ?? 1 } : rest);
+          }} />
+        {line.kind === "sale" ? tr({ en: "In instalments or received later", pt: "Parcelado ou recebo depois" }) : tr({ en: "In instalments or paid later", pt: "Parcelado ou pago depois" })}
+      </label>
+      {later && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label htmlFor={id("due")} className="text-sm font-medium">
+              {(line.installments ?? 1) > 1 ? tr({ en: "1st due date", pt: "1º vencimento" }) : tr({ en: "Due date", pt: "Vencimento" })}
+            </label>
+            <input id={id("due")} type="date" min={addDays(day, 1)} value={line.due_on ?? ""}
+              onChange={(e) => onChange({ ...line, due_on: e.target.value })}
+              className="h-11 w-full rounded-md border border-input bg-background px-3 text-base" />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor={id("inst")} className="text-sm font-medium">{tr({ en: "Instalments", pt: "Parcelas" })}</label>
+            <select id={id("inst")} className={selectClass} value={line.installments ?? 1}
+              onChange={(e) => onChange({ ...line, installments: Number(e.target.value) })}>
+              {Array.from({ length: 12 }, (_, n) => <option key={n + 1} value={n + 1}>{n + 1}x</option>)}
+            </select>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A line as journal_record takes it: one instalment is no instalment. */
+function cleanLine(l: Line): Line {
+  const { installments, ...rest } = l;
+  return { ...rest, ...(l.due_on && (installments ?? 1) > 1 ? { installments } : {}) };
 }
 
 async function errorCode(error: unknown): Promise<string> {
@@ -61,6 +149,8 @@ export function SeekerSpeak({ userId }: { userId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<string[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [lines, setLines] = useState<Line[]>([]);
+  const [editing, setEditing] = useState<Set<number>>(new Set());
   const [saved, setSaved] = useState<string | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const timer = useRef<number | null>(null);
@@ -102,6 +192,9 @@ export function SeekerSpeak({ userId }: { userId: string }) {
     if (!data) return;
     if (data.draft_id) {
       setDraft(data);
+      setLines(data.lines);
+      // A card sale or an expense without its category: open for her to check.
+      setEditing(new Set(data.lines.flatMap((l, i) => (l.payment_method === "credit_card" || (l.kind === "expense" && !l.category) ? [i] : []))));
       return;
     }
     setNotes([
@@ -159,24 +252,38 @@ export function SeekerSpeak({ userId }: { userId: string }) {
 
   const decide = async (confirm: boolean) => {
     if (!draft?.draft_id) return;
+    const adjusted = lines.map(cleanLine);
+    const changed = JSON.stringify(adjusted) !== JSON.stringify(draft.lines.map(cleanLine));
+    if (confirm) {
+      const problem = adjusted.map((l) => lineProblem(l, draft.day)).find(Boolean);
+      if (problem) return setError(problem);
+    }
     setBusy(true);
     setError(null);
-    const { data, error: rpcError } = await diaryDb.rpc("diary_draft_decide" as never, {
-      p_draft_id: draft.draft_id, p_confirm: confirm, p_seconds: null,
-    } as never);
-    setBusy(false);
-    if (rpcError) {
+    try {
+      // As she said it: the draft itself. Adjusted by hand: the draft is set
+      // aside and the day is recorded with her lines, as the diary's form does.
+      const { data, error: rpcError } = await diaryDb.rpc("diary_draft_decide" as never, {
+        p_draft_id: draft.draft_id, p_confirm: confirm && !changed, p_seconds: null,
+      } as never);
+      if (rpcError) throw rpcError;
+      const status = (data as { status?: string } | null)?.status;
+      if (confirm && changed) {
+        await diary.record({ requestId: newRequestId(), day: draft.day, lines: adjusted });
+        setSaved(dayName(draft.day, today));
+        void queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
+      } else if (status === "confirmed") {
+        setSaved(dayName(draft.day, today));
+        void queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
+      } else if (status === "stale") {
+        setError(tr({ en: "That reading expired. Say it again.", pt: "Essa leitura expirou. Fale de novo." }));
+      }
+      setDraft(null);
+    } catch {
       setError(tr({ en: "It was not saved. Try again.", pt: "Não foi salvo. Tente de novo." }));
-      return;
+    } finally {
+      setBusy(false);
     }
-    const status = (data as { status?: string } | null)?.status;
-    if (status === "confirmed") {
-      setSaved(dayName(draft.day, today));
-      void queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
-    } else if (status === "stale") {
-      setError(tr({ en: "That reading expired. Say it again.", pt: "Essa leitura expirou. Fale de novo." }));
-    }
-    setDraft(null);
   };
 
   if (!consented) {
@@ -204,7 +311,25 @@ export function SeekerSpeak({ userId }: { userId: string }) {
           <p className="font-medium">
             {tr({ en: `This is what I understood, for ${dayName(draft.day, today)}:`, pt: `Entendi assim, para ${dayName(draft.day, today)}:` })}
           </p>
-          <ul className="space-y-1">{draft.lines.map((l, i) => <li key={i}>{lineText(l)}</li>)}</ul>
+          <ul className="space-y-3">
+            {lines.map((l, i) => (
+              <li key={i} className="space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <span>{lineText(cleanLine(l))}</span>
+                  {!editing.has(i) && (
+                    <Button variant="ghost" size="sm" className="h-10 shrink-0 gap-1"
+                      onClick={() => setEditing((e) => new Set(e).add(i))}>
+                      <Pencil size={14} aria-hidden="true" />{tr({ en: "Adjust", pt: "Ajustar" })}
+                    </Button>
+                  )}
+                </div>
+                {editing.has(i) && (
+                  <LineEditor line={l} day={draft.day} index={i}
+                    onChange={(next) => { setError(null); setLines((all) => all.map((x, j) => (j === i ? next : x))); }} />
+                )}
+              </li>
+            ))}
+          </ul>
           {draft.notes.length > 0 && (
             <ul className="list-disc pl-5 text-sm text-muted-foreground">{draft.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
           )}
