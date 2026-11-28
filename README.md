@@ -20,7 +20,52 @@ This repository holds the public site, the diary, Missions and the Colosseum hac
 |---|---|---|
 | **The EmpowerFI diary** | [www.empowerfi.io/app/diario](https://www.empowerfi.io/app/diario), installable as an app (PWA) | Her daily record: sales and expenses by voice or by typing, the month's profit after her monthly salary, her week, a weekly reading (written by AI only if she agrees), reminders on the days her business opens, and a **Sponsors** tab with the sponsors of the real campaigns she is in. Sign-in by a code sent to her e-mail. Real data, on the app's production database. [docs/DIARY.md](docs/DIARY.md) |
 | **EmpowerFI Missions** | [www.empowerfi.io/app/missions](https://www.empowerfi.io/app/missions), the platform's main page, open without a sign-in | A sponsor funds a 30-day campaign from its own wallet into a vault on Solana devnet; one or more sponsors per campaign, each in its own vault. Entrepreneurs who record every day their business opens within those 30 days are paid on chain, once by each vault. [docs/MISSIONS.md](docs/MISSIONS.md) |
+| **EmpowerFI on Seeker** (hackathon build, 27–28 Nov 2026) | an Android app for the Solana dApp Store, around [empowerfi-seeker-dev.vercel.app/app/seeker](https://empowerfi-seeker-dev.vercel.app/app/seeker); on the **dev** database, devnet only | The diary on her phone: she records sales and expenses by voice with ElevenLabs, connects the wallet on her phone, and keeps her Missions reward as a reserve or withdraws it. [Below](#empowerfi-on-seeker-hackathon-build-2728-nov-2026) |
 | **Campaign management** | the `empowerfi-dashboard` repository (EmpowerFI staff only) | Campaigns and sponsors, logos and links, reviewing and publishing a Missions campaign, and marking each campaign **real** or **devnet**. Only real campaigns show in the diary's Sponsors tab. |
+
+## EmpowerFI on Seeker (hackathon build, 27–28 Nov 2026)
+
+The diary is already live on the web, so this build is limited to what the hackathon window added. **Everything in this section was written on 27 and 28 November 2026**: PRs #190 to #198. It is a **Seeker-only MVP**: it runs on the app's dev database and on devnet, with test tokens.
+
+**The web diary the women use today did not change.** A build check, the Vite plugin [`scripts/seeker-guard.ts`](scripts/seeker-guard.ts), walks the diary's module graph. If it reaches anything under `src/app/seeker/`, the build fails.
+
+### What she can do on it
+
+1. **Say what she sold or spent.** She talks, and ElevenLabs Scribe (`scribe_v2`) transcribes in Portuguese or English, following the app's language.
+   - The shared reader ([`_shared/spoken.ts`](platform/supabase/functions/_shared/spoken.ts)) proposes the lines. Code then checks every amount against her own words.
+   - What a voice note gets wrong is left to her hands, not guessed:
+     - an expense's category;
+     - à vista or in instalments, with how many and the first due date.
+   - When nothing is understood, the form opens for her to type the entry.
+2. **Hear it back.** ElevenLabs Flash (`eleven_flash_v2_5`) reads the draft aloud in her language: *"Entendi: venda de 30 reais no Pix. Está certo?"*. This is for women who read with difficulty. The voice informs and her tap decides: nothing reaches her journal until she confirms.
+3. **Connect the wallet on her phone.** She uses Mobile Wallet Adapter (`@solana-mobile/wallet-standard-mobile`). She signs a Sign In With Solana message: no transaction, no fee, valid five minutes, nonce used once. The server checks the Ed25519 signature before her rewards may go there ([`seeker-wallet`](platform/supabase/functions/seeker-wallet/index.ts)).
+4. **Keep her reward, or withdraw it.** A Missions reward is paid on devnet into her reward wallet: an address of the rewards program, with no private key anywhere. Then she chooses:
+   - **Keep:** it stays there as her reserve.
+   - **Send:** this and every later reward go to her phone's wallet by themselves.
+   - She can change her mind at any time. The statement links every movement to the Solana explorer.
+   - The reserve **earns nothing**. The app shows what a remunerated reserve would give her, with EmpowerFI taking 10% of a positive yield only and never of what she keeps, and says it is a simulation ([migration](platform/supabase/migrations/20270117000000_her_reward_kept_or_sent.sql)). A real yield, Pix and any custody wait for legal and partner checks.
+
+### How it is built
+
+| | |
+|---|---|
+| [`src/app/seeker/`](src/app/seeker/) | The route `/app/seeker`, lazy-loaded. It is closed on every deployment except the Seeker one (`VITE_SEEKER=1`). |
+| [`apps/seeker-shell/`](apps/seeker-shell/) | The Android shell from `npx solana-mobile webshell`: a WebView, so MWA works. It grants the microphone to the app's own origin only. The keystore is not in the repository. |
+| [`diary-speak-seeker`](platform/supabase/functions/diary-speak-seeker/index.ts) | A new function, a copy of the diary's `diary-speak` that uses ElevenLabs for hearing and reading back. The ElevenLabs key stays on the server. |
+| [`seeker-wallet`](platform/supabase/functions/seeker-wallet/index.ts) | A new function: the sign-in challenge and the signature check. |
+| Migrations `20270116…`, `20270117…` | Additive only: new tables and functions. `reward-payout` gained one additive call, which does nothing for a woman who never used the Seeker app. |
+
+The rewards themselves are the existing Missions program on devnet ([docs/MISSIONS.md](docs/MISSIONS.md)): a sponsor's vault pays every woman who recorded each day her business opened in the 30 days.
+
+### Trying it, and its limits
+
+- **Tested on an Android phone**, not on a Seeker, with Solflare as the wallet. MWA is the same standard on Seeker, but Seed Vault itself was not tested.
+- **The voice is allow-listed** to the founder and testers. Real entrepreneurs do not use it yet: the plan and its retention terms come first. A judge who signs up sees the rest of the app, but the voice answers `voice_not_allowed`. The demo video shows the voice.
+- **Limits:** 2 MB of audio per note and 20 drafts a day per person.
+- **Before the first recording** the app says, in plain words, that her audio goes to ElevenLabs, outside Brazil, and asks once.
+- **Not in this build:** a dApp Store listing, which the hackathon does not require, and push reminders inside the shell.
+
+The full plan and its decisions are in [PLAN_SEEKER.md](PLAN_SEEKER.md).
 
 ## Try the credit platform (showroom)
 
@@ -142,6 +187,8 @@ CI runs the first, the Deno gate and the program's LiteSVM tests on every push a
 src/app/                     the platform (/app): pages by role, audit screen
 src/app/diary/               the EmpowerFI diary (/app/diario), on the app's production database
 src/app/missions/            EmpowerFI Missions (/app/missions), the platform's main page
+src/app/seeker/              EmpowerFI on Seeker (/app/seeker), the hackathon's Android app, on the dev database
+apps/seeker-shell/           its Android shell (solana-mobile webshell)
 src/                         the public site (PT-BR at /, the main page; EN at /en)
 packages/                    campaign-vault · readiness-engine · eligibility-engine · capital-allocation · settlement-route · audit-commitments · audit-client
 programs/empowerfi-audit     the Anchor program and its tests
