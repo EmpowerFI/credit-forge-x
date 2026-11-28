@@ -11,6 +11,7 @@ import { DiaryLogo } from "../diary/Brand";
 import { seekerOpen } from "./config";
 import { SeekerWallet } from "./SeekerWallet";
 import { SeekerSpeak } from "./SeekerSpeak";
+import { SeekerReserve } from "./SeekerReserve";
 
 // The Seeker app (hackathon, 27–28/11/2026; PLAN_SEEKER.md). Its own route,
 // /app/seeker, lazy-loaded: nothing here reaches the web diary's bundle
@@ -94,6 +95,7 @@ function Home({ name, userId }: { name: string; userId: string }) {
           {first ? tr({ en: `Hi, ${first}`, pt: `Oi, ${first}` }) : tr({ en: "Hi", pt: "Oi" })}
         </h1>
         <SeekerSpeak userId={userId} />
+        <SeekerReserve />
         <SeekerWallet />
         <section className="rounded-lg border border-border bg-card p-4">
           <h2 className="font-semibold">{tr({ en: "Your diary", pt: "Seu diário" })}</h2>
