@@ -15,7 +15,7 @@ import { SeekerReserve } from "./SeekerReserve";
 
 // The Seeker app (hackathon, 27–28/11/2026; PLAN_SEEKER.md). Its own route,
 // /app/seeker, lazy-loaded: nothing here reaches the web diary's bundle
-// (scripts/check-seeker-bundle.mjs fails the build if it would). It reads the
+// (scripts/seeker-guard.ts fails the build if it would). It reads the
 // diary's own database client, which on the Seeker deployment points at dev;
 // on any other deployment VITE_SEEKER is unset and the route is closed.
 
