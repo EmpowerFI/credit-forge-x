@@ -1,5 +1,8 @@
 import { assert, assertEquals, assertFalse } from "jsr:@std/assert@1";
-import { DEFAULT_STT_MODEL, readScribe, scribeRequest, voiceAllowed, voiceLang } from "./elevenlabs.ts";
+import {
+  base64, DEFAULT_STT_MODEL, DEFAULT_TTS_MODEL, DEFAULT_VOICES, MAX_READBACK_CHARS, readBackText, readScribe, scribeRequest, ttsRequest,
+  voiceAllowed, voiceLang,
+} from "./elevenlabs.ts";
 
 Deno.test("Scribe is asked in batch, with the language fixed and nothing extra", async () => {
   const audio = new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" });
@@ -41,4 +44,32 @@ Deno.test("only the listed e-mails may use the voice", () => {
   assertFalse(voiceAllowed("founder@x.io", undefined));
   assertFalse(voiceAllowed("founder@x.io", ""));
   assertFalse(voiceAllowed(null, list));
+});
+
+Deno.test("the read-back says what was understood, in her language, and asks", () => {
+  const lines = [
+    { kind: "sale" as const, amount_cents: 35_000, payment_method: "credit_card" },
+    { kind: "expense" as const, amount_cents: 4_050, payment_method: "pix" },
+  ];
+  assertEquals(readBackText(lines, "pt"),
+    "Entendi: venda de 350 reais no cartão de crédito e gasto de 40 reais e 50 centavos no Pix. Está certo?");
+  assertEquals(readBackText(lines, "en"),
+    "I understood: a sale of 350 reais by credit card and an expense of 40 reais and 50 cents by Pix. Is that right?");
+  assertEquals(readBackText([lines[0]], "pt"), "Entendi: venda de 350 reais no cartão de crédito. Está certo?");
+  const many = Array.from({ length: 20 }, () => lines[0]);
+  assert(readBackText(many, "pt").length <= MAX_READBACK_CHARS);
+});
+
+Deno.test("the voice is asked with Flash, her voice and a small mp3", () => {
+  const { url, init } = ttsRequest("key-2", DEFAULT_VOICES.pt, DEFAULT_TTS_MODEL, "Entendi.");
+  assertEquals(url, "https://api.elevenlabs.io/v1/text-to-speech/33B4UnXyTNbgLmdEDh5P?output_format=mp3_22050_32");
+  assertEquals((init.headers as Record<string, string>)["xi-api-key"], "key-2");
+  assertEquals(JSON.parse(init.body as string), { text: "Entendi.", model_id: "eleven_flash_v2_5" });
+  assertEquals(DEFAULT_VOICES.en, "cgSgspJ2msm6clMCkdW9");
+});
+
+Deno.test("base64 of the audio, whatever its length", () => {
+  assertEquals(base64(new Uint8Array([104, 105])), "aGk=");
+  const big = new Uint8Array(100_000).fill(65);
+  assertEquals(atob(base64(big)).length, 100_000);
 });

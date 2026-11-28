@@ -1,6 +1,6 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
 import {
-  draftButton, draftMessages, dueFrom, heardText, installmentsFrom, looksLikeFigures, occurrences, readInterpretation,
+  draftButton, draftMessages, dueFrom, heardText, installmentsFrom, looksLikeFigures, occurrences, readInterpretation, spokenCentsEn,
   sendDraftRequest, spokenCents, toolInput,
 } from "./spoken.ts";
 
@@ -291,4 +291,37 @@ Deno.test("by hand: a figure she did not say is still refused", () => {
   const r = readInterpretation({ day: null, lines: [line({ amount_quote: "999", payment_method: "pix" })], left_out: [] },
     "vendi 250 no pix", EVENING, { byHand: true });
   assertEquals(r.lines, []);
+});
+
+Deno.test("English (Seeker): amounts in digits or words, in reais", () => {
+  assertEquals(spokenCentsEn("350"), 35_000);
+  assertEquals(spokenCentsEn("R$ 40.50"), 4_050);
+  assertEquals(spokenCentsEn("1,250.00"), 125_000);
+  assertEquals(spokenCentsEn("thirty reais"), 3_000);
+  assertEquals(spokenCentsEn("three hundred and fifty"), 35_000);
+  assertEquals(spokenCentsEn("forty-five bucks"), 4_500);
+  assertEquals(spokenCentsEn("two thousand five hundred"), 250_000);
+  assertEquals(spokenCentsEn("ten reais and fifty cents"), 1_050);
+  assertThrows(() => spokenCentsEn("thirty cakes"));
+  assertThrows(() => spokenCentsEn("trinta"));
+});
+
+Deno.test("English (Seeker): the day and the figures are read in English, by hand", () => {
+  const said = "Today I sold three hundred and fifty by credit card and spent 40 on packaging by Pix";
+  const r = readInterpretation({
+    day: "today",
+    lines: [
+      line({ amount_quote: "three hundred and fifty", payment_method: "credit_card" }),
+      line({ kind: "expense", amount_quote: "40", payment_method: "pix", category: "packaging" }),
+    ],
+    left_out: [],
+  }, said, MORNING, { byHand: true, lang: "en" });
+  assertEquals(r.day, "2026-10-21");
+  assertEquals(r.daySaid, true);
+  assertEquals(r.lines, [
+    { kind: "sale", amount_cents: 35_000, payment_method: "credit_card" },
+    { kind: "expense", amount_cents: 4_000, payment_method: "pix" },
+  ]);
+  // "hoje" is not English: the same answer in Portuguese mode does not take the day from the words.
+  assertEquals(readInterpretation({ day: "today", lines: [], left_out: [] }, said, MORNING).daySaid, false);
 });

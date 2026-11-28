@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Mic, Pencil, Square } from "lucide-react";
+import { Check, Loader2, Mic, Pencil, Square, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getLocale, tr } from "../i18n";
 import { diaryDb } from "../diary/db";
@@ -19,7 +19,19 @@ interface Draft {
   lines: Line[];
   notes: string[];
   heard: string | null;
+  /** The read-back, an mp3 in base64 (ElevenLabs), or null when the voice failed. */
+  speech?: string | null;
   error?: string;
+}
+
+/** Plays the read-back. Quiet if the WebView refuses: the draft is on the screen anyway. */
+function play(speech: string | null | undefined) {
+  if (!speech) return;
+  try {
+    void new Audio(`data:audio/mpeg;base64,${speech}`).play().catch(() => undefined);
+  } catch {
+    // no audio here
+  }
 }
 
 const MAX_SECONDS = 120;
@@ -247,6 +259,7 @@ export function SeekerSpeak({ userId }: { userId: string }) {
     if (!data) return;
     if (data.draft_id) {
       setDraft(data);
+      play(data.speech);
       setLines(data.lines);
       // An expense (its category) or a card (at once or in instalments): open for her.
       setEditing(new Set(data.lines.flatMap((l, i) => (needsHand(l) ? [i] : []))));
@@ -377,9 +390,17 @@ export function SeekerSpeak({ userId }: { userId: string }) {
       {draft ? (
         <div className="space-y-3" aria-live="polite">
           {draft.heard && <p className="text-sm text-muted-foreground">🎙️ «{draft.heard}»</p>}
-          <p className="font-medium">
-            {tr({ en: `This is what I understood, for ${dayName(draft.day, today)}:`, pt: `Entendi assim, para ${dayName(draft.day, today)}:` })}
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <p className="font-medium">
+              {tr({ en: `This is what I understood, for ${dayName(draft.day, today)}:`, pt: `Entendi assim, para ${dayName(draft.day, today)}:` })}
+            </p>
+            {draft.speech && (
+              <Button variant="ghost" size="sm" className="h-10 shrink-0 gap-1" onClick={() => play(draft.speech)}
+                aria-label={tr({ en: "Hear it again", pt: "Ouvir de novo" })}>
+                <Volume2 size={16} aria-hidden="true" />{tr({ en: "Hear", pt: "Ouvir" })}
+              </Button>
+            )}
+          </div>
           <ul className="space-y-3">
             {lines.map((l, i) => (
               <li key={i} className="space-y-2">
