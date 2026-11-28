@@ -24,14 +24,35 @@ interface Draft {
   error?: string;
 }
 
+// One player for every read-back. Android's WebView plays sound only after a
+// tap, per element: the tap on "Falar" unlocks this one with a silent clip, so
+// the read-back can play by itself when the draft arrives, seconds later.
+const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+let player: HTMLAudioElement | null = null;
+
+function audio(): HTMLAudioElement | null {
+  try {
+    player ??= new Audio();
+    return player;
+  } catch {
+    return null;
+  }
+}
+
+/** Call inside a tap, before any await. */
+function unlockAudio() {
+  const a = audio();
+  if (!a) return;
+  a.src = SILENCE;
+  void a.play().catch(() => undefined);
+}
+
 /** Plays the read-back. Quiet if the WebView refuses: the draft is on the screen anyway. */
 function play(speech: string | null | undefined) {
-  if (!speech) return;
-  try {
-    void new Audio(`data:audio/mpeg;base64,${speech}`).play().catch(() => undefined);
-  } catch {
-    // no audio here
-  }
+  const a = audio();
+  if (!speech || !a) return;
+  a.src = `data:audio/mpeg;base64,${speech}`;
+  void a.play().catch(() => undefined);
 }
 
 const MAX_SECONDS = 120;
@@ -277,6 +298,7 @@ export function SeekerSpeak({ userId }: { userId: string }) {
   };
 
   const start = async () => {
+    unlockAudio();
     setError(null);
     setSaved(null);
     try {
