@@ -202,6 +202,14 @@ Deno.serve(async (req) => {
     new Response(JSON.stringify(body), { status, headers: { ...CORS, "Content-Type": "application/json" } });
   if (!(await allowed(req))) return json({ error: "forbidden" }, 403);
   try {
+    // The Seeker's automatic transfer (20270117000000): whoever chose to send
+    // her reward to the wallet on her phone gets a withdrawal queued once it
+    // can go. Nothing for anyone else; a database without the Seeker
+    // migrations (production) answers that the function does not exist, and
+    // the run goes on as before.
+    const { error: seekerError } = await db.rpc("seeker_send_due");
+    if (seekerError && !/seeker_send_due/.test(seekerError.message)) console.error("seeker_send_due", seekerError.message);
+
     const done: { kind: string; outcome: string }[] = [];
     for (let n = 0; n < 10; n++) {
       const op = await call<Op | null>("payout_op_next");

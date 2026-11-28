@@ -13,8 +13,6 @@ const WALLET_KEY = [...PROFILE_KEY, "seeker-wallet"] as const;
 interface SeekerWalletRow { address: string; auto_transfer: boolean; verified_at: string }
 
 const short = (a: string) => `${a.slice(0, 4)}…${a.slice(-4)}`;
-const usdc = (units: number, decimals = 6) =>
-  `${(units / 10 ** decimals).toLocaleString(tr({ en: "en-GB", pt: "pt-BR" }), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`;
 const when = (iso: string) =>
   new Date(iso).toLocaleString(tr({ en: "en-GB", pt: "pt-BR" }), { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
@@ -95,16 +93,9 @@ export function SeekerWallet() {
   return (
     <section className="space-y-3 rounded-lg border border-border bg-card p-4" aria-labelledby="seeker-wallet-title">
       <div className="flex items-start justify-between gap-3">
-        <h2 id="seeker-wallet-title" className="font-semibold">{tr({ en: "Your rewards", pt: "Suas recompensas" })}</h2>
+        <h2 id="seeker-wallet-title" className="font-semibold">{tr({ en: "Your wallet", pt: "Sua carteira" })}</h2>
         <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">{tr({ en: "Test · devnet", pt: "Teste · devnet" })}</span>
       </div>
-
-      {r && r.paid_units > 0 && (
-        <div>
-          <p className="font-heading text-3xl tabular-nums">{usdc(r.balance_units, r.decimals)}</p>
-          <p className="text-sm text-muted-foreground">{tr({ en: "In your rewards wallet", pt: "Na sua carteira de recompensas" })}</p>
-        </div>
-      )}
 
       {!w ? (
         <>
@@ -138,7 +129,7 @@ export function SeekerWallet() {
           ) : activeFrom ? (
             <p className="flex items-center gap-2 text-muted-foreground">
               <Check size={16} aria-hidden="true" />
-              {tr({ en: "Each reward goes to it by itself.", pt: "Cada recompensa vai para ela sozinha." })}
+              {tr({ en: "Ready to receive what you send.", pt: "Pronta para receber o que você sacar." })}
             </p>
           ) : (
             <p className="flex items-start gap-2 text-muted-foreground">
