@@ -29,17 +29,17 @@ const NOW = new Date("2026-11-27T15:00:00Z");
 
 Deno.test("base58 reads a Solana address as its 32 bytes", () => {
   assertEquals(base58Bytes("11111111111111111111111111111111"), new Uint8Array(32));
-  assert(isAddress("GmqnZemgSxNoz1tehf2Y7uQ72NkfCN25PwHQbx41GS7f"));
+  assert(isAddress("Ax71Ar1DU2N685CEqmhHwWCtEoibtRVZztcjRqQN3UNb"));
   assertFalse(isAddress("0OIl-not-an-address"));
   assertFalse(isAddress("abc"));
   assertFalse(isAddress(42));
 });
 
 Deno.test("the message names the site, her wallet, the nonce and five minutes", () => {
-  const m = challengeMessage({ origin: "https://empowerfi-seeker-dev.vercel.app", address: "GmqnZemgSxNoz1tehf2Y7uQ72NkfCN25PwHQbx41GS7f", nonce: "abc123", now: NOW });
+  const m = challengeMessage({ origin: "https://empowerfi-seeker-dev.vercel.app", address: "Ax71Ar1DU2N685CEqmhHwWCtEoibtRVZztcjRqQN3UNb", nonce: "abc123", now: NOW });
   const lines = m.split("\n");
   assertEquals(lines[0], "empowerfi-seeker-dev.vercel.app wants you to sign in with your Solana account:");
-  assertEquals(lines[1], "GmqnZemgSxNoz1tehf2Y7uQ72NkfCN25PwHQbx41GS7f");
+  assertEquals(lines[1], "Ax71Ar1DU2N685CEqmhHwWCtEoibtRVZztcjRqQN3UNb");
   assert(lines.includes("URI: https://empowerfi-seeker-dev.vercel.app/app/seeker"));
   assert(lines.includes("Chain ID: devnet"));
   assert(lines.includes("Nonce: abc123"));
