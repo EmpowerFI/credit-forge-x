@@ -8,8 +8,12 @@
 // draft are the same shared code (_shared/spoken.ts), so a sale is read the
 // same way on both. The audio is held in memory only, never stored.
 //
-// Secrets: ELEVENLABS_API_KEY (Scribe), ANTHROPIC_API_KEY (reading),
+// The draft comes with its read-back: ElevenLabs Flash says what was
+// understood, in her voice for the app's language; she still taps to confirm.
+//
+// Secrets: ELEVENLABS_API_KEY (Scribe and the read-back), ANTHROPIC_API_KEY (reading),
 // SEEKER_VOICE_ALLOW (e-mails, comma-separated); optional ELEVENLABS_STT_MODEL,
+// ELEVENLABS_TTS_MODEL, ELEVENLABS_VOICE_ID_PT / _EN,
 // ANTHROPIC_INTERPRET_MODEL; SUPABASE_URL, SUPABASE_ANON_KEY and
 // SUPABASE_SERVICE_ROLE_KEY from the runtime.
 
@@ -18,7 +22,10 @@ import {
   DEFAULT_INTERPRET_MODEL, INTERPRET_PROMPT_VERSION, interpretRequest, MAX_AUDIO_BYTES,
   MAX_DRAFTS_PER_DAY, MAX_TEXT_CHARS, readInterpretation, toolInput,
 } from "../_shared/spoken.ts";
-import { DEFAULT_STT_MODEL, readScribe, scribeRequest, voiceAllowed, voiceLang } from "../_shared/elevenlabs.ts";
+import {
+  base64, DEFAULT_STT_MODEL, DEFAULT_TTS_MODEL, DEFAULT_VOICES, readBackText, readScribe, scribeRequest, ttsRequest,
+  type VoiceLang, voiceAllowed, voiceLang,
+} from "../_shared/elevenlabs.ts";
 import { addDays, spDate } from "../_shared/journal.ts";
 
 const CORS = {
@@ -44,6 +51,27 @@ function filenameFor(mimeType: string): string {
   if (mimeType.includes("mpeg")) return "voice.mp3";
   if (mimeType.includes("wav")) return "voice.wav";
   return "voice.ogg";
+}
+
+/**
+ * The draft read back in her language (ElevenLabs Flash), as an mp3 in base64,
+ * or null: if the voice fails, the draft comes without it.
+ */
+async function readBack(lines: { kind: "sale" | "expense"; amount_cents: number; payment_method: string }[], lang: VoiceLang): Promise<string | null> {
+  try {
+    const voice = Deno.env.get(lang === "en" ? "ELEVENLABS_VOICE_ID_EN" : "ELEVENLABS_VOICE_ID_PT") || DEFAULT_VOICES[lang];
+    const model = Deno.env.get("ELEVENLABS_TTS_MODEL") || DEFAULT_TTS_MODEL;
+    const { url, init } = ttsRequest(env("ELEVENLABS_API_KEY"), voice, model, readBackText(lines, lang));
+    const response = await fetch(url, { ...init, signal: AbortSignal.timeout(15_000) });
+    if (!response.ok) {
+      console.warn("diary-speak-seeker: read-back answered", response.status);
+      return null;
+    }
+    return base64(new Uint8Array(await response.arrayBuffer()));
+  } catch (e) {
+    console.warn("diary-speak-seeker: read-back failed", String(e).slice(0, 120));
+    return null;
+  }
 }
 
 Deno.serve(async (req) => {
@@ -81,7 +109,8 @@ Deno.serve(async (req) => {
       requestId = String(form.get("request_id") ?? "");
       lang = voiceLang(form.get("lang"));
     } else {
-      const body = await req.json() as { text?: unknown; day?: unknown; request_id?: unknown };
+      const body = await req.json() as { text?: unknown; day?: unknown; request_id?: unknown; lang?: unknown };
+      lang = voiceLang(body.lang);
       text = typeof body.text === "string" ? body.text.trim() : "";
       chosenDay = typeof body.day === "string" ? body.day : "";
       requestId = typeof body.request_id === "string" ? body.request_id : "";
@@ -127,7 +156,7 @@ Deno.serve(async (req) => {
     if (input === null) throw new Error("model returned no reading");
 
     // The Seeker: category, card dates and instalments are hers to set by hand in the draft.
-    const reading = readInterpretation(input, said, now, { byHand: true });
+    const reading = readInterpretation(input, said, now, { byHand: true, lang });
     // The screen says which day; her words win only when she named one.
     if (!reading.daySaid) reading.day = chosenDay;
     // Counts only: refusals quote her words, which stay out of the log.
@@ -149,7 +178,8 @@ Deno.serve(async (req) => {
       p_refusals: reading.refusals,
     });
     if (error) throw new Error(`draft not kept: ${error.message}`);
-    return json({ draft_id: draftId, day: reading.day, lines: reading.lines, notes: reading.notes, heard });
+    const speech = await readBack(reading.lines, lang);
+    return json({ draft_id: draftId, day: reading.day, lines: reading.lines, notes: reading.notes, heard, speech });
   } catch (e) {
     console.error("diary-speak-seeker failed", String(e).slice(0, 200));
     return json({ error: "unavailable" }, 503);

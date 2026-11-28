@@ -148,6 +148,76 @@ export function spokenCents(quote: string): number {
   return total;
 }
 
+// ------------------------------------------------------------ English (Seeker)
+
+const EN_VALUE: Record<string, number> = {
+  zero: 0, one: 1, a: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18,
+  nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+};
+const EN_CURRENCY = new Set(["reais", "real", "reis", "buck", "bucks", "brl"]);
+
+/** A whole number in English words or digits ("three hundred fifty", "2 thousand 500"); null if not one. */
+function wholeNumberEn(tokens: string[]): number | null {
+  let total = 0;
+  let current = 0;
+  let seen = false;
+  for (const t of tokens) {
+    if (t === "and") continue;
+    if (t === "hundred") {
+      if (current === 0 || current >= 100) return null;
+      current *= 100;
+      continue;
+    }
+    if (t === "thousand") {
+      total += (current === 0 ? 1 : current) * 1000;
+      current = 0;
+      seen = true;
+      continue;
+    }
+    const v = /^\d{1,6}$/.test(t) ? Number(t) : EN_VALUE[t];
+    if (v === undefined) return null;
+    current += v;
+    seen = true;
+  }
+  return seen ? total + current : null;
+}
+
+/**
+ * The Seeker in English: an amount as she said it, in reais, to cents. Digits
+ * ("350", "40.50", "1,250.00") or whole reais in words ("three hundred and
+ * fifty"), with "reais"/"bucks" allowed and "and 50 cents" after them. Any
+ * other word refuses the quote, as in Portuguese.
+ */
+export function spokenCentsEn(quote: string): number {
+  const s = plainWords(quote).replace(/r\$\s*/g, "").replace(/-/g, " ");
+  let tokens = s.split(" ").filter((t) => t !== "" && !EN_CURRENCY.has(t));
+  if (tokens.length === 0) throw new Error(`no amount in ${JSON.stringify(quote)}`);
+  let cents = 0;
+  const c = tokens.findIndex((t) => t === "cents" || t === "cent" || t === "centavos");
+  if (c !== -1) {
+    if (c !== tokens.length - 1) throw new Error(`words after cents in ${JSON.stringify(quote)}`);
+    const a = tokens.lastIndexOf("and", c);
+    const n = wholeNumberEn(tokens.slice(a === -1 ? 0 : a + 1, c));
+    if (n === null || n < 1 || n > 99) throw new Error(`not a number of cents: ${JSON.stringify(quote)}`);
+    cents = n;
+    tokens = a === -1 ? [] : tokens.slice(0, a);
+  }
+  let reaisCents = 0;
+  if (tokens.length === 1 && /^\d{1,3}(,\d{3})*(\.\d{1,2})?$|^\d+(\.\d{1,2})?$/.test(tokens[0])) {
+    const [whole, frac = ""] = tokens[0].replace(/,/g, "").split(".");
+    reaisCents = Number(whole) * 100 + Number(frac.padEnd(2, "0"));
+  } else if (tokens.length > 0) {
+    const n = wholeNumberEn(tokens);
+    if (n === null) throw new Error(`not an amount: ${JSON.stringify(quote)}`);
+    reaisCents = n * 100;
+  }
+  const total = reaisCents + cents;
+  if (!Number.isSafeInteger(total) || total <= 0) throw new Error(`not a positive amount: ${JSON.stringify(quote)}`);
+  if (total > 10_000_000_000) throw new Error(`amount above the ceiling: ${JSON.stringify(quote)}`);
+  return total;
+}
+
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
@@ -405,9 +475,12 @@ export function readInterpretation(
    * and instalments she sets by hand in the draft, so a line missing them is
    * kept, without them, instead of left out. Off for everyone else.
    */
-  opts: { byHand?: boolean } = {},
+  opts: { byHand?: boolean; lang?: "pt" | "en" } = {},
 ): Reading {
   const byHand = opts.byHand === true;
+  // The Seeker in English: figures and the day read in English. Everyone else: Portuguese, as always.
+  const english = opts.lang === "en";
+  const centsOf = english ? spokenCentsEn : spokenCents;
   const refusals: string[] = [];
   const notes: string[] = [];
   const answer = (input ?? {}) as { day?: unknown; lines?: unknown; left_out?: unknown };
@@ -416,10 +489,10 @@ export function readInterpretation(
 
   let daySaid = false;
   let day: string;
-  if (answer.day === "today" && /\bhoje\b/.test(words)) {
+  if (answer.day === "today" && (english ? /\btoday\b/ : /\bhoje\b/).test(words)) {
     day = today;
     daySaid = true;
-  } else if (answer.day === "yesterday" && /\bontem\b/.test(words)) {
+  } else if (answer.day === "yesterday" && (english ? /\byesterday\b/ : /\bontem\b/).test(words)) {
     day = addDays(today, -1);
     daySaid = true;
   } else {
@@ -442,7 +515,7 @@ export function readInterpretation(
     }
     let cents: number;
     try {
-      cents = spokenCents(quote);
+      cents = centsOf(quote);
     } catch (e) {
       refusals.push(`line ${i}: ${String(e)}`);
       continue;
@@ -452,13 +525,15 @@ export function readInterpretation(
     const kind = l.kind === "sale" || l.kind === "expense" ? l.kind : null;
     if (kind === null) {
       refusals.push(`line ${i}: kind ${JSON.stringify(l.kind)}`);
-      notes.push(`${brl(cents)}: não entendi se foi venda ou gasto.`);
+      notes.push(english ? `${brl(cents)}: I could not tell if it was a sale or an expense.` : `${brl(cents)}: não entendi se foi venda ou gasto.`);
       continue;
     }
     const what = kind === "sale" ? `Venda de ${brl(cents)}` : `Gasto de ${brl(cents)}`;
     const method = METHOD_IDS.includes(l.payment_method as PaymentMethod) ? l.payment_method as PaymentMethod : null;
     if (method === null) {
-      notes.push(`${what}: faltou dizer como ${kind === "sale" ? "recebeu" : "pagou"} (Pix, dinheiro, débito, crédito ou fiado).`);
+      notes.push(english
+        ? `${kind === "sale" ? "Sale" : "Expense"} of ${brl(cents)}: say how it was ${kind === "sale" ? "received" : "paid"} (Pix, cash, debit, credit or on tab).`
+        : `${what}: faltou dizer como ${kind === "sale" ? "recebeu" : "pagou"} (Pix, dinheiro, débito, crédito ou fiado).`);
       continue;
     }
 
@@ -547,7 +622,9 @@ export function readInterpretation(
   if (Array.isArray(answer.lines) && answer.lines.length > MAX_LINES) refusals.push(`more than ${MAX_LINES} lines`);
 
   for (const q of Array.isArray(answer.left_out) ? answer.left_out.slice(0, 5) : []) {
-    if (typeof q === "string" && q.trim() !== "" && occurrences(q, said) > 0) notes.push(`Não registrei: «${q.trim()}».`);
+    if (typeof q === "string" && q.trim() !== "" && occurrences(q, said) > 0) {
+      notes.push(english ? `Not recorded: «${q.trim()}».` : `Não registrei: «${q.trim()}».`);
+    }
     else refusals.push(`left_out ${JSON.stringify(q)} not in the words`);
   }
 
