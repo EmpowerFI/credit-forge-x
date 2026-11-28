@@ -37,9 +37,9 @@ The diary is already live on the web, so this build is limited to what the hacka
      - an expense's category;
      - à vista or in instalments, with how many and the first due date.
    - When nothing is understood, the form opens for her to type the entry.
-2. **Hear it back.** ElevenLabs Flash (`eleven_flash_v2_5`) reads the draft aloud in her language: *"Entendi: venda de 30 reais no Pix. Está certo?"*. This is for women who read with difficulty. The voice informs and her tap decides: nothing reaches her journal until she confirms.
-3. **Connect the wallet on her phone.** She uses Mobile Wallet Adapter (`@solana-mobile/wallet-standard-mobile`). She signs a Sign In With Solana message: no transaction, no fee, valid five minutes, nonce used once. The server checks the Ed25519 signature before her rewards may go there ([`seeker-wallet`](platform/supabase/functions/seeker-wallet/index.ts)).
-4. **Keep her reward, or withdraw it.** A Missions reward is paid on devnet into her reward wallet: an address of the rewards program, with no private key anywhere. Then she chooses:
+   - She checks the draft on screen and confirms with a tap: nothing reaches her journal before that.
+2. **Connect the wallet on her phone.** She uses Mobile Wallet Adapter (`@solana-mobile/wallet-standard-mobile`). She signs a Sign In With Solana message: no transaction, no fee, valid five minutes, nonce used once. The server checks the Ed25519 signature before her rewards may go there ([`seeker-wallet`](platform/supabase/functions/seeker-wallet/index.ts)).
+3. **Keep her reward, or withdraw it.** A Missions reward is paid on devnet into her reward wallet: an address of the rewards program, with no private key anywhere. Then she chooses:
    - **Keep:** it stays there as her reserve.
    - **Send:** this and every later reward go to her phone's wallet by themselves.
    - She can change her mind at any time. The statement links every movement to the Solana explorer.
@@ -51,7 +51,7 @@ The diary is already live on the web, so this build is limited to what the hacka
 |---|---|
 | [`src/app/seeker/`](src/app/seeker/) | The route `/app/seeker`, lazy-loaded. It is closed on every deployment except the Seeker one (`VITE_SEEKER=1`). |
 | [`apps/seeker-shell/`](apps/seeker-shell/) | The Android shell from `npx solana-mobile webshell`: a WebView, so MWA works. It grants the microphone to the app's own origin only. The keystore is not in the repository. |
-| [`diary-speak-seeker`](platform/supabase/functions/diary-speak-seeker/index.ts) | A new function, a copy of the diary's `diary-speak` that uses ElevenLabs for hearing and reading back. The ElevenLabs key stays on the server. |
+| [`diary-speak-seeker`](platform/supabase/functions/diary-speak-seeker/index.ts) | A new function, a copy of the diary's `diary-speak` that uses ElevenLabs Scribe to hear her. The ElevenLabs key stays on the server. |
 | [`seeker-wallet`](platform/supabase/functions/seeker-wallet/index.ts) | A new function: the sign-in challenge and the signature check. |
 | Migrations `20270116…`, `20270117…` | Additive only: new tables and functions. `reward-payout` gained one additive call, which does nothing for a woman who never used the Seeker app. |
 
@@ -63,7 +63,7 @@ The rewards themselves are the existing Missions program on devnet ([docs/MISSIO
 - **The voice is allow-listed** to the founder and testers. Real entrepreneurs do not use it yet: the plan and its retention terms come first. A judge who signs up sees the rest of the app, but the voice answers `voice_not_allowed`. The demo video shows the voice.
 - **Limits:** 2 MB of audio per note and 20 drafts a day per person.
 - **Before the first recording** the app says, in plain words, that her audio goes to ElevenLabs, outside Brazil, and asks once.
-- **Not in this build:** a dApp Store listing, which the hackathon does not require, and push reminders inside the shell.
+- **Not in this build:** a spoken read-back of the draft (ElevenLabs text to speech), a dApp Store listing, which the hackathon does not require, and push reminders inside the shell.
 
 The full plan and its decisions are in [PLAN_SEEKER.md](PLAN_SEEKER.md).
 

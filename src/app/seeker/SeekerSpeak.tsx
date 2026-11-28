@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2, Mic, Pencil, Square, Volume2 } from "lucide-react";
+import { Check, Loader2, Mic, Pencil, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getLocale, tr } from "../i18n";
 import { diaryDb } from "../diary/db";
@@ -19,40 +19,7 @@ interface Draft {
   lines: Line[];
   notes: string[];
   heard: string | null;
-  /** The read-back, an mp3 in base64 (ElevenLabs), or null when the voice failed. */
-  speech?: string | null;
   error?: string;
-}
-
-// One player for every read-back. Android's WebView plays sound only after a
-// tap, per element: the tap on "Falar" unlocks this one with a silent clip, so
-// the read-back can play by itself when the draft arrives, seconds later.
-const SILENCE = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
-let player: HTMLAudioElement | null = null;
-
-function audio(): HTMLAudioElement | null {
-  try {
-    player ??= new Audio();
-    return player;
-  } catch {
-    return null;
-  }
-}
-
-/** Call inside a tap, before any await. */
-function unlockAudio() {
-  const a = audio();
-  if (!a) return;
-  a.src = SILENCE;
-  void a.play().catch(() => undefined);
-}
-
-/** Plays the read-back. Quiet if the WebView refuses: the draft is on the screen anyway. */
-function play(speech: string | null | undefined) {
-  const a = audio();
-  if (!speech || !a) return;
-  a.src = `data:audio/mpeg;base64,${speech}`;
-  void a.play().catch(() => undefined);
 }
 
 const MAX_SECONDS = 120;
@@ -280,7 +247,6 @@ export function SeekerSpeak({ userId }: { userId: string }) {
     if (!data) return;
     if (data.draft_id) {
       setDraft(data);
-      play(data.speech);
       setLines(data.lines);
       // An expense (its category) or a card (at once or in instalments): open for her.
       setEditing(new Set(data.lines.flatMap((l, i) => (needsHand(l) ? [i] : []))));
@@ -298,7 +264,6 @@ export function SeekerSpeak({ userId }: { userId: string }) {
   };
 
   const start = async () => {
-    unlockAudio();
     setError(null);
     setSaved(null);
     try {
@@ -412,17 +377,9 @@ export function SeekerSpeak({ userId }: { userId: string }) {
       {draft ? (
         <div className="space-y-3" aria-live="polite">
           {draft.heard && <p className="text-sm text-muted-foreground">🎙️ «{draft.heard}»</p>}
-          <div className="flex items-start justify-between gap-2">
-            <p className="font-medium">
-              {tr({ en: `This is what I understood, for ${dayName(draft.day, today)}:`, pt: `Entendi assim, para ${dayName(draft.day, today)}:` })}
-            </p>
-            {draft.speech && (
-              <Button variant="ghost" size="sm" className="h-10 shrink-0 gap-1" onClick={() => play(draft.speech)}
-                aria-label={tr({ en: "Hear it again", pt: "Ouvir de novo" })}>
-                <Volume2 size={16} aria-hidden="true" />{tr({ en: "Hear", pt: "Ouvir" })}
-              </Button>
-            )}
-          </div>
+          <p className="font-medium">
+            {tr({ en: `This is what I understood, for ${dayName(draft.day, today)}:`, pt: `Entendi assim, para ${dayName(draft.day, today)}:` })}
+          </p>
           <ul className="space-y-3">
             {lines.map((l, i) => (
               <li key={i} className="space-y-2">
